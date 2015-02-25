@@ -2,6 +2,9 @@ PROJECT_VERSION=`./debianize.sh getversion`
 DISTPREFIX=artloglaby
 DISTJAR=$(DISTPREFIX)-$(PROJECT_VERSION).jar
 JDEE_VERSION=2.4.1
+JAVAC=javac
+JAR=jar
+RHINO_VER=1_7R5
 
 all: build.xml dist/lib/$(DISTJAR)
 
@@ -61,5 +64,9 @@ emacsdevenv: ~/.emacs.d/jdee-$(JDEE_VERSION)
 removejdee:
 	rm -rf ~/.emacs.d/jdee-$(JDEE_VERSION)
 	sed -i -n -e "/^(add-to-list 'load-path \"~\/\.emacs\.d\/jdee-$(JDEE_VERSION)\/lisp\")$$/d" -e "/^(load \"jde\")$$/d" -e"/^.*$$/p" ~/.emacs.d/init.el
+
+download/rhino$(RHINO_VER).zip:
+	mkdir -p download
+	cd download; wget https://github.com/mozilla/rhino/releases/download/Rhino$(RHINO_VER)_RELEASE/rhino$(RHINO_VER).zip
 
 .PHONY: clean all cleanall getname deb emacsdevenv removejdee
