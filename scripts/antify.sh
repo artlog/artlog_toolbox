@@ -24,7 +24,16 @@ cat <<EOF
   <target name="compile" depends="init"
         description="compile the source " >
     <!-- Compile the java code from \${src} into \${build} -->
-    <javac srcdir="\${src}" destdir="\${build}"/>
+EOF
+
+if [[ -z $java_target ]]
+then
+    echo "   <javac srcdir=\"\${src}\" destdir=\"\${build}\"/>"
+else
+    echo "   <javac target=\"$java_target\" source=\"$java_target\" srcdir=\"\${src}\" destdir=\"\${build}\"><compilerarg value=\"-Xlint:-options\"/></javac>"
+fi
+
+cat <<EOF
   </target>
 
   <target name="dist" depends="compile"
