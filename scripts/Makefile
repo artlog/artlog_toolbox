@@ -1,5 +1,5 @@
 PROJECT_VERSION=`./debianize.sh getversion`
-DISTPREFIX=artloglaby
+DISTPREFIX=`./debianize.sh getproject`
 DISTJAR=$(DISTPREFIX)-$(PROJECT_VERSION).jar
 JDEE_VERSION=2.4.1
 JAVAC=javac

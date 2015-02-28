@@ -218,7 +218,10 @@ do
     if [[ $action == run ]]
     then
 	echo "run it"
-	java -jar $(make getname)
+	{
+	    source ./project_params
+	    java -jar $(make getname) "$default_args"
+	}
     elif [[ $action == ant ]]
     then
 	make clean

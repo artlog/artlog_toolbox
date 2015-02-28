@@ -9,6 +9,10 @@ if [[ $action == getversion ]]
 then
     source ./project_params
     echo $project_version
+elif [[ $action == getproject ]]
+then
+    source ./project_params
+    echo $project_name
 elif [[ $action == create ]]
 then
     source ./project_params
