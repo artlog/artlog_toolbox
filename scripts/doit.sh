@@ -17,7 +17,17 @@ setup()
 do_code()
 {
     background=$1
-    find java/org/artisanlogiciel/games/ -name "*.java" |
+    jd=()
+    for java_dir in $(find java -name "*.java" -exec dirname {} \; | sort -u)
+    do	
+	jd+=("$java_dir")
+    done
+    echo ${#jd[@]}
+    if [[ ${#jd[@]} -gt 1 ]]
+    then
+	java_dir=$($DIALOG --menu "Select dir" 20 100 10 ${jd[@]} 3>&1 1>&2 2>&3)
+    fi
+    find $java_dir -name "*.java" |
 	{
 	    s=()
 	    while read codeline
@@ -39,8 +49,7 @@ do_code()
 		fi
 		popd
 	    fi
-	}
-    
+	}    
 }
 
 edit_properties()
