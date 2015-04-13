@@ -40,14 +40,12 @@ do_code()
 	    javaclass=$($DIALOG --menu "Edit it" 20 100 10 ${s[@]} 3>&1 1>&2 2>&3)
 	    if [[ -n $javaclass ]]
 	    then
-		pushd java
 		if [[ $background == codebg ]]
 		then
-		    nohup make work/$javaclass &
+		    ${EDITOR} $java_dir/$javaclass.java &
 		else
-		    make work/$javaclass
+		    ${EDITOR} $java_dir/$javaclass.java
 		fi
-		popd
 	    fi
 	}    
 }
@@ -204,7 +202,7 @@ possible_console_gui="whiptail dialog"
 for DIALOG in $possible_console_gui
 do
     DIALOG=$(which $DIALOG)
-    if [[ -n $DIALOG ]]
+    if [[ -x $DIALOG ]]
     then
 	break
     fi
@@ -214,6 +212,22 @@ if [[ -z $DIALOG ]]
 then
     echo "[ERROR] no console gui support (no dialog tool found within $possible_console_gui)  => no menus " >&2
     exit 1
+fi
+
+possible_editor="emacs vi nano"
+
+for EDITOR in $possible_editor
+do
+    EDITOR=$(which $EDITOR)
+    if [[ -x $EDITOR ]]
+    then
+	break
+    fi
+done
+
+if [[ -z $EDITOR ]]
+then
+    echo "[ERROR] no editor found (within $possible_editor)  => no editing " >&2
 fi
 
 setup
