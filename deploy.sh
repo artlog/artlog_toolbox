@@ -29,6 +29,23 @@ then
     echo "Deploying scripts..."
 
     pushd  ${A_TOOLBOX}
+    GIGN=../.gitignore
+    [[ -e $GIGN ]] | touch $GIGN
+    if grep "^${A_TOOLBOX}" $GIGN
+    then
+	echo "${A_TOOLBOX} already ignored"
+    else
+	echo "${A_TOOLBOX}" >> $GIGN
+    fi
+    for l in $(ls scripts)
+    do
+	if grep "^$l" $GIGN
+	then
+	    echo "$l already ignored"
+	else
+	    echo "$l" >>$GIGN
+	fi
+    done
     cp scripts/* ..
     popd
 else
