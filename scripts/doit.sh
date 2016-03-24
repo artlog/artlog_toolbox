@@ -1,4 +1,39 @@
 #!/bin/bash
+# entry point for project building / editing /...
+
+devenv_setup()
+{
+    if [[ -e devenv_params ]]
+    then
+	if [[ -e .within-devenv ]]	   
+	then
+	    echo "[ERROR] pid $(< .within-devenv) already called this $0 script within dev_env_setup" >&2
+	    echo "[INFO] Stopping to protected against infinite recursion" >&2
+	    echo "[INFO] stop $(< .within-devenv) process and remove .within-devenv file if it remains"
+	    exit 1
+	else
+	    echo "[WARNING] Run with devenv_params"
+	    source devenv_params
+	    PATH=$JDK_PATH/bin/:$JDK_PATH/jre/bin/:$ECLIPSE_PATH:$PATH
+	    export PATH JDK_PATH ECLIPSE_PATH DEV_ENV
+	    echo "$PID" > .within-devenv
+	    # Don't forget to set a param unless it will go in endless recursive call
+	    $0 within-devenv
+	    EXITCODE=$?
+	    rm .within-devenv
+	    exit $EXITCODE
+	fi
+    fi
+}
+
+info()
+{
+    echo "DEV_ENV=$DEV_ENV"
+    echo "JDK_PATH=$JDK_PATH"
+    echo "ECLIPSE_PATH=$ECLIPSE_PATH"
+    echo "PATH=$PATH"
+    java -version    
+}
 
 setup()
 {
@@ -197,6 +232,15 @@ list_labs()
 
 }
 
+
+
+# WARNING can call itself.
+if [[ -z "$1" ]]
+then
+    devenv_setup
+fi
+   
+
 possible_console_gui="whiptail dialog"
 
 for DIALOG in $possible_console_gui
@@ -236,7 +280,7 @@ action=initial
 
 while [[ $action != quit ]]
 do
-    action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  list_labs "Show Labyrinth with blender" test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" emacsdevenv "Setup Emacs java bindings JDEE" quit "Quit" 3>&1 1>&2 2>&3)
+    action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  list_labs "Show Labyrinth with blender" test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" emacsdevenv "Setup Emacs java bindings JDEE" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
 
     if [[ $action == run ]]
     then
@@ -292,5 +336,11 @@ do
     elif [[ $action == emacsdevenv ]]
     then
 	make $action
+    elif [[ $action == info ]]
+    then
+	infos=$(mktemp)
+	info >$infos
+	$DIALOG --textbox $infos 40 80 scrolltext
+	rm $infos
     fi
 done
