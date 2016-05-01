@@ -341,7 +341,7 @@ do
 	then
 	    echo "test it"
 	    pushd java
-	    make -f display
+	    make display
 	    popd
 	else
 	    make test
@@ -366,7 +366,7 @@ do
 	    if [[ -n $newclass ]]
 	    then
 		pushd java
-		make -f work/$newclass
+		make work/$newclass
 		popd
 	    fi
 	fi
