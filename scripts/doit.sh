@@ -8,14 +8,20 @@ devenv_setup()
 	if [[ -e .within-devenv ]]	   
 	then
 	    echo "[ERROR] pid $(< .within-devenv) already called this $0 script within dev_env_setup" >&2
-	    echo "[INFO] Stopping to protected against infinite recursion" >&2
+	    echo "[INFO] Stopping to protect against infinite recursion" >&2
 	    echo "[INFO] stop $(< .within-devenv) process and remove .within-devenv file if it remains"
 	    exit 1
 	else
 	    echo "[WARNING] Run with devenv_params"
 	    source devenv_params
-	    PATH=$JDK_PATH/bin/:$JDK_PATH/jre/bin/:$ECLIPSE_PATH:$PATH
-	    export PATH JDK_PATH ECLIPSE_PATH DEV_ENV
+	    if [[ -z $NOJAVA ]]
+	    then
+		PATH=$JDK_PATH/bin/:$JDK_PATH/jre/bin/:$ECLIPSE_PATH:$PATH
+		JAVA_MAKEFILE=Makefile.4.java
+		export PATH JDK_PATH ECLIPSE_PATH DEV_ENV JAVA_MAKEFILE
+	    else
+		export NOJAVA
+	    fi
 	    echo "$PID" > .within-devenv
 	    # Don't forget to set a param unless it will go in endless recursive call
 	    $0 within-devenv
@@ -28,61 +34,74 @@ devenv_setup()
 
 info()
 {
-    echo "DEV_ENV=$DEV_ENV"
-    echo "JDK_PATH=$JDK_PATH"
-    echo "ECLIPSE_PATH=$ECLIPSE_PATH"
-    echo "PATH=$PATH"
-    java -version    
+    if [[ -z $NOJAVA ]]
+    then
+	echo "DEV_ENV=$DEV_ENV"
+	echo "JDK_PATH=$JDK_PATH"
+	echo "ECLIPSE_PATH=$ECLIPSE_PATH"
+	echo "PATH=$PATH"
+	java -version
+    else
+	echo "NOJAVA is set to $NOJAVA"
+    fi
 }
 
 setup()
 {
-    if [[ ! -d java ]]
+    if [[ -z $NOJAVA ]]
     then
-	echo "[FATAL] this tools $0 is intended to be run within laby project. Missing java directory." >&2
-	exit 1
-    fi
-    if [[ ! -d lab ]]
-    then
-	echo "[INFO] Creating directory lab to save default lab created"
-	mkdir lab
+	if [[ ! -d java ]]
+	then
+	    echo "[INFO] Missing java directory." >&2
+	fi
+	# FIXME specific to laby project, should not be within general toolbox.
+	if [[ ! -d lab ]]
+	then
+	    echo "[INFO] Creating directory lab to save default lab created"
+	    mkdir lab
+	fi
     fi
 }
 
 do_code()
 {
-    background=$1
-    jd=()
-    for java_dir in $(find java -name "*.java" -exec dirname {} \; | sort -u)
-    do	
-	jd+=("$java_dir")
-    done
-    echo ${#jd[@]}
-    if [[ ${#jd[@]} -gt 1 ]]
+    if [[ -z $NOJAVA ]]
     then
-	java_dir=$($DIALOG --menu "Select dir" 20 100 10 ${jd[@]} 3>&1 1>&2 2>&3)
-    fi
-    find $java_dir -name "*.java" |
-	{
-	    s=()
-	    while read codeline
-	    do
-		javafile=$(basename "$codeline")
-		javaclass=${javafile/.java/}
-		echo "$javafile $javaclass"
-		s+=("$javaclass" "$codeline")
-	    done
-	    javaclass=$($DIALOG --menu "Edit it" 20 100 10 ${s[@]} 3>&1 1>&2 2>&3)
-	    if [[ -n $javaclass ]]
-	    then
-		if [[ $background == codebg ]]
+	background=$1
+	jd=()
+	for java_dir in $(find java -name "*.java" -exec dirname {} \; | sort -u)
+	do	
+	    jd+=("$java_dir")
+	done
+	echo ${#jd[@]}
+	if [[ ${#jd[@]} -gt 1 ]]
+	then
+	    java_dir=$($DIALOG --menu "Select dir" 20 100 10 ${jd[@]} 3>&1 1>&2 2>&3)
+	fi
+	find $java_dir -name "*.java" |
+	    {
+		s=()
+		while read codeline
+		do
+		    javafile=$(basename "$codeline")
+		    javaclass=${javafile/.java/}
+		    echo "$javafile $javaclass"
+		    s+=("$javaclass" "$codeline")
+		done
+		javaclass=$($DIALOG --menu "Edit it" 20 100 10 ${s[@]} 3>&1 1>&2 2>&3)
+		if [[ -n $javaclass ]]
 		then
-		    ${EDITOR} $java_dir/$javaclass.java &
-		else
-		    ${EDITOR} $java_dir/$javaclass.java
+		    if [[ $background == codebg ]]
+		    then
+			${EDITOR} $java_dir/$javaclass.java &
+		    else
+			${EDITOR} $java_dir/$javaclass.java
+		    fi
 		fi
-	    fi
-	}    
+	    }
+    else
+	echo "NOJAVA set"
+    fi
 }
 
 edit_properties()
@@ -280,35 +299,56 @@ action=initial
 
 while [[ $action != quit ]]
 do
-    action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  list_labs "Show Labyrinth with blender" test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" emacsdevenv "Setup Emacs java bindings JDEE" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
+    if [[ -z $NOJAVA ]]
+    then
+	# should be cleaned up from specific laby project targets.
+	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  list_labs "Show Labyrinth with blender" test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" emacsdevenv "Setup Emacs java bindings JDEE" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
+    else
+	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" run "Run it"  test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
+    fi
 
     if [[ $action == run ]]
     then
-	echo "run it"
-	{
-	    source ./project_params
-	    java -jar $(make getname) "$default_args"
-	}
+	if [[ -z $NOJAVA ]]
+	then
+	    echo "run it"
+	    {
+		source ./project_params	    
+		java -jar $(make -f ${JAVA_MAKEFILE} getname) "$default_args"
+	    }
+	else
+	    make
+	fi
     elif [[ $action == ant ]]
     then
-	make clean
-	make
+	make -f ${JAVA_MAKEFILE} clean
+	make -f ${JAVA_MAKEFILE}
 	ant compile
     elif [[ $action == clean ]]
     then
-	make clean
-        pushd java
-	make clean
-	popd
+	if [[ -z $NOJAVA ]]
+	then
+	    make -f ${JAVA_MAKEFILE} clean
+            pushd java
+	    make  clean
+	    popd
+	else
+	    make clean
+	fi
     elif [[ $action == test ]]
     then
-	echo "test it"
-	pushd java
-	make display
-	popd
+	if [[ -z $NOJAVA ]]
+	then
+	    echo "test it"
+	    pushd java
+	    make -f display
+	    popd
+	else
+	    make test
+	fi
     elif [[ $action == deb ]]
     then
-	make deb
+	make -f ${JAVA_MAKEFILE} deb
     elif [[ $action =~ code ]]
     then
 	do_code $action
@@ -326,7 +366,7 @@ do
 	    if [[ -n $newclass ]]
 	    then
 		pushd java
-		make work/$newclass
+		make -f work/$newclass
 		popd
 	    fi
 	fi
@@ -335,7 +375,7 @@ do
 	list_labs ./lab
     elif [[ $action == emacsdevenv ]]
     then
-	make $action
+	make -f ${JAVA_MAKEFILE} $action
     elif [[ $action == info ]]
     then
 	infos=$(mktemp)
