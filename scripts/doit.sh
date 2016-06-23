@@ -210,76 +210,18 @@ edit_properties()
 
 }
 
-# first argument mandatory : directory containing generated .lab and .stl files ( usualy ./lab )
-list_labs()
-{
-    local lab_dir=$1
-    if [[ -d $lab_dir ]]
-    then
-	modified=0
-	s=()
-	properties=()
-	values=()
-	{
-	    pushd $lab_dir
-	    for stl_lab in $(ls *lab*.stl)
-	    do
-		if [[ $stl_lab =~ ^([^0-9]*[0-9]*x[0-9]*).stl ]]
-		then
-		    property=${BASH_REMATCH[1]}
-		    value=$stl_lab
-		    s+=("$property" "$value")
-		    properties+=("$property")
-		    values+=("$value")
-		fi
-	    done
-	    s+=(exit "Exit")
-	    popd
-	}
-	
-	while true 
-	do
-	    property=$($DIALOG --menu "Show stl file from $lab_dir" 20 100 10 ${s[@]} 3>&1 1>&2 2>&3)
-	    if [[ $? = 0 ]]
-	    then
-		if [[ -n $property ]]
-		then
-		    if [[ $property == exit ]]
-		    then
-			return 1
-		    elif [[ $property == save ]]
-		    then
-			echo "TODO"
-			return 0
-		    fi
-		    prop_len=${#properties[*]}
-		    for  (( i=0; i<${prop_len}; i++ ));
-		    do
-			if [[ ${properties[$i]} == $property ]]
-			then
-			    blender --python blender_import.py -- $lab_dir/${values[$i]}
-			fi
-		    done
-
-		fi
-	    else
-		return 2
-	    fi
-	done
-    else
-	echo "[ERROR] lab dir '$propertyfile' not found" >&2
-    fi
-
-}
-
-
-
 # WARNING can call itself.
 if [[ -z "$1" ]]
 then
     devenv_setup
 fi
-   
+
+specific_menus=()
+
+if [[ -f ./specificdoit.sh ]]
+then
+    source ./specificdoit.sh
+fi
 
 possible_console_gui="whiptail dialog"
 
@@ -323,7 +265,7 @@ do
     if [[ -z $NOJAVA ]]
     then
 	# should be cleaned up from specific laby project targets.
-	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  list_labs "Show Labyrinth with blender" test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" emacsdevenv "Setup Emacs java bindings JDEE" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
+	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  ${specific_menus[@]} test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
     else
 	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" run "Run it"  test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
     fi
@@ -391,17 +333,13 @@ do
 		popd
 	    fi
 	fi
-    elif [[ $action == list_labs ]]
-    then
-	list_labs ./lab
-    elif [[ $action == emacsdevenv ]]
-    then
-	make -f ${JAVA_MAKEFILE} $action
     elif [[ $action == info ]]
     then
 	infos=$(mktemp)
 	info >$infos
 	$DIALOG --textbox $infos 40 80 scrolltext
 	rm $infos
+    else
+	specific_run $action
     fi
 done
