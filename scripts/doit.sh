@@ -1,5 +1,5 @@
 #!/bin/bash
-# entry point for project building / editing /...
+# entry point for project building / editing / running
 
 devenv_setup()
 {
@@ -68,19 +68,40 @@ do_code()
     if [[ -z $NOJAVA ]]
     then
 	background=$1
-	jd=()
-	for java_dir in $(find java -name "*.java" -exec dirname {} \; | sort -u)
-	do	
+	local jd=()
+	local id=()
+	local menu=()
+	index=0
+	# find all java source file within current directory and populate jd array with.
+	for java_dir in $(find java -name '*.java' -exec dirname {} \; | sort -u)
+	do
+	    index=$((index+1))
+	    id+=($index)
 	    jd+=("$java_dir")
+	    menu+=($index "$java_dir")
 	done
-	echo ${#jd[@]}
+	echo "found ${#jd[@]} java source directories"
 	if [[ ${#jd[@]} -gt 1 ]]
 	then
-	    java_dir=$($DIALOG --menu "Select dir" 20 100 10 ${jd[@]} 3>&1 1>&2 2>&3)
+	    echo "${jd[@]}"
+	    # menu <text> <height> <width> <listheight> <tag[1]> <name[1]> ... <tag[n]> <name[n]>
+	    index_dir=$($DIALOG --menu "Select dir" 20 100 10 ${menu[@]} 3>&1 1>&2 2>&3)
+	    if [[ ! $? ]]
+	    then
+		echo "[ERROR] $DIALOG --menu did fail when requesting choice over java directories" >&2
+		exit 1
+	    fi
 	fi
-	find $java_dir -name "*.java" |
+	java_dir=${jd[$((index_dir-1))]}
+	if [[ ! -d $java_dir ]]
+	then
+	    echo "$java_dir is not a directory" >&2
+	    return
+	fi
+	echo "chose dir $java_dir"
+	find $java_dir -maxdepth 1 -name '*.java' |
 	    {
-		s=()
+		local s=()
 		while read codeline
 		do
 		    javafile=$(basename "$codeline")
