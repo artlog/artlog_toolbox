@@ -54,12 +54,6 @@ setup()
 	then
 	    echo "[INFO] Missing java directory." >&2
 	fi
-	# FIXME specific to laby project, should not be within general toolbox.
-	if [[ ! -d lab ]]
-	then
-	    echo "[INFO] Creating directory lab to save default lab created"
-	    mkdir lab
-	fi
     fi
 }
 
