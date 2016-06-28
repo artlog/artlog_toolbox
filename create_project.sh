@@ -39,6 +39,10 @@ fi
 echo "to setup project $project_name :"
 echo "cd $(pwd); ./init.sh"
 
+git init
+git add ./init.sh
+git commit -m "initial commit project $project_name created by artlog toolbox"
+
 popd >/dev/null
 popd >/dev/null
        
