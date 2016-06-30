@@ -1,6 +1,12 @@
 #!/bin/bash
 # entry point for project building / editing / running
 
+# this specific_run is intended to be overriden by specific_doit.sh script if any.
+function specific_run()
+{
+    echo "[ERROR] '$1' command is not supported in a generic manner" >&2
+}
+
 devenv_setup()
 {
     if [[ -e devenv_params ]]
@@ -333,6 +339,9 @@ do
 	info >$infos
 	$DIALOG --textbox $infos 40 80 scrolltext
 	rm $infos
+    elif [[ $action == quit ]]
+    then
+	echo "[INFO] quit requested"
     else
 	specific_run $action
     fi
