@@ -51,16 +51,26 @@ setup_eclipse()
 
 check_eclipse()
 {
+    if [[ -z $JDK_PATH ]]
+    then
+	echo "[ERROR] Missing JDK_PATH, either devenv_params is wrong or missing" >&2
+	exit 1
+    fi
+    if [[ -z $ECLIPSE_PATH ]]
+    then
+	echo "[ERROR] Missing ECLIPSE_PATH, either devenv_params is wrong or missing" >&2
+	exit 1
+    fi
     if [[ ! -d $JDK_PATH ]]
     then
-	echo "[ERROR] Missing $JDK_PATH" >&2
+	echo "[ERROR] Missing JDK_PATH '$JDK_PATH'" >&2
     fi
     
     if [[ ! -d $ECLIPSE_PATH ]]
     then
 	ls -la ${DEV_ENV}
 	
-	echo "[ERROR] Missing $ECLIPSE_PATH ." >&2
+	echo "[ERROR] Missing ECLIPSE_PATH '$ECLIPSE_PATH'" >&2
 	exit 1
     fi
 
