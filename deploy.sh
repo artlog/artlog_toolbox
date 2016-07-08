@@ -1,5 +1,27 @@
 #!/bin/bash
 
+function update_migration()
+{
+    if [[ ! -e ../deploy.version ]]
+    then
+	# .git/refs/heads/master >../deploy.version
+	echo "54afe8d9468359e80322283cc5b6b7cd0cb6a630" >../deploy.version
+    fi
+
+    deployed_version=$(< ../deploy.version)
+
+    if [[ "$deployed_version" == "54afe8d9468359e80322283cc5b6b7cd0cb6a630" ]]
+    then
+	if [[ ! -e README.md ]]
+	then
+	    echo "[INFO] migration README -> README.md"
+	    mv README README.md
+	fi
+    fi
+
+    cp .git/refs/heads/master ../deploy.version
+}
+
 A_TOOLBOX=artlog_toolbox
 
 if [[ ! -d $A_TOOLBOX ]]
@@ -48,6 +70,10 @@ then
     done
     cp scripts/* ..
     popd
+
+    echo "Update migration"
+    update_migration
+    
 else
     echo "destroy deployed toolbox"
     for script in $(ls ${A_TOOLBOX}/scripts)

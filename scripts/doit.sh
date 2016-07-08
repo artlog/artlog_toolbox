@@ -317,7 +317,7 @@ do
 	do_code $action
     elif [[ $action == readme ]]
     then
-	$DIALOG --textbox README 40 80 --scrolltext
+	$DIALOG --textbox README.md 40 80 --scrolltext
     elif [[ $action == properties ]]
     then
 	edit_properties project_params
