@@ -2,13 +2,13 @@
 
 function update_migration()
 {
-    if [[ ! -e ../deploy.version ]]
+    if [[ ! -e deploy.version ]]
     then
-	# .git/refs/heads/master >../deploy.version
-	echo "54afe8d9468359e80322283cc5b6b7cd0cb6a630" >../deploy.version
+	# .git/refs/heads/master >deploy.version
+	echo "54afe8d9468359e80322283cc5b6b7cd0cb6a630" >deploy.version
     fi
 
-    deployed_version=$(< ../deploy.version)
+    deployed_version=$(< deploy.version)
 
     if [[ "$deployed_version" == "54afe8d9468359e80322283cc5b6b7cd0cb6a630" ]]
     then
@@ -19,7 +19,7 @@ function update_migration()
 	fi
     fi
 
-    cp .git/refs/heads/master ../deploy.version
+    cp ${A_TOOLBOX}/.git/refs/heads/master deploy.version
 }
 
 A_TOOLBOX=artlog_toolbox

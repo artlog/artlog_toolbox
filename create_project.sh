@@ -232,16 +232,17 @@ do
 	git add $param_file
     fi
 done
-cat <<EOF >README
+cat <<EOF >README.md
 Newly create $project_name by $0
 
 Please enter here a correct explanation for this project
 
-./init.sh
-# will create build scripts from artlog_toolbox
 ./doit.sh
 EOF
-git add README
+git add README.md
+
+./init.sh
+
 git commit -m "initial commit project $project_name created by artlog toolbox"
 
 popd >/dev/null
