@@ -5,7 +5,7 @@ usage()
 {
     echo "Usage $0:"
     echo "setup_dev_env: create file devenv_params with reference over jdk and eclipse path"
-    echo "any other argumetn is an error"
+    echo "any other argument is an error"
     echo "no argument => launch eclipse"
 }
 create_dev_params()
@@ -75,11 +75,15 @@ check_eclipse()
     fi
 
 }
+
+# not yet used ...
 create_sandbox()
 {
     mkdir sandbox
 }
 
+# overrides PATH with JDK_PATH ECLIPSE_PATH
+# and check java is the right one to launch eclipse
 run_in_sandbox()
 {
     PATH=$JDK_PATH/bin/:$JDK_PATH/jre/bin/:$ECLIPSE_PATH:$PATH
@@ -118,5 +122,5 @@ done
 
 setup_eclipse_dir
 check_eclipse
-run_in_sandbox eclipse
+run_in_sandbox eclipse -data $(pwd)/workspace
 
