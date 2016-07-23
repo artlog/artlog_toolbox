@@ -6,11 +6,22 @@
 struct allistof;
 struct allistelement;
 
+enum allistelement_flags {
+  ALLIST_SHRUNK = 1,
+  ALLIST_EXT = 2, // has extended links
+  ALLIST_MALLOC = 4 // was created with malloc, can be shrunk in-situ
+};
+
 struct allistlink {
   struct allistelement * next;
   struct allistelement * previous;
   void * data; // specific data for this membership
   struct allistof* memberof;
+};
+
+struct allistextlink {
+  struct allistextlink * nextextlink;
+  struct allistlink link;
 };
 
 struct indexset {
@@ -34,11 +45,14 @@ struct allistelement {
   struct indexset indexset; // what indexes in global membership it belongs to
   /**
     when a call to shrink is done, it is no more possible to add membership
-    all links will be used and shrunk will be set to 1.
+    all links will be used and flag ALLIST_SHRUNK will be set.
     at creation shrunk is 0, and there is a link for every possible membership
     some links can be NULL
+    
+    ALLIST_EXT allows to indicate extlink is in use
    */
-  int shrunk; 
+  int flags;
+  struct allistextlink * extlink;
   struct allistlink link[1]; // link on next element in membership growable in fact [memberships];
 };
 
@@ -96,3 +110,30 @@ int allistelement_is_in(struct allistelement * element, struct allistof * list);
 struct allistelement * allistelement_shrink(struct allistelement * this, struct shrunkinfo * shrunkinfo);
 
 int allist_set_debug( int d);
+
+
+int indexset_get(struct  indexset * indexset, int pabs);
+
+int indexset_reset(struct indexset * indexset, int pabs);
+
+int indexset_set(struct indexset * indexset, int pabs);
+
+int allistelement_get_memberships(struct allistelement * this);
+
+/** for each element of list call callback 
+  first call is with param, next call are with previous result of callback
+  if callback return NULL then for each stops
+  start element where to start WARNING it MUST be withing list, if NULL, head or tail of list will be used.
+  step : > 0 forward from head
+         < 0 backward from tail
+  offset : 0 starts at element
+           > 0 starts at nth element
+           < start at preivousth element
+*/
+void * allist_for_each(struct allistof * list,
+		       struct allistelement * start,
+		       void * (*callback) (struct allistof * list, struct allistelement * element, struct allistelement * next, int count, void * param),
+		       void * param,
+		       int step,
+		       int offset
+		       );

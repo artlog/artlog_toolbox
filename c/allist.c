@@ -23,19 +23,19 @@ int popcount(unsigned int i)
 
 int indexset_get(struct  indexset * indexset, int pabs)
 {
-  return ( (indexset->set & (1 << pabs)) != 0 );
+  return ( (indexset->set & (1L << pabs)) != 0 );
 }
 
 int indexset_reset(struct indexset * indexset, int pabs)
 {
-  if ( (indexset->set & (1 << pabs)) == 0 )
+  if ( (indexset->set & (1L << pabs)) == 0 )
     {
       // already unset
       return 0;
     }
   else
     {
-      indexset->set = indexset->set ^ (1 << pabs);
+      indexset->set = indexset->set ^ (1L << pabs);
       -- indexset->count;
       return 1;
     }
@@ -43,9 +43,9 @@ int indexset_reset(struct indexset * indexset, int pabs)
 
 int indexset_set(struct indexset * indexset, int pabs)
 {
-  if ( (indexset->set & (1 << pabs)) == 0 )
+  if ( (indexset->set & (1L << pabs)) == 0 )
     {      
-      indexset->set = indexset->set | (1 << pabs);
+      indexset->set = indexset->set | (1L << pabs);
       ++ indexset->count;
       return 1;
     }
@@ -169,36 +169,47 @@ when number of membership is known
 struct allistelement * new_allistelement(int memberships, void * data, int delta)
 {
   int newlength = sizeof(struct allistelement) + sizeof(struct allistlink) * (memberships-1);
-  struct allistelement * allocated = malloc(newlength);
+  struct allistelement * allocated = calloc(1,newlength);
   if ( allocated != NULL )
     {
-      bzero(allocated,newlength);
       allocated->memberships=memberships;
       allocated->data=data;
+      allocated->flags=ALLIST_MALLOC;
     }
   return allocated;
+}
+
+int allistelement_is_shrunk(struct allistelement * element)
+{
+  return (element->flags & ALLIST_SHRUNK) != 0;
+}
+  
+int allistelement_getrelindex( struct allistelement * current, int absindex)
+{
+  int relindex = 0;
+  if ( allistelement_is_shrunk(current) )
+    {
+      relindex=indexset_getrelindex(&current->indexset,absindex);
+    }
+  else
+    {
+      relindex = absindex;
+    }
+  return relindex;
 }
 
 int allistelement_get_memberships(struct allistelement * this)
 {
   int memberships=0;
-  if ( this->shrunk == 0 )
+  for (int i=0; i< this->memberships; i++)
     {
-      for (int i=0; i< this->memberships; i++)
+      if ( this->link[i].memberof != NULL )
 	{
-	  if ( this->link[i].memberof != NULL )
-	    {
-	      ++ memberships;
-	    }
+	  ++ memberships;
 	}
-    }
-  else
-    {
-      memberships=this->memberships;
     }
   return memberships;
 }
-
 
 /*
  shrink allistelement to take a minimal size
@@ -209,7 +220,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
   int shrunkerror = 0;
   int nowayback = 0;
   // already skrunk.
-  if (this->shrunk == 1 )
+  if (allistelement_is_shrunk(this))
     {
       return this;
     }
@@ -218,10 +229,16 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
   // no gain... no pain !
   if ( memberships == this->memberships )
     {
-      if ( debug) { fprintf(stderr,"no gain no pain.");}
+      if ( debug) { fprintf(stderr,"no gain no pain %p %i", this, memberships);}
       return this;
     }
-  
+
+  // current limit of indexset
+  if ( memberships > 64 )
+    {
+      return this;
+    }
+
   int newlength = sizeof(*this) + sizeof(this->link) * memberships;
   struct allistelement * shrunk = malloc(newlength);
   if ( shrunk != NULL )
@@ -315,7 +332,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	  else
 	    {
 	      int relindex = 0;
-	      if ( previous->shrunk)
+	      if (allistelement_is_shrunk(previous))
 		{
 		  relindex = indexset_getrelindex(&previous->indexset,i);
 		  if ( relindex >= previous->memberships )
@@ -328,6 +345,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		{
 		  relindex = i;
 		}
+
 	      // replace this by shrunk
 	      if ( previous->link[relindex].next == this )
 		{
@@ -357,7 +375,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	  else
 	    {
 	      int relindex = 0;
-	      if ( next->shrunk)
+	      if (allistelement_is_shrunk(next))
 		{
 		  relindex = indexset_getrelindex(&next->indexset,i);
 		  if ( relindex >= next->memberships )
@@ -384,7 +402,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	    }
 	  ++shrunkpos;
 	}
-      shrunk->shrunk=1;
+      shrunk->flags|= ALLIST_SHRUNK;
       shrunk->memberships=shrunkpos;
     }
   if ( shrunkerror > 0 )
@@ -460,13 +478,26 @@ struct allistelement * allistcontext_new_allistelement(struct allistcontext * co
 
 struct allistelement * allistelement_add_in(struct allistelement * element, struct allistof * list)
 {
-  struct allistof * previouslist = element->link[list->membership_id].memberof;
+  struct allistof * previouslist = NULL;
   struct allistelement * tail = list->tail;
+
+  if (element == NULL)
+    {
+      return NULL;
+    }
+  if ( list->membership_id > 64)
+    {
+      // extended add in TODO
+      return NULL;
+    }
+  
+  previouslist = element->link[allistelement_getrelindex(element,list->membership_id)].memberof;
+  
   // was not a member of this list
   if ( previouslist == NULL )
     {      
       // empty list
-      if ( element->shrunk == 1 )
+      if (allistelement_is_shrunk(element) )
 	{
 	  // can't add an element already shrunk into a new list.
 	  return NULL;
@@ -501,23 +532,19 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
 	}
       else
 	{	  
-	  if ( element->shrunk == 1 )
+	  if (allistelement_is_shrunk(element))
 	    {
 	      // can't add an element already shrunk into a new list.
 	      return NULL;
 	    }
 	  if (list->errors == 0)
 	    {
-	      int rel_index = list->membership_id;
-	      if ( tail->shrunk == 1)
+	      int rel_index = allistelement_getrelindex(tail, list->membership_id);
+	      if ( rel_index > list->membership_id)
 		{
-		  rel_index = indexset_getrelindex(&tail->indexset, list->membership_id);
-		  if ( rel_index > list->membership_id)
-		    {
-		      ++list->errors;
-		      // don't continue index is wrong
-		      return NULL;
-		    }
+		  ++list->errors;
+		  // don't continue index is wrong
+		  return NULL;
 		}
 	      // add a new element in an existing list => add at end.
 	      if ( tail->link[rel_index].next != NULL)
@@ -563,17 +590,92 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
 
 int allistelement_is_in(struct allistelement * element, struct allistof * list)
 {
-  if ( element->shrunk == 0 )
+  int rel_index = allistelement_getrelindex(element, list->membership_id);
+  if ( rel_index > list->membership_id )
     {
-      return element->link[list->membership_id].memberof == list;
+      return 0; // should be -1 or something indicating an error.
+    }
+  return element->link[rel_index].memberof == list;
+}
+
+struct allistelement * move_to_offset( struct allistelement * current,
+		int offset,
+		int absindex)
+{
+  if ( current == NULL )
+    {
+      return current;
+    }     
+  if ( offset > 0 )
+    {
+      for (int j=0; (current !=NULL) && (j< offset); j++)
+	{	  
+	  current=current->link[allistelement_getrelindex(current,absindex)].next;
+	}
+    }
+  else if ( offset < 0 )
+    {
+      for (int j=0; (current !=NULL) && (j>offset); j--)
+	{
+	  current=current->link[allistelement_getrelindex(current,absindex)].previous;
+	}
+    }
+  return current;
+}
+
+void * allist_for_each(struct allistof * list,
+		       struct allistelement * start,
+		       void * (*callback) (struct allistof * list, struct allistelement * element, struct allistelement * next, int count, void * param),
+		       void * param,
+		       int step,
+		       int offset)
+{
+  void * result = NULL;
+  struct allistelement * current = NULL;
+  struct allistelement * walk = NULL;
+  int absindex = 0;
+  if ( list == NULL)
+    {
+      return NULL;
+    }
+  absindex = list->membership_id;
+  if ( start == NULL )
+    {
+      if ( step < 0 )
+	{
+	  current = list->tail;
+	}
+      else
+	{
+	  current = list->head;
+	}
     }
   else
     {
-      int rel_index = indexset_getrelindex(&element->indexset, list->membership_id);
-      if ( rel_index > list->membership_id )
-	{
-	  return 0; // should be -1 or something indicating an error.
-	}
-      return element->link[rel_index].memberof == list;
+      current = start;
     }
+  // move to offset
+  current = move_to_offset(current, offset, absindex);
+  for (int i=0; (current != NULL) && ( i<list->count) ; i++)
+    {
+      walk=current;
+      
+      current = move_to_offset(current, step, absindex);
+      
+      result = callback(list, walk, current, i, param);
+      if ( result == NULL )
+	{
+	  break;
+	}
+      else
+	{
+	  param=result;
+	}
+      if ( walk == current )
+	{
+	  // walking to very same than the one previoulsy walked.
+	  break;
+	}
+    }
+  return param;
 }
