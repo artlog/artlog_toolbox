@@ -7,14 +7,15 @@ this is allist contract
 #include <string.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-
+#include <time.h>
 
 #include "allist.h"
 // direct acces to internal implementation
 #include "allist_internal.h"
 
 #define PRIMCOUNT 25
-#define NUMBERCOUNT 60000
+// with 200000 get disposed by kernel while processing due to mermoyr conu
+#define NUMBERCOUNT 20000
 
 int test_debug=1;
 
@@ -325,6 +326,38 @@ int test2()
 		{
 		  if (test_debug) {fprintf(stderr,"[INFO] add new prime  %i in prime list\n", i);}
 		}
+
+	      // this stress memory => process stopped early...
+	      if ( 0 )
+	      {
+		struct shrunkinfo shrunkinfo;
+		struct allistelement * shrunk;
+		shrunk=allistelement_shrink(elementp[i],&shrunkinfo);
+		if ( ( shrunk != NULL)  && ( shrunkinfo.shrunkerrors == 0 ))
+		  {
+		    if ( shrunk != elementp[i] )
+		      {
+			if ( allistelement_release(elementp[i]) == 0 )
+			  {
+			    elementp[i] = shrunk;
+			  }
+			else
+			  {
+			    fprintf(stderr,"[ERROR] release failure for %p",elementp[i]);
+			    return -step;
+			  }
+		      }
+		    else
+		      {
+			if (test_debug) {fprintf(stderr,"shrunk %p did nothing\n", shrunk);}
+		      }
+		  }
+		else
+		  {
+		    fprintf(stderr,"[ERROR] shrunk failure for %p\n",elementp[i]);
+		    return -step;
+		  }
+	      }	      
 	    }
 	}
     }
@@ -380,6 +413,11 @@ int test4()
   for (int i=0; i<NUMBERCOUNT; i++)
     {
       step++;
+      if ( elementp[i] == NULL )
+	{
+	  fprintf(stderr, "NULL element in %s:%i \n", __func__,__LINE__);
+	  return -1;
+	}
       shrunk=allistelement_shrink(elementp[i],&info);
       if ((shrunk == NULL) || (info.shrunkerrors > 0))
 	{
@@ -397,10 +435,12 @@ int test4()
       */
       if ( (elementp[i] != NULL) && (  elementp[i] != shrunk ) )
 	{
-	  // cleanup, at least zero in head ( fixed size part ) of element.
-	  bzero(elementp[i],sizeof(struct allistelement));
-	  // fprintf(stderr,"cleaning element %i %p", i, elementp[i]);
-	  free(elementp[i]);
+	  if ( test_debug > 1) { fprintf(stderr,"cleaning element %i %p", i, elementp[i]);}
+	  if ( allistelement_release(elementp[i]) != 0 )
+	    {
+	      fprintf(stderr,"[ERROR] release of %p failed %i \n", elementp[i], i);
+	      return -step;
+	    }
 	}
       elementp[i]=shrunk;
       ++step;
@@ -428,8 +468,10 @@ int test5()
   return 0;
 }
 
-int checktest(char* test, int result)
+int checktest(char* test, int result, time_t * start)
 {
+  time_t end;
+  time(&end);
   if ( result == 0 )
     {
       printf("%s OK\n", test);
@@ -438,6 +480,7 @@ int checktest(char* test, int result)
     {
       printf("%s KO error %i \n", test, result);
     }
+  printf("test %s took %lu second\n", test,  (end - *start));
   return result;
 
 }
@@ -489,16 +532,24 @@ int main(int argc, char * argv[])
 	    }
 	}
       int step = 0;
+      time_t start;
       show_memory_usage();
-      int fulltest = checktest("indexset test",test0())
-	|| checktest("list allocation test",test1())
-	|| checktest("fill lists test",test2())
-	|| checktest("zero membership test",test3());
+      time(&start);
+      checktest("indexset test",test0(),&start);
+
+      if ( checktest("list allocation test",test1(),&start) != 0 )
+	{
+	  fprintf(stderr,"Unrecoverable error, stop test\n");
+	  return 1;
+	}
+      
+      checktest("fill lists test",test2(),&start);
+      checktest("zero membership test",test3(),&start);
 
       // dump_context(context);
-      checktest("shrink test",test4());
+      checktest("shrink test",test4(),&start);
       
-      checktest("primality membership test",test5());
+      checktest("primality membership test",test5(),&start);
       // dump_context(context);
 
       printf( "%i set=", 77);

@@ -61,7 +61,7 @@ struct allistelement {
     
     ALLIST_EXT allows to indicate extlink is in use
    */
-  int flags;
+  unsigned short flags;
   struct allistextlink * extlink;
   struct allistlink link[1]; // link on next element in membership growable in fact [memberships];
 };
@@ -102,7 +102,7 @@ struct allistof * new_allistof(struct allistcontext * context);
 /**
   find list with membership id within this context
  */
-struct allistof * allistcontext_get_membership(struct allistcontext * context, unsigned short membership);
+struct allistof * allistcontext_get_membership(struct allistcontext * context, int membership);
 
 struct allistelement * allistcontext_new_allistelement(struct allistcontext * context, void * data);
 
@@ -116,8 +116,11 @@ int allistelement_is_in(struct allistelement * element, struct allistof * list);
 /*
  shrink allistelement to take a minimal size
  WARNING this rewrite full linkage ( next previous head tail ).
+ if element is shrunk then previous should be released.
  */
 struct allistelement * allistelement_shrink(struct allistelement * this, struct shrunkinfo * shrunkinfo);
+
+int allistelement_release(struct allistelement * this);
 
 int allist_set_debug( int d);
 
