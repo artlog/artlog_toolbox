@@ -3,6 +3,8 @@
    every element knows its membership.
 */
 
+#define INDEXSET_COUNT 64
+
 struct allistof;
 struct allistelement;
 
@@ -19,14 +21,22 @@ struct allistlink {
   struct allistof* memberof;
 };
 
-struct allistextlink {
-  struct allistextlink * nextextlink;
-  struct allistlink link;
+/**
+ membership from 0 to INDEXSET_COUNT -1
+ */
+struct indexset {
+  unsigned char count;
+  unsigned long long set;
 };
 
-struct indexset {
-  unsigned long long set;
-  unsigned char count;
+/**
+ supports memberships id links from offset to offset + INDEXSET_COUNT -1
+*/
+struct allistextlink {
+  int first; // should be a multiple of INDEXSET_COUNT
+  struct indexset indexset;
+  struct allistextlink * nextextlink;
+  struct allistlink link[INDEXSET_COUNT];
 };
 
 struct allistelement {
@@ -42,7 +52,7 @@ struct allistelement {
      or
      indexset_getabsindex(indexset,i);
   */
-  struct indexset indexset; // what indexes in global membership it belongs to
+  struct indexset indexset; // what indexes in global membership it belongs to, currently limited to first 64 memberships
   /**
     when a call to shrink is done, it is no more possible to add membership
     all links will be used and flag ALLIST_SHRUNK will be set.
@@ -82,7 +92,7 @@ struct shrunkinfo
 /**
   create a context for a maximum of  memberships count of alllists
  */
-struct allistcontext * new_allistcontext(unsigned short memberships);
+struct allistcontext * new_allistcontext(int memberships);
 
 /**
   create a new list into context, within context use first free membership

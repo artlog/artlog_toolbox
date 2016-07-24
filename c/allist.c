@@ -63,6 +63,7 @@ int indexset_set(struct indexset * indexset, int pabs)
 int indexset_getrelindex(struct indexset * indexset, int pabs)
 {
   unsigned long long set = indexset->set;
+  if ( debug>1) {fprintf(stderr,"get relindex %p %i set 0x%lx\n",indexset, pabs, set);}
   if ( set == 0 )
     {
       return -1;
@@ -77,7 +78,7 @@ int indexset_getrelindex(struct indexset * indexset, int pabs)
   int p2=0;
   if ( pabs >= 32 )
   {
-    p1 = popcount( ((unsigned int) (set >>32)) && ( ((unsigned int) 0xffffffff) >> (63-pabs) ));
+    p1 = popcount( ((unsigned int) (set >>32)) & ( ((unsigned int) 0xffffffff) >> (63-pabs) ));
     p2 = popcount((unsigned int) set) ;
   } else {
     p1 = popcount(set & (((unsigned int)(0xffffffff)) >> (31-pabs))) ;
@@ -160,7 +161,7 @@ int indexset_getabsindex(struct indexset * indexset, int prel)
 
 int indexset_dump(struct indexset * indexset, FILE* where)
 {
-  fprintf(where,"indexset count %i set %lx\n",indexset->count,  indexset->set);
+  fprintf(where,"indexset count %i set 0x%lx\n",indexset->count,  indexset->set);
 }
 
 /**
@@ -177,6 +178,17 @@ struct allistelement * new_allistelement(int memberships, void * data, int delta
       allocated->flags=ALLIST_MALLOC;
     }
   return allocated;
+}
+
+int allistelement_is_ext(struct allistelement * element, int membership)
+{
+  // TODO should check in element
+  return ( membership > INDEXSET_COUNT );
+}
+
+int allistelement_has_ext(struct allistelement * element)
+{
+  return (element->flags & ALLIST_EXT) != 0;
 }
 
 int allistelement_is_shrunk(struct allistelement * element)
@@ -196,6 +208,12 @@ int allistelement_getrelindex( struct allistelement * current, int absindex)
       relindex = absindex;
     }
   return relindex;
+}
+
+int allistelement_get_memberships_ext(struct allistelement * this)
+{
+  // TODO
+  return 0;
 }
 
 int allistelement_get_memberships(struct allistelement * this)
@@ -233,9 +251,16 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
       return this;
     }
 
-  // current limit of indexset
-  if ( memberships > 64 )
+  if (allistelement_has_ext(this))
     {
+      if ( debug) { fprintf(stderr,"no shrink if element has extended membership . TODO.  %p %i\n", this, memberships);}
+      return this;
+    }
+  // current limit of indexset
+  if ( allistelement_is_ext(this, memberships) )
+    {
+      // TODO support ext
+      if ( debug) { fprintf(stderr,"no shrink if requiring extended membership . TODO.  %p %i\n", this, memberships);}
       return this;
     }
 
@@ -248,27 +273,34 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
       // reset pointers to shrunk
       // i is absolute ( in this ) that is >= relative
       // shrunkpos is relative, in shrunk
+      if ( debug > 1 ) {fprintf(stderr,"this %p shrunk %p memberships %i\n",this, shrunk, this->memberships);}	  
       for (int i=0; (i < this->memberships) && (shrunkerror==0); i++)
 	{
 	  if ( this->link[i].memberof != NULL )
 	    {
-	      if ( indexset_set(&shrunk->indexset, i) == 0)
+	      if ( i < INDEXSET_COUNT )
 		{
-		  // was already set
-		  if (debug) {fprintf(stderr,"indexset already set for %i",i);}
+		  if ( indexset_set(&shrunk->indexset, i) == 0)
+		    {
+		      // was already set
+		      if (debug) {fprintf(stderr,"indexset already set for %i",i);}
+		    }
 		}
 	    }
 	  else
 	    {
-	      if ( indexset_reset(&shrunk->indexset, i) != 0 )
+	      if ( i < INDEXSET_COUNT )
 		{
-		  // was set
-		  if (debug) {fprintf(stderr,"indexset set for %i ( should be 0) ",i);}
+		  if ( indexset_reset(&shrunk->indexset, i) != 0 )
+		    {
+		      // was set
+		      if (debug) {fprintf(stderr,"indexset set for %i ( should be 0) ",i);}
+		    }
 		}
 	      // we are not interested.
 	      continue;
 	    }
-	  
+	  if ( debug > 1 ) {fprintf(stderr,"this %p shrunk %p indexset %lu \n",this, shrunk, shrunk->indexset.set);}
 	  if ( shrunkpos < i )
 	    {
 	      if ( shrunkpos != indexset_getrelindex(&shrunk->indexset,i) )
@@ -290,15 +322,25 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	  struct allistelement * next = shrunk->link[shrunkpos].next;
 	  struct allistelement * previous = shrunk->link[shrunkpos].previous;
 
+	  if (( next !=NULL) && (allistelement_has_ext(next)))
+	    {
+	      if (debug) {fprintf(stderr,"next %p is extended", next );}
+	    }
+
+	  if (( previous !=NULL) && (allistelement_has_ext(previous)))
+	    {
+	      if (debug) {fprintf(stderr,"previous %p is extended", previous );}
+	    }
+
 	  if ( this->link[i].next != next )
 	    {
-	      fprintf(stderr,"shrunk %p and this %p next differs", this->link[i].next, next );
+	      if (debug) {fprintf(stderr,"shrunk %p and this %p next differs", this->link[i].next, next );}
 	      ++ shrunkerror;
 	    }
 
 	  if ( this->link[i].previous != previous )
 	    {
-	      fprintf(stderr,"shrunk %p and this %p previous differs", this->link[i].previous , previous );
+	      if (debug) {fprintf(stderr,"shrunk %p and this %p previous differs", this->link[i].previous , previous );}
 	      ++ shrunkerror;
 	    }
 
@@ -340,22 +382,30 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		      ++shrunkerror;
 		      if ( debug ) { fprintf(stderr, "previous index %i exceeds membemships %i\n", relindex, previous->memberships);}
 		    }
+		  if ( relindex < 0)
+		    {
+		      ++shrunkerror;
+		      if ( debug ) { fprintf(stderr, "previous %p index %i negative for abs %i memberships %i indexset %lu\n", previous, relindex, i, previous->memberships, previous->indexset.set);}
+		    }
 		}
 	      else
 		{
 		  relindex = i;
 		}
 
-	      // replace this by shrunk
-	      if ( previous->link[relindex].next == this )
+	      if (shrunkerror == 0)
 		{
-		  previous->link[relindex].next=shrunk;
-		  ++nowayback;
-		}
-	      else
-		{
-		  if (debug) { fprintf(stderr, "previous.next %i was not pointing on this %p != %p \n", relindex, previous->link[relindex].next, this);}
-		  ++shrunkerror;
+		  // replace this by shrunk
+		  if ( previous->link[relindex].next == this )
+		    {
+		      previous->link[relindex].next=shrunk;
+		      ++nowayback;
+		    }
+		  else
+		    {
+		      if (debug) { fprintf(stderr, "previous.next %i was not pointing on this %p != %p \n", relindex, previous->link[relindex].next, this);}
+		      ++shrunkerror;
+		    }
 		}
 	    }	  
 	  
@@ -383,21 +433,29 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		      ++shrunkerror;
 		      if ( debug ) { fprintf(stderr, "next index %i exceeds membemships %i\n", relindex, next->memberships);}
 		    }
+		  if ( relindex < 0)
+		    {
+		      ++shrunkerror;
+		      if ( debug ) { fprintf(stderr, "next index %i negative for abs %i membership %i\n", relindex, i, next->memberships);}
+		    }
 		}
 	      else
 		{
 		  relindex = i;
 		}
-	      // replace this by shrunk
-	      if ( next->link[relindex].previous == this )
+	      if (shrunkerror == 0)
 		{
-		  next->link[relindex].previous=shrunk;
-		  ++nowayback;
-		}
-	      else
-		{
-		  if (debug) { fprintf(stderr, "next.previous %i was not pointing on this %p != %p \n", relindex, next->link[relindex].previous, this);}
-		  ++shrunkerror;
+		  // replace this by shrunk
+		  if ( next->link[relindex].previous == this )
+		    {
+		      next->link[relindex].previous=shrunk;
+		      ++nowayback;
+		    }
+		  else
+		    {
+		      if (debug) { fprintf(stderr, "next.previous %i was not pointing on this %p != %p \n", relindex, next->link[relindex].previous, this);}
+		      ++shrunkerror;
+		    }
 		}
 	    }
 	  ++shrunkpos;
@@ -423,19 +481,22 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
       shrunkhealth->shrunkerrors=shrunkerror;
       shrunkhealth->nowayback=nowayback;
     }
+  if ( shrunk != NULL )
+    {
+      if ( debug > 1 ) {fprintf(stderr,"RETURN this %p shrunk %p indexset %lu \n",this, shrunk, shrunk->indexset.set);}
+    }
   return shrunk;      
 }
 
 /**
   create a context for a maximum of  memberships count of allists
  */
-struct allistcontext * new_allistcontext(unsigned short memberships)
+struct allistcontext * new_allistcontext(int memberships)
 {
   int newlength = sizeof(struct allistcontext) + sizeof(struct allistof) * (memberships-1);
-  struct allistcontext * allocated = malloc(newlength);
+  struct allistcontext * allocated = calloc(1, newlength);
   if ( allocated != NULL )
     {
-      bzero(allocated,newlength);
       allocated->membership_reservation=memberships;
     }
   return allocated;
@@ -476,6 +537,176 @@ struct allistelement * allistcontext_new_allistelement(struct allistcontext * co
   return element;
 }
 
+struct allistextlink * allistelement_get_extlink_ext(struct allistelement * element, struct allistof * list)
+{
+  int membership = list->membership_id;
+  int error = 0;
+  if ( (element->flags & ALLIST_EXT) != 0 )
+    {
+      struct allistextlink * ext = element->extlink;
+      while ( ext != NULL )
+	{
+	  if ( ( ext->first >= membership )  && ( membership < ext->first + INDEXSET_COUNT) )
+	    {
+	      // found right ext chunk
+	      return ext;
+	    }
+	  ext = ext->nextextlink;
+	}      
+      return NULL;
+    }
+  return NULL;
+}
+  
+struct allistlink * allistelement_get_link_ext(struct allistelement * element, struct allistof * list)
+{  
+  int membership = list->membership_id;
+  struct allistextlink * ext = allistelement_get_extlink_ext(element,list);
+  if ( ext != NULL )
+    {
+      if ( ( ext->first >= membership )  && ( membership < ext->first + INDEXSET_COUNT) )
+	{
+	  // found right ext chunk
+	  struct allistlink * link = &ext->link[ membership - ext->first];
+	  if ( link->memberof == NULL )
+	    {
+	      return NULL;
+	    }
+	  if ( link->memberof == list )
+	    {
+	      return link;
+	    }
+	  else
+	    {
+	      // error
+	      ++ list->errors;
+	    }
+	}
+    }      
+  return NULL;
+}
+
+int allistelement_is_in_ext(struct allistelement * element, struct allistof * list)
+{
+  return (allistelement_get_link_ext(element, list) != NULL);
+}
+
+struct allistelement * walk_one( struct allistelement * current,
+			     struct allistof * list,
+			     int direction)
+{
+  if ( allistelement_is_ext(current, list->membership_id) )
+    {
+      struct allistlink * link = allistelement_get_link_ext(current, list);
+      if ( link != NULL )
+	{
+	  if ( direction > 0 )
+	    {
+	      current=link->next;
+	    }
+	  else if ( direction < 0)
+	    {
+	      current=link->previous;
+	    }
+	}
+      else
+	{
+	  current = NULL;
+	}
+    }
+  else
+    {
+      int absindex = list->membership_id;
+      if ( direction > 0)
+	{
+	  current=current->link[allistelement_getrelindex(current,absindex)].next;
+	}
+      else if ( direction < 0)
+	{
+	  current=current->link[allistelement_getrelindex(current,absindex)].previous;
+	}
+    }
+  return current;
+}
+
+/** add  in extended part 
+ */
+struct allistelement * allistelement_add_in_ext(struct allistelement * element, struct allistof * list)
+{
+  struct allistlink * link = NULL;
+  struct allistextlink * ext = allistelement_get_extlink_ext(element, list);
+  int membership = list->membership_id;
+  if (ext == NULL)
+    {
+      // should add it
+      // allocate a new and link it at head
+      ext = calloc(1, sizeof( struct allistextlink));
+      if ( ext != NULL )
+	{
+	  ext->nextextlink=element->extlink;
+	  element->extlink=ext;
+	  element->flags|=ALLIST_EXT;
+	  ext->first=membership - (membership % INDEXSET_COUNT);
+	  if (debug) {fprintf(stderr,"allocate ext link %p\n", ext);}
+	}
+      else
+	{
+	  if (debug) { fprintf(stderr,"memory allocation failure for allistextlink %i bytes. memory shortage !\n", sizeof( struct allistextlink));}
+	  return NULL;
+	}
+    }
+
+  if ( ext != NULL )
+    {
+      if ( ( membership >= ext->first )  && ( membership < (ext->first + INDEXSET_COUNT)) )
+	{
+	  // found right ext chunk
+	  struct allistlink * link = &ext->link[ membership - ext->first];
+	  if ( link->memberof == NULL )
+	    {
+	      if (debug) { fprintf(stderr,"add ext %p in list %p\n", ext, list);}
+	      // should add it.
+	      if ( list->tail != NULL )
+		{
+		  struct allistelement * previous = list->tail;
+		  struct allistlink * plink = NULL;
+		  if ( allistelement_is_ext(previous, list->membership_id) )
+		    {
+		      plink = allistelement_get_link_ext(previous, list);
+		    }
+		  else
+		    {
+		      int absindex = list->membership_id;
+		      plink = &previous->link[allistelement_getrelindex(previous,absindex)];
+		    }
+		  if ( plink != NULL )
+		    {
+		      plink->next=element;
+		    }
+		  link->previous=list->tail;
+		}
+	      list->tail=element;
+	      link->memberof=list;
+	      ++list->count;
+	    }
+	  if ( link->memberof == list )
+	    {
+	      return element;
+	    }
+	  else
+	    {
+	      // error
+	      ++ list->errors;
+	    }
+	}
+      else
+	{
+	  if (debug) {fprintf(stderr,"ext %p first %i in wrong membership %i\n",ext, ext->first, membership);}
+	}
+    }
+  return NULL;
+}
+  
 struct allistelement * allistelement_add_in(struct allistelement * element, struct allistof * list)
 {
   struct allistof * previouslist = NULL;
@@ -485,10 +716,10 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
     {
       return NULL;
     }
-  if ( list->membership_id > 64)
+  if ( allistelement_is_ext( element, list->membership_id))
     {
-      // extended add in TODO
-      return NULL;
+      if (debug) {fprintf(stderr,"add in ext %p \n", element);}
+      return allistelement_add_in_ext(element,list);
     }
   
   previouslist = element->link[allistelement_getrelindex(element,list->membership_id)].memberof;
@@ -588,36 +819,46 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
   return element;  
 }
 
+  
 int allistelement_is_in(struct allistelement * element, struct allistof * list)
 {
-  int rel_index = allistelement_getrelindex(element, list->membership_id);
-  if ( rel_index > list->membership_id )
+  int membership = list->membership_id;
+  if ( allistelement_is_ext(element, membership) )
     {
-      return 0; // should be -1 or something indicating an error.
+      int rel_index = allistelement_getrelindex(element, list->membership_id);
+      if ( rel_index > list->membership_id )
+	{
+	  return 0; // should be -1 or something indicating an error.
+	}
+      return element->link[rel_index].memberof == list;
     }
-  return element->link[rel_index].memberof == list;
+  else
+    {
+      return allistelement_is_in_ext(element, list);
+    }
 }
 
-struct allistelement * move_to_offset( struct allistelement * current,
+
+struct allistelement * walk_steps( struct allistelement * current,
 		int offset,
-		int absindex)
+		struct allistof * list)
 {
   if ( current == NULL )
     {
       return current;
-    }     
+    }
   if ( offset > 0 )
     {
       for (int j=0; (current !=NULL) && (j< offset); j++)
 	{	  
-	  current=current->link[allistelement_getrelindex(current,absindex)].next;
+	  current=walk_one(current,list,offset);
 	}
     }
   else if ( offset < 0 )
     {
       for (int j=0; (current !=NULL) && (j>offset); j--)
 	{
-	  current=current->link[allistelement_getrelindex(current,absindex)].previous;
+	  current=walk_one(current,list,offset);
 	}
     }
   return current;
@@ -633,12 +874,10 @@ void * allist_for_each(struct allistof * list,
   void * result = NULL;
   struct allistelement * current = NULL;
   struct allistelement * walk = NULL;
-  int absindex = 0;
   if ( list == NULL)
     {
       return NULL;
     }
-  absindex = list->membership_id;
   if ( start == NULL )
     {
       if ( step < 0 )
@@ -655,12 +894,12 @@ void * allist_for_each(struct allistof * list,
       current = start;
     }
   // move to offset
-  current = move_to_offset(current, offset, absindex);
+  current = walk_steps(current, offset, list);
   for (int i=0; (current != NULL) && ( i<list->count) ; i++)
     {
       walk=current;
       
-      current = move_to_offset(current, step, absindex);
+      current = walk_steps(current, step, list);
       
       result = callback(list, walk, current, i, param);
       if ( result == NULL )
