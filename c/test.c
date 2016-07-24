@@ -18,6 +18,7 @@ this is allist contract
 #define NUMBERCOUNT 20000
 
 int test_debug=1;
+int shrinkit=0;
 
 int prims[PRIMCOUNT] = { 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97};
 
@@ -328,7 +329,7 @@ int test2()
 		}
 
 	      // this stress memory => process stopped early...
-	      if ( 0 )
+	      if ( shrinkit )
 	      {
 		struct shrunkinfo shrunkinfo;
 		struct allistelement * shrunk;
@@ -517,18 +518,21 @@ int main(int argc, char * argv[])
 		  printf("debug set\n");
 		  allist_set_debug(2);
 		}
-
+	      else if (strcmp(argv[i],"-notestdebug") == 0)
+		{
+		  printf("test debug unset\n");
+		  test_debug=0;
+		}
+	      else if (strcmp(argv[i],"-shrinkit") == 0)
+		{
+		  printf("shrink right after add\n");
+		  shrinkit=1;
+		}
 	      else
-		if (strcmp(argv[i],"-notestdebug") == 0)
-		  {
-		    printf("test debug unset\n");
-		    test_debug=0;
-		  }
-		else
-		  {
-		    fprintf(stderr,"[ERROR] unrecognized option %s", argv[i]);
-		    exit(1);
-		  }
+		{
+		  fprintf(stderr,"[ERROR] unrecognized option %s", argv[i]);
+		  exit(1);
+		}
 	    }
 	}
       int step = 0;
