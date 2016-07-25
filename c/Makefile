@@ -1,4 +1,4 @@
 
 
-test: test.c allist.c
-	gcc $^ -o $@
+test: test.c allist.c dump.c
+	gcc -g $^ -o $@

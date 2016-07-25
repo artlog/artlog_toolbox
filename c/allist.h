@@ -131,7 +131,7 @@ int indexset_reset(struct indexset * indexset, int pabs);
 
 int indexset_set(struct indexset * indexset, int pabs);
 
-int allistelement_get_memberships(struct allistelement * this);
+int allistelement_get_all_memberships(struct allistelement * this);
 
 /** for each element of list call callback 
   first call is with param, next call are with previous result of callback
@@ -141,7 +141,7 @@ int allistelement_get_memberships(struct allistelement * this);
          < 0 backward from tail
   offset : 0 starts at element
            > 0 starts at nth element
-           < start at preivousth element
+           < start at previousth element
 */
 void * allist_for_each(struct allistof * list,
 		       struct allistelement * start,

@@ -12,81 +12,26 @@ this is allist contract
 #include "allist.h"
 // direct acces to internal implementation
 #include "allist_internal.h"
+// dump
+#include "dump.h"
 
 #define PRIMCOUNT 25
-// with 200000 get disposed by kernel while processing due to mermoyr conu
-#define NUMBERCOUNT 20000
+
+#define NUMBERCOUNT 200000
 
 int test_debug=1;
 int shrinkit=0;
 
 int prims[PRIMCOUNT] = { 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97};
 
-//int glob_numbercount=NUMBERCOUNT;
+int glob_numbercount=NUMBERCOUNT;
 
 struct allistcontext * context = NULL;
 struct allistelement * elementp[NUMBERCOUNT];
 
 struct allistof * primelp = NULL;
 
-void * dump_element(struct allistof * list, struct allistelement * element, struct allistelement * next, int count, void * param)
-{
-  if ( next != NULL )
-    {
-      printf(" %i," , element->data);
-    }
-  else
-    {
-      printf(" %i.\n" , element->data);
-    }
-  return param;
-}
 
-void dump_list(struct allistof * list)
-{
-  void * param = list;
-  if ( list->errors > 0 )
-    {
-      printf("list %p has errors %i\n", list, list->errors);
-    }
-     
-  param = allist_for_each(list, list->head, dump_element, param, 1, 0);
-  if (param != list )
-    {
-      printf( "dump error expected %p got %p\n", list, param);
-    }
-}
-
-void dump_indexset(struct indexset * setp)
-{
-  int max=INDEXSET_COUNT;
-  for (int i=0; i < max; i++)
-    {
-      if ( indexset_get(setp, i) != 0 )
-	{
-	  printf("%i,",i);
-	}
-    }
-}
-
-void dump_context( struct allistcontext * context)
-{
-  printf("context %p {\n", context);
-  if (context != NULL)
-    {
-      printf("membership_reservation %i;\n", context->membership_reservation);
-      printf("next_membership %i;\n", context->next_membership);
-      for (int i =0; i<context->next_membership; i++)
-	{
-	  printf("membership[%i] list.count %i list.errors %i;\n", i, context->list[i].count,  context->list[i].errors );
-	}
-    }
-  else
-    {
-      printf("!NULL!\n");
-    }
-  printf("}\n");
-}
 
 int test0()
 {
@@ -176,7 +121,7 @@ int test1()
   int step=1;
 
   // add one at end for list of primes
-  context=new_allistcontext(NUMBERCOUNT+1);
+  context=new_allistcontext(glob_numbercount+1);
   if ( context != NULL )
     {
       ++step;
@@ -188,7 +133,7 @@ int test1()
 	  return -step;
 	}
 
-      for (int i=0; i< NUMBERCOUNT; i++)
+      for (int i=0; i< glob_numbercount; i++)
 	{
 	  listof=new_allistof(context);
 	  ++step;
@@ -240,9 +185,19 @@ void * test2_add_factor (struct allistof * list, struct allistelement * element,
 {
   struct test2_factor * factor = (struct test2_factor *) param;
   int prime = (unsigned long long) element->data;
+  if ( list != primelp )
+    {
+      fprintf(stderr,"[ERROR] walking non  prime list to get factors \n");
+      return NULL;
+    }
   if ( factor != NULL)
     {
       struct allistof * primelist = allistcontext_get_membership(context,prime+1); // get (prime+1)th element in context.
+      if (primelist == primelp)
+	{
+	  fprintf(stderr,"[ERROR] factor list is prime list \n");
+	  return NULL;
+	}
       if ( primelist != NULL )
 	{
 	  if ( 2 * prime > factor->value )
@@ -259,7 +214,17 @@ void * test2_add_factor (struct allistof * list, struct allistelement * element,
 		  ++factor->error;
 		  return NULL;
 		}
+	      if ( primelist->errors > 0 )
+		{
+		  if (test_debug) {fprintf(stderr,"add %i in prime factor list %i %i count %i has errors %i\n", factor->value, count, prime, primelist->count, primelist->errors);}
+		  factor->error += primelist->errors;
+		  return NULL;
+		}
 	    }
+	}
+      else
+	{
+	  if (test_debug) {fprintf(stderr,"can't get prime list for %i count %i\n", factor->value, count);}
 	}
     }
   return factor;
@@ -292,7 +257,7 @@ int test2()
     }
 
   factor.error=0;
-  for (int i=0; i<NUMBERCOUNT; i++)
+  for (int i=0; i<glob_numbercount; i++)
     {
       if ( elementp[i]!=NULL)
 	{
@@ -315,7 +280,8 @@ int test2()
       ++step;
       if ( i > 1)
 	{
-	  if ( allistelement_get_memberships(elementp[i]) == 0)
+	  // allistelement_get_memberships fails on extended ...
+	  if ( allistelement_get_all_memberships(elementp[i]) == 0)
 	    {
 	      // this is a new potential prime.
 	      if ( allistelement_add_in(elementp[i], primelp) == NULL )
@@ -327,44 +293,45 @@ int test2()
 		{
 		  if (test_debug) {fprintf(stderr,"[INFO] add new prime  %i in prime list\n", i);}
 		}
-
-	      // this stress memory => process stopped early...
-	      if ( shrinkit )
-	      {
-		struct shrunkinfo shrunkinfo;
-		struct allistelement * shrunk;
-		shrunk=allistelement_shrink(elementp[i],&shrunkinfo);
-		if ( ( shrunk != NULL)  && ( shrunkinfo.shrunkerrors == 0 ))
-		  {
-		    if ( shrunk != elementp[i] )
-		      {
-			if ( allistelement_release(elementp[i]) == 0 )
-			  {
-			    elementp[i] = shrunk;
-			  }
-			else
-			  {
-			    fprintf(stderr,"[ERROR] release failure for %p",elementp[i]);
-			    return -step;
-			  }
-		      }
-		    else
-		      {
-			if (test_debug) {fprintf(stderr,"shrunk %p did nothing\n", shrunk);}
-		      }
-		  }
-		else
-		  {
-		    fprintf(stderr,"[ERROR] shrunk failure for %p\n",elementp[i]);
-		    return -step;
-		  }
-	      }	      
 	    }
 	}
+      // this stress memory => process stopped early...
+      if ( shrinkit )
+	{
+	  struct shrunkinfo shrunkinfo;
+	  struct allistelement * shrunk;
+	  shrunk=allistelement_shrink(elementp[i],&shrunkinfo);
+	  if ( ( shrunk != NULL)  && ( shrunkinfo.shrunkerrors == 0 ))
+	    {
+	      if ( shrunk != elementp[i] )
+		{
+		  if ( allistelement_release(elementp[i]) == 0 )
+		    {
+		      elementp[i] = shrunk;
+		    }
+		  else
+		    {
+		      fprintf(stderr,"[ERROR] release failure for %p",elementp[i]);
+		      return -step;
+		    }
+		}
+	      else
+		{
+		  if (test_debug) {fprintf(stderr,"shrunk %p did nothing\n", shrunk);}
+		}
+	    }
+	  else
+	    {	      
+	      fprintf(stderr,"[ERROR] shrunk failure for %p\n",elementp[i]);
+	      return -step;
+	    }
+	  if (test_debug>1) {dump_element_full(shrunk);}
+	}      
+
     }
   ++step;
   // check count
-  if ( context->next_membership != (NUMBERCOUNT + 1) )
+  if ( context->next_membership != (glob_numbercount + 1) )
     {
       return -step;
     }
@@ -377,7 +344,7 @@ int test2()
 	  if ( list->head != NULL)
 	    {
 	      unsigned long long prim = (unsigned long long)  list->head->data;
-	      if ( list->count < ( ( NUMBERCOUNT / prim  )))
+	      if ( list->count < ( ( glob_numbercount / prim  )))
 		{
 		  if (test_debug) {fprintf(stderr,"membership[%i] list.count wrong %i %p %p;\n", i , list->count, list, (list->head != NULL) ? list->head->data : NULL );}
 		  dump_list(&context->list[i]);
@@ -411,7 +378,7 @@ int test4()
   struct allistelement * shrunk;
   struct shrunkinfo info;
   
-  for (int i=0; i<NUMBERCOUNT; i++)
+  for (int i=0; i<glob_numbercount; i++)
     {
       step++;
       if ( elementp[i] == NULL )
@@ -502,6 +469,7 @@ void show_memory_usage()
 
 int main(int argc, char * argv[])
 {
+  int count=1;
   if ( argc >= 1 )
     {
       if( argc > 1)
@@ -528,6 +496,11 @@ int main(int argc, char * argv[])
 		  printf("shrink right after add\n");
 		  shrinkit=1;
 		}
+	      else if (strcmp(argv[i],"10x") == 0)
+		{
+		  count=count * 10;
+		  printf("count = %i\n", count);
+                }
 	      else
 		{
 		  fprintf(stderr,"[ERROR] unrecognized option %s", argv[i]);
@@ -537,6 +510,10 @@ int main(int argc, char * argv[])
 	}
       int step = 0;
       time_t start;
+      if ( count > 1 )
+	{
+	  glob_numbercount=count;
+	}
       show_memory_usage();
       time(&start);
       checktest("indexset test",test0(),&start);
