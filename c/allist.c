@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "dump.h"
 
@@ -37,6 +38,7 @@ int indexset_get(struct  indexset * indexset, int pabs)
 
 int indexset_reset(struct indexset * indexset, int pabs)
 {
+  assert( (indexset->tag[0]='I') || (indexset->tag[0]='E') );
   if ( pabs >= INDEXSET_COUNT )
     {
       fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%s", pabs, __func__,__LINE__);
@@ -57,6 +59,7 @@ int indexset_reset(struct indexset * indexset, int pabs)
 
 int indexset_set(struct indexset * indexset, int pabs)
 {
+  assert( (indexset->tag[0]='I') || (indexset->tag[0]='E') );
   if ( pabs >= INDEXSET_COUNT )
     {
       fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%s", pabs, __func__,__LINE__);
@@ -208,6 +211,9 @@ struct allistelement * new_allistelement(int memberships, void * data, int delta
     {
       allocated->memberships=memberships;
       allocated->data=data;
+      allocated->indexset.tag[0] = 'I';
+      allocated->indexset.tag[1] = 'D';
+      allocated->indexset.tag[2] = 'X';
       allocated->flags=ALLIST_MALLOC;
     }
   return allocated;
@@ -268,6 +274,10 @@ int allistelement_is_shrunk(struct allistelement * element)
 
 int allistelement_get_memberships(struct allistelement * this)
 {
+  assert(this != NULL);
+  // check memory corruption
+  assert( this->indexset.tag[0] == 'I' );
+
   int memberships=0;
   for (int i=0; i< this->memberships; i++)
     {
@@ -297,11 +307,8 @@ int allistelement_getrelindex_slow(struct allistelement * this, int absindex)
 int allistelement_getrelindex( struct allistelement * current, int absindex)
 {
   int relindex = -1;
-  if ( current == NULL )
-    {
-      fprintf(stderr, "NULL element in %s:%i \n", __func__,__LINE__);
-      return -1;
-    }  
+  assert(current != NULL);
+  
   if ( allistelement_is_shrunk(current) )
     {
       if (absindex >= INDEXSET_COUNT)
@@ -332,8 +339,15 @@ int allistelement_getrelindex( struct allistelement * current, int absindex)
 
 int allistelement_get_memberships_ext(struct allistelement * this)
 {
-  struct allistextlink * ext = this->extlink;
+  struct allistextlink * ext = NULL;
   int extmemberships = 0;
+
+  assert(this!=NULL);
+
+  // check memory corruption
+  assert( this->indexset.tag[0] == 'I' );
+
+  ext = this->extlink;
   while ( ext != NULL )
     {
       int count =0;
@@ -371,6 +385,9 @@ int allistelement_get_memberships_ext(struct allistelement * this)
 
 int allistelement_get_all_memberships(struct allistelement * this)
 {
+  assert(this!=NULL);
+  // check memory corruption
+  assert( this->indexset.tag[0] == 'I' );
   return allistelement_get_memberships(this) + allistelement_get_memberships_ext(this); 
 }
 /**
@@ -542,6 +559,10 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	  element->flags|=ALLIST_EXT;
 	  ext->first=membership - (membership % INDEXSET_COUNT);
 	  if (debug) {fprintf(stderr,"allocate ext link %p element.data %p first %i membership %i nextlink %p\n", ext, element->data, ext->first, membership, ext->nextextlink);}
+	  ext->indexset.tag[0] = 'E';
+	  ext->indexset.tag[1] = 'X';
+	  ext->indexset.tag[2] = 'T';
+
 	}
       else
 	{
@@ -1050,7 +1071,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		next = ext->nextextlink;
 		if ( next ==  (void *) 0xdeadbebf )
 		  {
-		    fprintf(stderr,"[WARNING] very suspicious pointer ext %p", ext);
+		    fprintf(stderr,"[WARNING] very suspicious pointer ext %p\n", ext);
 		  }
 		++nowayback;
 		ext->nextextlink = (void *) 0xdeadbebf;
@@ -1076,7 +1097,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	  struct allistelement * previous = shrunk->link[shrunkpos].previous;
 	  
 	  if ( previous == NULL )
-	    {	  
+	    {
 	      if ( shrunk->link[shrunkpos].memberof->head == this )
 		{
 		  shrunk->link[shrunkpos].memberof->head=shrunk;
@@ -1090,6 +1111,9 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	    }
 	  else
 	    {
+	      // check memory corruption
+	      assert( previous->indexset.tag[0] == 'I' );
+
 	      struct allistlink * plink = get_link(previous,shrunk->link[shrunkpos].memberof);
 	      if ( plink != NULL )
 		{
@@ -1127,6 +1151,9 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	    }
 	  else
 	    {
+	      // check memory corruption
+	      assert( next->indexset.tag[0] == 'I' );
+
 	      struct allistlink * nlink = get_link(next,shrunk->link[shrunkpos].memberof);
 	      if ( nlink != NULL )
 		{

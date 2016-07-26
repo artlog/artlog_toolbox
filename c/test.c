@@ -242,18 +242,21 @@ int test2()
     {
       struct allistof * listof = allistcontext_get_membership(context,j);
       int i = prims[j];
-      elementp[i]=allistcontext_new_allistelement(context,(void*)((long long)i));
-      step++;
-      if ( listof == NULL )
+      if ( i < glob_numbercount )
 	{
-	  return -step;
+	  elementp[i]=allistcontext_new_allistelement(context,(void*)((long long)i));
+	  step++;
+	  if ( listof == NULL )
+	    {
+	      return -step;
+	    }
+	  step++;
+	  if ( allistelement_add_in(elementp[i], primelp) == NULL )
+	    {
+	      if (test_debug) {fprintf(stderr,"can't add %i in prime list %i\n", prims[j], j);}
+	      return -step;
+	    }
 	}
-      step++;
-      if ( allistelement_add_in(elementp[i], primelp) == NULL )
-	{
-	  if (test_debug) {fprintf(stderr,"can't add %i in prime list %i\n", prims[j], j);}
-	  return -step;
-	}	      
     }
 
   factor.error=0;
@@ -278,55 +281,57 @@ int test2()
 	  return -step;
 	}
       ++step;
-      if ( i > 1)
+      if (elementp[i] != NULL)
 	{
-	  // allistelement_get_memberships fails on extended ...
-	  if ( allistelement_get_all_memberships(elementp[i]) == 0)
-	    {
-	      // this is a new potential prime.
-	      if ( allistelement_add_in(elementp[i], primelp) == NULL )
+	  if (( i > 1) && (elementp[i] != NULL))
+	    {	  
+	      // allistelement_get_memberships fails on extended ...
+	      if ( allistelement_get_all_memberships(elementp[i]) == 0)
 		{
-		  if (test_debug) {fprintf(stderr,"can't add new prime  %i in prime list\n", i);}
-		  return -step;
-		}
-	      else
-		{
-		  if (test_debug) {fprintf(stderr,"[INFO] add new prime  %i in prime list\n", i);}
-		}
-	    }
-	}
-      // this stress memory => process stopped early...
-      if ( shrinkit )
-	{
-	  struct shrunkinfo shrunkinfo;
-	  struct allistelement * shrunk;
-	  shrunk=allistelement_shrink(elementp[i],&shrunkinfo);
-	  if ( ( shrunk != NULL)  && ( shrunkinfo.shrunkerrors == 0 ))
-	    {
-	      if ( shrunk != elementp[i] )
-		{
-		  if ( allistelement_release(elementp[i]) == 0 )
+		  // this is a new potential prime.
+		  if ( allistelement_add_in(elementp[i], primelp) == NULL )
 		    {
-		      elementp[i] = shrunk;
+		      if (test_debug) {fprintf(stderr,"can't add new prime  %i in prime list\n", i);}
+		      return -step;
 		    }
 		  else
 		    {
-		      fprintf(stderr,"[ERROR] release failure for %p",elementp[i]);
-		      return -step;
+		      if (test_debug>1) {fprintf(stderr,"[INFO] add new prime  %i in prime list\n", i);}
+		    }
+		}
+	    }
+	  if ( shrinkit )
+	    {
+	      struct shrunkinfo shrunkinfo;
+	      struct allistelement * shrunk;
+	      shrunk=allistelement_shrink(elementp[i],&shrunkinfo);
+	      if ( ( shrunk != NULL)  && ( shrunkinfo.shrunkerrors == 0 ))
+		{
+		  if ( shrunk != elementp[i] )
+		    {
+		      if ( allistelement_release(elementp[i]) == 0 )
+			{
+			  elementp[i] = shrunk;
+			}
+		      else
+			{
+			  fprintf(stderr,"[ERROR] release failure for %p",elementp[i]);
+			  return -step;
+			}
+		    }
+		  else
+		    {
+		      if (test_debug) {fprintf(stderr,"shrunk %p did nothing\n", shrunk);}
 		    }
 		}
 	      else
-		{
-		  if (test_debug) {fprintf(stderr,"shrunk %p did nothing\n", shrunk);}
+		{	      
+		  fprintf(stderr,"[ERROR] shrunk failure for %p\n",elementp[i]);
+		  return -step;
 		}
+	      if (test_debug>1) {dump_element_full(shrunk);}
 	    }
-	  else
-	    {	      
-	      fprintf(stderr,"[ERROR] shrunk failure for %p\n",elementp[i]);
-	      return -step;
-	    }
-	  if (test_debug>1) {dump_element_full(shrunk);}
-	}      
+	}
 
     }
   ++step;
@@ -383,7 +388,7 @@ int test4()
       step++;
       if ( elementp[i] == NULL )
 	{
-	  fprintf(stderr, "NULL element in %s:%i \n", __func__,__LINE__);
+	  fprintf(stderr, "NULL element[%i] in %s:%i \n", i, __func__,__LINE__);
 	  return -1;
 	}
       shrunk=allistelement_shrink(elementp[i],&info);
@@ -426,10 +431,13 @@ int test5()
 {
   for (int j=0; j<PRIMCOUNT;j++)
     {
-      if ( ( (elementp[prims[j]]->flags & ALLIST_SHRUNK) != 0) && (elementp[prims[j]]->memberships > 1) )
+      if ( prims[j] < glob_numbercount )
 	{
-	  printf("WRONG PRIME %i, dividers %i", prims[j],  elementp[prims[j]]->memberships);
-	  return -j;
+	  if ( ( (elementp[prims[j]]->flags & ALLIST_SHRUNK) != 0) && (elementp[prims[j]]->memberships > 1) )
+	    {
+	      printf("WRONG PRIME %i, dividers %i", prims[j],  elementp[prims[j]]->memberships);
+	      return -j;
+	    }
 	}
     }
   dump_list(primelp);
@@ -533,8 +541,15 @@ int main(int argc, char * argv[])
       checktest("primality membership test",test5(),&start);
       // dump_context(context);
 
-      printf( "%i set=", 77);
-      dump_indexset(&elementp[77]->indexset);
+      printf( "%i set \n", glob_numbercount-1);
+      if (elementp[glob_numbercount-1] != NULL)
+	{
+	  dump_indexset(&elementp[glob_numbercount-1]->indexset);
+	}
+      else
+	{
+	  printf("element %i null\n",glob_numbercount-1);
+	}
     }
   else
     {

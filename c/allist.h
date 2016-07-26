@@ -25,8 +25,9 @@ struct allistlink {
  membership from 0 to INDEXSET_COUNT -1
  */
 struct indexset {
-  unsigned char count;
   unsigned long long set;
+  unsigned char count;
+  char tag[3];
 };
 
 /**
