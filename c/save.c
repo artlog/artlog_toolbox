@@ -95,10 +95,10 @@ int save_shift_file_name(struct savecontext * savecontext)
       sprintf(template,"%s.%s",prefix,extension);
       {
 	sprintf(fullpath,"%s/%s",savecontext->dir,template);
-	// file exists
+	// file exists ?
 	if ( save_file_exists(fullpath) == -1)
 	  {
-	    // GOOD, free file is found !
+	    // file does not exist : GOOD, free file is found !
 	    freefile=template;
 	  }
       }
@@ -112,11 +112,11 @@ int save_shift_file_name(struct savecontext * savecontext)
 	  int count = 0; // number of entries matching template found
 	  int index_max = 0;
 	  int index_min = maxsave;
-	  int freeindex=index_max+1;
+	  int freeindex=0;
 	  
 	  // prefix.[0..9]+.extension
 	  sprintf(template,"%s.%%i.%s",prefix,extension);
-	  while (fileentry = readdir(currentdir))
+	  while ( (fileentry = readdir(currentdir)) != NULL )
 	    {
 	      int index;
 	      if (sscanf(fileentry->d_name,template,&index) == 1)
@@ -141,6 +141,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 		  count ++;
 		}
 	    }
+	  freeindex=index_max+1;
 	  if ( save_debug > 1 )
 	    {
 	      if ( count < (index_max-index_min+1) )

@@ -382,7 +382,8 @@ int test4()
   int step = 0;
   struct allistelement * shrunk;
   struct shrunkinfo info;
-  
+
+  info.shrunkerrors=0;
   for (int i=0; i<glob_numbercount; i++)
     {
       step++;
