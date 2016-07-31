@@ -15,3 +15,6 @@ int save_set_debug(int debug);
 int save_init_context(struct savecontext * context, char * dir, char* prefix, char * extension);
 
 int save_shift_file_name(struct savecontext * savecontext);
+
+/** return 0 if file exist and can be open in read mode */
+int save_file_exists(char * template);
