@@ -5,10 +5,9 @@ this is allist contract
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <time.h>
 
+#include "check_test.h"
 #include "allist.h"
 // direct acces to internal implementation
 #include "allist_internal.h"
@@ -445,37 +444,6 @@ int test5()
   return 0;
 }
 
-int checktest(char* test, int result, time_t * start)
-{
-  time_t end;
-  time(&end);
-  if ( result == 0 )
-    {
-      printf("%s OK\n", test);
-    }
-  else
-    {
-      printf("%s KO error %i \n", test, result);
-    }
-  printf("test %s took %lu second\n", test,  (end - *start));
-  return result;
-
-}
-
-void show_memory_usage()
-{
-
-  struct rusage memuse;
-  
-  getrusage(RUSAGE_SELF, &memuse);
-
-  printf( "maximum resident set size %lu\n", memuse.ru_maxrss);
-  printf( "integral shared memory size %lu\n",memuse.ru_ixrss);
-  printf( "integral unshared data size %lu\n", memuse.ru_idrss);
-  printf( "integral unshared stack size %lu\n", memuse.ru_isrss);
-  
-}
-
 int main(int argc, char * argv[])
 {
   int count=1;
@@ -525,21 +493,21 @@ int main(int argc, char * argv[])
 	}
       show_memory_usage();
       time(&start);
-      checktest("indexset test",test0(),&start);
+      checktest(stdout,"indexset test",test0(),&start);
 
-      if ( checktest("list allocation test",test1(),&start) != 0 )
+      if ( checktest(stdout,"list allocation test",test1(),&start) != 0 )
 	{
 	  fprintf(stderr,"Unrecoverable error, stop test\n");
 	  return 1;
 	}
       
-      checktest("fill lists test",test2(),&start);
-      checktest("zero membership test",test3(),&start);
+      checktest(stdout,"fill lists test",test2(),&start);
+      checktest(stdout,"zero membership test",test3(),&start);
 
       // dump_context(context);
-      checktest("shrink test",test4(),&start);
+      checktest(stdout,"shrink test",test4(),&start);
       
-      checktest("primality membership test",test5(),&start);
+      checktest(stdout,"primality membership test",test5(),&start);
       // dump_context(context);
 
       printf( "%i set \n", glob_numbercount-1);
