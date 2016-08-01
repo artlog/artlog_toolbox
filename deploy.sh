@@ -26,11 +26,12 @@ PROJECT_DIR=$(pwd)
 
 if [[ -z $ARTLOG_TOOLBOX ]]
 then
-    # should find toolbox relative to this deploy.sh script
-    A_TOOLBOX=$(dirname $(pwd)/$0)
+    A_TOOLBOX=$(dirname $(readlink -f "$0"))
+    echo "find toolbox relative to this deploy.sh script '$0'"
 else
     A_TOOLBOX=$ARTLOG_TOOLBOX
 fi
+echo "ARTLOG_TOOLBOX=$A_TOOLBOX"
 
 if [[ ! -d $A_TOOLBOX ]]
 then
