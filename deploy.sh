@@ -22,7 +22,15 @@ function update_migration()
     cp ${A_TOOLBOX}/.git/refs/heads/master deploy.version
 }
 
-A_TOOLBOX=artlog_toolbox
+PROJECT_DIR=$(pwd)
+
+if [[ -z $ARTLOG_TOOLBOX ]]
+then
+    # should find toolbox relative to this deploy.sh script
+    A_TOOLBOX=$(dirname $(pwd)/$0)
+else
+    A_TOOLBOX=$ARTLOG_TOOLBOX
+fi
 
 if [[ ! -d $A_TOOLBOX ]]
 then
@@ -51,7 +59,7 @@ then
     echo "Deploying scripts..."
 
     pushd  ${A_TOOLBOX}
-    GIGN=../.gitignore
+    GIGN=${PROJECT_DIR}/.gitignore
     [[ -e $GIGN ]] | touch $GIGN
     if grep "^${A_TOOLBOX}" $GIGN
     then
@@ -68,7 +76,7 @@ then
 	    echo "$l" >>$GIGN
 	fi
     done
-    cp scripts/* ..
+    cp scripts/* ${PROJECT_DIR}/
     popd
 
     echo "Update migration"
@@ -82,7 +90,7 @@ else
 	then
 	    shortscript=$(basename "$script")
             echo "deleting '$shortscript'"
-	    rm "$shortscript"
+	    rm "${PROJECT_DIR}/$shortscript"
 	fi
     done
 fi

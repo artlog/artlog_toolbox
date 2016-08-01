@@ -114,7 +114,7 @@ EOF
 
 function create_makefile_for()
 {
-    $l=$1
+    l=$1
     if [[ "$l" == "java" ]]
     then
 	create_makefile_for_java
@@ -123,6 +123,11 @@ function create_makefile_for()
 	create_makefile_for_c
     fi
 }
+
+THIS_TOOL=$0
+ARTLOG_TOOLBOX=$(dirname $(pwd)/$THIS_TOOL)
+
+echo "Using ARTLOG_TOOLBOX=$ARTLOG_TOOLBOX"
 
 if [[ $# == 0 ]]
 then
@@ -172,14 +177,21 @@ pushd $project_name >/dev/null
 cat <<EOF >init.sh
 #!/bin/bash
 
-if [[ ! -d  artlog_toolbox ]]
+if [[ -z \$ARTLOG_TOOLBOX ]]
 then
-    git clone https://github.com/artlog/artlog_toolbox.git artlog_toolbox
-    pushd artlog_toolbox
+   ARTLOG_TOOLBOX=\$(pwd)/artlog_toolbox
+   echo "no ARTLOG_TOOLBOX found, use a dedicated one\$ARTLOG_TOOLBOX"
+fi
+
+if [[ ! -d \$ARTLOG_TOOLBOX ]]
+then
+    git clone https://github.com/artlog/artlog_toolbox.git \$ARTLOG_TOOLBOX
+    pushd \$ARTLOG_TOOLBOX
     git checkout master
     popd
 fi
-artlog_toolbox/deploy.sh
+echo "ARTLOG_TOOLBOX=\$ARTLOG_TOOLBOX" >toolbox.param
+\$ARTLOG_TOOLBOX/deploy.sh
 EOF
 
 chmod u+x init.sh
@@ -241,7 +253,7 @@ Please enter here a correct explanation for this project
 EOF
 git add README.md
 
-./init.sh
+ARTLOG_TOOLBOX=$ARTLOG_TOOLBOX ./init.sh
 
 git commit -m "initial commit project $project_name created by artlog toolbox"
 
