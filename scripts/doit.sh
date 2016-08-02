@@ -216,6 +216,17 @@ then
     devenv_setup
 fi
 
+if [[ !  -f toolbox.param ]]
+then
+    if [[ -d artlog_toolbox ]]
+    then
+	echo "[INFO] setup local artlog_toolbox"
+	echo "ARTLOG_TOOLBOX=$(pwd)/artlog_toolbox" >toolbox.param
+    else
+	echo "[WARNING] no toolbox.param and no local artlog_toolbox found" >&2
+    fi
+fi
+
 specific_menus=()
 
 if [[ -f ./specificdoit.sh ]]
