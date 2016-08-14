@@ -6,11 +6,31 @@ CPPFLAGS=-g
 
 BUILD=build
 
-src=c/json.c c/main.c
+libsrc=c/json.c
+src=c/main.c
+libraries=json alsave altest
 
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
+libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
+
+
+# default target is to build libraries
+libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
+
+$(BUILD)/lib/libjson.a: $(BUILD)/obj/json.o  $(BUILD)/include/json.h
+	ar rccs $@ $<
+
+$(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
+	ar rccs $@ $<
+
+$(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test.h
+	ar rccs $@ $<
 
 $(objects): | $(BUILD)/obj
+
+
+$(libobjects): | $(BUILD)/lib
+
 
 test:$(BUILD)/json
 	mkdir -p $@
@@ -20,22 +40,31 @@ test:$(BUILD)/json
 	diff test/parse1.json test/parse2.json
 	diff test/parse1.json test/parse3.json
 
-$(BUILD)/json: $(objects)
-	@echo link json objects $(objects)
-	$(LD) $(LDFLAGS) $^ -o $@
+$(BUILD)/json: $(BUILD)/lib/libjson.a $(objects) 
+	@echo link json objects $(objects) and libjson
+	$(LD) -o $@ $(LDFLAGS) $(objects) -L$(BUILD)/lib -Wl,-Bstatic -ljson -Wl,-Bdynamic
 
 $(BUILD)/obj:
 	mkdir -p $@
 
-$(BUILD)/obj/%.o: c/%.c
+$(BUILD)/lib:
+	mkdir -p $@
+
+$(BUILD)/include:
+	mkdir -p $@
+
+$(BUILD)/include/%.h: c/%.h $(BUILD)/include
+	cp $< $@
+
+$(BUILD)/obj/%.o: c/%.c $(BUILD)/include/json.h $(BUILD)/obj
 	@echo compile $< 
 	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
-	rm -f $(objects)
+	rm -rf $(BUILD)
 
-.PHONY:clean test
+.PHONY:clean test libs
 
-
-
+# needed to keep those files within include after make ( remove unused )
+.PRECIOUS: $(BUILD)/include/%.h
 
