@@ -178,3 +178,12 @@ void dump_ctx(struct json_ctx * ctx);
 /** Initialize json_context **/
 void json_context_initialize(struct json_ctx *json_context);
 
+/**
+  return value with key keyname in object
+**/
+struct json_object * json_dict_get_value(char * keyname, struct json_object * object);
+
+/**
+  return value at index in list
+**/
+struct json_object * json_list_get( struct json_object * object, int index);

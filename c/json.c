@@ -651,6 +651,17 @@ void dump_list_object(struct json_ctx * ctx, struct json_object * object, struct
   printf("]");
 }
 
+struct json_object * json_list_get( struct json_object * object, int index)
+{
+  if ( index < object->list.nitems )
+    {
+      return object->list.value[index];
+    }
+  return NULL;
+}
+
+
+
 void dump_dict_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i;
@@ -670,6 +681,27 @@ void dump_dict_object(struct json_ctx * ctx, struct json_object * object, struct
   exit_indent( print_ctx);
   dump_indent(print_ctx);
   printf("}");
+}
+
+struct json_object * json_dict_get_value(char * keyname, struct json_object * object)
+{
+  int i;
+  struct json_object * value = NULL;
+  if (object->dict.nitems > 0)
+    {
+      for(i=0;(value == NULL) && (i< object->dict.nitems) ;i++)
+	{
+	  struct json_pair * pair = object->dict.items[i];
+	  if ( pair != NULL )
+	    {
+	      if ( strcmp( pair->key->string.chars, keyname) == 0 )
+		{
+		  value = pair->value;
+		}
+	    }
+	}
+    }
+  return value;
 }
 
 void dump_growable(struct json_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx)
