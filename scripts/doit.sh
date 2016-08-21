@@ -72,8 +72,8 @@ do_code()
 	local id=()
 	local menu=()
 	index=0
-	# find all java source file within current directory and populate jd array with.
-	for java_dir in $(find java -name '*.java' -exec dirname {} \; | sort -u)
+	# find all java source file within current directory and populate jd array with. even if java is a link ( -H option ).
+	for java_dir in $(find -H java -name '*.java' -exec dirname {} \; | sort -u)
 	do
 	    index=$((index+1))
 	    id+=($index)
