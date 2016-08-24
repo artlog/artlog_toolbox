@@ -13,6 +13,11 @@ elif [[ $action == getproject ]]
 then
     source ./project_params
     echo $project_name
+elif [[ $action =~ get([_a-z]*)$ ]]
+then
+    getvar=${BASH_REMATCH[1]}
+    source ./project_params
+    eval "echo \$$getvar"
 elif [[ $action == create ]]
 then
     source ./project_params

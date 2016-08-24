@@ -339,9 +339,7 @@ do
 	then
 	    if [[ -n $newclass ]]
 	    then
-		pushd java
-		make work/$newclass
-		popd
+		MAIN_CLASS=Main PACKAGE=$(./debianize.sh getproject_mainpackage) make -f Makefile.4.create work/$newclass
 	    fi
 	fi
     elif [[ $action == info ]]
