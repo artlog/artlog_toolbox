@@ -13,6 +13,7 @@ static int debug=0;
 int allist_set_debug( int d)
 {
   debug=d;
+  return 0;
 }
 
 /*
@@ -41,7 +42,7 @@ int indexset_reset(struct indexset * indexset, int pabs)
   assert( (indexset->tag[0]='I') || (indexset->tag[0]='E') );
   if ( pabs >= INDEXSET_COUNT )
     {
-      fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%s", pabs, __func__,__LINE__);
+      fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
   if ( (indexset->set & (1L << pabs)) == 0 )
@@ -62,7 +63,7 @@ int indexset_set(struct indexset * indexset, int pabs)
   assert( (indexset->tag[0]='I') || (indexset->tag[0]='E') );
   if ( pabs >= INDEXSET_COUNT )
     {
-      fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%s", pabs, __func__,__LINE__);
+      fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
   if ( (indexset->set & (1L << pabs)) == 0 )
@@ -99,7 +100,7 @@ int indexset_getrelindex(struct indexset * indexset, int pabs)
       return -1;
     }
   unsigned long long set = indexset->set;
-  if ( debug>1) {fprintf(stderr,"get relindex %p %i set 0x%lx\n",indexset, pabs, set);}
+  if ( debug>1) {fprintf(stderr,"get relindex %p %i set 0x%llx\n",indexset, pabs, set);}
   if ( set == 0 )
     {
       return -1;
@@ -119,7 +120,7 @@ int indexset_getrelindex(struct indexset * indexset, int pabs)
   } else {
     p1 = popcount(set & (((unsigned int)(0xffffffff)) >> (31-pabs))) ;
   }
-  if (debug>2) {     fprintf(stderr,"indexset %lx %i %i %i \n", indexset->set, pabs, p1,p2); }
+  if (debug>2) {     fprintf(stderr,"indexset %llx %i %i %i \n", indexset->set, pabs, p1,p2); }
   return p1 + p2 -1;
 }
   
@@ -197,7 +198,8 @@ int indexset_getabsindex(struct indexset * indexset, int prel)
 
 int indexset_dump(struct indexset * indexset, FILE* where)
 {
-  fprintf(where,"indexset count %i set 0x%lx\n",indexset->count,  indexset->set);
+  fprintf(where,"indexset count %i set 0x%llx\n",indexset->count,  indexset->set);
+  return 0;
 }
 
 /**
@@ -360,7 +362,7 @@ int allistelement_get_memberships_ext(struct allistelement * this)
 	}
       if ( count != indexset_count( &ext->indexset))
 	{
-	  fprintf(stderr, "indexset mismatch %s:%i %i!=%i 0x%lx\n", __func__,__LINE__,count,indexset_count( &ext->indexset),ext->indexset.set);
+	  fprintf(stderr, "indexset mismatch %s:%i %i!=%i 0x%llx\n", __func__,__LINE__,count,indexset_count( &ext->indexset),ext->indexset.set);
 	  for (int i=0; i<INDEXSET_COUNT; i++)
 	    {
 	      if ( ext->link[i].memberof != NULL )
@@ -442,7 +444,6 @@ struct allistelement * allistcontext_new_allistelement(struct allistcontext * co
 struct allistextlink * allistelement_get_extlink_ext(struct allistelement * element, struct allistof * list)
 {
   int membership = list->membership_id;
-  int error = 0;
   if (membership < INDEXSET_COUNT)
     {
       if (debug) {fprintf(stderr,"suspicious get ext link for element %p list %p membership %i smaller than set %i\n", element, list, membership, INDEXSET_COUNT );}
@@ -542,7 +543,6 @@ struct allistelement * walk_one( struct allistelement * current,
  */
 struct allistelement * allistelement_add_in_ext(struct allistelement * element, struct allistof * list)
 {
-  struct allistlink * link = NULL;
   struct allistextlink * ext = allistelement_get_extlink_ext(element, list);
   int membership = list->membership_id;
 
@@ -566,7 +566,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	}
       else
 	{
-	  if (debug) { fprintf(stderr,"memory allocation failure for allistextlink %i bytes. memory shortage !\n", sizeof( struct allistextlink));}
+	  if (debug) { fprintf(stderr,"memory allocation failure for allistextlink %li bytes. memory shortage !\n", sizeof( struct allistextlink));}
 	  return NULL;
 	}
     }
@@ -581,7 +581,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	    {
 	      if ( link->next != NULL )
 		{
-		  if (debug) { fprintf(stderr,"[ERROR] element %p in list %p has no membership but a next set\n", element, list, link->next);}
+		  if (debug) { fprintf(stderr,"[ERROR] element %p in list %p has no membership but a next set %p\n", element, list, link->next);}
 		}
 	      // should add it.
 	      if ( list->tail != NULL )
@@ -981,7 +981,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	      // we are not interested.
 	      continue;
 	    }
-	  if ( debug > 1 ) {fprintf(stderr,"this %p shrunk %p indexset %lu \n",this, shrunk, shrunk->indexset.set);}
+	  if ( debug > 1 ) {fprintf(stderr,"this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
 	  if ( shrunkpos < i )
 	    {
 	      if ( shrunkpos != indexset_getrelindex(&shrunk->indexset,i) )
@@ -1056,7 +1056,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	      }
 	    if ( shrunkpos != (memberships + extmemberships) )
 	      {
-		fprintf(stderr,"[ERROR] unexpected membership size %s:i %i!=%i %i %i\n",__func__,__LINE__,shrunkpos,(memberships + extmemberships), count, extmemberships);
+		fprintf(stderr,"[ERROR] unexpected membership size %s:%i %i!=%i %i %i\n",__func__,__LINE__,shrunkpos,(memberships + extmemberships), count, extmemberships);
 		shrunkerror++;		
 	      }	    
 	}
@@ -1125,7 +1125,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		    }
 		  else
 		    {
-		      fprintf(stderr, "[ERROR] previous.next membership was not pointing on this %p != %p \n", i, plink->next, this);
+		      fprintf(stderr, "[ERROR] previous.next membership was not pointing on this %i %p != %p \n", i, plink->next, this);
 		      ++shrunkerror;
 		    }		  
 		}
@@ -1200,7 +1200,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
     }
   if ( shrunk != NULL )
     {
-      if ( debug > 1 ) {fprintf(stderr,"RETURN this %p shrunk %p indexset %lu \n",this, shrunk, shrunk->indexset.set);}
+      if ( debug > 1 ) {fprintf(stderr,"RETURN this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
     }
   return shrunk;      
 }

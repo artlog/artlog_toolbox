@@ -10,11 +10,11 @@ void * dump_element(struct allistof * list, struct allistelement * element, stru
 {
   if ( next != NULL )
     {
-      printf(" %i," , element->data);
+      printf(" %p," , element->data);
     }
   else
     {
-      printf(" %i.\n" , element->data);
+      printf(" %p.\n" , element->data);
     }
   return param;
 }
@@ -52,7 +52,7 @@ void * dump_element_full(struct allistelement * element)
   if ( element != NULL )
     {
       printf("dump full element %p\n", element);
-      printf("data %ul\n" , element->data);
+      printf("data %p\n" , element->data);
       printf("memberships %i\n" , element->memberships);
       printf("flags %u\n" , element->flags);
       for (int i =0; i < element->memberships; i++)
@@ -79,7 +79,7 @@ void * dump_element_full(struct allistelement * element)
 	      ext = ext->nextextlink;
 	    }
 	}
-      printf("indexset %lx \n", element->indexset);
+      printf("indexset %llu \n", element->indexset.set);
       dump_indexset(&element->indexset);
     }
   return  element->data;

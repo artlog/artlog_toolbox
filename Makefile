@@ -8,7 +8,7 @@ BUILD=build
 
 libsrc=c/json.c
 src=c/main.c
-libraries=json alsave altest
+libraries=json alsave altest allist
 
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
@@ -16,6 +16,9 @@ libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 
 # default target is to build libraries
 libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
+
+$(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
+	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
 $(BUILD)/lib/libjson.a: $(BUILD)/obj/json.o  $(BUILD)/include/json.h
 	ar rccs $@ $<

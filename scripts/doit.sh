@@ -278,7 +278,7 @@ do
 	# should be cleaned up from specific laby project targets.
 	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  ${specific_menus[@]} test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
     else
-	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" run "Run it"  test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
+	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" run "Run it"  test "Test it" ${specific_menus[@]} code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
     fi
 
     if [[ $action == run ]]
