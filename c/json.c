@@ -51,14 +51,19 @@ void syntax_error(struct json_ctx * ctx,void * data,struct json_object * object,
 
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
 {
-  struct json_object * object=malloc(sizeof(struct json_object));
+  struct json_object * object=calloc(1,sizeof(struct json_object));
   if ( object != NULL)
     {
       object->type=objtype;
-      if ( ctx->bufpos < ctx->bufsize )
+      // warning, should keep a place for final 0
+      if ( (ctx->bufpos + 1) < ctx->bufsize )
 	{
 	  // reduce it...
-	  ctx->buf=realloc(ctx->buf,ctx->bufpos);
+	  if ( json_debug > 0 )
+	    {
+	      printf("reduce string '%s' from %i to %i\n",ctx->buf,ctx->bufsize,ctx->bufpos+1);
+	    }
+	  ctx->buf=realloc(ctx->buf,ctx->bufpos+1);
 	  ctx->bufsize=ctx->bufpos;
 	}
       object->string.chars=ctx->buf;
@@ -530,8 +535,8 @@ int add_char(struct json_ctx * ctx, char token, char c)
 #endif
   if (ctx->buf == NULL)
     {
-      ctx->buf=malloc(bufsize);
-      ctx->buf[bufsize-1]=0;
+      ctx->buf=calloc(1,bufsize);
+      //ctx->buf[bufsize-1]=0;
       ctx->bufpos=0;
       ctx->bufsize=bufsize;
     }

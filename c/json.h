@@ -127,6 +127,7 @@ void memory_shortage(struct json_ctx * ctx);
 
 void syntax_error(struct json_ctx * ctx,void * data,struct json_object * object,struct json_object * parent);
 
+// create a json string object from context buffer
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype);
 
 struct json_object * new_growable(struct json_ctx * ctx, char final_type);
