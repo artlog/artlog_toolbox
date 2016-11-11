@@ -61,6 +61,12 @@ void main_pushback_char(struct json_ctx *ctx, void *data, char pushback)
   ctx->pos--;
 }
 
+void usage()
+{
+  printf("First argument : filename to open in read only mode to parse in json.\n");
+  printf("Output : dump parsed json to standard output.\n");
+}
+
 /**
 main
 First argument : filename to open in read only mode to parse in json.
@@ -114,6 +120,10 @@ int main(int argc, char ** argv)
 	  exit(1);
 	}
       
+    }
+  else
+    {
+      usage();
     }
   exit(0);
 }

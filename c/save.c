@@ -58,7 +58,9 @@ int save_init_context(struct savecontext * context, char * dir, char* prefix, ch
   return 0;
 }
 
-/** every file with a prefix prefix.[0..9]+.extension will be rename with a superior index if room is needed.
+/**
+ * every file with a prefix prefix.[0..9]+.extension will be rename with a superior index if room is needed.
+ * what about prefix.extension ( ie without 0 between prefix and extension ) ?
  */
 int save_shift_file_name(struct savecontext * savecontext)
 {
@@ -100,7 +102,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 	  {
 	    // file does not exist : GOOD, free file is found !
 	    freefile=template;
-	  }
+	  }	
       }
 
       // need to move file to have a place.
@@ -123,9 +125,22 @@ int save_shift_file_name(struct savecontext * savecontext)
 		{
 		  if ( save_debug >0 ) {
 		    printf("FOUND index %i in\n",index);
+		    printf("%s %i==",template, index);
 		    printf(template, index);
 		    printf("==%s\n", fileentry->d_name);
 		  }
+		  sprintf(newpath,template,index);
+		  // protect against sscanf early match ( seems to disregards extension )
+		  // ex: "non matching sscanf selection cube.9.record != cube.9.cubemodel"
+		  if ( strcmp(newpath,fileentry->d_name) != 0 )
+		    {
+		      if ( save_debug > 0 )
+			{
+			  printf("non matching sscanf selection %s != %s\n", newpath,fileentry->d_name);
+			}
+		      continue;
+		    }
+
 		  if ( index > index_max )
 		    {
 		      index_max = index;
@@ -162,7 +177,6 @@ int save_shift_file_name(struct savecontext * savecontext)
 
 	      // move all index up ...
 	      
-
 	      // find first hole if any
 	      if ( count < (index_max-index_min+1) )
 		{
@@ -179,20 +193,18 @@ int save_shift_file_name(struct savecontext * savecontext)
 		    }
 		}
 
-	      
 	      for (int i=freeindex-1; i>0; i--)
-	      {
-		sprintf(oldpath,"%s.%i.%s", prefix,i,extension);
-		sprintf(newpath,"%s.%i.%s", prefix,i+1,extension);
-		if (save_debug > 0) {printf("rename %s->%s\n", oldpath, newpath);}
-		if ( renameat(dir_fd, oldpath,
-			      dir_fd, newpath) != 0 )
-		  {
-		    fprintf(stderr,"error while renaming %s->%s  [%i] %s\n",oldpath, newpath, errno, strerror(errno));
-		    break;
-		  }
-	      }
-
+		{		
+		  sprintf(oldpath,"%s.%i.%s", prefix,i,extension);		
+		  sprintf(newpath,"%s.%i.%s", prefix,i+1,extension);
+		  if (save_debug > 0) {printf("rename %s->%s\n", oldpath, newpath);}
+		  if ( renameat(dir_fd, oldpath,
+				dir_fd, newpath) != 0 )
+		    {
+		      fprintf(stderr,"error while renaming %s->%s  [%i] %s index min=%i\n",oldpath, newpath, errno, strerror(errno), index_min);
+		      break;
+		    }
+		}
 	    }
 	  else
 	    {
