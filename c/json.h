@@ -1,4 +1,5 @@
-  
+
+// forward definitions
 struct json_ctx;
 struct json_object;
 
@@ -9,6 +10,7 @@ struct print_ctx {
   char * s_indent;
 };
 
+/** print context to stderr */
 void dump_ctx(struct json_ctx * ctx);
 
 /** Where output is finaly done */
@@ -19,35 +21,41 @@ typedef void (*set_pushback_char)(struct json_ctx *ctx, void *data, char pushbac
 typedef struct json_object* (*parse_func) (struct json_ctx *ctx, void *data, struct json_object * object);
 typedef int (*add_token_char)(struct json_ctx *ctx, char token, char c);
 
-struct json_pos_info {
+/** keep position of line and column for a stream during a json parsing */
+struct json_pos_info
+{
   int line;
   int column;
 };
 
 /**
 Level of char seen :
-char depend on context 
+char depend on context ( see struct json_ctx )
 parenthesis
 braket
 dquote
 squte
 **/
-struct json_level {
+struct json_level
+{
   int open_level;
   int max_open_level; // level of  {,[,'," seen
   int max_close_level; // level of },],'," 'seen
 };
 
 /** a simple linked list of json_object */
-struct json_link {
+struct json_link
+{
   struct json_object * value;
   struct json_link * next;
 };
 
 /** A growable is a json object TO BE
 It will be reduced to a real json object at 'concrete' time
+when number of link component will be wellknown.
 **/
-struct json_growable {
+struct json_growable
+{
   struct json_link head; // has a meaning ONLY if tail is non NULL.
   struct json_link * tail;
   int size;
@@ -55,11 +63,12 @@ struct json_growable {
 };
 
 /** Parsing context of json */
-struct json_ctx {
-  struct json_level parenthesis;
-  struct json_level braket;
-  struct json_level dquote;
-  struct json_level squote;  
+struct json_ctx
+{
+  struct json_level parenthesis; // parenthesis '(' ')' 
+  struct json_level braket; // brakets '[' ']' 
+  struct json_level dquote; // double quote '"'
+  struct json_level squote; // simple quote "'"
   get_next_char next_char;
   set_pushback_char pushback_char;
   parse_func unstack;
@@ -74,7 +83,8 @@ struct json_ctx {
 };
 
 /** a json_object that is a number */
-struct json_number {
+struct json_number
+{
   int length;
   unsigned char * b;
 };
@@ -103,17 +113,18 @@ struct json_dict {
   struct json_pair * items[];
 };
 
+/** any king json object */
 struct json_object {
-  char type;
+  char type; // use to select real object type within union
   unsigned char pad[3];
   struct json_pos_info pos_info;
   union {
-    struct json_number number;
-    struct json_string string;
-    struct json_list list;
-    struct json_dict dict;
-    struct json_pair pair;
-    struct json_growable growable;
+    struct json_number number; // NOT YET IMPLEMENTED ?
+    struct json_string string;  // '"' '\'
+    struct json_list list; // '['
+    struct json_dict dict; // '{'
+    struct json_pair pair; // ':'
+    struct json_growable growable; // 'G'
   }; 
 };
 
@@ -166,6 +177,9 @@ json_object parent of json object to be currently parsed.
  **/
 struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json_object * parent);
 
+/**
+ used during parsing when a char should be re-parsed 
+**/
 void pushback_char(struct json_ctx *ctx, void *data, char pushback);
 
 int add_char(struct json_ctx * ctx, char token, char c);
@@ -188,3 +202,18 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
   return value at index in list
 **/
 struct json_object * json_list_get( struct json_object * object, int index);
+
+/** set debug level 0 : none 
+return previous debug flags
+*/
+int json_set_debug(int debug);
+
+/**
+first lazzy implementation : compare them
+
+return 1 if equals, 0 if different.
+*/
+int json_unify_object(
+	       struct json_ctx * ctx, struct json_object * object,
+	       struct json_ctx * other_ctx, struct json_object * other_object,
+	       struct print_ctx * print_ctx);

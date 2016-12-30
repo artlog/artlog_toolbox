@@ -43,6 +43,7 @@ test:$(BUILD)/json
 	./$(BUILD)/json test.json >test/parse1.json
 	./$(BUILD)/json parse1.json >test/parse2.json
 	./$(BUILD)/json refnawak.json >test/parse3.json
+	./$(BUILD)/json test.json refnawak.json
 	diff test/parse1.json test/parse2.json
 	diff test/parse1.json test/parse3.json
 

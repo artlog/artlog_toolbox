@@ -64,6 +64,7 @@ void main_pushback_char(struct json_ctx *ctx, void *data, char pushback)
 void usage()
 {
   printf("First argument : filename to open in read only mode to parse in json.\n");
+  printf("Second argument : filename to open in read only mode to parse in json for template.\n");
   printf("Output : dump parsed json to standard output.\n");
 }
 
@@ -102,6 +103,21 @@ int main(int argc, char ** argv)
   print_context.s_indent = NULL;
   */
 
+  struct json_ctx json_template_context;
+  struct print_ctx print_template_context;
+
+  struct main_context_data template_data;
+
+  json_context_initialize( &json_template_context);
+
+  json_template_context.next_char=main_next_char;
+  json_template_context.pushback_char=main_pushback_char;
+  
+  // two spaces
+  print_template_context.do_indent = 0;
+  print_template_context.indent = 0;
+  print_template_context.s_indent = "";
+
   if (argc > 1)
     {
       data.last=0;
@@ -114,6 +130,32 @@ int main(int argc, char ** argv)
 	  fclose(data.f);
 	  //dump_ctx(&json_context);
 	  dump_object(&json_context,root,&print_context);
+	  printf("\n");
+	  if ( argc > 2 )
+	    {
+	      template_data.last=0;
+	      template_data.flags=0;
+	      template_data.f = fopen(argv[2],"r");
+	      if ( template_data.f != NULL )
+		{
+		  struct json_object * template_root=NULL;
+		  template_root=parse_level(&json_template_context,&template_data,template_root);
+		  fclose(template_data.f);
+		  dump_object(&json_template_context,template_root,&print_template_context);
+		  printf("\n");
+		  if ( json_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
+		    {
+		      printf("\n%s and %s json match\n", argv[1], argv[2]);
+		      exit(0);
+		    }
+		  else
+		    {
+		      printf("\n%s and %s json DOES NOT match\n", argv[1], argv[2]);
+		      exit(1);
+		    }
+		}
+	    }
+	      
 	}
       else
 	{
@@ -127,3 +169,4 @@ int main(int argc, char ** argv)
     }
   exit(0);
 }
+

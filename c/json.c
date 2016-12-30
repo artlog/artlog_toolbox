@@ -5,8 +5,14 @@
 
 #include "json.h"
 
-
 int json_debug=0;
+
+int json_set_debug(int debug)
+{
+  int previous=json_debug;
+  json_debug = debug;
+  return previous;
+}
 
 /**
 a complicated json stream ( one char ahead ) parser 
@@ -777,6 +783,206 @@ void dump_object(struct json_ctx * ctx, struct json_object * object, struct prin
       printf(" NULL ");
     }
 }
+
+
+int json_unify_string(struct json_ctx * ctx, struct json_object * object,
+		      struct json_ctx * other_ctx, struct json_object * other_object,
+		      struct print_ctx * print_ctx)
+{
+  if ( ( object != NULL) && (other_object != NULL ) )
+    {
+      struct json_string * string = &object->string;
+      if ( strcmp(string->chars, other_object->string.chars) == 0 )
+	{
+	  printf("%c%s%c",object->type,string->chars,object->type);
+	  return 1;
+	}
+      else
+	{
+	  return 0;
+	}      
+    }
+  else
+    {
+      printf("'0");
+      return 0;
+    }  
+}
+
+int json_unify_list(struct json_ctx * ctx, struct json_object * object,
+		     struct json_ctx * other_ctx, struct json_object * other_object,
+		     struct print_ctx * print_ctx)
+{
+  int i=0;
+  int ok = 0;
+  if ( object->list.nitems != other_object->list.nitems )
+    {
+      return 0;
+    }
+  printf("%c",object->type);
+  enter_indent( print_ctx);
+  if (object->list.nitems > 0)
+    {
+      dump_indent(print_ctx);
+      ok = json_unify_object(ctx,object->list.value[0],
+			     other_ctx,other_object->list.value[0],
+			     print_ctx);
+      for(i=1;(ok == 1) && (i< object->list.nitems);i++)
+	{
+	  printf(",");
+	  dump_indent(print_ctx);
+	  ok= json_unify_object(ctx,object->list.value[i],
+				other_ctx,other_object->list.value[i],
+				print_ctx);
+	}
+    }
+  else
+    {
+      ok = 1;
+    }
+  exit_indent( print_ctx);
+  dump_indent(print_ctx);
+  printf("]");
+  return ok;
+}
+
+int json_unify_pair(struct json_ctx * ctx, struct json_pair * pair,
+		     struct json_ctx * other_ctx, struct json_pair * other_pair,
+		     struct print_ctx * print_ctx)
+{
+  int ok =  json_unify_object(ctx,pair->key,
+			      other_ctx, other_pair->key,
+			      print_ctx);
+  printf(":");
+  if ( ok == 1 )
+    {
+      ok = json_unify_object(ctx,pair->value,
+		       other_ctx,other_pair->value,
+		       print_ctx);
+    }
+  return ok;
+}
+
+int json_unify_pair_object(struct json_ctx * ctx, struct json_object * object,
+		            struct json_ctx * other_ctx, struct json_object * other_object,
+		            struct print_ctx * print_ctx)
+{
+  if ( ( object != NULL) && (other_object != NULL ) )
+    {
+      assert(object->type == ':');
+      return json_unify_pair(ctx,&object->pair,
+			     other_ctx,&other_object->pair,
+			     print_ctx);
+    }
+  else
+    {
+      printf(":0");
+      return 0;
+    }
+
+}
+
+int json_unify_dict(
+	       struct json_ctx * ctx, struct json_object * object,
+	       struct json_ctx * other_ctx, struct json_object * other_object,
+	       struct print_ctx * print_ctx)
+{
+  int i;
+  int ok = 0;
+  
+  if ( object->dict.nitems != other_object->dict.nitems )
+    {
+      return 0;
+    }
+  printf("%c",object->type);
+  enter_indent(print_ctx);
+  if (object->dict.nitems > 0)
+    {
+      dump_indent(print_ctx);
+      ok = json_unify_pair(ctx,object->dict.items[0],
+			   other_ctx, other_object->dict.items[0],
+			   print_ctx);
+      for(i=1;(ok == 1) && ( i< object->dict.nitems);i++)
+	{
+	  printf(",");
+	  dump_indent(print_ctx);
+	  ok = json_unify_pair(ctx,object->dict.items[i],
+			       other_ctx, other_object->dict.items[i],
+			       print_ctx);
+	}
+    }
+  else
+    {
+      ok = 1;
+    }    
+  exit_indent( print_ctx);
+  dump_indent(print_ctx);
+  printf("}");
+
+  return ok;
+}
+
+int json_unify_object(
+	       struct json_ctx * ctx, struct json_object * object,
+	       struct json_ctx * other_ctx, struct json_object * other_object,
+	       struct print_ctx * print_ctx)
+{
+  // test identity
+  if ( object == other_object )
+    {
+      return 1;
+    }
+
+  if ( (object != NULL) && (other_object != NULL ) )
+    {
+      if ( other_object->type != object->type )
+	{
+	  return 0;
+	}
+	 
+      // printf("%p[%c]",object,object->type);
+      switch(object->type)
+	{
+	case 'G':
+	  dump_growable_object(ctx, object, print_ctx);
+	  return 0;
+	  break;
+	case '{':
+	  return json_unify_dict(ctx,object,
+				 other_ctx, other_object, print_ctx);
+	  break;
+	case '[':
+	  return json_unify_list(ctx,object,
+				 other_ctx, other_object,
+				 print_ctx);
+	  break;
+	case '"':
+	case '\'':
+	  return json_unify_string(ctx,object,
+				   other_ctx, other_object,
+				   print_ctx);
+	  break;
+	case ':':
+	  return json_unify_pair_object(ctx,object,
+					other_ctx, other_object,
+					print_ctx);
+	  break;
+	case ',':
+	  printf("#");
+	  break;
+        default:
+	  printf("ERROR type %c %p",object->type, print_ctx);
+	}
+    }
+  else
+    {
+      printf(" NULL ");
+      return 0;
+    }
+  
+  return 0;
+}
+
 
 void dump_ctx(struct json_ctx * ctx)
 {
