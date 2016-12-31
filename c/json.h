@@ -1,10 +1,15 @@
+#ifndef __JSON_HEADER__
+#define __JSON_HEADER__
+
+#include "json_errors.h"
 
 // forward definitions
 struct json_ctx;
 struct json_object;
 
 /* parameters for pretty printing */
-struct print_ctx {
+struct print_ctx
+{
   int indent;
   int do_indent; // 0 no indent, >= 1 number of space by indent.
   char * s_indent;
@@ -69,11 +74,13 @@ struct json_ctx
   struct json_level braket; // brakets '[' ']' 
   struct json_level dquote; // double quote '"'
   struct json_level squote; // simple quote "'"
+  struct json_level variable; // variable "?" ; to use existing framework JSON_TOGGLE not really sound yet.
   get_next_char next_char;
   set_pushback_char pushback_char;
   parse_func unstack;
   add_token_char add_char;
   char * buf;
+  int debug_level;
   int bufpos;
   int bufsize;
   int pos;
@@ -113,18 +120,40 @@ struct json_dict {
   struct json_pair * items[];
 };
 
+/**
+  different from a pair since it is a template filled by unification
+*/
+struct json_variable {
+  struct json_object * key; // should be json_string ?
+  struct json_object * value;
+  int bound;
+};
+
+enum json_internal_constant {
+  JSON_CONSTANT_TRUE,
+  JSON_CONSTANT_FALSE,
+  JSON_CONSTANT_NULL
+};
+
+struct json_constant {
+  enum json_internal_constant value;
+};
+
 /** any king json object */
 struct json_object {
   char type; // use to select real object type within union
   unsigned char pad[3];
+  int shares; // number of times it is referenced a json_variable
   struct json_pos_info pos_info;
   union {
-    struct json_number number; // NOT YET IMPLEMENTED ?
-    struct json_string string;  // '"' '\'
+    struct json_constant constant; // NOT YET IMPLEMENTED 'T' true 'F' false 'N' null
+    struct json_number number; // NOT YET IMPLEMENTED '0'
+    struct json_string string;  // '"' '\' or '$' ( internaly used to name variables )
     struct json_list list; // '['
     struct json_dict dict; // '{'
     struct json_pair pair; // ':'
     struct json_growable growable; // 'G'
+    struct json_variable variable; // '?'
   }; 
 };
 
@@ -136,7 +165,7 @@ void debug_tag(char c);
 
 void memory_shortage(struct json_ctx * ctx);
 
-void syntax_error(struct json_ctx * ctx,void * data,struct json_object * object,struct json_object * parent);
+void syntax_error(struct json_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
 // create a json string object from context buffer
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype);
@@ -208,6 +237,11 @@ return previous debug flags
 */
 int json_set_debug(int debug);
 
+/** set debug level 0 : none 
+return previous debug flags
+*/
+int json_ctx_set_debug(struct json_ctx * ctx, int debug);
+
 /**
 first lazzy implementation : compare them
 
@@ -217,3 +251,5 @@ int json_unify_object(
 	       struct json_ctx * ctx, struct json_object * object,
 	       struct json_ctx * other_ctx, struct json_object * other_object,
 	       struct print_ctx * print_ctx);
+
+#endif

@@ -76,6 +76,10 @@ Output : dump parsed json to standard output
  **/
 int main(int argc, char ** argv)
 {
+  char * json_filename = NULL;
+  char * json_template = NULL;
+  int debug = 0;
+  
   struct json_ctx json_context;
   struct print_ctx print_context;
 
@@ -118,11 +122,45 @@ int main(int argc, char ** argv)
   print_template_context.indent = 0;
   print_template_context.s_indent = "";
 
-  if (argc > 1)
+  if ( argc > 1 )
     {
+      for (int i =1; i< argc ; i++)
+	{
+	  if ( argv[i][0] != '-' )
+	    {
+	      if ( json_filename == NULL )
+		{
+		  json_filename = argv[i];
+		}
+	      else if ( json_template == NULL )
+		{
+		  json_template = argv[i];
+		}
+	      else
+		{
+		  debug=1;
+		}
+	    }
+	  else
+	    {
+	      debug=1;
+	    }
+	}
+    }
+
+  json_set_debug(debug);
+  json_ctx_set_debug(&json_context,debug);
+  json_ctx_set_debug(&json_template_context,debug);
+  
+  if (json_filename != NULL)
+    {
+      if ( debug > 0)
+	{
+	  printf("parsing json filename : %s\n", json_filename);
+	}
       data.last=0;
       data.flags=0;
-      data.f = fopen(argv[1],"r");
+      data.f = fopen(json_filename,"r");
       if ( data.f != NULL )
 	{
 	  struct json_object * root=NULL;
@@ -131,11 +169,15 @@ int main(int argc, char ** argv)
 	  //dump_ctx(&json_context);
 	  dump_object(&json_context,root,&print_context);
 	  printf("\n");
-	  if ( argc > 2 )
+	  if ( json_template != NULL )
 	    {
+	      if ( debug > 0 )
+		{
+		  printf("parsing json template : %s\n", json_template);
+		}
 	      template_data.last=0;
 	      template_data.flags=0;
-	      template_data.f = fopen(argv[2],"r");
+	      template_data.f = fopen(json_template,"r");
 	      if ( template_data.f != NULL )
 		{
 		  struct json_object * template_root=NULL;

@@ -8,7 +8,7 @@ BUILD=build
 
 libsrc=c/json.c
 src=c/main.c
-libraries=json alsave altest allist
+libraries=json alsave altest allist aldev
 
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
@@ -20,13 +20,16 @@ libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
-$(BUILD)/lib/libjson.a: $(BUILD)/obj/json.o  $(BUILD)/include/json.h
+$(BUILD)/lib/libjson.a: $(BUILD)/obj/json.o  $(BUILD)/include/json.h $(BUILD)/include/json_errors.h
 	ar rccs $@ $<
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
 	ar rccs $@ $<
 
 $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test.h
+	ar rccs $@ $<
+
+$(BUILD)/lib/libaldev.a:  $(BUILD)/obj/todo.o $(BUILD)/include/todo.h
 	ar rccs $@ $<
 
 $(BUILD)/checksave: $(BUILD)/obj/save_main.o $(BUILD)/lib/libalsave.a
@@ -44,6 +47,7 @@ test:$(BUILD)/json
 	./$(BUILD)/json parse1.json >test/parse2.json
 	./$(BUILD)/json refnawak.json >test/parse3.json
 	./$(BUILD)/json test.json refnawak.json
+	./$(BUILD)/json refnawak.json template.json -debug
 	diff test/parse1.json test/parse2.json
 	diff test/parse1.json test/parse3.json
 
