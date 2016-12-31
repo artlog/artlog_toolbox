@@ -286,6 +286,7 @@ struct json_object * new_variable(struct json_ctx * ctx, struct json_object * ke
   return object;
 }
 
+// should set owner of values to new object
 struct json_object * create_json_list(struct json_ctx * ctx, struct json_object * obj)
 {
   struct json_growable * growable = &obj->growable;
@@ -301,12 +302,17 @@ struct json_object * create_json_list(struct json_ctx * ctx, struct json_object 
       link=growable->tail;
       if ( link != NULL)
 	{
+	  growable->head.value->owner=object;
+	  growable->head.value->index=i;
 	  list->value[i++]=growable->head.value;
 	  if ( link != &growable->head )
 	    {
 	      link=growable->head.next;
 	      while ((link != NULL)&&(i<size))
 		{
+		  link->value->owner=object;
+		  link->value->index=i;
+
 		  list->value[i++]=link->value;
 		  link=link->next;
 		}
@@ -322,6 +328,7 @@ struct json_object * create_json_list(struct json_ctx * ctx, struct json_object 
 }
 
 // collect only pairs
+// should set owner of values to new object
 struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object * obj)
 {
   struct json_growable * growable= &obj->growable;
@@ -339,7 +346,11 @@ struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object 
 	{
 	  if (growable->head.value != NULL)
 	    { 
-	      if (growable->head.value->type == ':') { dict->items[i++]=&growable->head.value->pair; }
+	      if (growable->head.value->type == ':') {
+		dict->items[i]=&growable->head.value->pair;
+		growable->head.value->owner=object;
+		++i;
+	      }
 	      else  { release_object(growable->head.value);}
 	    }
 	  if ( link != &growable->head )
@@ -349,8 +360,15 @@ struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object 
 		{
 		  if (link->value!=NULL) 
 		    {
-		      if (link->value->type == ':') { dict->items[i++]=&link->value->pair; }
-		      else { release_object(link->value); }
+		      if (link->value->type == ':')
+			{
+			  dict->items[i++]=&link->value->pair;
+			  link->value->owner=object;
+			}
+		      else
+			{
+			  release_object(link->value);
+			}
 		    }
 		  link=link->next;
 		}
@@ -576,7 +594,6 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 		  printf("new variable key %p\n", variable_name);
 		}
 	      object = new_variable(ctx,variable_name);
-
 	      if (parent == NULL)
 		{
 		  return object;
@@ -600,6 +617,8 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 		  syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,object,parent);
 		}
 	      object->pair.value=value;
+	      // where value knows its name.
+	      value->owner=pair;
 	      if (parent == NULL)
 		{
 		  return object;
@@ -754,10 +773,14 @@ void dump_variable(struct json_ctx * ctx, struct json_variable * variable, struc
 	  dump_object(ctx,variable->key, print_ctx);
 	}
       printf("?");
+      /**  can't be would need a json_object ??
+      printf("==");
+      json_print_object_name(ctx,variable,print_ctx);
+      **/
       if ( variable->bound == 1 )
 	{
 	  printf("=");
-	  dump_object(ctx,variable->value, print_ctx);
+	  dump_object(ctx,variable->value, print_ctx);	  
 	}
     }
 }
@@ -1123,12 +1146,12 @@ int json_unify_variable(
     {
       return variable_object->variable.value == object;
     }
-
+  
   variable_object->variable.bound=1;
   variable_object->variable.value=object;
 
   dump_variable_object(variable_ctx,variable_object,print_ctx);
- 
+  
   return 1;
 }
 
@@ -1263,4 +1286,23 @@ void json_context_initialize(struct json_ctx *json_context)
   json_context->root=NULL;
   json_context->tail=NULL;
   json_context->debug_level=0;
+}
+
+void json_print_object_name(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+{
+  if ( object != NULL )
+    {
+      if (object->owner != NULL )
+	{
+	  json_print_object_name(ctx,object->owner,print_ctx);
+	  if ( object->type == ':' )
+	    {
+	      printf(".%s",object->pair.key->string.chars);
+	    }
+	  else if ( object->owner->type  == '[' )
+	    {
+	      printf(".%u", object->index);
+	    }
+	}
+    } 
 }

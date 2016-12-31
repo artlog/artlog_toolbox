@@ -139,12 +139,14 @@ struct json_constant {
   enum json_internal_constant value;
 };
 
-/** any king json object */
+/** any kind of json object */
 struct json_object {
   char type; // use to select real object type within union
   unsigned char pad[3];
   int shares; // number of times it is referenced a json_variable
   struct json_pos_info pos_info;
+  struct json_object * owner; // parent owner used to construct naming.
+  int index; // index in parent if a list
   union {
     struct json_constant constant; // NOT YET IMPLEMENTED 'T' true 'F' false 'N' null
     struct json_number number; // NOT YET IMPLEMENTED '0'
@@ -251,5 +253,8 @@ int json_unify_object(
 	       struct json_ctx * ctx, struct json_object * object,
 	       struct json_ctx * other_ctx, struct json_object * other_object,
 	       struct print_ctx * print_ctx);
+
+
+void json_print_object_name(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 #endif
