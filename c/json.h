@@ -3,6 +3,9 @@
 
 #include "json_errors.h"
 
+#define JSON_PATH_MAX_CHARS 4096
+#define JSON_PATH_DEPTH 1024
+
 // forward definitions
 struct json_ctx;
 struct json_object;
@@ -159,6 +162,13 @@ struct json_object {
   }; 
 };
 
+struct json_path {
+  char type; // '{' string is key of dict, '[' index is index of list , '*' automatic ( ie key or index is used depending on parsed structure )
+  struct json_path * child;
+  struct json_string string;
+  int index;
+};
+
 void debug_tag(char c);
 
 #define JSON_OPEN(ctx,__member__,object)   ctx->__member__.open_level++;ctx-> __member__ .max_open_level++;object=new_ ## __member__(ctx);
@@ -257,4 +267,9 @@ int json_unify_object(
 
 void json_print_object_name(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
+/**
+given a json_path ex : menu.popup.menuitem.1 find the json object.
+*/
+struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, struct json_object * object);
+			
 #endif

@@ -121,6 +121,7 @@ struct json_object * new_growable(struct json_ctx * ctx, char final_type)
      object->growable.head.value=NULL;
      object->growable.head.next=NULL;
      object->growable.size=0;
+     object->owner=NULL;
    }
  else
    {
@@ -274,6 +275,8 @@ struct json_object * new_variable(struct json_ctx * ctx, struct json_object * ke
   if (object != NULL)
     {
       object->type='?';
+      object->owner=NULL;
+      object->index=0;
       memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
       object->variable.key=key;
       object->variable.value=NULL;
@@ -773,10 +776,6 @@ void dump_variable(struct json_ctx * ctx, struct json_variable * variable, struc
 	  dump_object(ctx,variable->key, print_ctx);
 	}
       printf("?");
-      /**  can't be would need a json_object ??
-      printf("==");
-      json_print_object_name(ctx,variable,print_ctx);
-      **/
       if ( variable->bound == 1 )
 	{
 	  printf("=");
@@ -842,6 +841,10 @@ void dump_variable_object(struct json_ctx * ctx, struct json_object * object, st
   if ( object != NULL)
     {
       assert(object->type == '?');
+
+      json_print_object_name(ctx,object,print_ctx);
+      printf(".");
+
       dump_variable(ctx,&object->variable, print_ctx);
     }
   else
@@ -917,6 +920,30 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
 	      if ( strcmp( pair->key->string.chars, keyname) == 0 )
 		{
 		  value = pair->value;
+		}
+	    }
+	}
+    }
+  return value;
+}
+
+struct json_object * json_dict_path_get_value(struct json_path * path, struct json_object * object)
+{
+  int i;
+  struct json_object * value = NULL;
+  if (object->dict.nitems > 0)
+    {
+      for(i=0;(value == NULL) && (i< object->dict.nitems) ;i++)
+	{
+	  struct json_pair * pair = object->dict.items[i];
+	  if ( pair != NULL )
+	    {
+	      if ( path->string.length == pair->key->string.length )
+		{
+		  if ( strncmp( pair->key->string.chars, path->string.chars, path->string.length) == 0 )
+		    {
+		      value = pair->value;
+		    }
 		}
 	    }
 	}
@@ -1292,17 +1319,206 @@ void json_print_object_name(struct json_ctx * ctx, struct json_object * object, 
 {
   if ( object != NULL )
     {
-      if (object->owner != NULL )
+      if ( object->type != 0 )
 	{
-	  json_print_object_name(ctx,object->owner,print_ctx);
-	  if ( object->type == ':' )
+	  if (object->owner != NULL )
 	    {
-	      printf(".%s",object->pair.key->string.chars);
-	    }
-	  else if ( object->owner->type  == '[' )
-	    {
-	      printf(".%u", object->index);
+	      json_print_object_name(ctx,object->owner,print_ctx);
+	      if ( object->type == ':' )
+		{
+		  printf(".%s",object->pair.key->string.chars);
+		}
+	      else if ( object->owner->type  == '[' )
+		{
+		  printf(".%u", object->index);
+		}
 	    }
 	}
+      else
+	{
+	  printf("!");
+	}
     } 
+}
+
+void dump_json_path(struct json_path * json_path)
+{
+  int watchguard = JSON_PATH_DEPTH ;
+  while ( ( json_path != NULL ) && ( watchguard > 0 ) )    
+    {
+      ++ watchguard;
+      printf(".%.*s", json_path->string.length, json_path->string.chars);
+      json_path = json_path->child;
+    }
+}
+
+/**
+ WARNING json_path itself is used for strings 
+if given_pathes is NULL then it will be dynamically allocated else it should have been zeroed before use.
+**/
+struct json_path * create_json_path(int maxlength, char * json_path, struct json_ctx * ctx, int max_depth, struct json_path * given_pathes)
+{
+  struct json_path * pathes = given_pathes;
+  if ( pathes == NULL )
+    {      
+      pathes=calloc(max_depth, sizeof(struct json_path));
+    }
+  if ( pathes != NULL )
+    {      
+      char * current = json_path;
+      int pos = 0; // position of current within json_path
+      int digits = 1;
+      int json_path_index = -1;
+      int next_path = 0;
+      char next_type = '*';
+      while ( ( pos < maxlength) && ( *current != 0 ) && (json_path_index < max_depth) )
+	{
+	  char c = *current;
+	  if ( c == '.' )
+	    {
+	      // next path
+	      next_path=1;
+	      next_type='*';
+	    }
+	  else if ( (  c == '['  ) || ( ( c == '{') ))
+	    {
+	      next_path=1;
+	      next_type=c;
+	    }
+	  else if ( ( next_type == '[' ) && ((c) == ']') )
+	    {
+	      next_path=1;
+	      next_type='*';
+	    }
+	  else if ( ( next_type == '{' ) && ((c) == '}') )
+	    {
+	      next_path=1;
+	      next_type='*';
+	    }
+	  else
+	    {
+	      if ( next_path == 1 )
+		{
+		  ++ json_path_index;
+		  next_path = 0;
+		}
+	      if ( json_debug > 0 )
+		{
+		  printf("json_path_index:%i pos:%i %s\n", json_path_index, pos, current);
+		}
+
+	      if ( json_path_index < 0 )
+		{
+		  json_path_index = 0;
+		}
+	      pathes[json_path_index].child = NULL;
+	      if (pathes[json_path_index].string.chars == NULL )
+		{
+		  pathes[json_path_index].type = next_type;
+		  pathes[json_path_index].string.chars = current;
+		  pathes[json_path_index].string.length = 1;
+		  pathes[json_path_index].index = 0;
+		  digits=1;
+		}
+	      else
+		{
+		  pathes[json_path_index].string.length ++;
+		}
+	      if ( json_path_index > 0 )
+		{
+		  pathes[json_path_index-1].child=&pathes[json_path_index];
+		}
+	      if ( digits > 0 )
+		{
+		  if ( ( (c) <= '9' ) && ( (c) >= '0' ) )
+		    {
+		      pathes[json_path_index].index+=((c) - '0') * digits;
+		      digits *= 10;
+		    }
+		  else
+		    {
+		      pathes[json_path_index].index=-1;
+		      digits=0;
+		    }
+		}
+	    }
+	  ++ pos;
+	  current=&(json_path[pos]);	  
+	}
+      return &pathes[0];
+    }
+  else
+    {
+      return NULL;
+    }
+}
+
+struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, struct json_object * object)
+{
+  struct json_path * json_path_object = create_json_path(JSON_PATH_MAX_CHARS,json_path,ctx,JSON_PATH_DEPTH,NULL);
+  struct json_object * current_object = object;
+  
+  if ( json_path_object != NULL )
+    {
+      struct json_path * current_path = json_path_object;
+      dump_json_path(json_path_object);
+
+      int watchguard = JSON_PATH_DEPTH ;
+      while ( ( current_path != NULL ) && ( watchguard > 0 ) && (current_object != NULL ) )
+	{
+	  ++ watchguard;
+	  if (( current_path->type == '*' ) || ( current_path->type ==  current_object->type ))
+	    {
+	      if (current_object->type == '{' )
+		{
+		  // should find the right key
+		  struct json_object * value = json_dict_path_get_value(current_path, current_object);
+		  if ( value == NULL )
+		    {
+		      printf("[ERROR] path keyname %.*s not found\n", current_path->string.length, current_path->string.chars);
+		      current_object = NULL;
+		    }
+		  else
+		    {
+		      current_object = value;
+		    }
+		}
+	      else if (current_object->type == '[' )
+		{
+		  if ( current_path->index < 0 )
+		    {
+		      printf("[ERROR] path type index %i invalid\n", current_path->index);
+		      current_object = NULL;
+		    }
+		  else
+		    {
+		      // should find the right index
+		      struct json_object * value = json_list_get(current_object,current_path->index);
+		      if ( value == NULL )
+			{
+			  printf("[ERROR] path index %i not found.\n", current_path->index);
+			  current_object = NULL;
+			}
+		      else
+			{
+			  current_object = value;
+			}
+		    }
+		}
+	      else
+		{
+		  printf("[FATAL] json object type not supported for path search %c", current_object->type);
+		  current_object = NULL;
+		}
+	    }
+	  else
+	    {
+	      printf("[ERROR] path type non matching object %c != %c\n",  current_object->type, current_path->type);
+	      current_object = NULL;
+	    }
+	  current_path = current_path->child;
+	}
+      free(json_path_object);
+    }
+  return current_object;
 }

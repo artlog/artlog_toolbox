@@ -78,7 +78,9 @@ int main(int argc, char ** argv)
 {
   char * json_filename = NULL;
   char * json_template = NULL;
+  char * json_path = NULL;
   int debug = 0;
+  int path = 0;
   
   struct json_ctx json_context;
   struct print_ctx print_context;
@@ -128,22 +130,36 @@ int main(int argc, char ** argv)
 	{
 	  if ( argv[i][0] != '-' )
 	    {
-	      if ( json_filename == NULL )
+	      if ( path == 1 )
 		{
-		  json_filename = argv[i];
-		}
-	      else if ( json_template == NULL )
-		{
-		  json_template = argv[i];
+		  if ( json_path == NULL )
+		    {
+		      json_path = argv[i];
+		    }
+		  path =  0;
 		}
 	      else
 		{
-		  debug=1;
+		  if ( json_filename == NULL )
+		    {
+		      json_filename = argv[i];
+		    }
+		  else if ( json_template == NULL )
+		    {
+		      json_template = argv[i];
+		    }
 		}
 	    }
 	  else
 	    {
-	      debug=1;
+	      switch(argv[i][1])
+		{
+		case 'd':
+		  debug=1;
+		  break;
+		case 'p':
+		  path=1;
+		}		  
 	    }
 	}
     }
@@ -169,6 +185,19 @@ int main(int argc, char ** argv)
 	  //dump_ctx(&json_context);
 	  dump_object(&json_context,root,&print_context);
 	  printf("\n");
+	  if ( json_path != NULL )
+	    {
+	      struct json_object * found = json_walk_path(json_path, &json_context,root);
+	      if ( found != NULL )
+		{
+		  printf("=");
+		  dump_object(&json_context,found,&print_context);
+		}
+	      else
+		{
+		  printf(" NOT FOUND.");
+		}
+	    }
 	  if ( json_template != NULL )
 	    {
 	      if ( debug > 0 )
