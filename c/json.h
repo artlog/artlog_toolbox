@@ -92,12 +92,7 @@ struct json_ctx
   struct json_object * tail;
 };
 
-/** a json_object that is a number */
-struct json_number
-{
-  int length;
-  unsigned char * b;
-};
+/** json_object that is a number is a json_string with a type '0' */
 
 /* a json_object that is a string */
 struct json_string {
@@ -133,9 +128,10 @@ struct json_variable {
 };
 
 enum json_internal_constant {
-  JSON_CONSTANT_TRUE,
+  JSON_CONSTANT_TRUE=0,
   JSON_CONSTANT_FALSE,
-  JSON_CONSTANT_NULL
+  JSON_CONSTANT_NULL,
+  JSON_CONSTANT_LAST
 };
 
 struct json_constant {
@@ -151,9 +147,9 @@ struct json_object {
   struct json_object * owner; // parent owner used to construct naming.
   int index; // index in parent if a list
   union {
-    struct json_constant constant; // NOT YET IMPLEMENTED 'T' true 'F' false 'N' null
-    struct json_number number; // NOT YET IMPLEMENTED '0'
-    struct json_string string;  // '"' '\' or '$' ( internaly used to name variables )
+    struct json_constant * constant; // 't' true 'f' false 'n' null
+    // struct json_number number; // '0' in fact this is string with type '0'
+    struct json_string string;  // '"' '\' or '$' ( internaly used to name variables ) or '0' for number
     struct json_list list; // '['
     struct json_dict dict; // '{'
     struct json_pair pair; // ':'
@@ -271,5 +267,33 @@ void json_print_object_name(struct json_ctx * ctx, struct json_object * object, 
 given a json_path ex : menu.popup.menuitem.1 find the json object.
 */
 struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, struct json_object * object);
-			
+
+/**
+dump object in a flat view, ie using object name=value notation for every value.
+ */
+void json_flatten(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+
+enum json_walk_action {
+  JSON_WALK_CONTINUE, // normal action, continue
+  JSON_WALK_STOP, // stop at this step and return without error
+  JSON_WALK_SKIP, // skip next
+  JSON_WALK_NEXT_PARENT, // search within current parent list of dict is over, move to next
+  JSON_WALK_FATAL_ERROR // internal problem : stop and return with error, avoid using any memory context, can be corrupted.
+};
+  
+struct json_walk_leaf_callbacks  {
+  /** specific data */
+  void * data;
+  struct json_ctx * ctx;
+  struct print_ctx * print_ctx;
+  /** notify a leaf ( ie a bare value, not a list or a dict ) */
+  enum json_walk_action (*json_advertise_leaf) ( struct json_walk_leaf_callbacks * this, struct json_path * json_path, struct json_object * json_object);
+  /** notify a variable ( part of template ) */
+  enum json_walk_action (*json_advertise_set_variable) ( struct json_walk_leaf_callbacks * this, struct json_path * json_path, struct json_variable * json_variable);
+  /** json path where to start search */
+  struct json_path * root;
+  /** json template for variables */
+  struct json_object * template;
+};
+
 #endif

@@ -5,9 +5,27 @@
 
 #include "json.h"
 
+struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
+  {
+    {.value=JSON_CONSTANT_TRUE},
+    {.value=JSON_CONSTANT_FALSE},
+    {.value=JSON_CONSTANT_NULL},    
+  };
+
 // TODO follow specs from  http://json.org/ http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
 
 int json_debug=0;
+
+void flush_char_buffer(struct json_ctx * ctx)
+{
+  if (ctx->buf != NULL )
+    {
+      free(ctx->buf);
+      ctx->buf=NULL;
+      ctx->bufpos=0;
+      ctx->bufsize=0;
+    }
+}
 
 int json_set_debug(int debug)
 {
@@ -171,10 +189,15 @@ void dump_growable(struct json_ctx * ctx, struct json_growable * growable, struc
 
 void add_to_growable(struct json_ctx * ctx,struct json_growable * growable,struct json_object * object)
 {
-#ifdef DEBUGALL
-  printf("\n<");
-  dump_growable(ctx, growable);
-#endif
+  if (json_debug > 0 )
+    {
+      printf("%c+=%c\n",growable->final_type,object->type);
+      if (json_debug > 2)
+	{
+	  printf("before<");
+	  dump_growable(ctx, growable,NULL);
+	}
+    }
   if ( growable->tail == NULL)
     {
       // growable was empty. add first element
@@ -194,11 +217,15 @@ void add_to_growable(struct json_ctx * ctx,struct json_growable * growable,struc
       assert(growable->head.next != NULL);
       growable->tail=link;
     }
-#ifdef DEBUGALL
-  printf("\n>");
-  dump_growable(ctx, growable);
-  puts("");
-#endif
+  if ( json_debug > 0 )
+    {
+      printf("\nafter<");
+      if ( json_debug > 0 )
+	{
+	  dump_growable(ctx, growable,NULL);
+	  printf("\n>>");
+	}
+    }
 }
 
 
@@ -221,6 +248,13 @@ void add_object(struct json_ctx * ctx,struct json_object * parent,struct json_ob
 	  debug_tag('*');
 	}
     }
+  else
+    {
+      if ( json_debug  > 0 )
+	{
+	  printf("(oldtail == NULL %c", object->type);
+	}
+    }
   struct json_object * newtail=new_growable(ctx,object->type);
   if (newtail != NULL)
     {
@@ -231,7 +265,6 @@ void add_object(struct json_ctx * ctx,struct json_object * parent,struct json_ob
 	}
       else
 	{
-
 	  if (ctx->root == NULL)
 	    {
 	      debug_tag('x');
@@ -413,13 +446,191 @@ struct json_object * concrete(struct json_ctx * ctx, struct json_object * object
   return object;
 }
 
-struct json_object * parse_number_level(struct json_ctx * ctx, void * data, struct json_object * parent)
+/**
+ return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
+*/
+struct json_object * parse_number_level(struct json_ctx * ctx, char first, void * data, struct json_object * parent)
 {
-  return NULL;
+  int state = 0;
+  char c = first;
+  while ( state >= 0 )
+    {
+      if ( json_debug > 3 )
+	{
+	  printf("(number state %i)",state);
+	}
+      switch(state)
+	{
+	case 0:
+	  if ( c == '-' )
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	    }
+	  state = 1;
+	  break;
+	case 1:
+	  if ( c == '0' )
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	      state = 3;
+	    }
+	  else if ( ( c > '0' ) && ( c <='9' ) )
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	      state = 2;	      
+	    }
+	  else
+	    {
+	      state = -1;
+	    }
+	  break;
+	case 2:
+	  while ( ( c >= '0' ) && ( c <='9' ) )
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	    }
+	  state=3;
+	  break;
+	case 3:
+	  if ( c == '.' )
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	      state = 4;
+	    }
+	  else
+	    {
+	      state = 5;
+	    }
+	  break;
+	case 4:
+	  while ( ( c >= '0' ) && ( c <='9' ) )
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	    }
+	  state = 5;
+	  break;
+	case 5:
+	  if (( c=='e') || (c =='E'))
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	      state = 6;
+	    }
+	  else
+	    {
+	      state = 8;
+	    }
+	  break;
+	case 6:
+	  if (( c=='+') || (c =='-'))
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	    }
+	  state=7;
+	  // no break on purpose
+	case 7:
+	  while ( ( c >= '0' ) && ( c <='9' ) )
+	    {
+	      ctx->add_char(ctx,'0',c);
+	      c = ctx->next_char(ctx,data);
+	    }
+	  state=8;
+	  // no break on purpose
+	case 8:
+	  // this char is NOT part of our number
+	  ctx->pushback_char(ctx,data,c);
+	  if ( json_debug > 0 )
+	    {
+	      printf("(pushback end of number %c)",c);
+	    }
+	  state = 9;
+	  return cut_string_object(ctx,'0');
+	default:
+	  state = -1;
+	  // this is an error
+	}      
+    }
+  return (struct json_object *) NULL;
 }
 
-struct json_object * parse_constant_level(struct json_ctx * ctx, void * data, struct json_object * parent)
+int json_ctx_consume(struct json_ctx * ctx, void * data, char * str)
 {
+  int index = 0;
+  char c = ctx->next_char(ctx,data);
+  while ( (c != 0 ) && (str[index] != 0) )
+    {
+      if ( c != str[index] )
+	{
+	  return 0;
+	}
+      ctx->add_char(ctx,c,c);
+      ++ index;
+      if (str[index] == 0)
+	{
+	  break;
+	}      
+      c =ctx->next_char(ctx,data);
+    }
+  return (str[index] == 0);
+}
+
+struct json_object * new_json_constant_object(struct json_ctx * ctx, char t, enum json_internal_constant constant)
+{
+  struct json_object * object=malloc(sizeof(struct json_object));
+  debug_tag(t);
+  if (object != NULL)
+    {
+      object->type=t;
+      object->owner=NULL;
+      object->index=0;
+      memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
+      object->constant = &json_constant_object[constant];
+      if ( json_debug > 0 )
+	{
+	  printf("(constant %c)",t);
+	}
+    }
+  else
+    {
+      memory_shortage(ctx);
+    }
+  return object;  
+}
+
+struct json_object * parse_constant_level(struct json_ctx * ctx, char first, void * data, struct json_object * parent)
+{
+  ctx->add_char(ctx,first,first);
+  switch(first)
+    {
+    case 't':  
+      if ( json_ctx_consume(ctx,data,"rue") )
+	{
+	  flush_char_buffer(ctx);
+	  return new_json_constant_object(ctx, first,JSON_CONSTANT_TRUE);	  
+	}
+      break;
+    case 'f':
+	if (json_ctx_consume(ctx,data,"alse") )
+	  {
+	    flush_char_buffer(ctx);
+	    return new_json_constant_object(ctx, first,JSON_CONSTANT_FALSE);
+	  }
+      break;
+    case 'n':
+      if ( json_ctx_consume(ctx,data,"ull") )
+	{
+	  flush_char_buffer(ctx);
+	  return new_json_constant_object(ctx, first,JSON_CONSTANT_NULL);
+	}
+      break;
+    }
   return NULL;
 }
 
@@ -437,7 +648,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 
   // main loop char by char, delegate to sub parser in many cases.
   while (c != 0)  {
-    if ( json_debug > 0 )
+    if ( json_debug > 2 )
       {
 	switch(c)
 	  {
@@ -492,6 +703,13 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      syntax_error(ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
 	    }
 	  object=NULL;
+	}
+      else
+	{
+	  if ( json_debug > 0 )
+	    {
+	      printf( "} hit NULL object");
+	    }
 	}
       return concrete(ctx,parent);
       break;
@@ -573,6 +791,13 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	    }
 	  object=NULL;
 	}
+      else
+	{
+	  if (json_debug > 0 )
+	    {
+	      printf("(ignore ,)");
+	    }
+	}
       break;
     case '?':
       if ( object != NULL )
@@ -615,13 +840,16 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      struct json_object * pair=new_pair_key(ctx,object);
 	      object=pair;
 	      struct json_object * value=parse_level(ctx,data,NULL);
+	      object->pair.value=value;
 	      if ( value == NULL )
 		{
 		  syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,object,parent);
 		}
-	      object->pair.value=value;
-	      // where value knows its name.
-	      value->owner=pair;
+	      else
+		{
+		  // where value knows its name.
+		  value->owner=pair;
+		}
 	      if (parent == NULL)
 		{
 		  return object;
@@ -629,7 +857,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	    }
 	  else
 	    {
-	      debug_tag('#');
+	      debug_tag(object->type);
 	      syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
 	      object=NULL;
 	    }
@@ -655,12 +883,30 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
     case '7':
     case '8':
     case '9':
-      object=parse_number_level(ctx,data,object);
+      if ( object == NULL )
+	{
+	  object=parse_number_level(ctx,c,data,object);
+	  if (parent == NULL)
+	    {
+	      return object;
+	    }
+	}
+      else
+	{
+	  if (json_debug > 0 )
+	    {
+	      printf("non NULL object for number parsing\n");
+	    }
+	}
       break;
     case 'f':
     case 't':
     case 'n':
-      object=parse_constant_level(ctx,data,object);
+      object=parse_constant_level(ctx,c,data,object);
+      if (parent == NULL)
+	{
+	  return object;
+	}
       break;
     case 0:
       // force failure programming error
@@ -701,6 +947,10 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
   // should not pushback something else than previous char. programming error
   assert( (ctx->pos>0) && (pushback == str->chars[ctx->pos-1]));
   ctx->pos--;
+  if ( json_debug > 0 )
+    {
+      printf("(pushback %c)",pushback);
+    }
 }
 
 int add_char(struct json_ctx * ctx, char token, char c)
@@ -744,7 +994,7 @@ void dump_string(struct json_ctx * ctx, struct json_object * object, struct prin
   if ( object != NULL)
     {
       struct json_string * string = &object->string;
-      if ( object->type != '$' )
+      if ( ( object->type != '$' ) && ( object->type != '0') )
 	{
 	  printf("%c%s%c",object->type,string->chars,object->type);
 	}
@@ -984,6 +1234,32 @@ void dump_growable_object(struct json_ctx * ctx, struct json_object * object, st
   dump_growable(ctx,growable, print_ctx);
 }
 
+void dump_constant_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+{
+  if ( object->constant != NULL )
+    {
+      switch(object->constant->value)
+	{
+	case JSON_CONSTANT_TRUE:
+	  printf("true");
+	  break;
+	case JSON_CONSTANT_FALSE:
+	  printf("false");
+	  break;
+	case JSON_CONSTANT_NULL:
+	  printf("null");
+	  break;
+	default:
+	  printf("ERROR constant type %c %p",object->type, print_ctx);
+	}
+    }
+  else
+    {
+      printf("ERROR constant type %c %p NULL",object->type, print_ctx);
+    }
+    
+}
+
 void dump_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if (object != NULL)
@@ -1003,6 +1279,7 @@ void dump_object(struct json_ctx * ctx, struct json_object * object, struct prin
 	case '"':
 	case '\'':
 	case '$':
+	case '0': // number is special string
 	  dump_string(ctx,object, print_ctx);
 	  break;
 	case ':':
@@ -1013,6 +1290,11 @@ void dump_object(struct json_ctx * ctx, struct json_object * object, struct prin
 	  break;
 	case '?':
 	  dump_variable_object(ctx,object, print_ctx);
+	  break;
+	case 'n':
+	case 't':
+	case 'f':
+	  dump_constant_object(ctx,object, print_ctx);
 	  break;
         default:
 	  printf("ERROR type %c %p",object->type, print_ctx);
@@ -1522,3 +1804,10 @@ struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, str
     }
   return current_object;
 }
+
+void json_flatten(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+{
+  // don't use todo here since in an external library
+  // todo("json_flatten could be done with a special print_ctx and rely on dump");
+}
+
