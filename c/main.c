@@ -18,13 +18,19 @@ struct main_context_data {
 enum als_flag {
   ALSFLAG_PUSHBACK = 1
 };
-  
+
+static int main_debug=0;
+
 char main_next_char(struct json_ctx* ctx, void * data)
 {
   struct main_context_data * main_data = (struct main_context_data *) data;
   if ( ( main_data->flags &  ALSFLAG_PUSHBACK ) != 0 )
     {
       main_data->flags ^= ALSFLAG_PUSHBACK;
+      if ( main_debug > 0 )
+	{
+	  printf("main_next_char next_char got pushedback value '%c'",main_data->last);
+	}
       return main_data->last;
     }
     
@@ -52,12 +58,21 @@ void main_pushback_char(struct json_ctx *ctx, void *data, char pushback)
   struct main_context_data * main_data = (struct main_context_data *) data;
   // should not pushback something else than previous char. programming error
   assert( (ctx->pos>0) && (pushback == main_data->last ));
+  if ( pushback != main_data->last )
+    {
+      fprintf(stderr,"assert + pushback error %c != %c \n", pushback, main_data->last);
+    }
+  else if ( main_debug > 0 )
+    {
+      printf("pushback '%c'\n", pushback);
+    }
+  
   if ( ( main_data->flags &  ALSFLAG_PUSHBACK ) != 0 )
     {
       // two pushback ... NOT SUPPORTED
       fprintf(stderr,"2 pushbacks line %i column %i\n", ctx->pos_info.line, ctx->pos_info.column);
     }    
-  main_data->flags &= ALSFLAG_PUSHBACK;
+  main_data->flags |= ALSFLAG_PUSHBACK;  
   ctx->pos--;
 }
 
@@ -167,6 +182,7 @@ int main(int argc, char ** argv)
   json_set_debug(debug);
   json_ctx_set_debug(&json_context,debug);
   json_ctx_set_debug(&json_template_context,debug);
+  main_debug=debug;
   
   if (json_filename != NULL)
     {

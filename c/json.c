@@ -78,7 +78,7 @@ void syntax_error(struct json_ctx * ctx, enum json_syntax_error erroridx, void *
   if ( ctx->debug_level > 0 )
     {
       // should do better...
-      fprintf(stderr,"Syntax error %u.\n", erroridx);
+      fprintf(stderr,"\nSyntax error %u.\n", erroridx);
       c = ctx->next_char(ctx, data);
       printf("here :^%c",c);
       while ( c!= 0)
@@ -549,6 +549,12 @@ struct json_object * parse_number_level(struct json_ctx * ctx, char first, void 
 	  if ( json_debug > 0 )
 	    {
 	      printf("(pushback end of number %c)",c);
+	      char d = ctx->next_char(ctx,data);
+	      if ( d != c )
+		{
+		  fprintf(stderr,"(pushback end of number FAILS '%c'!='%c')\n",c, d);
+		}
+	      ctx->pushback_char(ctx,data,c);
 	    }
 	  state = 9;
 	  return cut_string_object(ctx,'0');
@@ -679,7 +685,6 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
       object=parse_level(ctx,data,object); // expects to parse until '}' included
       if (parent == NULL)
 	{
-	  //ctx->pushback_char(ctx,data,'}');
 	  return object;
 	}
       break;
@@ -718,7 +723,6 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
       object=parse_level(ctx,data,object); // expects to parse until ']' included
       if (parent == NULL)
 	{
-	  // ctx->pushback_char(ctx,data,']');
 	  return object;
 	}
       break;
@@ -772,6 +776,10 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
     case ',':
       if (object !=NULL)
 	{
+	  if ( json_debug > 0 )
+	    {
+	      printf("(%c parent:%p object:%p",c,parent,object);
+	    }
 	  if (parent !=NULL) 
 	    {
 	      if ( parent->type=='G')
@@ -795,7 +803,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	{
 	  if (json_debug > 0 )
 	    {
-	      printf("(ignore ,)");
+	      printf("(ignore , NULL object)");
 	    }
 	}
       break;
@@ -949,7 +957,7 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
   ctx->pos--;
   if ( json_debug > 0 )
     {
-      printf("(pushback %c)",pushback);
+      printf("(pushback %c)",pushback);      
     }
 }
 

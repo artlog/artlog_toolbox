@@ -1,0 +1,29 @@
+{
+    "test":null,
+    "table":false,
+    "esperanza":true,
+    "a number":789.949e10,
+    "a negative number ?":-0.0000000,
+    "another number":12,
+    "menu":
+    {
+        "id": "file",
+        "value": "File",
+        "popup":
+        {
+            "menuitem":
+            [
+                { "value": "New", "onclick": "CreateNewDoc()" },
+                { "value": "Open", "onclick": "OpenDoc()" },
+                { "value": "Close", "onclick": "CloseDoc()" }
+            ]
+        },
+	"1":1 ,
+	"2":2,
+	"3":3 ,
+	"4":4
+    },
+    "testwihtoutspace":13,
+    "testme":"test"
+    
+}

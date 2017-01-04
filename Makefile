@@ -50,6 +50,7 @@ test:$(BUILD)/json
 	./$(BUILD)/json refnawak.json template.json -debug
 	diff test/parse1.json test/parse2.json
 	diff test/parse1.json test/parse3.json
+	./$(BUILD)/json test2.json
 
 $(BUILD)/json: $(BUILD)/lib/libjson.a $(objects) 
 	@echo link json objects $(objects) and libjson
