@@ -70,6 +70,10 @@ struct json_growable
   char final_type;
 };
 
+enum json_internal_flags {
+  JSON_FLAG_IGNORE=1
+};
+
 /** Parsing context of json */
 struct json_ctx
 {
@@ -87,6 +91,8 @@ struct json_ctx
   int bufpos;
   int bufsize;
   int pos;
+  int internal_flags;
+  struct json_object * error; // null if no error encountered, else set to last error
   struct json_pos_info pos_info;
   struct json_object * root;
   struct json_object * tail;
@@ -138,6 +144,12 @@ struct json_constant {
   enum json_internal_constant value;
 };
 
+struct json_info_error {
+  struct json_string string;
+  struct json_pos_info where;
+  enum json_syntax_error erroridx;
+};
+  
 /** any kind of json object */
 struct json_object {
   char type; // use to select real object type within union
@@ -155,6 +167,7 @@ struct json_object {
     struct json_pair pair; // ':'
     struct json_growable growable; // 'G'
     struct json_variable variable; // '?'
+    struct json_info_error error; // 'E'
   }; 
 };
 
@@ -173,7 +186,7 @@ void debug_tag(char c);
 
 void memory_shortage(struct json_ctx * ctx);
 
-void syntax_error(struct json_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
+struct json_object * syntax_error(struct json_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
 // create a json string object from context buffer
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype);

@@ -38,11 +38,12 @@ char main_next_char(struct json_ctx* ctx, void * data)
     {
       if ( main_data->last ==  0x0a )
 	{	  
-	  ++ctx->pos_info.column;
+	  ++ctx->pos_info.line;
+	  ctx->pos_info.column=0;
 	}
       else if ( main_data->last != 0x0c )
 	{
-	  ++ctx->pos_info.line;
+	  ++ctx->pos_info.column;
 	}
       ++ctx->pos;
       return main_data->last;
@@ -106,6 +107,8 @@ int main(int argc, char ** argv)
 
   json_context.next_char=main_next_char;
   json_context.pushback_char=main_pushback_char;
+  json_context.pos_info.line=0;
+  json_context.pos_info.column=0;
   
   /* tabs
   print_context.do_indent = 1;
@@ -117,7 +120,7 @@ int main(int argc, char ** argv)
   print_context.do_indent = 2;
   print_context.indent = 0;
   print_context.s_indent = " ";
-
+  
   /* flat canonical
   print_context.do_indent = 0;
   print_context.indent = 0;
@@ -133,12 +136,14 @@ int main(int argc, char ** argv)
 
   json_template_context.next_char=main_next_char;
   json_template_context.pushback_char=main_pushback_char;
+  json_template_context.pos_info.line=0;
+  json_template_context.pos_info.column=0;
   
   // two spaces
   print_template_context.do_indent = 0;
   print_template_context.indent = 0;
   print_template_context.s_indent = "";
-
+  
   if ( argc > 1 )
     {
       for (int i =1; i< argc ; i++)

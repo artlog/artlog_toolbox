@@ -72,29 +72,63 @@ void memory_shortage(struct json_ctx * ctx)
   exit(2);
 }
 
-void syntax_error(struct json_ctx * ctx, enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent)
+struct json_object * new_json_error(struct json_ctx * ctx, enum json_syntax_error erroridx)
 {
-  char c=0;  
+  struct json_object * object = malloc(sizeof(struct json_object));
+  if (object != NULL)
+    {
+      object->type='E';
+      memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
+      memcpy(&object->error.where,&ctx->pos_info,sizeof(object->error.where));      
+      object->error.erroridx=erroridx;
+    }
+  else
+    {
+      memory_shortage(ctx);
+    }
+  return object;
+}
+
+struct json_object * syntax_error(struct json_ctx * ctx, enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent)
+{
+  char c=0;
+  int max_buff = 1024;
+  int buf_idx=0;
+  char * err_buf = malloc(max_buff);
+  if ( err_buf == NULL )
+    {
+      memory_shortage(ctx);
+    }
+  struct json_object * err_object = new_json_error(ctx,erroridx);
+  c = ctx->next_char(ctx, data);
+  // capture some context ( 5 lines, cumulated < max_buff chars )
+  // eat all to end => only one error will be captured.
+  while ( c!= 0)
+    {
+      if ( (ctx->pos_info.line < err_object->pos_info.line + 5 ) && ( buf_idx < max_buff ) )
+	{	  
+	  err_buf[buf_idx]=c;
+	  buf_idx ++;
+	}      
+      c = ctx->next_char(ctx, data);
+    }
+  err_object->error.string.chars=err_buf;
+  // always null terminated
+  if ( buf_idx >= max_buff )
+    {
+      buf_idx=max_buff-1;
+    }
+  err_buf[buf_idx]=0;  
+  err_object->error.string.length=buf_idx;  
   if ( ctx->debug_level > 0 )
     {
-      // should do better...
-      fprintf(stderr,"\nSyntax error %u.\n", erroridx);
-      c = ctx->next_char(ctx, data);
-      printf("here :^%c",c);
-      while ( c!= 0)
-	{
-	  printf("%c",c);
-	  c = ctx->next_char(ctx, data);
-	}
+      dump_object(ctx,err_object,NULL);
       printf("while parsing object :\n");
       dump_object(ctx,object,NULL);
       printf("\n parent :\n");
       dump_object(ctx,parent,NULL);
     }
-  else
-    {
-      printf("syntax error %u\n",erroridx);
-    }
+  return err_object;
 }
 
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
@@ -612,12 +646,12 @@ struct json_object * new_json_constant_object(struct json_ctx * ctx, char t, enu
 
 struct json_object * parse_constant_level(struct json_ctx * ctx, char first, void * data, struct json_object * parent)
 {
-  ctx->add_char(ctx,first,first);
   switch(first)
     {
     case 't':  
       if ( json_ctx_consume(ctx,data,"rue") )
 	{
+	  ctx->add_char(ctx,first,first);
 	  flush_char_buffer(ctx);
 	  return new_json_constant_object(ctx, first,JSON_CONSTANT_TRUE);	  
 	}
@@ -625,6 +659,7 @@ struct json_object * parse_constant_level(struct json_ctx * ctx, char first, voi
     case 'f':
 	if (json_ctx_consume(ctx,data,"alse") )
 	  {
+	    ctx->add_char(ctx,first,first);
 	    flush_char_buffer(ctx);
 	    return new_json_constant_object(ctx, first,JSON_CONSTANT_FALSE);
 	  }
@@ -632,12 +667,17 @@ struct json_object * parse_constant_level(struct json_ctx * ctx, char first, voi
     case 'n':
       if ( json_ctx_consume(ctx,data,"ull") )
 	{
+	  ctx->add_char(ctx,first,first);
 	  flush_char_buffer(ctx);
 	  return new_json_constant_object(ctx, first,JSON_CONSTANT_NULL);
 	}
       break;
+    default:
+      ctx->pushback_char(ctx,data,first);
+      return syntax_error(ctx,JSON_ERROR_CONSTANT_INVALID,data,NULL,parent);
     }
-  return NULL;
+  ctx->pushback_char(ctx,data,first);
+  return syntax_error(ctx,JSON_ERROR_CONSTANT_ERROR,data,NULL,parent);
 }
 
 /**
@@ -678,254 +718,303 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	    printf("%c",c);
 	  }
       }
+
+    // ignored characters.
     switch(c)
-    {
-    case '{': 
-      JSON_OPEN(ctx,parenthesis,object);
-      object=parse_level(ctx,data,object); // expects to parse until '}' included
-      if (parent == NULL)
-	{
-	  return object;
-	}
-      break;
-    case '}':
-      JSON_CLOSE(ctx,parenthesis);
-      if (object !=NULL)
-	{
-	  if ((parent != NULL) && ( parent->type=='G'))
-	    {
-	      if ( parent->growable.final_type == '{')
-		{
-		  add_to_growable(ctx,&parent->growable,object);
-		}
-	      else
-		{
-		  syntax_error(ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
-		}
-	    }
-	  else
-	    {
-	      syntax_error(ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
-	    }
-	  object=NULL;
-	}
-      else
-	{
-	  if ( json_debug > 0 )
-	    {
-	      printf( "} hit NULL object");
-	    }
-	}
-      return concrete(ctx,parent);
-      break;
-    case '[':
-      JSON_OPEN(ctx,braket,object);
-      object=parse_level(ctx,data,object); // expects to parse until ']' included
-      if (parent == NULL)
-	{
-	  return object;
-	}
-      break;
-    case ']':
-      JSON_CLOSE(ctx,braket);
-      if (object !=NULL)
-	{
-	  if ( parent !=NULL ) 
-	    {
-	      if (parent->type=='G')
-		{
-		  if ( parent->growable.final_type == '[')
-		    {
-		      add_to_growable(ctx,&parent->growable,object);
-		    }
-		  else
-		    {
-		      syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
-		    }
-		}
-	      else
-		{
-		  syntax_error(ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
-		}
-	    }
-	  else
-	    {
-	      syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
-	    }
-	  object=NULL;
-	}
-      return concrete(ctx,parent);
-      break;
-    case '"':
-      JSON_TOGGLE(ctx,dquote);
-      if ((parent != NULL) && (parent->type == '"'))
-	{
-	  // can't parse a string within a string
-	  syntax_error(ctx,JSON_ERROR_STRING_IN_STRING, data,object,parent);
-	}
-      else
-	{
-	  object=parse_dquote_level(ctx,data,parent);
-	  if (parent == NULL)
-	    {
-	      return object;
-	    }
-	  // else should be handled by ':', ',' or '}' or ']' ie any close.
-	}
-      break;
-    case ',':
-      if (object !=NULL)
-	{
-	  if ( json_debug > 0 )
-	    {
-	      printf("(%c parent:%p object:%p",c,parent,object);
-	    }
-	  if (parent !=NULL) 
-	    {
-	      if ( parent->type=='G')
-		{
-		  add_to_growable(ctx,&parent->growable,object);
-		}
-	      else
-		{
-		  syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
-		}
-	    }
-	  else
-	    {
-	      // special case if parent is NULL then it is up to caller to retrieve parent to add this result into it.
-	      ctx->pushback_char(ctx,data,c);
-	      return object;
-	    }
-	  object=NULL;
-	}
-      else
-	{
-	  if (json_debug > 0 )
-	    {
-	      printf("(ignore , NULL object)");
-	    }
-	}
-      break;
-    case '?':
-      if ( object != NULL )
-	{
-	  syntax_error(ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
-	}
-      else
-	{
-	  debug_tag('?');
-	  JSON_TOGGLE(ctx,variable);
-	  struct json_object * variable_name = parse_variable_level(ctx,data,parent);	  
-	  if (variable_name == NULL )
-	    {
-	      syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
-	    }
-	  else
-	    {
-	      // need to set type to '$' due to parse_variable_level that is defined for '?'
-	      variable_name->type='$';
-	      if ( json_debug > 0 )
-		{
-		  printf("new variable key %p\n", variable_name);
-		}
-	      object = new_variable(ctx,variable_name);
-	      if (parent == NULL)
-		{
-		  return object;
-		}
-	      // else should be handled by ':', ',' or '}' or ']' ie any close.	      
-	    }
-	}
-      break;
-    case ':':
-      // object pair : replace current object with a pair...
-      // previous should be a string
-      if (object !=NULL)
-	{
-	  if (object->type == '\"') 
-	    {
-	      struct json_object * pair=new_pair_key(ctx,object);
-	      object=pair;
-	      struct json_object * value=parse_level(ctx,data,NULL);
-	      object->pair.value=value;
-	      if ( value == NULL )
-		{
-		  syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,object,parent);
-		}
-	      else
-		{
-		  // where value knows its name.
-		  value->owner=pair;
-		}
-	      if (parent == NULL)
-		{
-		  return object;
-		}
-	    }
-	  else
-	    {
-	      debug_tag(object->type);
-	      syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
-	      object=NULL;
-	    }
-	}
-      else
-	{
-	  debug_tag('#');
-	  syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
-	}
-      break;
-    case '\'':
-      JSON_TOGGLE(ctx,squote);
-      object=parse_squote_level(ctx,data,object);
-      break;
-    case '-':
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      if ( object == NULL )
-	{
-	  object=parse_number_level(ctx,c,data,object);
-	  if (parent == NULL)
-	    {
-	      return object;
-	    }
-	}
-      else
-	{
-	  if (json_debug > 0 )
-	    {
-	      printf("non NULL object for number parsing\n");
-	    }
-	}
-      break;
-    case 'f':
-    case 't':
-    case 'n':
-      object=parse_constant_level(ctx,c,data,object);
-      if (parent == NULL)
-	{
-	  return object;
-	}
-      break;
-    case 0:
-      // force failure programming error
-      assert(c!=0);
-      break;
-    default:
-      if ( ctx->debug_level > 0 )
-	{
-	  printf("ignore '%c'\n", c);
-	}
-    }
+      {
+      case ' ':
+      case 0x0a:
+      case 0x0c:
+      case 9: // tab
+	// ignore
+	if ( ctx->debug_level > 0 )
+	  {
+	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
+	      {
+		printf("<ignore %c", c);
+	      }
+
+	    else
+	      {
+		printf("%c", c);
+	      }
+	  }
+	ctx->internal_flags |= JSON_FLAG_IGNORE;
+	break;
+      default:
+	if ( ctx->debug_level > 0 )
+	  {
+	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) != 0 )
+	      {
+		printf("ignore>");
+	      }
+	  }
+	ctx->internal_flags &= !JSON_FLAG_IGNORE;
+      };
+
+    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
+      {
+	switch(c)
+	  {
+	  case '{': 
+	    JSON_OPEN(ctx,parenthesis,object);
+	    object=parse_level(ctx,data,object); // expects to parse until '}' included
+	    if (parent == NULL)
+	      {
+		return object;
+	      }
+	    break;
+	  case '}':
+	    JSON_CLOSE(ctx,parenthesis);
+	    if (object !=NULL)
+	      {
+		if ((parent != NULL) && ( parent->type=='G'))
+		  {
+		    if ( parent->growable.final_type == '{')
+		      {
+			add_to_growable(ctx,&parent->growable,object);
+		      }
+		    else
+		      {
+			syntax_error(ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
+		      }
+		  }
+		else
+		  {
+		    syntax_error(ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
+		  }
+		object=NULL;
+	      }
+	    else
+	      {
+		if ( json_debug > 0 )
+		  {
+		    printf( "} hit NULL object");
+		  }
+	      }
+	    return concrete(ctx,parent);
+	    break;
+	  case '[':
+	    JSON_OPEN(ctx,braket,object);
+	    object=parse_level(ctx,data,object); // expects to parse until ']' included
+	    if (parent == NULL)
+	      {
+		return object;
+	      }
+	    break;
+	  case ']':
+	    JSON_CLOSE(ctx,braket);
+	    if (object !=NULL)
+	      {
+		if ( parent !=NULL ) 
+		  {
+		    if (parent->type=='G')
+		      {
+			if ( parent->growable.final_type == '[')
+			  {
+			    add_to_growable(ctx,&parent->growable,object);
+			  }
+			else
+			  {
+			    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
+			  }
+		      }
+		    else
+		      {
+			syntax_error(ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
+		      }
+		  }
+		else
+		  {
+		    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
+		  }
+		object=NULL;
+	      }
+	    return concrete(ctx,parent);
+	    break;
+	  case '"':
+	    JSON_TOGGLE(ctx,dquote);
+	    if ((parent != NULL) && (parent->type == '"'))
+	      {
+		// can't parse a string within a string
+		syntax_error(ctx,JSON_ERROR_STRING_IN_STRING, data,object,parent);
+	      }
+	    else
+	      {
+		object=parse_dquote_level(ctx,data,parent);
+		if (parent == NULL)
+		  {
+		    return object;
+		  }
+		// else should be handled by ':', ',' or '}' or ']' ie any close.
+	      }
+	    break;
+	  case ',':
+	    if (object !=NULL)
+	      {
+		if ( json_debug > 0 )
+		  {
+		    printf("(%c parent:%p object:%p",c,parent,object);
+		  }
+		if (parent !=NULL) 
+		  {
+		    if ( parent->type=='G')
+		      {
+			add_to_growable(ctx,&parent->growable,object);
+		      }
+		    else
+		      {
+			syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
+		      }
+		  }
+		else
+		  {
+		    // special case if parent is NULL then it is up to caller to retrieve parent to add this result into it.
+		    ctx->pushback_char(ctx,data,c);
+		    return object;
+		  }
+		object=NULL;
+	      }
+	    else
+	      {
+		if (json_debug > 0 )
+		  {
+		    printf("(ignore , NULL object)");
+		  }
+	      }
+	    break;
+	  case '?':
+	    if ( object != NULL )
+	      {
+		syntax_error(ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
+	      }
+	    else
+	      {
+		debug_tag('?');
+		JSON_TOGGLE(ctx,variable);
+		struct json_object * variable_name = parse_variable_level(ctx,data,parent);	  
+		if (variable_name == NULL )
+		  {
+		    syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
+		  }
+		else
+		  {
+		    // need to set type to '$' due to parse_variable_level that is defined for '?'
+		    variable_name->type='$';
+		    if ( json_debug > 0 )
+		      {
+			printf("new variable key %p\n", variable_name);
+		      }
+		    object = new_variable(ctx,variable_name);
+		    if (parent == NULL)
+		      {
+			return object;
+		      }
+		    // else should be handled by ':', ',' or '}' or ']' ie any close.	      
+		  }
+	      }
+	    break;
+	  case ':':
+	    // object pair : replace current object with a pair...
+	    // previous should be a string
+	    if (object !=NULL)
+	      {
+		if (object->type == '\"') 
+		  {
+		    struct json_object * pair=new_pair_key(ctx,object);
+		    object=pair;
+		    struct json_object * value=parse_level(ctx,data,NULL);
+		    object->pair.value=value;
+		    if ( value == NULL )
+		      {
+			syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,object,parent);
+		      }
+		    else
+		      {
+			// where value knows its name.
+			value->owner=pair;
+		      }
+		    if (parent == NULL)
+		      {
+			return object;
+		      }
+		  }
+		else
+		  {
+		    debug_tag(object->type);
+		    syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
+		    object=NULL;
+		  }
+	      }
+	    else
+	      {
+		debug_tag('#');
+		syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
+	      }
+	    break;
+	  case '\'':
+	    JSON_TOGGLE(ctx,squote);
+	    object=parse_squote_level(ctx,data,object);
+	    break;
+	  case '-':
+	  case '0':
+	  case '1':
+	  case '2':
+	  case '3':
+	  case '4':
+	  case '5':
+	  case '6':
+	  case '7':
+	  case '8':
+	  case '9':
+	    if ( object == NULL )
+	      {
+		object=parse_number_level(ctx,c,data,object);
+		if (parent == NULL)
+		  {
+		    return object;
+		  }
+	      }
+	    else
+	      {
+		ctx->pushback_char(ctx,data,c);
+		return syntax_error(ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
+	      }
+	    break;
+	  case 'f':
+	  case 't':
+	  case 'n':
+	    if ( object == NULL )
+	      {
+		object=parse_constant_level(ctx,c,data,object);
+		if (parent == NULL)
+		  {
+		    return object;
+		  }
+	      }
+	    else
+	      {
+		ctx->pushback_char(ctx,data,c);
+		return syntax_error(ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
+	      }
+	    break;
+	  case 0:
+	    // force failure programming error
+	    assert(c!=0);
+	    break;
+	  default:
+	    ctx->pushback_char(ctx,data,c);
+	    if ( object != NULL )
+	      {
+		return syntax_error(ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
+	      }
+	    else
+	      {
+		return syntax_error(ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
+	      }
+	  }
+      }
+    
     c=ctx->next_char(ctx, data);
   }
   
@@ -1268,6 +1357,22 @@ void dump_constant_object(struct json_ctx * ctx, struct json_object * object, st
     
 }
 
+void dump_error_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+{
+  if (( object != NULL) && (object->error.string.chars != NULL ))
+    {
+      printf("syntax error %u (line:%i,column:%i)\n%.*s\n",
+	     object->error.erroridx,
+	     object->error.where.line,object->error.where.column,
+	     object->error.string.length,object->error.string.chars
+	     );
+    }
+  else
+    {
+      printf("syntax error object is corrupted %p\n", object);
+    }
+}
+
 void dump_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if (object != NULL)
@@ -1303,6 +1408,9 @@ void dump_object(struct json_ctx * ctx, struct json_object * object, struct prin
 	case 't':
 	case 'f':
 	  dump_constant_object(ctx,object, print_ctx);
+	  break;
+	case 'E':
+	  dump_error_object(ctx,object, print_ctx);
 	  break;
         default:
 	  printf("ERROR type %c %p",object->type, print_ctx);
