@@ -158,6 +158,7 @@ struct json_object {
   struct json_pos_info pos_info;
   struct json_object * owner; // parent owner used to construct naming.
   int index; // index in parent if a list
+  void * private_data; // can be used to attach to a json_object some internal data.
   union {
     struct json_constant * constant; // 't' true 'f' false 'n' null
     // struct json_number number; // '0' in fact this is string with type '0'
