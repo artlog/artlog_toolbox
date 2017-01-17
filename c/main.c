@@ -2,80 +2,13 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "json.h"
+#include "json_import_internal.h"
 
 /**
 a complicated json stream ( one char ahead ) parser 
 **/
 
-/** fully rely on stream buffering */
-struct main_context_data {
-  char last;
-  FILE * f;
-  int flags;
-};
-
-enum als_flag {
-  ALSFLAG_PUSHBACK = 1
-};
-
 static int main_debug=0;
-
-char main_next_char(struct json_ctx* ctx, void * data)
-{
-  struct main_context_data * main_data = (struct main_context_data *) data;
-  if ( ( main_data->flags &  ALSFLAG_PUSHBACK ) != 0 )
-    {
-      main_data->flags ^= ALSFLAG_PUSHBACK;
-      if ( main_debug > 0 )
-	{
-	  printf("main_next_char next_char got pushedback value '%c'",main_data->last);
-	}
-      return main_data->last;
-    }
-    
-  if ( fread(&main_data->last, 1, 1, main_data->f) == 1 )
-    {
-      if ( main_data->last ==  0x0a )
-	{	  
-	  ++ctx->pos_info.line;
-	  ctx->pos_info.column=0;
-	}
-      else if ( main_data->last != 0x0c )
-	{
-	  ++ctx->pos_info.column;
-	}
-      ++ctx->pos;
-      return main_data->last;
-    }
-  else
-    {
-      return 0;
-    }
-}
-
-void main_pushback_char(struct json_ctx *ctx, void *data, char pushback)
-{
-  struct main_context_data * main_data = (struct main_context_data *) data;
-  // should not pushback something else than previous char. programming error
-  assert( (ctx->pos>0) && (pushback == main_data->last ));
-  if ( pushback != main_data->last )
-    {
-      fprintf(stderr,"assert + pushback error %c != %c \n", pushback, main_data->last);
-    }
-  else if ( main_debug > 0 )
-    {
-      printf("pushback '%c'\n", pushback);
-    }
-  
-  if ( ( main_data->flags &  ALSFLAG_PUSHBACK ) != 0 )
-    {
-      // two pushback ... NOT SUPPORTED
-      fprintf(stderr,"2 pushbacks line %i column %i\n", ctx->pos_info.line, ctx->pos_info.column);
-    }    
-  main_data->flags |= ALSFLAG_PUSHBACK;  
-  ctx->pos--;
-}
 
 void usage()
 {
@@ -101,15 +34,10 @@ int main(int argc, char ** argv)
   struct json_ctx json_context;
   struct print_ctx print_context;
 
-  struct main_context_data data;
+  struct json_import_context_data data;
 
-  json_context_initialize( &json_context);
+  json_import_context_initialize( &json_context);
 
-  json_context.next_char=main_next_char;
-  json_context.pushback_char=main_pushback_char;
-  json_context.pos_info.line=0;
-  json_context.pos_info.column=0;
-  
   /* tabs
   print_context.do_indent = 1;
   print_context.indent = 0;
@@ -130,15 +58,10 @@ int main(int argc, char ** argv)
   struct json_ctx json_template_context;
   struct print_ctx print_template_context;
 
-  struct main_context_data template_data;
+  struct json_import_context_data template_data;
 
-  json_context_initialize( &json_template_context);
+  json_import_context_initialize( &json_template_context);
 
-  json_template_context.next_char=main_next_char;
-  json_template_context.pushback_char=main_pushback_char;
-  json_template_context.pos_info.line=0;
-  json_template_context.pos_info.column=0;
-  
   // two spaces
   print_template_context.do_indent = 0;
   print_template_context.indent = 0;

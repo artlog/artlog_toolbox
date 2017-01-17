@@ -6,7 +6,7 @@ CPPFLAGS=-g
 
 BUILD=build
 
-libsrc=c/json.c
+libsrc=c/json.c c/json_import_internal.c
 src=c/main.c
 libraries=json alsave altest allist aldev
 
@@ -17,11 +17,13 @@ libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 # default target is to build libraries
 libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
+all: libs test
+
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
-$(BUILD)/lib/libjson.a: $(BUILD)/obj/json.o  $(BUILD)/include/json.h $(BUILD)/include/json_errors.h
-	ar rccs $@ $<
+$(BUILD)/lib/libjson.a: $(BUILD)/obj/json.o  $(BUILD)/obj/json_import_internal.o $(BUILD)/include/json.h $(BUILD)/include/json_errors.h $(BUILD)/include/json_import_internal.h
+	ar rccs $@ $(BUILD)/obj/json.o $(BUILD)/obj/json_import_internal.o
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
 	ar rccs $@ $<
@@ -52,7 +54,7 @@ test:$(BUILD)/json
 	diff test/parse1.json test/parse3.json
 	./$(BUILD)/json test2.json
 
-$(BUILD)/json: $(BUILD)/lib/libjson.a $(objects) 
+$(BUILD)/json: $(BUILD)/lib/libjson.a $(objects)
 	@echo link json objects $(objects) and libjson
 	$(LD) -o $@ $(LDFLAGS) $(objects) -L$(BUILD)/lib -Wl,-Bstatic -ljson -Wl,-Bdynamic
 
@@ -68,14 +70,14 @@ $(BUILD)/include:
 $(BUILD)/include/%.h: c/%.h $(BUILD)/include
 	cp $< $@
 
-$(BUILD)/obj/%.o: c/%.c $(BUILD)/include/json.h $(BUILD)/obj
+$(BUILD)/obj/%.o: c/%.c $(BUILD)/obj
 	@echo compile $< 
 	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 clean:
 	rm -rf $(BUILD)
 
-.PHONY:clean test libs
+.PHONY:clean test libs all
 
 # needed to keep those files within include after make ( remove unused )
 .PRECIOUS: $(BUILD)/include/%.h

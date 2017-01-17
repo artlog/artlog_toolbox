@@ -1927,3 +1927,48 @@ void json_flatten(struct json_ctx * ctx, struct json_object * object, struct pri
   // todo("json_flatten could be done with a special print_ctx and rely on dump");
 }
 
+int json_get_int(struct json_object * object )
+{
+  int cumul = 0;
+  int result = 0;
+  int negative = 0;
+  if ( ( object != NULL ) && ( object->type = '0' ) )
+    {
+      struct json_string * number = &object->string;
+      if ( number->chars != NULL )
+	{
+	  int i =0;
+	  if ( number->chars[0] == '-' )
+	    {
+	      negative=1;
+	      i=1;	      
+	    }
+	  for (; i < number->length ; i++)
+	    {
+	      char c = number->chars[i];
+	      if ( ( c >= '0' ) && ( c <= '9' ) )
+		{
+		  cumul = result*10 + (c - '0');
+		  if ( cumul < result )
+		    {
+		      // overflow.
+		      break;
+		    }
+		  else
+		    {
+		      result=cumul;
+		    }		      
+		}
+	      else
+		{
+		  break;
+		}
+	    }
+	  if (negative)
+	    {
+	      result=-result;
+	    }
+	}
+    }
+  return result;
+}

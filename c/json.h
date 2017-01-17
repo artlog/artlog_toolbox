@@ -310,4 +310,11 @@ struct json_walk_leaf_callbacks  {
   struct json_object * template;
 };
 
+/**
+  convert a json_object into an int if json object is already recognized as a number
+  if object represent another number than an int, resultcan be whatever.
+  else return 0
+*/
+int json_get_int(struct json_object * object );
+
 #endif
