@@ -8,7 +8,7 @@ BUILD=build
 
 libsrc=c/json.c c/json_import_internal.c
 src=c/main.c
-libraries=json alsave altest allist aldev
+libraries=json alsave altest allist aldev alhash
 
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
@@ -17,7 +17,7 @@ libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 # default target is to build libraries
 libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
-all: libs test
+all: libs tests
 
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
@@ -34,6 +34,9 @@ $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test
 $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/todo.o $(BUILD)/include/todo.h
 	ar rccs $@ $<
 
+$(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/include/alhash.h
+	ar rccs $@ $<
+
 $(BUILD)/checksave: $(BUILD)/obj/save_main.o $(BUILD)/lib/libalsave.a
 	$(LD) -o $@ $(LDFLAGS) $(BUILD)/obj/save_main.o -L$(BUILD)/lib -Wl,-Bstatic -lalsave -Wl,-Bdynamic
 
@@ -43,20 +46,28 @@ $(objects): | $(BUILD)/obj
 $(libobjects): | $(BUILD)/lib
 
 
-test:$(BUILD)/json
-	mkdir -p $@
-	./$(BUILD)/json test.json >test/parse1.json
-	./$(BUILD)/json parse1.json >test/parse2.json
-	./$(BUILD)/json refnawak.json >test/parse3.json
-	./$(BUILD)/json test.json refnawak.json
-	./$(BUILD)/json refnawak.json template.json -debug
+tests: testjson testhash
+
+
+testhash: $(BUILD)/hash
+	$^ alhashsample/sample2.txt
+
+$(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -Wl,-Bdynamic
+
+testjson:$(BUILD)/json
+	$^ test.json >test/parse1.json
+	$^ parse1.json >test/parse2.json
+	$^ refnawak.json >test/parse3.json
+	$^ test.json refnawak.json
+	$^ refnawak.json template.json -debug
 	diff test/parse1.json test/parse2.json
 	diff test/parse1.json test/parse3.json
-	./$(BUILD)/json test2.json
+	$^ test2.json
 
-$(BUILD)/json: $(BUILD)/lib/libjson.a $(objects)
+$(BUILD)/json: $(objects)
 	@echo link json objects $(objects) and libjson
-	$(LD) -o $@ $(LDFLAGS) $(objects) -L$(BUILD)/lib -Wl,-Bstatic -ljson -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -ljson -Wl,-Bdynamic
 
 $(BUILD)/obj:
 	mkdir -p $@
@@ -77,7 +88,7 @@ $(BUILD)/obj/%.o: c/%.c $(BUILD)/obj
 clean:
 	rm -rf $(BUILD)
 
-.PHONY:clean test libs all
+.PHONY:clean test libs all tests testjson testhash
 
 # needed to keep those files within include after make ( remove unused )
 .PRECIOUS: $(BUILD)/include/%.h

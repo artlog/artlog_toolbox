@@ -1,0 +1,65 @@
+#ifndef __ALHASH_HEADER__
+#define __ALHASH_HEADER__
+
+/**
+a fixed hash table
+you can add and retrieve keyed values in it ( but not removal ).
+**/
+
+// minimal hash
+#define ALHASH_BUCKET_SIZE 127
+
+/** data pointing on a contiguous block of length bytes */
+struct alhash_datablock {
+  int length; // > 0 , EMPTY BLOCK NOT VALID
+  void * data; // NULL value NOT VALID.
+};
+  
+struct alhash_entry {
+  long hash_key;
+  struct alhash_datablock key;
+  struct alhash_datablock value;
+  // another entry at the very same place in the bucket of the hash
+  // this is a ring, ie a loop.
+  struct alhash_entry * collision_ring; 
+};
+
+// at least ALHASH_BUCKET_SIZE , in fact it will dynamically allocated at table init and can contain really more entries.
+struct alhash_bucket {
+  struct alhash_entry entries[ALHASH_BUCKET_SIZE];
+};
+
+struct alhash_table {
+  int bucket_size; // number of possible entries in this table
+  int used; // number of entries in  use
+  struct alhash_bucket * inner;
+  long (*alhash_func) (void * value, int length);
+};
+
+long alhash_hash_string(void * string, int length);
+
+/**
+Warning : does not check for duplicates
+if object is already there, it will be read twice, use alhash_get_entry first.
+ */
+struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_datablock * key, struct alhash_datablock * value);
+
+/**
+return entry owning same key content ( content of key->data over length bytes)
+ */
+struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key);
+
+// length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
+void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length));
+
+// walk entry and all collisions.
+// if callback returns a value != 0 it stops.
+// return number of elements accepted by callback ( for which callback return value was 0 ).
+int alhash_walk_collisions(struct alhash_entry * entry, int (*callback) (struct alhash_entry * entry, void * data, int index), void * data);
+
+// walk table in order of buckets entries
+// if callback returns a value != 0 it stops.
+// return number of elements accepted by callback ( for which callback return value was 0 ).
+int alhash_walk_table( struct alhash_table * table, int (*callback) (struct alhash_entry * entry, void * data, int index), void * data);
+
+#endif
