@@ -1,5 +1,9 @@
 /**
-this is allist contract 
+ This is allist contract 
+ drive tests on allist structure
+ plays with primes, implementation limited to long long primes.
+
+ run it with -help option to get usage.
 **/
 
 #include <stdlib.h>
@@ -16,23 +20,59 @@ this is allist contract
 
 #define PRIMCOUNT 25
 
-#define NUMBERCOUNT 200000
-
-int test_debug=1;
-int shrinkit=0;
-
+// preallcoated primes
 int prims[PRIMCOUNT] = { 2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97};
 
-int glob_numbercount=NUMBERCOUNT;
+struct _exec_params {
+  // set debugging
+  int test_debug;
+  // shrink result
+  int shrinkit;
+  int decomp;
+};
 
-struct allistcontext * context = NULL;
-struct allistelement * elementp[NUMBERCOUNT];
+struct _prime_context {
+  struct _exec_params params;
+  // global prime list to be built
+  struct allistof * primelp;  
+  // upper bound of integer set in which we want to extract primes.
+  int glob_numbercount;
+  struct allistcontext * context;
+  // decomposition of primes, last table [ will be over-allocated in create_prime_context(...)]
+  struct allistelement * elementp[PRIMCOUNT];
+};
 
-struct allistof * primelp = NULL;
+// will be created by create_prime_context
+struct _prime_context * prime_context = NULL;
 
+/**
+  numbercount is the count of numbers
+**/
+struct _prime_context * create_prime_context( int numbercount )
+{
+  struct _prime_context * prime_contextp = calloc( 1, sizeof(struct _prime_context) + ( ( numbercount > PRIMCOUNT ) ? ( numbercount - PRIMCOUNT ) * sizeof(struct listelement *) : 0) );
+  // calloc set everything to 0.
+  if ( prime_contextp != NULL )
+    {
+      prime_contextp->glob_numbercount = (numbercount > PRIMCOUNT) ? numbercount : PRIMCOUNT;
+    }
+  else
+    {
+      exit(1);
+    }    
+  return prime_contextp;  
+}
 
+void set_prime_context_params( struct _prime_context * prime_contextp, struct _exec_params * params )
+{
+  memcpy(&prime_contextp->params, params, sizeof(prime_contextp->params));
+}
 
-int test0()
+/**
+return 0 if all tests of indexset are ok
+else return a negative number related to error
+**/
+int test_indexset()
 {
   struct indexset set;
   int max = INDEXSET_COUNT;
@@ -114,55 +154,58 @@ int test0()
 /**
  list allocation test
  */
-int test1()
+int test_allistcontext_allocation()
 {
   struct allistof * listof;
   int step=1;
 
   // add one at end for list of primes
-  context=new_allistcontext(glob_numbercount+1);
-  if ( context != NULL )
+  prime_context->context=new_allistcontext(prime_context->glob_numbercount+1);
+  if ( prime_context->context != NULL )
     {
       ++step;
-      primelp=new_allistof(context);
-      // first is for primes
-      if (primelp == NULL)
-	{
-	  if (test_debug) {fprintf(stderr, "allocation of listof for primes failed\n");}
-	  return -step;
-	}
 
-      for (int i=0; i< glob_numbercount; i++)
+      for (int i=0; i< prime_context->glob_numbercount; i++)
 	{
-	  listof=new_allistof(context);
+	  listof=new_allistof(prime_context->context);
 	  ++step;
 	  if ( listof != NULL )
 	    {
-	      if (listof->membership_id != (i+1))
+	      // membership_id is number
+	      if (listof->membership_id != i)
 		{
-		  if (test_debug) {fprintf(stderr,"unexpected membership_id %i != %i should grow linearly\n",listof->membership_id,(i+1));}
+		  if (prime_context->params.test_debug) {fprintf(stderr,"unexpected membership_id %i != %i should grow linearly\n",listof->membership_id,(i+1));}
 		  return -step;
 		}
-	      struct allistof * contextlistof = allistcontext_get_membership(context, (i+1));
+	      struct allistof * contextlistof = allistcontext_get_membership(prime_context->context, i);
 	      ++step;
 	      if (contextlistof != listof)
 		{
-		  if (test_debug) {fprintf(stderr,"context membership %i %p does not match with created membership %p \n",i,contextlistof,listof);}
+		  if (prime_context->params.test_debug) {fprintf(stderr,"context membership %i %p does not match with created membership %p \n",i,contextlistof,listof);}
 		  return -step;
 		}
 	    }
 	  else
 	    {
-	      if (test_debug) {fprintf(stderr,"allocation failure of listof %i\n",i);}
+	      if (prime_context->params.test_debug) {fprintf(stderr,"allocation failure of listof %i\n",i);}
 	      return -step;
 	    }
 	}
       ++step;
-      listof=new_allistof(context);
+      // membership glob_numbercount is list of primes.
+      prime_context->primelp=new_allistof(prime_context->context);
+      // first is for primes
+      if (prime_context->primelp == NULL)
+	{
+	  if (prime_context->params.test_debug) {fprintf(stderr, "allocation of listof for primes failed\n");}
+	  return -step;
+	}
+
+      listof=new_allistof(prime_context->context);
       // should fail since above reservation
       if (listof != NULL)
 	{
-	  if (test_debug) {fprintf(stderr, "allocation of listof above context reservation\n");}
+	  if (prime_context->params.test_debug) {fprintf(stderr, "allocation of listof above context reservation\n");}
 	  return -step;
 	}
     }
@@ -170,29 +213,33 @@ int test1()
     {
       return -step;
     }
+
   return 0;
 }
 
 struct test2_factor
 {
-  int value;
+  int value; // int and not long long ?
   struct allistelement * element;
   int error;
 };
 
+/**
+callback used in foreach  to add a factor into a list.
+ **/
 void * test2_add_factor (struct allistof * list, struct allistelement * element, struct allistelement * next, int count, void * param)
 {
   struct test2_factor * factor = (struct test2_factor *) param;
   int prime = (unsigned long long) element->data;
-  if ( list != primelp )
+  if ( list != prime_context->primelp )
     {
       fprintf(stderr,"[ERROR] walking non  prime list to get factors \n");
       return NULL;
     }
   if ( factor != NULL)
     {
-      struct allistof * primelist = allistcontext_get_membership(context,prime+1); // get (prime+1)th element in context.
-      if (primelist == primelp)
+      struct allistof * primelist = allistcontext_get_membership(prime_context->context,prime); // get (prime)th element in context.
+      if (primelist == prime_context->primelp)
 	{
 	  fprintf(stderr,"[ERROR] factor list is prime list \n");
 	  return NULL;
@@ -205,17 +252,17 @@ void * test2_add_factor (struct allistof * list, struct allistelement * element,
 	    }
 	  if ( factor->value % prime == 0 )
 	    {
-	      if (test_debug > 1) {fprintf(stderr,"factor %i prime %i count %i list %p\n", factor->value, prime, primelist->count, primelist);}
+	      if (prime_context->params.test_debug > 1) {fprintf(stderr,"factor %i prime %i count %i list %p\n", factor->value, prime, primelist->count, primelist);}
 	      if ( allistelement_add_in(factor->element, primelist) == NULL )
 		{
-		  if (test_debug) {fprintf(stderr,"can't add %i in prime factor list %i %i count %i\n", factor->value, count, prime, primelist->count);}
+		  if (prime_context->params.test_debug) {fprintf(stderr,"can't add %i in prime factor list %i %i count %i\n", factor->value, count, prime, primelist->count);}
 		  dump_list(primelist);
 		  ++factor->error;
 		  return NULL;
 		}
 	      if ( primelist->errors > 0 )
 		{
-		  if (test_debug) {fprintf(stderr,"add %i in prime factor list %i %i count %i has errors %i\n", factor->value, count, prime, primelist->count, primelist->errors);}
+		  if (prime_context->params.test_debug) {fprintf(stderr,"add %i in prime factor list %i %i count %i has errors %i\n", factor->value, count, prime, primelist->count, primelist->errors);}
 		  factor->error += primelist->errors;
 		  return NULL;
 		}
@@ -223,135 +270,137 @@ void * test2_add_factor (struct allistof * list, struct allistelement * element,
 	}
       else
 	{
-	  if (test_debug) {fprintf(stderr,"can't get prime list for %i count %i\n", factor->value, count);}
+	  if (prime_context->params.test_debug) {fprintf(stderr,"can't get prime list for %i count %i\n", factor->value, count);}
 	}
     }
   return factor;
 }
   
 /**
- fill list test
+ fill list elementp with primes
 */
-int test2()
+int test_fill_primelist()
 {
-  int step=1;
+  int step=1; // use for error return, to gather where error was.
   struct test2_factor factor;
-  
+
+  // initialization with precomputed-list of primes.
   for (int j=0; j<PRIMCOUNT;j++)
     {
-      struct allistof * listof = allistcontext_get_membership(context,j);
+      struct allistof * listof = allistcontext_get_membership(prime_context->context,j);
       int i = prims[j];
-      if ( i < glob_numbercount )
+      if ( i < prime_context->glob_numbercount )
 	{
-	  elementp[i]=allistcontext_new_allistelement(context,(void*)((long long)i));
+	  prime_context->elementp[i]=allistcontext_new_allistelement(prime_context->context,(void*)((long long)i));
 	  step++;
 	  if ( listof == NULL )
 	    {
 	      return -step;
 	    }
 	  step++;
-	  if ( allistelement_add_in(elementp[i], primelp) == NULL )
+	  if ( allistelement_add_in(prime_context->elementp[i], prime_context->primelp) == NULL )
 	    {
-	      if (test_debug) {fprintf(stderr,"can't add %i in prime list %i\n", prims[j], j);}
+	      if (prime_context->params.test_debug) {fprintf(stderr,"can't add %i in prime list %i\n", prims[j], j);}
 	      return -step;
 	    }
 	}
     }
 
   factor.error=0;
-  for (int i=0; i<glob_numbercount; i++)
+  // walk full set of integers up to upper bound
+  for (int i=0; i<prime_context->glob_numbercount; i++)
     {
-      if ( elementp[i]!=NULL)
+      if ( prime_context->elementp[i]!=NULL)
 	{
 	  // already analyzed
 	  continue;
 	}
-      elementp[i]=allistcontext_new_allistelement(context,(void*)((long long)i));
+      prime_context->elementp[i]=allistcontext_new_allistelement(prime_context->context,(void*)((long long)i));
       factor.value=i;
-      factor.element=elementp[i];
+      factor.element=prime_context->elementp[i];
       step++;
-      if ( elementp[i] == NULL )
+      if ( prime_context->elementp[i] == NULL )
 	{
 	  return -step;
 	}
-      allist_for_each(primelp, NULL, test2_add_factor, &factor, 1, 0);
+      allist_for_each(prime_context->primelp, NULL, test2_add_factor, &factor, 1, 0);
       if ( factor.error > 0)
 	{
 	  return -step;
 	}
       ++step;
-      if (elementp[i] != NULL)
+      if (prime_context->elementp[i] != NULL)
 	{
-	  if (( i > 1) && (elementp[i] != NULL))
+	  if (( i > 1) && (prime_context->elementp[i] != NULL))
 	    {	  
 	      // allistelement_get_memberships fails on extended ...
-	      if ( allistelement_get_all_memberships(elementp[i]) == 0)
+	      if ( allistelement_get_all_memberships(prime_context->elementp[i]) == 0)
 		{
 		  // this is a new potential prime.
-		  if ( allistelement_add_in(elementp[i], primelp) == NULL )
+		  if ( allistelement_add_in(prime_context->elementp[i], prime_context->primelp) == NULL )
 		    {
-		      if (test_debug) {fprintf(stderr,"can't add new prime  %i in prime list\n", i);}
+		      if (prime_context->params.test_debug) {fprintf(stderr,"can't add new prime  %i in prime list\n", i);}
 		      return -step;
 		    }
 		  else
 		    {
-		      if (test_debug>1) {fprintf(stderr,"[INFO] add new prime  %i in prime list\n", i);}
+		      if (prime_context->params.test_debug>1) {fprintf(stderr,"[INFO] add new prime  %i in prime list\n", i);}
 		    }
 		}
 	    }
-	  if ( shrinkit )
+	  if ( prime_context->params.shrinkit )
 	    {
 	      struct shrunkinfo shrunkinfo;
 	      struct allistelement * shrunk;
-	      shrunk=allistelement_shrink(elementp[i],&shrunkinfo);
+	      shrunk=allistelement_shrink(prime_context->elementp[i],&shrunkinfo);
 	      if ( ( shrunk != NULL)  && ( shrunkinfo.shrunkerrors == 0 ))
 		{
-		  if ( shrunk != elementp[i] )
+		  if ( shrunk != prime_context->elementp[i] )
 		    {
-		      if ( allistelement_release(elementp[i]) == 0 )
+		      if ( allistelement_release(prime_context->elementp[i]) == 0 )
 			{
-			  elementp[i] = shrunk;
+			  prime_context->elementp[i] = shrunk;
 			}
 		      else
 			{
-			  fprintf(stderr,"[ERROR] release failure for %p",elementp[i]);
+			  fprintf(stderr,"[ERROR] release failure for %p",prime_context->elementp[i]);
 			  return -step;
 			}
 		    }
 		  else
 		    {
-		      if (test_debug) {fprintf(stderr,"shrunk %p did nothing\n", shrunk);}
+		      if (prime_context->params.test_debug) {fprintf(stderr,"shrunk %p did nothing\n", shrunk);}
 		    }
 		}
 	      else
 		{	      
-		  fprintf(stderr,"[ERROR] shrunk failure for %p\n",elementp[i]);
+		  fprintf(stderr,"[ERROR] shrunk failure for %p\n",prime_context->elementp[i]);
 		  return -step;
 		}
-	      if (test_debug>1) {dump_element_full(shrunk);}
+	      if (prime_context->params.test_debug>1) {dump_element_full(shrunk);}
 	    }
 	}
 
     }
   ++step;
   // check count
-  if ( context->next_membership != (glob_numbercount + 1) )
+  if ( prime_context->context->next_membership != (prime_context->glob_numbercount + 1) )
     {
       return -step;
     }
-  for (int i =1; i<context->next_membership; i++)
+  for (int i =1; i<prime_context->context->next_membership; i++)
     {
       step++;
-      struct allistof * list = &context->list[i];
+      struct allistof * list = &prime_context->context->list[i];
       if ( list != NULL )
 	{
 	  if ( list->head != NULL)
 	    {
 	      unsigned long long prim = (unsigned long long)  list->head->data;
-	      if ( list->count < ( ( glob_numbercount / prim  )))
+	      if ( list->count < ( ( prime_context->glob_numbercount / prim  )))
 		{
-		  if (test_debug) {fprintf(stderr,"membership[%i] list.count wrong %i %p %p;\n", i , list->count, list, (list->head != NULL) ? list->head->data : NULL );}
-		  dump_list(&context->list[i]);
+		  if (prime_context->params.test_debug) {fprintf(stderr,"membership[%i] list.count wrong %i %p %p;\n", i , list->count, list, (list->head != NULL) ? list->head->data : NULL );}
+		  dump_list(&prime_context->context->list[i]);
 		  return -step;
 		}	      
 	    }
@@ -366,8 +415,8 @@ int test3()
 {
   for (int j=0; j<PRIMCOUNT;j++)
     {
-      struct allistof * listof = allistcontext_get_membership(context,j);
-      if ( allistelement_is_in(elementp[0], listof) != 1 )
+      struct allistof * listof = allistcontext_get_membership(prime_context->context,j);
+      if ( allistelement_is_in(prime_context->elementp[0], listof) != 1 )
 	{
 	  return -j;
 	}
@@ -383,18 +432,18 @@ int test4()
   struct shrunkinfo info;
 
   info.shrunkerrors=0;
-  for (int i=0; i<glob_numbercount; i++)
+  for (int i=0; i<prime_context->glob_numbercount; i++)
     {
       step++;
-      if ( elementp[i] == NULL )
+      if ( prime_context->elementp[i] == NULL )
 	{
 	  fprintf(stderr, "NULL element[%i] in %s:%i \n", i, __func__,__LINE__);
 	  return -1;
 	}
-      shrunk=allistelement_shrink(elementp[i],&info);
+      shrunk=allistelement_shrink(prime_context->elementp[i],&info);
       if ((shrunk == NULL) || (info.shrunkerrors > 0))
 	{
-	  if (test_debug) {
+	  if (prime_context->params.test_debug) {
 	    fprintf(stderr,"shrink failure for %i\n", i);
 	    fprintf(stderr,"shrunk errors  %i \n",info.shrunkerrors);
 	  }
@@ -406,20 +455,20 @@ int test4()
 	   fprintf(stderr,"shrink ok for %i\n", i);
 	}      
       */
-      if ( (elementp[i] != NULL) && (  elementp[i] != shrunk ) )
+      if ( (prime_context->elementp[i] != NULL) && (  prime_context->elementp[i] != shrunk ) )
 	{
-	  if ( test_debug > 1) { fprintf(stderr,"cleaning element %i %p", i, elementp[i]);}
-	  if ( allistelement_release(elementp[i]) != 0 )
+	  if ( prime_context->params.test_debug > 1) { fprintf(stderr,"cleaning element %i %p", i, prime_context->elementp[i]);}
+	  if ( allistelement_release(prime_context->elementp[i]) != 0 )
 	    {
-	      fprintf(stderr,"[ERROR] release of %p failed %i \n", elementp[i], i);
+	      fprintf(stderr,"[ERROR] release of %p failed %i \n", prime_context->elementp[i], i);
 	      return -step;
 	    }
 	}
-      elementp[i]=shrunk;
+      prime_context->elementp[i]=shrunk;
       ++step;
-      if ((i>1) && ( elementp[i]->memberships == 0))
+      if ((i>1) && ( prime_context->elementp[i]->memberships == 0))
 	{
-	    printf("new prime %i should have been already insterted in prime list \n", i);
+	    printf("new prime %i should have been already inserted in prime list \n", i);
 	    return -step;
 	}
     }
@@ -427,26 +476,39 @@ int test4()
 }
 
 /** primality check */
-int test5()
+int primality_check_test()
 {
   for (int j=0; j<PRIMCOUNT;j++)
     {
-      if ( prims[j] < glob_numbercount )
+      if ( prims[j] < prime_context->glob_numbercount )
 	{
-	  if ( ( (elementp[prims[j]]->flags & ALLIST_SHRUNK) != 0) && (elementp[prims[j]]->memberships > 1) )
+	  if ( ( (prime_context->elementp[prims[j]]->flags & ALLIST_SHRUNK) != 0) && (prime_context->elementp[prims[j]]->memberships > 1) )
 	    {
-	      printf("WRONG PRIME %i, dividers %i", prims[j],  elementp[prims[j]]->memberships);
+	      printf("WRONG PRIME %i, dividers %i", prims[j],  prime_context->elementp[prims[j]]->memberships);
 	      return -j;
 	    }
 	}
     }
-  dump_list(primelp);
+  printf("list of primes : \n");
+  dump_list(prime_context->primelp);
   return 0;
+}
+
+void usage()
+{
+  printf(" -debug, -trace, -notestdebug, -shrinkit, 10x, -decomp \n");
 }
 
 int main(int argc, char * argv[])
 {
   int count=1;
+  struct _exec_params params =
+    {
+      .test_debug=1,
+      .shrinkit=0,
+      .decomp=0
+    };
+  
   if ( argc >= 1 )
     {
       if( argc > 1)
@@ -463,65 +525,96 @@ int main(int argc, char * argv[])
 		  printf("debug set\n");
 		  allist_set_debug(2);
 		}
+	      else if (strcmp(argv[i],"-testdebug") == 0)
+		{
+		  printf("test debug set\n");
+		  params.test_debug=1;
+		}
 	      else if (strcmp(argv[i],"-notestdebug") == 0)
 		{
 		  printf("test debug unset\n");
-		  test_debug=0;
+		  params.test_debug=0;
 		}
 	      else if (strcmp(argv[i],"-shrinkit") == 0)
 		{
 		  printf("shrink right after add\n");
-		  shrinkit=1;
+		  params.shrinkit=1;
 		}
 	      else if (strcmp(argv[i],"10x") == 0)
 		{
 		  count=count * 10;
 		  printf("count = %i\n", count);
                 }
+	      else if (strcmp(argv[i],"-decomp")==0)
+		{
+		  params.decomp=1;
+		}
 	      else
 		{
 		  fprintf(stderr,"[ERROR] unrecognized option %s", argv[i]);
+		  usage();
 		  exit(1);
 		}
 	    }
 	}
       int step = 0;
       time_t start;
-      if ( count > 1 )
-	{
-	  glob_numbercount=count;
-	}
+      
+      prime_context=create_prime_context(count);
+      set_prime_context_params(prime_context, &params);
+      
       show_memory_usage();
       time(&start);
-      checktest(stdout,"indexset test",test0(),&start);
+      checktest(stdout,"indexset test",test_indexset(),&start);
 
-      if ( checktest(stdout,"list allocation test",test1(),&start) != 0 )
+      if ( checktest(stdout,"list allocation test",test_allistcontext_allocation(),&start) != 0 )
 	{
 	  fprintf(stderr,"Unrecoverable error, stop test\n");
 	  return 1;
 	}
       
-      checktest(stdout,"fill lists test",test2(),&start);
+      checktest(stdout,"fill lists test",test_fill_primelist(),&start);
+      show_memory_usage();
+      
       checktest(stdout,"zero membership test",test3(),&start);
 
       // dump_context(context);
       checktest(stdout,"shrink test",test4(),&start);
       
-      checktest(stdout,"primality membership test",test5(),&start);
-      // dump_context(context);
+      checktest(stdout,"primality membership test",primality_check_test(),&start);
+      //dump_context(context);
 
-      printf( "%i set \n", glob_numbercount-1);
-      if (elementp[glob_numbercount-1] != NULL)
+      printf( "%i set \n", prime_context->glob_numbercount-1);
+      if (prime_context->elementp[prime_context->glob_numbercount-1] != NULL)
 	{
-	  dump_indexset(&elementp[glob_numbercount-1]->indexset);
+	  dump_indexset(&prime_context->elementp[prime_context->glob_numbercount-1]->indexset);
 	}
       else
 	{
-	  printf("element %i null\n",glob_numbercount-1);
+	  printf("element %i null\n",prime_context->glob_numbercount-1);
+	}
+      
+      if ( prime_context->params.decomp == 1 )
+	{
+	  for (int i = 1; i < prime_context->glob_numbercount; i ++)
+	    {
+	      if (prime_context->elementp[i] != NULL)
+		{
+		  printf("%i = " , i);
+		  dump_indexset(&prime_context->elementp[i]->indexset);
+		  printf("\n");
+		}
+	    }
 	}
     }
   else
     {
       fprintf(stderr,"too many arguments ( currenlty supported -debug ) ");
     }
+
+  if ( prime_context != NULL )
+    {
+      free(prime_context);
+    }
+
 }

@@ -7,6 +7,20 @@ function specific_run()
     echo "[ERROR] '$1' command is not supported in a generic manner" >&2
 }
 
+# within a list of files $1 $2 ... find the first that exists and set variable found_best to it.
+find_best()
+{
+    while [[ $# > 0 ]]
+    do
+	if [[ -f $1 ]]
+	then
+	    found_best=$1
+	    return
+	fi
+	shift
+    done
+}
+
 devenv_setup()
 {
     if [[ -e devenv_params ]]
@@ -328,7 +342,14 @@ do
 	do_code $action
     elif [[ $action == readme ]]
     then
-	$DIALOG --textbox README.md 40 80 --scrolltext
+	found_best=
+	find_best README README.md
+	if [[ -n $found_best ]]
+	then
+	    $DIALOG --textbox $found_best 40 80 --scrolltext
+	else
+	    echo "no README or README.md found" >&2
+	fi
     elif [[ $action == properties ]]
     then
 	edit_properties project_params
