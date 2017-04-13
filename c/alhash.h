@@ -38,6 +38,9 @@ struct alhash_table {
 
 long alhash_hash_string(void * string, int length);
 
+// callback to use as a filter, when it returns 0 it means OK any other value is filtered out
+typedef int (*alhash_callback) (struct alhash_entry * entry, void * data, int index);
+  
 /**
 Warning : does not check for duplicates
 if object is already there, it will be read twice, use alhash_get_entry first.
@@ -55,11 +58,11 @@ void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (v
 // walk entry and all collisions.
 // if callback returns a value != 0 it stops.
 // return number of elements accepted by callback ( for which callback return value was 0 ).
-int alhash_walk_collisions(struct alhash_entry * entry, int (*callback) (struct alhash_entry * entry, void * data, int index), void * data);
+int alhash_walk_collisions(struct alhash_entry * entry, alhash_callback callback, void * data);
 
 // walk table in order of buckets entries
 // if callback returns a value != 0 it stops.
 // return number of elements accepted by callback ( for which callback return value was 0 ).
-int alhash_walk_table( struct alhash_table * table, int (*callback) (struct alhash_entry * entry, void * data, int index), void * data);
+int alhash_walk_table( struct alhash_table * table, alhash_callback callback, void * data);
 
 #endif

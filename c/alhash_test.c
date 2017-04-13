@@ -41,6 +41,11 @@ int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int ind
   return 0;
 }
 
+void usage()
+{
+  printf("please provide filepath of file to insert into alhash. format is a file \n");
+}
+
 int main(int argc, char ** argv)
 {
   if ( argc > 1 )
@@ -96,5 +101,9 @@ int main(int argc, char ** argv)
 	{
 	  fprintf(stderr,"%s not found", filename);
 	}
+    }
+  else
+    {
+      usage();
     }
 }

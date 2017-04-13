@@ -1,3 +1,7 @@
+/**
+a hash within your tools allow you to do smoke tests
+**/
+
 #include "alhash.h"
 
 #include <stdio.h>
@@ -205,7 +209,7 @@ int alhash_walk_callback_null (struct alhash_entry * entry, void * data, int ind
   return 0;
 }
    
-int alhash_walk_collisions(struct alhash_entry * entry, int (*callback) (struct alhash_entry * entry, void * data, int index), void * data)
+int alhash_walk_collisions(struct alhash_entry * entry, alhash_callback callback, void * data)
 {
   int step = 0;
   if ( callback == NULL )
@@ -233,7 +237,7 @@ int alhash_walk_collisions(struct alhash_entry * entry, int (*callback) (struct 
   return step;
 }
 
-int alhash_walk_table( struct alhash_table * table, int (*callback) (struct alhash_entry * entry, void * data, int index), void * data)
+int alhash_walk_table( struct alhash_table * table, alhash_callback callback, void * data)
 {
   int step = 0;
   if ( callback == NULL )
