@@ -1,14 +1,10 @@
 #ifndef __JSON_HEADER__
 #define __JSON_HEADER__
 
+#include "json_parser.h"
 #include "json_errors.h"
 
-#define JSON_PATH_MAX_CHARS 4096
 #define JSON_PATH_DEPTH 1024
-
-// forward definitions
-struct json_ctx;
-struct json_object;
 
 /* parameters for pretty printing */
 struct print_ctx
@@ -23,33 +19,6 @@ void dump_ctx(struct json_ctx * ctx);
 
 /** Where output is finaly done */
 void dump_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
-typedef char (*get_next_char)(struct json_ctx *ctx, void *data);
-typedef void (*set_pushback_char)(struct json_ctx *ctx, void *data, char pushback);
-typedef struct json_object* (*parse_func) (struct json_ctx *ctx, void *data, struct json_object * object);
-typedef int (*add_token_char)(struct json_ctx *ctx, char token, char c);
-
-/** keep position of line and column for a stream during a json parsing */
-struct json_pos_info
-{
-  int line;
-  int column;
-};
-
-/**
-Level of char seen :
-char depend on context ( see struct json_ctx )
-parenthesis
-braket
-dquote
-squte
-**/
-struct json_level
-{
-  int open_level;
-  int max_open_level; // level of  {,[,'," seen
-  int max_close_level; // level of },],'," 'seen
-};
 
 /** a simple linked list of json_object */
 struct json_link
@@ -75,28 +44,6 @@ enum json_internal_flags {
 };
 
 /** Parsing context of json */
-struct json_ctx
-{
-  struct json_level parenthesis; // parenthesis '(' ')' 
-  struct json_level braket; // brakets '[' ']' 
-  struct json_level dquote; // double quote '"'
-  struct json_level squote; // simple quote "'"
-  struct json_level variable; // variable "?" ; to use existing framework JSON_TOGGLE not really sound yet.
-  get_next_char next_char;
-  set_pushback_char pushback_char;
-  parse_func unstack;
-  add_token_char add_char;
-  char * buf;
-  int debug_level;
-  int bufpos;
-  int bufsize;
-  int pos;
-  int internal_flags;
-  struct json_object * error; // null if no error encountered, else set to last error
-  struct json_pos_info pos_info;
-  struct json_object * root;
-  struct json_object * tail;
-};
 
 /** json_object that is a number is a json_string with a type '0' */
 
@@ -179,14 +126,6 @@ struct json_path {
   int index;
 };
 
-void debug_tag(char c);
-
-#define JSON_OPEN(ctx,__member__,object)   ctx->__member__.open_level++;ctx-> __member__ .max_open_level++;object=new_ ## __member__(ctx);
-#define JSON_CLOSE(ctx,__member__)   ctx->__member__.open_level--;ctx-> __member__.max_close_level++;
-#define JSON_TOGGLE(ctx,__member__)   ctx->__member__.open_level++;ctx->__member__.max_open_level++; 
-
-void memory_shortage(struct json_ctx * ctx);
-
 struct json_object * syntax_error(struct json_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
 // create a json string object from context buffer
@@ -196,53 +135,10 @@ struct json_object * new_growable(struct json_ctx * ctx, char final_type);
 
 #define JSON_DEFINE_NEW(__member__,__char__) struct json_object * new_ ## __member__(struct json_ctx * ctx) { return new_growable(ctx,__char__);};
 
-#define JSON_DEFINE_TOGGLE(__member__,__char__) \
-  struct json_object * parse_ ## __member__ ## _level(struct json_ctx * ctx, void * data, struct json_object * object) \
-{\
-  char c = ctx->next_char(ctx, data);\
-  while ( c != 0)\
-    {\
-  if ( c == __char__)\
-	{\
-	  JSON_TOGGLE(ctx,__member__);\
-	  return cut_string_object(ctx,__char__);\
-	}\
-  else if ( c == '\\' ) {				\
-        c=ctx->next_char(ctx, data);\
-	if ( c != 0 ) ctx->add_char(ctx,__char__, c);	\
-  }\
-  else {\
-    ctx->add_char(ctx,__char__, c);		\
-      }\
-      c=ctx->next_char(ctx, data);\
-    }\
-  return (struct json_object *) NULL;		\
-}\
-
-/**
- Actual parsing step
-
-json_ctx current context ( will be updated )
-void * data represent stream currently parsed, actual type depends on next_char function.
-json_object parent of json object to be currently parsed.
- **/
-struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json_object * parent);
-
-/**
- used during parsing when a char should be re-parsed 
-**/
-void pushback_char(struct json_ctx *ctx, void *data, char pushback);
-
-int add_char(struct json_ctx * ctx, char token, char c);
-
-char next_char(struct json_ctx* ctx, void * data);
   
 void dump_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 void dump_ctx(struct json_ctx * ctx);
-
-/** Initialize json_context **/
-void json_context_initialize(struct json_ctx *json_context);
 
 /**
   return value with key keyname in object
@@ -258,11 +154,6 @@ struct json_object * json_list_get( struct json_object * object, int index);
 return previous debug flags
 */
 int json_set_debug(int debug);
-
-/** set debug level 0 : none 
-return previous debug flags
-*/
-int json_ctx_set_debug(struct json_ctx * ctx, int debug);
 
 /**
 first lazzy implementation : compare them
@@ -316,5 +207,10 @@ struct json_walk_leaf_callbacks  {
   else return 0
 */
 int json_get_int(struct json_object * object );
+
+char * json_get_string(struct json_object * object);
+
+/** Where growables becomes real json objects **/
+struct json_object * json_concrete(struct json_ctx * ctx, struct json_object * object);
 
 #endif

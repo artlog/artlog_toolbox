@@ -6,7 +6,7 @@ CPPFLAGS=-g
 
 BUILD=build
 
-libsrc=c/json.c c/json_import_internal.c
+libsrc=c/json_parser.c c/json.c c/json_import_internal.c
 src=c/main.c
 libraries=json alsave altest allist aldev alhash
 
@@ -17,13 +17,17 @@ libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 # default target is to build libraries
 libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
-all: libs tests
+
+all: libs tests libinclude
+
+libinclude: $(BUILD)/include/json.h $(BUILD)/include/json_errors.h $(BUILD)/include/json_import_internal.h $(BUILD)/include/json_parser.h
+
 
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
-$(BUILD)/lib/libjson.a: $(BUILD)/obj/json.o  $(BUILD)/obj/json_import_internal.o $(BUILD)/include/json.h $(BUILD)/include/json_errors.h $(BUILD)/include/json_import_internal.h
-	ar rccs $@ $(BUILD)/obj/json.o $(BUILD)/obj/json_import_internal.o
+$(BUILD)/lib/libjson.a: $(BUILD)/obj/json_parser.o $(BUILD)/obj/json.o  $(BUILD)/obj/json_import_internal.o
+	ar rccs $@ $(BUILD)/obj/json_parser.o $(BUILD)/obj/json.o $(BUILD)/obj/json_import_internal.o
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
 	ar rccs $@ $<
@@ -39,6 +43,10 @@ $(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/include/alhash.h
 
 $(BUILD)/checksave: $(BUILD)/obj/save_main.o $(BUILD)/lib/libalsave.a
 	$(LD) -o $@ $(LDFLAGS) $(BUILD)/obj/save_main.o -L$(BUILD)/lib -Wl,-Bstatic -lalsave -Wl,-Bdynamic
+
+$(BUILD)/test_auto_c_gen:  $(BUILD)/obj/json_to_c_stub.o
+	@echo link json objects $^ and libjson
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -ljson -Wl,-Bdynamic
 
 $(objects): | $(BUILD)/obj
 
@@ -88,7 +96,7 @@ $(BUILD)/obj/%.o: c/%.c $(BUILD)/obj
 clean:
 	rm -rf $(BUILD)
 
-.PHONY:clean test libs all tests testjson testhash
+.PHONY:clean test libs all tests testjson testhash libinclude
 
 # needed to keep those files within include after make ( remove unused )
 .PRECIOUS: $(BUILD)/include/%.h

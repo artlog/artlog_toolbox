@@ -5,6 +5,13 @@
 
 #include "json.h"
 
+#ifdef JSON_TODO
+#include "todo.h"
+#else
+// ignore :-(
+#define todo(text)
+#endif
+
 struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
   {
     {.value=JSON_CONSTANT_TRUE},
@@ -16,17 +23,6 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
 
 int json_debug=0;
 
-void flush_char_buffer(struct json_ctx * ctx)
-{
-  if (ctx->buf != NULL )
-    {
-      free(ctx->buf);
-      ctx->buf=NULL;
-      ctx->bufpos=0;
-      ctx->bufsize=0;
-    }
-}
-
 int json_set_debug(int debug)
 {
   int previous=json_debug;
@@ -34,19 +30,6 @@ int json_set_debug(int debug)
   return previous;
 }
 
-int json_ctx_set_debug(struct json_ctx * ctx, int debug)
-{
-  if ( ctx != NULL )
-    {
-      int previous=ctx->debug_level;
-      ctx->debug_level = debug;
-      return previous;
-    }
-  else
-    {
-      return json_debug;
-    }
-}
 
 /**
 a complicated json stream ( one char ahead ) parser 
@@ -57,20 +40,6 @@ JSON_DEFINE_TOGGLE(dquote,'"')
 JSON_DEFINE_NEW(parenthesis,'{')
 JSON_DEFINE_NEW(braket,'[')
 JSON_DEFINE_TOGGLE(variable,'?')
-
-void debug_tag(char c)
-{
-  if (json_debug>0)
-    {
-      printf("%c",c);
-    }
-}
-
-void memory_shortage(struct json_ctx * ctx)
-{
-  fprintf(stderr,"Memory heap shortage. Exiting \n");
-  exit(2);
-}
 
 struct json_object * new_json_error(struct json_ctx * ctx, enum json_syntax_error erroridx)
 {
@@ -197,7 +166,7 @@ struct json_link * new_link(struct json_ctx * ctx)
  return link;
 }
 
-void growable_release_object(struct json_object * object)
+void json_growable_release_object(struct json_object * object)
 {
   if (object->growable.size > 1)
     {
@@ -212,7 +181,7 @@ void growable_release_object(struct json_object * object)
   free(object);
 }
 
-void release_object(struct json_object * object)
+void json_release_object(struct json_object * object)
 {
   // FIXME since object might link to other objects...
   assert(object != NULL);
@@ -262,7 +231,6 @@ void add_to_growable(struct json_ctx * ctx,struct json_growable * growable,struc
     }
 }
 
-
 void add_object(struct json_ctx * ctx,struct json_object * parent,struct json_object * object)
 {
   struct json_object * oldtail= ctx->tail;
@@ -272,14 +240,14 @@ void add_object(struct json_ctx * ctx,struct json_object * parent,struct json_ob
     {
       if (oldtail->type == 'G')
 	{
-	  debug_tag('+');
+	  debug_tag(ctx,'+');
 	  // add object to a growable.
 	  add_to_growable(ctx,&oldtail->growable,object);
 	  return;
 	}
       else
 	{
-	  debug_tag('*');
+	  debug_tag(ctx,'*');
 	}
     }
   else
@@ -294,19 +262,19 @@ void add_object(struct json_ctx * ctx,struct json_object * parent,struct json_ob
     {
       if ( oldtail != NULL) 
 	{
-	  debug_tag('*');
+	  debug_tag(ctx,'*');
 	  add_to_growable(ctx,&oldtail->growable,newtail);
 	}
       else
 	{
 	  if (ctx->root == NULL)
 	    {
-	      debug_tag('x');
+	      debug_tag(ctx,'x');
 	      ctx->root=newtail;
 	    }
 	  else
 	    {
-	      debug_tag('.');
+	      debug_tag(ctx,'.');
 	    }
 	}
       ctx->tail=newtail;
@@ -320,7 +288,7 @@ void add_object(struct json_ctx * ctx,struct json_object * parent,struct json_ob
 struct json_object * new_pair_key(struct json_ctx * ctx, struct json_object * key)
 {
   struct json_object * object=malloc(sizeof(struct json_object));
-  debug_tag(':');
+  debug_tag(ctx,':');
   if (object != NULL)
     {
       object->type=':';
@@ -338,7 +306,7 @@ struct json_object * new_pair_key(struct json_ctx * ctx, struct json_object * ke
 struct json_object * new_variable(struct json_ctx * ctx, struct json_object * key)
 {
   struct json_object * object=malloc(sizeof(struct json_object));
-  debug_tag('?');
+  debug_tag(ctx,'?');
   if (object != NULL)
     {
       object->type='?';
@@ -421,7 +389,7 @@ struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object 
 		growable->head.value->owner=object;
 		++i;
 	      }
-	      else  { release_object(growable->head.value);}
+	      else  { json_release_object(growable->head.value);}
 	    }
 	  if ( link != &growable->head )
 	    {
@@ -437,7 +405,7 @@ struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object 
 			}
 		      else
 			{
-			  release_object(link->value);
+			  json_release_object(link->value);
 			}
 		    }
 		  link=link->next;
@@ -454,7 +422,7 @@ struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object 
 }
 
 /** Where growables becomes real json objects **/
-struct json_object * concrete(struct json_ctx * ctx, struct json_object * object)
+struct json_object * json_concrete(struct json_ctx * ctx, struct json_object * object)
 {
   if (object !=NULL)
     {
@@ -466,12 +434,12 @@ struct json_object * concrete(struct json_ctx * ctx, struct json_object * object
 	    {
 	    case '{':
 	      newobject=create_json_dict(ctx,object);
-	      growable_release_object(object);
+	      json_growable_release_object(object);
 	      object=newobject;
 	      break;
 	    case '[':
 	      newobject=create_json_list(ctx,object);
-	      growable_release_object(object);
+	      json_growable_release_object(object);
 	      object=newobject;
 	      break;
 	    }
@@ -483,148 +451,21 @@ struct json_object * concrete(struct json_ctx * ctx, struct json_object * object
 /**
  return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
 */
-struct json_object * parse_number_level(struct json_ctx * ctx, char first, void * data, struct json_object * parent)
+struct json_object * json_parse_number_level(struct json_ctx * ctx, char first, void * data, struct json_object * parent)
 {
-  int state = 0;
-  char c = first;
-  while ( state >= 0 )
+  int state = parse_number_level(ctx, first, data);
+  if ( state == 9 )
     {
-      if ( json_debug > 3 )
-	{
-	  printf("(number state %i)",state);
-	}
-      switch(state)
-	{
-	case 0:
-	  if ( c == '-' )
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	    }
-	  state = 1;
-	  break;
-	case 1:
-	  if ( c == '0' )
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	      state = 3;
-	    }
-	  else if ( ( c > '0' ) && ( c <='9' ) )
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	      state = 2;	      
-	    }
-	  else
-	    {
-	      state = -1;
-	    }
-	  break;
-	case 2:
-	  while ( ( c >= '0' ) && ( c <='9' ) )
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	    }
-	  state=3;
-	  break;
-	case 3:
-	  if ( c == '.' )
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	      state = 4;
-	    }
-	  else
-	    {
-	      state = 5;
-	    }
-	  break;
-	case 4:
-	  while ( ( c >= '0' ) && ( c <='9' ) )
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	    }
-	  state = 5;
-	  break;
-	case 5:
-	  if (( c=='e') || (c =='E'))
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	      state = 6;
-	    }
-	  else
-	    {
-	      state = 8;
-	    }
-	  break;
-	case 6:
-	  if (( c=='+') || (c =='-'))
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	    }
-	  state=7;
-	  // no break on purpose
-	case 7:
-	  while ( ( c >= '0' ) && ( c <='9' ) )
-	    {
-	      ctx->add_char(ctx,'0',c);
-	      c = ctx->next_char(ctx,data);
-	    }
-	  state=8;
-	  // no break on purpose
-	case 8:
-	  // this char is NOT part of our number
-	  ctx->pushback_char(ctx,data,c);
-	  if ( json_debug > 0 )
-	    {
-	      printf("(pushback end of number %c)",c);
-	      char d = ctx->next_char(ctx,data);
-	      if ( d != c )
-		{
-		  fprintf(stderr,"(pushback end of number FAILS '%c'!='%c')\n",c, d);
-		}
-	      ctx->pushback_char(ctx,data,c);
-	    }
-	  state = 9;
-	  return cut_string_object(ctx,'0');
-	default:
-	  state = -1;
-	  // this is an error
-	}      
+      return cut_string_object(ctx,'0');
     }
   return (struct json_object *) NULL;
 }
 
-int json_ctx_consume(struct json_ctx * ctx, void * data, char * str)
-{
-  int index = 0;
-  char c = ctx->next_char(ctx,data);
-  while ( (c != 0 ) && (str[index] != 0) )
-    {
-      if ( c != str[index] )
-	{
-	  return 0;
-	}
-      ctx->add_char(ctx,c,c);
-      ++ index;
-      if (str[index] == 0)
-	{
-	  break;
-	}      
-      c =ctx->next_char(ctx,data);
-    }
-  return (str[index] == 0);
-}
 
 struct json_object * new_json_constant_object(struct json_ctx * ctx, char t, enum json_internal_constant constant)
 {
   struct json_object * object=malloc(sizeof(struct json_object));
-  debug_tag(t);
+  debug_tag(ctx,t);
   if (object != NULL)
     {
       object->type=t;
@@ -680,13 +521,6 @@ struct json_object * parse_constant_level(struct json_ctx * ctx, char first, voi
   return syntax_error(ctx,JSON_ERROR_CONSTANT_ERROR,data,NULL,parent);
 }
 
-/**
- Actual parsing step
-
-json_ctx current context ( will be updated )
-void * data represent stream currently parsed, actual type depends on next_char function.
-json_object parent of json object to be currently parsed.
- **/
 struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json_object * parent)
 {
   char c = ctx->next_char(ctx, data);
@@ -792,7 +626,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 		    printf( "} hit NULL object");
 		  }
 	      }
-	    return concrete(ctx,parent);
+	    return json_concrete(ctx,parent);
 	    break;
 	  case '[':
 	    JSON_OPEN(ctx,braket,object);
@@ -830,7 +664,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 		  }
 		object=NULL;
 	      }
-	    return concrete(ctx,parent);
+	    return json_concrete(ctx,parent);
 	    break;
 	  case '"':
 	    JSON_TOGGLE(ctx,dquote);
@@ -841,7 +675,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      }
 	    else
 	      {
-		object=parse_dquote_level(ctx,data,parent);
+		object=json_parse_dquote_level(ctx,data,parent);
 		if (parent == NULL)
 		  {
 		    return object;
@@ -890,9 +724,9 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      }
 	    else
 	      {
-		debug_tag('?');
+		debug_tag(ctx,'?');
 		JSON_TOGGLE(ctx,variable);
-		struct json_object * variable_name = parse_variable_level(ctx,data,parent);	  
+		struct json_object * variable_name = json_parse_variable_level(ctx,data,parent);	  
 		if (variable_name == NULL )
 		  {
 		    syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
@@ -941,20 +775,20 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 		  }
 		else
 		  {
-		    debug_tag(object->type);
+		    debug_tag(ctx,object->type);
 		    syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
 		    object=NULL;
 		  }
 	      }
 	    else
 	      {
-		debug_tag('#');
+		debug_tag(ctx,'#');
 		syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
 	      }
 	    break;
 	  case '\'':
 	    JSON_TOGGLE(ctx,squote);
-	    object=parse_squote_level(ctx,data,object);
+	    object=json_parse_squote_level(ctx,data,object);
 	    break;
 	  case '-':
 	  case '0':
@@ -969,7 +803,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	  case '9':
 	    if ( object == NULL )
 	      {
-		object=parse_number_level(ctx,c,data,object);
+		object=json_parse_number_level(ctx,c,data,object);
 		if (parent == NULL)
 		  {
 		    return object;
@@ -1018,7 +852,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
     c=ctx->next_char(ctx, data);
   }
   
-  return concrete(ctx,object);
+  return json_concrete(ctx,object);
 }
 
 char next_char(struct json_ctx* ctx, void * data)
@@ -1038,52 +872,6 @@ char next_char(struct json_ctx* ctx, void * data)
     }
 }
 
-void pushback_char(struct json_ctx *ctx, void *data, char pushback)
-{
-  struct json_string * str = (struct json_string *) data;
-  // should not pushback something else than previous char. programming error
-  assert( (ctx->pos>0) && (pushback == str->chars[ctx->pos-1]));
-  ctx->pos--;
-  if ( json_debug > 0 )
-    {
-      printf("(pushback %c)",pushback);      
-    }
-}
-
-int add_char(struct json_ctx * ctx, char token, char c)
-{
-  int bufsize=256;
-#ifdef DEBUGALL
-  printf("%c", c);
-#endif
-  if (ctx->buf == NULL)
-    {
-      ctx->buf=calloc(1,bufsize);
-      //ctx->buf[bufsize-1]=0;
-      ctx->bufpos=0;
-      ctx->bufsize=bufsize;
-    }
-  if (ctx->bufpos+1>=ctx->bufsize)
-    {
-      bufsize=ctx->bufsize + ctx->bufsize / 2;
-      char * newbuf=realloc(ctx->buf,bufsize);
-      if (newbuf != NULL)
-	{
-	  //done by realloc
-	  //memcpy(newbuf,ctx->buf,ctx->bufsize);
-	  //free(ctx->buf);
-	  ctx->buf[bufsize-1]=0;
-	  ctx->bufsize=bufsize; 
-	  ctx->buf=newbuf;
-	}
-      else
-	{
-	  memory_shortage(ctx);
-	}
-    }
-  ctx->buf[ctx->bufpos++]=c;
-  return 0;
-}
 
 
 void dump_string(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
@@ -1697,21 +1485,6 @@ void dump_ctx(struct json_ctx * ctx)
     }
 }
 
-/** Initialize json_context **/
-void json_context_initialize(struct json_ctx *json_context)
-{
-  json_context->unstack=parse_level;
-  json_context->next_char=next_char;
-  json_context->pushback_char=pushback_char;
-  json_context->add_char=add_char;
-  json_context->pos=0;
-  json_context->buf=NULL;
-  json_context->bufsize=0;
-  json_context->bufpos=0;
-  json_context->root=NULL;
-  json_context->tail=NULL;
-  json_context->debug_level=0;
-}
 
 void json_print_object_name(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
@@ -1923,8 +1696,7 @@ struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, str
 
 void json_flatten(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
-  // don't use todo here since in an external library
-  // todo("json_flatten could be done with a special print_ctx and rely on dump");
+  todo("json_flatten could be done with a special print_ctx and rely on dump");
 }
 
 int json_get_int(struct json_object * object )
@@ -1971,4 +1743,13 @@ int json_get_int(struct json_object * object )
 	}
     }
   return result;
+}
+
+char * json_get_string(struct json_object * object)
+{
+  if ( ( object != NULL ) && ( ( object->type = '"' ) || ( object->type = '\'' ) ) )
+    {
+      return  object->string.chars;
+    }
+  return NULL;
 }
