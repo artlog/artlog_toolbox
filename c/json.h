@@ -6,6 +6,32 @@
 
 #define JSON_PATH_DEPTH 1024
 
+/**
+Level of token seen :
+char depend on context ( see struct json_ctx )
+parenthesis
+braket
+dquote
+squte
+**/
+struct json_level
+{
+  int open_level;
+  int max_open_level; // level of  {,[,'," seen
+  int max_close_level; // level of },],'," 'seen
+};
+
+
+struct json_parser_ctx
+{
+  struct json_level parenthesis; // parenthesis '(' ')' 
+  struct json_level braket; // brakets '[' ']' 
+  struct json_level dquote; // double quote '"'
+  struct json_level squote; // simple quote "'"
+  struct json_level variable; // variable "?" ; to use existing framework JSON_TOGGLE not really sound yet.
+  struct json_ctx * tokenizer;
+};
+
 /* parameters for pretty printing */
 struct print_ctx
 {
@@ -13,12 +39,6 @@ struct print_ctx
   int do_indent; // 0 no indent, >= 1 number of space by indent.
   char * s_indent;
 };
-
-/** print context to stderr */
-void dump_ctx(struct json_ctx * ctx);
-
-/** Where output is finaly done */
-void dump_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 /** a simple linked list of json_object */
 struct json_link
@@ -37,10 +57,6 @@ struct json_growable
   struct json_link * tail;
   int size;
   char final_type;
-};
-
-enum json_internal_flags {
-  JSON_FLAG_IGNORE=1
 };
 
 /** Parsing context of json */
@@ -80,6 +96,7 @@ struct json_variable {
   int bound;
 };
 
+// todo , subset of TOKEN_FALSE ... 
 enum json_internal_constant {
   JSON_CONSTANT_TRUE=0,
   JSON_CONSTANT_FALSE,
@@ -119,6 +136,13 @@ struct json_object {
   }; 
 };
 
+
+/** print context to stderr */
+void dump_ctx(struct json_parser_ctx * ctx);
+
+/** Where output is finaly done */
+void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+
 struct json_path {
   char type; // '{' string is key of dict, '[' index is index of list , '*' automatic ( ie key or index is used depending on parsed structure )
   struct json_path * child;
@@ -126,19 +150,19 @@ struct json_path {
   int index;
 };
 
-struct json_object * syntax_error(struct json_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
+struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
 // create a json string object from context buffer
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype);
 
-struct json_object * new_growable(struct json_ctx * ctx, char final_type);
+struct json_object * new_growable(struct json_parser_ctx * ctx, char final_type);
 
-#define JSON_DEFINE_NEW(__member__,__char__) struct json_object * new_ ## __member__(struct json_ctx * ctx) { return new_growable(ctx,__char__);};
+#define JSON_DEFINE_NEW(__member__,__char__) struct json_object * new_ ## __member__(struct json_parser_ctx * ctx) { return new_growable(ctx,__char__);};
 
   
-void dump_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
-void dump_ctx(struct json_ctx * ctx);
+void dump_ctx(struct json_parser_ctx * ctx);
 
 /**
   return value with key keyname in object
@@ -161,22 +185,22 @@ first lazzy implementation : compare them
 return 1 if equals, 0 if different.
 */
 int json_unify_object(
-	       struct json_ctx * ctx, struct json_object * object,
-	       struct json_ctx * other_ctx, struct json_object * other_object,
+	       struct json_parser_ctx * ctx, struct json_object * object,
+	       struct json_parser_ctx * other_ctx, struct json_object * other_object,
 	       struct print_ctx * print_ctx);
 
 
-void json_print_object_name(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+void json_print_object_name(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 /**
 given a json_path ex : menu.popup.menuitem.1 find the json object.
 */
-struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, struct json_object * object);
+struct json_object * json_walk_path(char * json_path, struct json_parser_ctx * ctx, struct json_object * object);
 
 /**
 dump object in a flat view, ie using object name=value notation for every value.
  */
-void json_flatten(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+void json_flatten(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 enum json_walk_action {
   JSON_WALK_CONTINUE, // normal action, continue
@@ -189,7 +213,7 @@ enum json_walk_action {
 struct json_walk_leaf_callbacks  {
   /** specific data */
   void * data;
-  struct json_ctx * ctx;
+  struct json_parser_ctx * ctx;
   struct print_ctx * print_ctx;
   /** notify a leaf ( ie a bare value, not a list or a dict ) */
   enum json_walk_action (*json_advertise_leaf) ( struct json_walk_leaf_callbacks * this, struct json_path * json_path, struct json_object * json_object);
@@ -211,8 +235,35 @@ int json_get_int(struct json_object * object );
 char * json_get_string(struct json_object * object);
 
 /** Where growables becomes real json objects **/
-struct json_object * json_concrete(struct json_ctx * ctx, struct json_object * object);
+struct json_object * json_concrete(struct json_parser_ctx * ctx, struct json_object * object);
 
-struct json_object * parse_level_legacy(struct json_ctx * ctx, void * data, struct json_object * parent);
+/**
+ Actual parsing step
 
+json_ctx current context ( will be updated )
+void * data represent stream currently parsed, actual type depends on next_char function.
+json_object parent of json object to be currently parsed.
+
+return a json_concret'ized object representing full parsing for this level.
+ **/
+struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent);
+
+#define JSON_OPEN(ctx,__member__,object)   ctx->__member__.open_level++;ctx-> __member__ .max_open_level++;object=new_ ## __member__(ctx);
+#define JSON_CLOSE(ctx,__member__)   ctx->__member__.open_level--;ctx-> __member__.max_close_level++;
+#define JSON_TOGGLE(ctx,__member__)   ctx->__member__.open_level++;ctx->__member__.max_open_level++; 
+
+#define JSON_DEFINE_TOGGLE(__member__,__char__) \
+  struct json_object * json_parse_ ## __member__ ## _level(struct json_parser_ctx * ctx, void * data) \
+{\
+  int result = parse_until_escaped_level(ctx->tokenizer,data,__char__,'\\');\
+  if ( result ) { \
+    JSON_TOGGLE(ctx,__member__);			\
+    return cut_string_object(ctx->tokenizer,__char__);		\
+  }							\
+  return (struct json_object *) NULL;		\
+}\
+
+// goal separate tokenizer and parsing.
+typedef struct json_object* (*json_parse_func) (struct json_parser_ctx *ctx, void *data, struct json_object * parent);
+  
 #endif

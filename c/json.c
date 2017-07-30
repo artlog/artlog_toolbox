@@ -13,22 +13,6 @@
 #define todo(text) printf("todo(%s)\n",text);
 #endif
 
-enum json_token_id {
-  JSON_TOKEN_EOF_ID,
-  JSON_TOKEN_OPEN_PARENTHESIS_ID,
-  JSON_TOKEN_CLOSE_PARENTHESIS_ID,
-  JSON_TOKEN_OPEN_BRAKET_ID,
-  JSON_TOKEN_CLOSE_BRAKET_ID,
-  JSON_TOKEN_COMA_ID,
-  JSON_TOKEN_DOUBLE_POINT_ID,
-  JSON_TOKEN_DQUOTE_ID,
-  JSON_TOKEN_SQUOTE_ID,
-  JSON_TOKEN_VARIABLE_ID,
-  JSON_TOKEN_NUMBER_ID,
-  JSON_TOKEN_TRUE_ID,
-  JSON_TOKEN_FALSE_ID,
-  JSON_TOKEN_NULL_ID
-};
 
 struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
   {
@@ -59,12 +43,10 @@ JSON_DEFINE_NEW(parenthesis,'{')
 JSON_DEFINE_NEW(braket,'[')
 JSON_DEFINE_TOGGLE(variable,'?')
 
-TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
-TOKEN_DEFINE_TOKENIZER(SQUOTE,'\'')
-TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
 
-struct json_object * new_json_error(struct json_ctx * ctx, enum json_syntax_error erroridx)
+struct json_object * new_json_error(struct json_parser_ctx * parser, enum json_syntax_error erroridx)
 {
+  struct json_ctx * ctx = parser->tokenizer;
   struct json_object * object = malloc(sizeof(struct json_object));
   if (object != NULL)
     {
@@ -80,17 +62,18 @@ struct json_object * new_json_error(struct json_ctx * ctx, enum json_syntax_erro
   return object;
 }
 
-struct json_object * syntax_error(struct json_ctx * ctx, enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent)
+struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent)
 {
   char c=0;
   int max_buff = 1024;
   int buf_idx=0;
   char * err_buf = malloc(max_buff);
+  struct json_ctx * ctx = parser->tokenizer;
   if ( err_buf == NULL )
     {
       memory_shortage(ctx);
     }
-  struct json_object * err_object = new_json_error(ctx,erroridx);
+  struct json_object * err_object = new_json_error(parser,erroridx);
   c = ctx->next_char(ctx, data);
   // capture some context ( 5 lines, cumulated < max_buff chars )
   // eat all to end => only one error will be captured.
@@ -113,11 +96,11 @@ struct json_object * syntax_error(struct json_ctx * ctx, enum json_syntax_error 
   err_object->error.string.length=buf_idx;  
   if ( ctx->debug_level > 0 )
     {
-      dump_object(ctx,err_object,NULL);
+      dump_object(parser,err_object,NULL);
       printf("while parsing object :\n");
-      dump_object(ctx,object,NULL);
+      dump_object(parser,object,NULL);
       printf("\n parent :\n");
-      dump_object(ctx,parent,NULL);
+      dump_object(parser,parent,NULL);
     }
   return err_object;
 }
@@ -152,13 +135,13 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
   return object;
 }
 
-struct json_object * new_growable(struct json_ctx * ctx, char final_type)
+struct json_object * new_growable(struct json_parser_ctx * ctx, char final_type)
 {
  struct json_object * object=malloc(sizeof(struct json_object));
  if (object != NULL)
    {
      object->type='G';
-     memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
+     memcpy(&object->pos_info,&ctx->tokenizer->pos_info,sizeof(object->pos_info));
      object->growable.final_type=final_type;
      object->growable.tail=NULL;
      object->growable.head.value=NULL;
@@ -168,12 +151,12 @@ struct json_object * new_growable(struct json_ctx * ctx, char final_type)
    }
  else
    {
-     memory_shortage(ctx);
+     memory_shortage(ctx->tokenizer);
    }
  return object;
 }
 
-struct json_link * new_link(struct json_ctx * ctx)
+struct json_link * new_link(struct json_parser_ctx * ctx)
 {
  struct json_link * link=malloc(sizeof(struct json_link));
  if (link != NULL)
@@ -183,7 +166,7 @@ struct json_link * new_link(struct json_ctx * ctx)
    }
  else
    {
-     memory_shortage(ctx);
+     memory_shortage(ctx->tokenizer);
    }
  return link;
 }
@@ -210,9 +193,9 @@ void json_release_object(struct json_object * object)
   free(object);
 }
 
-void dump_growable(struct json_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx);
+void dump_growable(struct json_parser_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx);
 
-void add_to_growable(struct json_ctx * ctx,struct json_growable * growable,struct json_object * object)
+void add_to_growable(struct json_parser_ctx * ctx,struct json_growable * growable,struct json_object * object)
 {
   if (json_debug > 0 )
     {
@@ -253,8 +236,9 @@ void add_to_growable(struct json_ctx * ctx,struct json_growable * growable,struc
     }
 }
 
-struct json_object * new_pair_key(struct json_ctx * ctx, struct json_object * key)
+struct json_object * new_pair_key(struct json_parser_ctx * parser, struct json_object * key)
 {
+  struct json_ctx * ctx = parser->tokenizer;
   struct json_object * object=malloc(sizeof(struct json_object));
   debug_tag(ctx,':');
   if (object != NULL)
@@ -271,8 +255,9 @@ struct json_object * new_pair_key(struct json_ctx * ctx, struct json_object * ke
   return object;
 }
 
-struct json_object * new_variable(struct json_ctx * ctx, struct json_object * key)
+struct json_object * new_variable(struct json_parser_ctx * parser, struct json_object * key)
 {
+  struct json_ctx * ctx = parser->tokenizer;
   struct json_object * object=malloc(sizeof(struct json_object));
   debug_tag(ctx,'?');
   if (object != NULL)
@@ -293,8 +278,9 @@ struct json_object * new_variable(struct json_ctx * ctx, struct json_object * ke
 }
 
 // should set owner of values to new object
-struct json_object * create_json_list(struct json_ctx * ctx, struct json_object * obj)
+struct json_object * create_json_list(struct json_parser_ctx * parser, struct json_object * obj)
 {
+  struct json_ctx * ctx = parser->tokenizer;
   struct json_growable * growable = &obj->growable;
   struct json_link * link=NULL;
   int size=growable->size;
@@ -335,8 +321,9 @@ struct json_object * create_json_list(struct json_ctx * ctx, struct json_object 
 
 // collect only pairs
 // should set owner of values to new object
-struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object * obj)
+struct json_object * create_json_dict(struct json_parser_ctx * parser, struct json_object * obj)
 {
+  struct json_ctx * ctx = parser->tokenizer;
   struct json_growable * growable= &obj->growable;
   struct json_link * link=NULL;
   int size=growable->size;
@@ -390,7 +377,7 @@ struct json_object * create_json_dict(struct json_ctx * ctx, struct json_object 
 }
 
 /** Where growables becomes real json objects **/
-struct json_object * json_concrete(struct json_ctx * ctx, struct json_object * object)
+struct json_object * json_concrete(struct json_parser_ctx * parser, struct json_object * object)
 {
   if (object !=NULL)
     {
@@ -401,12 +388,12 @@ struct json_object * json_concrete(struct json_ctx * ctx, struct json_object * o
 	  switch(growable->final_type)
 	    {
 	    case '{':
-	      newobject=create_json_dict(ctx,object);
+	      newobject=create_json_dict(parser,object);
 	      json_growable_release_object(object);
 	      object=newobject;
 	      break;
 	    case '[':
-	      newobject=create_json_list(ctx,object);
+	      newobject=create_json_list(parser,object);
 	      json_growable_release_object(object);
 	      object=newobject;
 	      break;
@@ -417,35 +404,9 @@ struct json_object * json_concrete(struct json_ctx * ctx, struct json_object * o
 }
 
 
-/**
- return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
-*/
-struct al_token * tokenizer_NUMBER(struct json_ctx * ctx, char first, void * data)
+struct json_object * new_json_constant_object(struct json_parser_ctx * parser, char t, enum json_internal_constant constant)
 {
-  int state = parse_number_level(ctx, first, data);
-  if ( state == 9 )
-    {
-      JSON_TOKEN(NUMBER);
-    }
-  return (struct al_token *) NULL;
-}
-
-/**
- return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
-*/
-struct json_object * json_parse_number_level(struct json_ctx * ctx, char first, void * data)
-{
-  int state = parse_number_level(ctx, first, data);
-  if ( state == 9 )
-    {
-      return cut_string_object(ctx,'0');
-    }
-  return (struct json_object *) NULL;
-}
-
-
-struct json_object * new_json_constant_object(struct json_ctx * ctx, char t, enum json_internal_constant constant)
-{
+  struct json_ctx * ctx = parser->tokenizer;
   struct json_object * object=malloc(sizeof(struct json_object));
   debug_tag(ctx,t);
   if (object != NULL)
@@ -467,532 +428,13 @@ struct json_object * new_json_constant_object(struct json_ctx * ctx, char t, enu
   return object;  
 }
 
-struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * data)
-{
-  switch(first)
-    {
-    case 't':  
-      if ( json_ctx_consume(ctx,data,"rue") )
-	{
-	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(ctx);
-	  JSON_TOKEN(TRUE);
-	}
-      break;
-    case 'f':
-	if (json_ctx_consume(ctx,data,"alse") )
-	  {
-	    ctx->add_char(ctx,first,first);
-	    flush_char_buffer(ctx);
-	    JSON_TOKEN(FALSE);
-	  }
-      break;
-    case 'n':
-      if ( json_ctx_consume(ctx,data,"ull") )
-	{
-	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(ctx);
-	  JSON_TOKEN(NULL);
-	}
-      break;
-    default:
-      ctx->pushback_char(ctx,data,first);
-      return NULL;
-    }
-  ctx->pushback_char(ctx,data,first);
-  return NULL;
-}
-
-struct json_object * parse_constant_level(struct json_ctx * ctx, char first, void * data)
-{
-  switch(first)
-    {
-    case 't':  
-      if ( json_ctx_consume(ctx,data,"rue") )
-	{
-	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(ctx);
-	  return new_json_constant_object(ctx, first,JSON_CONSTANT_TRUE);	  
-	}
-      break;
-    case 'f':
-	if (json_ctx_consume(ctx,data,"alse") )
-	  {
-	    ctx->add_char(ctx,first,first);
-	    flush_char_buffer(ctx);
-	    return new_json_constant_object(ctx, first,JSON_CONSTANT_FALSE);
-	  }
-      break;
-    case 'n':
-      if ( json_ctx_consume(ctx,data,"ull") )
-	{
-	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(ctx);
-	  return new_json_constant_object(ctx, first,JSON_CONSTANT_NULL);
-	}
-      break;
-    default:
-      ctx->pushback_char(ctx,data,first);
-      return syntax_error(ctx,JSON_ERROR_CONSTANT_INVALID,data,NULL,NULL);
-    }
-  ctx->pushback_char(ctx,data,first);
-  return syntax_error(ctx,JSON_ERROR_CONSTANT_ERROR,data,NULL,NULL);
-}
-
-// legacy, first implementation all in one ( tokenizer + parser ).
-struct json_object * parse_level_legacy(struct json_ctx * ctx, void * data, struct json_object * parent)
-{
-  char c = ctx->next_char(ctx, data);
-  struct json_object * object=NULL;
-
-  // main loop char by char, delegate to sub parser in many cases.
-  while (c != 0)  {
- 
-    // ignored characters.
-    switch(c)
-      {
-      case ' ':
-      case 0x0a:
-      case 0x0c:
-      case 9: // tab
-	// ignore
-	if ( ctx->debug_level > 0 )
-	  {
-	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
-	      {
-		printf("<ignore %c", c);
-	      }
-
-	    else
-	      {
-		printf("%c", c);
-	      }
-	  }
-	ctx->internal_flags |= JSON_FLAG_IGNORE;
-	break;
-      default:
-	if ( ctx->debug_level > 0 )
-	  {
-	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) != 0 )
-	      {
-		printf("ignore>");
-	      }
-	  }
-	ctx->internal_flags &= !JSON_FLAG_IGNORE;
-      };
-
-    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
-      {
-	switch(c)
-	  {
-	  case '{': 
-	    JSON_OPEN(ctx,parenthesis,object);
-	    object=parse_level_legacy(ctx,data,object); // expects to parse until '}' included
-	    if (parent == NULL)
-	      {
-		return object;
-	      }
-	    break;
-	  case '}':
-	    JSON_CLOSE(ctx,parenthesis);
-	    if (object !=NULL)
-	      {
-		if ((parent != NULL) && ( parent->type=='G'))
-		  {
-		    if ( parent->growable.final_type == '{')
-		      {
-			add_to_growable(ctx,&parent->growable,object);
-		      }
-		    else
-		      {
-			syntax_error(ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
-		      }
-		  }
-		else
-		  {
-		    syntax_error(ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
-		  }
-		object=NULL;
-	      }
-	    else
-	      {
-		if ( json_debug > 0 )
-		  {
-		    printf( "} hit NULL object");
-		  }
-	      }
-	    return json_concrete(ctx,parent);
-	    break;
-	  case '[':
-	    JSON_OPEN(ctx,braket,object);
-	    object=parse_level_legacy(ctx,data,object); // expects to parse until ']' included
-	    if (parent == NULL)
-	      {
-		return object;
-	      }
-	    break;
-	  case ']':
-	    JSON_CLOSE(ctx,braket);
-	    if (object !=NULL)
-	      {
-		if ( parent !=NULL ) 
-		  {
-		    if (parent->type=='G')
-		      {
-			if ( parent->growable.final_type == '[')
-			  {
-			    add_to_growable(ctx,&parent->growable,object);
-			  }
-			else
-			  {
-			    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
-			  }
-		      }
-		    else
-		      {
-			syntax_error(ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
-		      }
-		  }
-		else
-		  {
-		    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
-		  }
-		object=NULL;
-	      }
-	    return json_concrete(ctx,parent);
-	    break;
-	  case '"':
-	    JSON_TOGGLE(ctx,dquote);
-	    if ((parent != NULL) && (parent->type == '"'))
-	      {
-		// can't parse a string within a string
-		syntax_error(ctx,JSON_ERROR_STRING_IN_STRING, data,object,parent);
-	      }
-	    else
-	      {
-		object=json_parse_dquote_level(ctx,data);
-		if (parent == NULL)
-		  {
-		    return object;
-		  }
-		// else should be handled by ':', ',' or '}' or ']' ie any close.
-	      }
-	    break;
-	  case ',':
-	    if (object !=NULL)
-	      {
-		if ( json_debug > 0 )
-		  {
-		    printf("(%c parent:%p object:%p",c,parent,object);
-		  }
-		if (parent !=NULL) 
-		  {
-		    if ( parent->type=='G')
-		      {
-			add_to_growable(ctx,&parent->growable,object);
-		      }
-		    else
-		      {
-			syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
-		      }
-		  }
-		else
-		  {
-		    // special case if parent is NULL then it is up to caller to retrieve parent to add this result into it.
-		    ctx->pushback_char(ctx,data,c);
-		    return object;
-		  }
-		object=NULL;
-	      }
-	    else
-	      {
-		if (json_debug > 0 )
-		  {
-		    printf("(ignore , NULL object)");
-		  }
-	      }
-	    break;
-	  case '?':
-	    if ( object != NULL )
-	      {
-		syntax_error(ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
-	      }
-	    else
-	      {
-		debug_tag(ctx,'?');
-		JSON_TOGGLE(ctx,variable);
-		struct json_object * variable_name = json_parse_variable_level(ctx,data);	  
-		if (variable_name == NULL )
-		  {
-		    syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
-		  }
-		else
-		  {
-		    // need to set type to '$' due to parse_variable_level that is defined for '?'
-		    variable_name->type='$';
-		    if ( json_debug > 0 )
-		      {
-			printf("new variable key %p\n", variable_name);
-		      }
-		    object = new_variable(ctx,variable_name);
-		    if (parent == NULL)
-		      {
-			return object;
-		      }
-		    // else should be handled by ':', ',' or '}' or ']' ie any close.	      
-		  }
-	      }
-	    break;
-	  case ':':
-	    // object pair : replace current object with a pair...
-	    // previous should be a string
-	    if (object !=NULL)
-	      {
-		if (object->type == '\"') 
-		  {
-		    struct json_object * pair=new_pair_key(ctx,object);
-		    object=pair;
-		    struct json_object * value=parse_level_legacy(ctx,data,NULL);
-		    object->pair.value=value;
-		    if ( value == NULL )
-		      {
-			syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,object,parent);
-		      }
-		    else
-		      {
-			// where value knows its name.
-			value->owner=pair;
-		      }
-		    if (parent == NULL)
-		      {
-			return object;
-		      }
-		  }
-		else
-		  {
-		    debug_tag(ctx,object->type);
-		    syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
-		    object=NULL;
-		  }
-	      }
-	    else
-	      {
-		debug_tag(ctx,'#');
-		syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
-	      }
-	    break;
-	  case '\'':
-	    JSON_TOGGLE(ctx,squote);
-	    object=json_parse_squote_level(ctx,data);
-	    break;
-	  case '-':
-	  case '0':
-	  case '1':
-	  case '2':
-	  case '3':
-	  case '4':
-	  case '5':
-	  case '6':
-	  case '7':
-	  case '8':
-	  case '9':
-	    if ( object == NULL )
-	      {
-		object=json_parse_number_level(ctx,c,data);
-		if (parent == NULL)
-		  {
-		    return object;
-		  }
-	      }
-	    else
-	      {
-		ctx->pushback_char(ctx,data,c);
-		return syntax_error(ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
-	      }
-	    break;
-	  case 'f':
-	  case 't':
-	  case 'n':
-	    if ( object == NULL )
-	      {
-		object=parse_constant_level(ctx,c,data);
-		if (parent == NULL)
-		  {
-		    return object;
-		  }
-	      }
-	    else
-	      {
-		ctx->pushback_char(ctx,data,c);
-		return syntax_error(ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
-	      }
-	    break;
-	  case 0:
-	    // force failure programming error
-	    assert(c!=0);
-	    break;
-	  default:
-	    ctx->pushback_char(ctx,data,c);
-	    if ( object != NULL )
-	      {
-		return syntax_error(ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
-	      }
-	    else
-	      {
-		return syntax_error(ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
-	      }
-	  }
-      }
-    
-    c=ctx->next_char(ctx, data);
-  }
-  
-  return json_concrete(ctx,object);
-}
-
-
-
-// find the next token
-// TODO not yet used, should be used as intermediate in parse_level...
-struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
-{
-  char c = ctx->next_char(ctx, data);
-
-  // main loop char by char, delegate to sub parser in many cases.
-  while (c != 0)  {
-    if ( ctx->debug_level > 2 )
-      {
-	switch(c)
-	  {
-	  case '{':
-	  case '}':
-	  case '[':
-	  case ']':
-	  case '"':
-	  case '\'':
-	  case ',':
-	  case ':':
-	  case '?':
-	    printf("%c[%x]\n",c,c);
-	    /*
-	    if (parent != NULL)
-	      {
-		dump_object(ctx,parent,NULL);
-	      }
-	    */
-	    puts("\n-------");
-	    break;
-	  default:
-	    printf("%c",c);
-	  }
-      }
-
-    // ignored characters.
-    switch(c)
-      {
-      case ' ':
-      case 0x0a: // lf
-      case 0x0c: // cr
-      case 9: // tab
-	// ignore
-	if ( ctx->debug_level > 0 )
-	  {
-	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
-	      {
-		printf("<ignore %c", c);
-	      }
-
-	    else
-	      {
-		printf("%c", c);
-	      }
-	  }
-	ctx->internal_flags |= JSON_FLAG_IGNORE;
-	break;
-      default:
-	if ( ctx->debug_level > 0 )
-	  {
-	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) != 0 )
-	      {
-		printf("ignore>");
-	      }
-	  }
-	ctx->internal_flags &= !JSON_FLAG_IGNORE;
-      };
-
-    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
-      {
-	switch(c)
-	  {
-	  case '{':
-	    JSON_TOKEN(OPEN_PARENTHESIS);
-	    break;
-	  case '}':
-	    JSON_TOKEN(CLOSE_PARENTHESIS);
-	    break;
-	  case '[':
-	    JSON_TOKEN(OPEN_BRAKET);
-	    break;
-	  case ']':
-	    JSON_TOKEN(CLOSE_BRAKET);
-	    break;
-	  case '"':
-	    return tokenizer_DQUOTE(ctx,data);
-	    // else should be handled by ':', ',' or '}' or ']' ie any close.
-	    break;
-	  case ',':
-	    JSON_TOKEN(COMA);
-	    break;
-	  case '?':
-	    return tokenizer_VARIABLE(ctx,data);
-	    break;
-	  case ':':
-	    JSON_TOKEN(DOUBLE_POINT);
-	    break;
-	  case '\'':
-	    return tokenizer_SQUOTE(ctx,data);
-	    break;
-	  case '-':
-	  case '0':
-	  case '1':
-	  case '2':
-	  case '3':
-	  case '4':
-	  case '5':
-	  case '6':
-	  case '7':
-	  case '8':
-	  case '9':
-	    return tokenizer_NUMBER(ctx,c,data);
-	    break;
-	  case 'f': // false
-	  case 't': // true
-	  case 'n': // null
-	    return tokenizer_CONSTANT(ctx,c,data);
-	    break;
-	  case 0:
-	    // force failure programming error
-	    assert(c!=0);
-	    break;
-	  default: // unexpected char ?
-	    // PUSHBACK ? TO CHECK
-	    ctx->pushback_char(ctx,data,c);
-	  }
-      }
-    
-    c=ctx->next_char(ctx, data);
-  }
-  
-  JSON_TOKEN(EOF);
-}
-
 
 // new implementation, rely on tokenizer.
-struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json_object * parent)
+struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
 {
   struct al_token * last_token;
 
-  last_token = json_tokenizer(ctx,data);
+  last_token = json_tokenizer(ctx->tokenizer,data);
   
   struct json_object * object=NULL;
 
@@ -1084,7 +526,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      }
 	    else
 	      {
-		object=cut_string_object(ctx,'"');
+		object=cut_string_object(ctx->tokenizer,'"');
 		if (parent == NULL)
 		  {
 		    return object;
@@ -1134,9 +576,9 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      }
 	    else
 	      {
-		debug_tag(ctx,'?');
+		debug_tag(ctx->tokenizer,'?');
 		JSON_TOGGLE(ctx,variable);
-		struct json_object * variable_name = cut_string_object(ctx,'?');	  
+		struct json_object * variable_name = cut_string_object(ctx->tokenizer,'?');	  
 		if (variable_name == NULL )
 		  {
 		    syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
@@ -1185,24 +627,24 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 		  }
 		else
 		  {
-		    debug_tag(ctx,object->type);
+		    debug_tag(ctx->tokenizer,object->type);
 		    syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
 		    object=NULL;
 		  }
 	      }
 	    else
 	      {
-		debug_tag(ctx,'#');
+		debug_tag(ctx->tokenizer,'#');
 		syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
 	      }
 	    break;
 	  case JSON_TOKEN_SQUOTE_ID:
-	    object=cut_string_object(ctx,'\'');
+	    object=cut_string_object(ctx->tokenizer,'\'');
 	    break;
 	  case JSON_TOKEN_NUMBER_ID:
 	    if ( object == NULL )
 	      {
-		object=cut_string_object(ctx,'0');
+		object=cut_string_object(ctx->tokenizer,'0');
 		if (parent == NULL)
 		  {
 		    return object;
@@ -1253,7 +695,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      }
 	  }
 
-	  last_token = json_tokenizer(ctx,data);
+	  last_token = json_tokenizer(ctx->tokenizer,data);
   }
 
   return json_concrete(ctx,object);
@@ -1278,7 +720,7 @@ char next_char(struct json_ctx* ctx, void * data)
 
 
 
-void dump_string(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_string(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if ( object != NULL)
     {
@@ -1298,14 +740,14 @@ void dump_string(struct json_ctx * ctx, struct json_object * object, struct prin
     }
 }
 
-void dump_pair(struct json_ctx * ctx, struct json_pair * pair, struct print_ctx * print_ctx)
+void dump_pair(struct json_parser_ctx * ctx, struct json_pair * pair, struct print_ctx * print_ctx)
 {
   dump_object(ctx,pair->key, print_ctx);
   printf(":");
   dump_object(ctx,pair->value, print_ctx);
 }
 
-void dump_variable(struct json_ctx * ctx, struct json_variable * variable, struct print_ctx * print_ctx)
+void dump_variable(struct json_parser_ctx * ctx, struct json_variable * variable, struct print_ctx * print_ctx)
 {
   if ( variable != NULL )
     {
@@ -1362,7 +804,7 @@ void exit_indent(struct print_ctx * print_ctx)
     }
 }
 
-void dump_pair_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_pair_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if ( object != NULL)
     {
@@ -1375,7 +817,7 @@ void dump_pair_object(struct json_ctx * ctx, struct json_object * object, struct
     }
 }
 
-void dump_variable_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_variable_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if ( object != NULL)
     {
@@ -1392,7 +834,7 @@ void dump_variable_object(struct json_ctx * ctx, struct json_object * object, st
     }
 }
 
-void dump_list_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_list_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i=0;
   printf("%c",object->type);
@@ -1424,7 +866,7 @@ struct json_object * json_list_get( struct json_object * object, int index)
 
 
 
-void dump_dict_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_dict_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i;
   printf("%c",object->type);
@@ -1490,7 +932,7 @@ struct json_object * json_dict_path_get_value(struct json_path * path, struct js
   return value;
 }
 
-void dump_growable(struct json_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx)
+void dump_growable(struct json_parser_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx)
 {
   struct json_link * link=NULL;
   link=growable->tail;
@@ -1516,14 +958,14 @@ void dump_growable(struct json_ctx * ctx, struct json_growable * growable, struc
   printf("%c|",growable->final_type);
 }
 
-void dump_growable_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_growable_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   assert(object->type == 'G');
   struct json_growable * growable=&object->growable;
   dump_growable(ctx,growable, print_ctx);
 }
 
-void dump_constant_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_constant_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if ( object->constant != NULL )
     {
@@ -1549,7 +991,7 @@ void dump_constant_object(struct json_ctx * ctx, struct json_object * object, st
     
 }
 
-void dump_error_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if (( object != NULL) && (object->error.string.chars != NULL ))
     {
@@ -1565,7 +1007,7 @@ void dump_error_object(struct json_ctx * ctx, struct json_object * object, struc
     }
 }
 
-void dump_object(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if (object != NULL)
     {
@@ -1615,8 +1057,8 @@ void dump_object(struct json_ctx * ctx, struct json_object * object, struct prin
 }
 
 
-int json_unify_string(struct json_ctx * ctx, struct json_object * object,
-		      struct json_ctx * other_ctx, struct json_object * other_object,
+int json_unify_string(struct json_parser_ctx * ctx, struct json_object * object,
+		      struct json_parser_ctx * other_ctx, struct json_object * other_object,
 		      struct print_ctx * print_ctx)
 {
   if ( ( object != NULL) && (other_object != NULL ) )
@@ -1639,8 +1081,8 @@ int json_unify_string(struct json_ctx * ctx, struct json_object * object,
     }  
 }
 
-int json_unify_list(struct json_ctx * ctx, struct json_object * object,
-		     struct json_ctx * other_ctx, struct json_object * other_object,
+int json_unify_list(struct json_parser_ctx * ctx, struct json_object * object,
+		     struct json_parser_ctx * other_ctx, struct json_object * other_object,
 		     struct print_ctx * print_ctx)
 {
   int i=0;
@@ -1676,8 +1118,8 @@ int json_unify_list(struct json_ctx * ctx, struct json_object * object,
   return ok;
 }
 
-int json_unify_pair(struct json_ctx * ctx, struct json_pair * pair,
-		     struct json_ctx * other_ctx, struct json_pair * other_pair,
+int json_unify_pair(struct json_parser_ctx * ctx, struct json_pair * pair,
+		     struct json_parser_ctx * other_ctx, struct json_pair * other_pair,
 		     struct print_ctx * print_ctx)
 {
   int ok =  json_unify_object(ctx,pair->key,
@@ -1693,8 +1135,8 @@ int json_unify_pair(struct json_ctx * ctx, struct json_pair * pair,
   return ok;
 }
 
-int json_unify_pair_object(struct json_ctx * ctx, struct json_object * object,
-		            struct json_ctx * other_ctx, struct json_object * other_object,
+int json_unify_pair_object(struct json_parser_ctx * ctx, struct json_object * object,
+		            struct json_parser_ctx * other_ctx, struct json_object * other_object,
 		            struct print_ctx * print_ctx)
 {
   if ( ( object != NULL) && (other_object != NULL ) )
@@ -1713,8 +1155,8 @@ int json_unify_pair_object(struct json_ctx * ctx, struct json_object * object,
 }
 
 int json_unify_dict(
-	       struct json_ctx * ctx, struct json_object * object,
-	       struct json_ctx * other_ctx, struct json_object * other_object,
+	       struct json_parser_ctx * ctx, struct json_object * object,
+	       struct json_parser_ctx * other_ctx, struct json_object * other_object,
 	       struct print_ctx * print_ctx)
 {
   int i;
@@ -1755,8 +1197,8 @@ int json_unify_dict(
 /** assume ctx & object are non-variables and variable_objet is 
  **/
 int json_unify_variable(
-	       struct json_ctx * ctx, struct json_object * object,
-	       struct json_ctx * variable_ctx, struct json_object * variable_object,
+	       struct json_parser_ctx * ctx, struct json_object * object,
+	       struct json_parser_ctx * variable_ctx, struct json_object * variable_object,
 	       struct print_ctx * print_ctx)
 {
   if ( variable_object->variable.bound != 0 )
@@ -1773,8 +1215,8 @@ int json_unify_variable(
 }
 
 int json_unify_object(
-	       struct json_ctx * ctx, struct json_object * object,
-	       struct json_ctx * other_ctx, struct json_object * other_object,
+	       struct json_parser_ctx * ctx, struct json_object * object,
+	       struct json_parser_ctx * other_ctx, struct json_object * other_object,
 	       struct print_ctx * print_ctx)
 {
   int unify = 0; // 1 == this; 2 == other
@@ -1867,13 +1309,13 @@ int json_unify_object(
 }
 
 
-void dump_ctx(struct json_ctx * ctx)
+void dump_ctx(struct json_parser_ctx * ctx)
 {
   todo("really dump context only");
 }
 
 
-void json_print_object_name(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void json_print_object_name(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   if ( object != NULL )
     {
@@ -1914,7 +1356,7 @@ void dump_json_path(struct json_path * json_path)
  WARNING json_path itself is used for strings 
 if given_pathes is NULL then it will be dynamically allocated else it should have been zeroed before use.
 **/
-struct json_path * create_json_path(int maxlength, char * json_path, struct json_ctx * ctx, int max_depth, struct json_path * given_pathes)
+struct json_path * create_json_path(int maxlength, char * json_path, struct json_parser_ctx * ctx, int max_depth, struct json_path * given_pathes)
 {
   struct json_path * pathes = given_pathes;
   if ( pathes == NULL )
@@ -2011,7 +1453,7 @@ struct json_path * create_json_path(int maxlength, char * json_path, struct json
     }
 }
 
-struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, struct json_object * object)
+struct json_object * json_walk_path(char * json_path, struct json_parser_ctx * ctx, struct json_object * object)
 {
   struct json_path * json_path_object = create_json_path(JSON_PATH_MAX_CHARS,json_path,ctx,JSON_PATH_DEPTH,NULL);
   struct json_object * current_object = object;
@@ -2081,7 +1523,7 @@ struct json_object * json_walk_path(char * json_path, struct json_ctx * ctx, str
   return current_object;
 }
 
-void json_flatten(struct json_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void json_flatten(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   todo("json_flatten could be done with a special print_ctx and rely on dump");
 }

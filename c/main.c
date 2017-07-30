@@ -30,15 +30,15 @@ int main(int argc, char ** argv)
   char * json_path = NULL;
   int debug = 0;
   int path = 0;
-  
-  struct json_ctx json_context;
+
+  struct json_parser_ctx json_context;
+  struct json_ctx json_tokenizer;
   struct print_ctx print_context;
 
   struct json_import_context_data data;
 
-  json_import_context_initialize( &json_context);
-  // force legacy
-  json_context.unstack=parse_level_legacy;
+  json_import_context_initialize( &json_tokenizer);
+  json_context.tokenizer=&json_tokenizer;
 
   /* tabs
   print_context.do_indent = 1;
@@ -57,12 +57,14 @@ int main(int argc, char ** argv)
   print_context.s_indent = NULL;
   */
 
-  struct json_ctx json_template_context;
+  struct json_ctx json_template_tokenizer;
+  struct json_parser_ctx json_template_context;
   struct print_ctx print_template_context;
 
   struct json_import_context_data template_data;
 
-  json_import_context_initialize( &json_template_context);
+  json_import_context_initialize( &json_template_tokenizer);
+  json_template_context.tokenizer=&json_template_tokenizer;
 
   // two spaces
   print_template_context.do_indent = 0;
@@ -110,8 +112,8 @@ int main(int argc, char ** argv)
     }
 
   json_set_debug(debug);
-  json_ctx_set_debug(&json_context,debug);
-  json_ctx_set_debug(&json_template_context,debug);
+  json_ctx_set_debug(&json_tokenizer,debug);
+  json_ctx_set_debug(&json_template_tokenizer,debug);
   main_debug=debug;
   
   if (json_filename != NULL)
@@ -126,7 +128,7 @@ int main(int argc, char ** argv)
       if ( data.f != NULL )
 	{
 	  struct json_object * root=NULL;
-	  root=parse_level_legacy(&json_context,&data,root);
+	  root=parse_level(&json_context,&data,root);
 	  fclose(data.f);
 	  //dump_ctx(&json_context);
 	  dump_object(&json_context,root,&print_context);

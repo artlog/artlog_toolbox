@@ -3,12 +3,64 @@
 #include <assert.h>
 #include "json_parser.h"
 
+TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
+TOKEN_DEFINE_TOKENIZER(SQUOTE,'\'')
+TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
+
+/**
+ return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
+*/
+struct al_token * tokenizer_NUMBER(struct json_ctx * ctx, char first, void * data)
+{
+  int state = parse_number_level(ctx, first, data);
+  if ( state == 9 )
+    {
+      JSON_TOKEN(NUMBER);
+    }
+  return (struct al_token *) NULL;
+}
+
+struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * data)
+{
+  switch(first)
+    {
+    case 't':  
+      if ( json_ctx_consume(ctx,data,"rue") )
+	{
+	  ctx->add_char(ctx,first,first);
+	  flush_char_buffer(ctx);
+	  JSON_TOKEN(TRUE);
+	}
+      break;
+    case 'f':
+	if (json_ctx_consume(ctx,data,"alse") )
+	  {
+	    ctx->add_char(ctx,first,first);
+	    flush_char_buffer(ctx);
+	    JSON_TOKEN(FALSE);
+	  }
+      break;
+    case 'n':
+      if ( json_ctx_consume(ctx,data,"ull") )
+	{
+	  ctx->add_char(ctx,first,first);
+	  flush_char_buffer(ctx);
+	  JSON_TOKEN(NULL);
+	}
+      break;
+    default:
+      ctx->pushback_char(ctx,data,first);
+      return NULL;
+    }
+  ctx->pushback_char(ctx,data,first);
+  return NULL;
+}
+
+
 
 /** Initialize json_context **/
 void json_context_initialize(struct json_ctx *json_context)
 {
-  json_context->unstack=parse_level;
-  //json_context->unstack=parse_level_legacy;
   json_context->next_char=next_char;
   json_context->pushback_char=pushback_char;
   json_context->add_char=add_char;
@@ -285,4 +337,138 @@ int parse_until_escaped_level(struct json_ctx * ctx, void * data, char stop, cha
       c=ctx->next_char(ctx, data);
     }
   return 0;
+}
+
+
+// find the next token
+struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
+{
+  char c = ctx->next_char(ctx, data);
+
+  // main loop char by char, delegate to sub parser in many cases.
+  while (c != 0)  {
+    if ( ctx->debug_level > 2 )
+      {
+	switch(c)
+	  {
+	  case '{':
+	  case '}':
+	  case '[':
+	  case ']':
+	  case '"':
+	  case '\'':
+	  case ',':
+	  case ':':
+	  case '?':
+	    printf("%c[%x]\n",c,c);
+	    /*
+	    if (parent != NULL)
+	      {
+		dump_object(ctx,parent,NULL);
+	      }
+	    */
+	    puts("\n-------");
+	    break;
+	  default:
+	    printf("%c",c);
+	  }
+      }
+
+    // ignored characters.
+    switch(c)
+      {
+      case ' ':
+      case 0x0a: // lf
+      case 0x0c: // cr
+      case 9: // tab
+	// ignore
+	if ( ctx->debug_level > 0 )
+	  {
+	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
+	      {
+		printf("<ignore %c", c);
+	      }
+
+	    else
+	      {
+		printf("%c", c);
+	      }
+	  }
+	ctx->internal_flags |= JSON_FLAG_IGNORE;
+	break;
+      default:
+	if ( ctx->debug_level > 0 )
+	  {
+	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) != 0 )
+	      {
+		printf("ignore>");
+	      }
+	  }
+	ctx->internal_flags &= !JSON_FLAG_IGNORE;
+      };
+
+    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
+      {
+	switch(c)
+	  {
+	  case '{':
+	    JSON_TOKEN(OPEN_PARENTHESIS);
+	    break;
+	  case '}':
+	    JSON_TOKEN(CLOSE_PARENTHESIS);
+	    break;
+	  case '[':
+	    JSON_TOKEN(OPEN_BRAKET);
+	    break;
+	  case ']':
+	    JSON_TOKEN(CLOSE_BRAKET);
+	    break;
+	  case '"':
+	    return tokenizer_DQUOTE(ctx,data);
+	    // else should be handled by ':', ',' or '}' or ']' ie any close.
+	    break;
+	  case ',':
+	    JSON_TOKEN(COMA);
+	    break;
+	  case '?':
+	    return tokenizer_VARIABLE(ctx,data);
+	    break;
+	  case ':':
+	    JSON_TOKEN(DOUBLE_POINT);
+	    break;
+	  case '\'':
+	    return tokenizer_SQUOTE(ctx,data);
+	    break;
+	  case '-':
+	  case '0':
+	  case '1':
+	  case '2':
+	  case '3':
+	  case '4':
+	  case '5':
+	  case '6':
+	  case '7':
+	  case '8':
+	  case '9':
+	    return tokenizer_NUMBER(ctx,c,data);
+	    break;
+	  case 'f': // false
+	  case 't': // true
+	  case 'n': // null
+	    return tokenizer_CONSTANT(ctx,c,data);
+	    break;
+	  case 0:
+	    // force failure programming error
+	    assert(c!=0);
+	    break;
+	  default: // unexpected char ?
+	    // PUSHBACK ? TO CHECK
+	    ctx->pushback_char(ctx,data,c);
+	  }
+      }
+    
+    c=ctx->next_char(ctx, data);
+  }
+  
+  JSON_TOKEN(EOF);
 }
