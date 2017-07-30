@@ -1136,7 +1136,7 @@ struct json_object * parse_level(struct json_ctx * ctx, void * data, struct json
 	      {
 		debug_tag(ctx,'?');
 		JSON_TOGGLE(ctx,variable);
-		struct json_object * variable_name = json_parse_variable_level(ctx,data);	  
+		struct json_object * variable_name = cut_string_object(ctx,'?');	  
 		if (variable_name == NULL )
 		  {
 		    syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
