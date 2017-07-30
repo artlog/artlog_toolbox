@@ -213,4 +213,6 @@ char * json_get_string(struct json_object * object);
 /** Where growables becomes real json objects **/
 struct json_object * json_concrete(struct json_ctx * ctx, struct json_object * object);
 
+struct json_object * parse_level_legacy(struct json_ctx * ctx, void * data, struct json_object * parent);
+
 #endif

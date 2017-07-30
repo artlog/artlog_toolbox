@@ -9,9 +9,15 @@
 struct json_ctx;
 struct json_object;
 
+struct al_token {
+  int token;
+};
+
 typedef char (*get_next_char)(struct json_ctx *ctx, void *data);
 typedef void (*set_pushback_char)(struct json_ctx *ctx, void *data, char pushback);
-typedef struct json_object* (*parse_func) (struct json_ctx *ctx, void *data, struct json_object * parent);
+// goal separate tokenizer and parsing.
+typedef struct json_object* (*json_parse_func) (struct json_ctx *ctx, void *data, struct json_object * parent);
+typedef struct al_token* (*al_tokenizer_func) (struct json_ctx *ctx, void *data);
 typedef int (*add_token_char)(struct json_ctx *ctx, char token, char c);
 
 
@@ -46,7 +52,8 @@ struct json_ctx
   struct json_level variable; // variable "?" ; to use existing framework JSON_TOGGLE not really sound yet.
   get_next_char next_char;
   set_pushback_char pushback_char;
-  parse_func unstack;
+  json_parse_func unstack;
+  al_tokenizer_func tokenizer;
   add_token_char add_char;
   char * buf;
   int debug_level;
@@ -54,10 +61,9 @@ struct json_ctx
   int bufsize;
   int pos;
   int internal_flags;
-  struct json_object * error; // null if no error encountered, else set to last error
+  // struct json_object * error; // null if no error encountered, else set to last error
+  struct al_token last_token;
   struct json_pos_info pos_info;
-  struct json_object * root;
-  struct json_object * tail;
 };
 
 #define JSON_OPEN(ctx,__member__,object)   ctx->__member__.open_level++;ctx-> __member__ .max_open_level++;object=new_ ## __member__(ctx);
@@ -65,7 +71,7 @@ struct json_ctx
 #define JSON_TOGGLE(ctx,__member__)   ctx->__member__.open_level++;ctx->__member__.max_open_level++; 
 
 #define JSON_DEFINE_TOGGLE(__member__,__char__) \
-  struct json_object * json_parse_ ## __member__ ## _level(struct json_ctx * ctx, void * data, struct json_object * object) \
+  struct json_object * json_parse_ ## __member__ ## _level(struct json_ctx * ctx, void * data) \
 {\
   int result = parse_until_escaped_level(ctx,data,__char__,'\\');\
   if ( result ) { \
@@ -73,6 +79,20 @@ struct json_ctx
     return cut_string_object(ctx,__char__);		\
   }							\
   return (struct json_object *) NULL;		\
+}\
+
+#define JSON_TOKEN(token_name) \
+  { ctx->last_token.token=JSON_TOKEN_ ##token_name ##_ID;\
+    return &ctx->last_token; }
+
+#define TOKEN_DEFINE_TOKENIZER(__token__,__char__) \
+  struct al_token * tokenizer_ ## __token__ (struct json_ctx * ctx, void * data) \
+{\
+  int result = parse_until_escaped_level(ctx,data,__char__,'\\');\
+  if ( result ) { \
+    JSON_TOKEN(__token__);				\
+  }							\
+  return  NULL;		\
 }\
 
 /** Initialize json_context **/

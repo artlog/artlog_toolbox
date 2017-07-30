@@ -37,6 +37,8 @@ int main(int argc, char ** argv)
   struct json_import_context_data data;
 
   json_import_context_initialize( &json_context);
+  // force legacy
+  json_context.unstack=parse_level_legacy;
 
   /* tabs
   print_context.do_indent = 1;
@@ -124,7 +126,7 @@ int main(int argc, char ** argv)
       if ( data.f != NULL )
 	{
 	  struct json_object * root=NULL;
-	  root=parse_level(&json_context,&data,root);
+	  root=parse_level_legacy(&json_context,&data,root);
 	  fclose(data.f);
 	  //dump_ctx(&json_context);
 	  dump_object(&json_context,root,&print_context);

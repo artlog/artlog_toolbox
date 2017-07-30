@@ -8,6 +8,7 @@
 void json_context_initialize(struct json_ctx *json_context)
 {
   json_context->unstack=parse_level;
+  //json_context->unstack=parse_level_legacy;
   json_context->next_char=next_char;
   json_context->pushback_char=pushback_char;
   json_context->add_char=add_char;
@@ -15,8 +16,6 @@ void json_context_initialize(struct json_ctx *json_context)
   json_context->buf=NULL;
   json_context->bufsize=0;
   json_context->bufpos=0;
-  json_context->root=NULL;
-  json_context->tail=NULL;
   json_context->debug_level=0;
 }
 
