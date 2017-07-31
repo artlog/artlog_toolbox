@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "alcommon.h"
 
 #include "dump.h"
 
@@ -34,7 +35,7 @@ int indexset_get(struct  indexset * indexset, int pabs)
       fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
-  return ( (indexset->set & (1L << pabs)) != 0 );
+  return ( FLAG_IS_SET(indexset->set,(1L << pabs)) );
 }
 
 int indexset_reset(struct indexset * indexset, int pabs)
@@ -45,7 +46,7 @@ int indexset_reset(struct indexset * indexset, int pabs)
       fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
-  if ( (indexset->set & (1L << pabs)) == 0 )
+  if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
     {
       // already unset
       return 0;
@@ -66,7 +67,7 @@ int indexset_set(struct indexset * indexset, int pabs)
       fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
-  if ( (indexset->set & (1L << pabs)) == 0 )
+  if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
     {      
       indexset->set = indexset->set | (1L << pabs);
       ++ indexset->count;
@@ -225,7 +226,7 @@ int allistelement_release(struct allistelement * this)
 {
   if ( this != NULL )
     {
-      if ( (this->flags & ALLIST_MALLOC) != 0 )
+      if ( FLAG_IS_SET(this->flags, ALLIST_MALLOC) )
 	{
 	  // make it clearly wrong to prevent reuse and help debugging
 	  if ( this == (void *) 0xdeadbeefL)
@@ -261,7 +262,7 @@ int allistelement_is_ext(struct allistelement * element, int membership)
 
 int allistelement_has_ext(struct allistelement * element)
 {
-  return (element->flags & ALLIST_EXT) != 0;
+  return FLAG_IS_SET(element->flags,ALLIST_EXT);
 }
 
 int allistelement_is_shrunk(struct allistelement * element)
@@ -271,7 +272,7 @@ int allistelement_is_shrunk(struct allistelement * element)
       fprintf(stderr, "NULL element in %s:%i \n", __func__,__LINE__);
       return -1;
     }
-  return (element->flags & ALLIST_SHRUNK) != 0;
+  return FLAG_IS_SET(element->flags,ALLIST_SHRUNK);
 }
 
 int allistelement_get_memberships(struct allistelement * this)
@@ -449,7 +450,7 @@ struct allistextlink * allistelement_get_extlink_ext(struct allistelement * elem
       if (debug) {fprintf(stderr,"suspicious get ext link for element %p list %p membership %i smaller than set %i\n", element, list, membership, INDEXSET_COUNT );}
       
     }
-  if ( (element->flags & ALLIST_EXT) != 0 )
+  if ( FLAG_IS_SET(element->flags,ALLIST_EXT)  )
     {
       struct allistextlink * ext = element->extlink;
       while ( ext != NULL )

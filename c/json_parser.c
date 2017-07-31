@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include "alcommon.h"
 #include "json_parser.h"
 
 TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
@@ -384,14 +385,14 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	// ignore
 	if ( ctx->debug_level > 0 )
 	  {
-	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
+	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
-		printf("<ignore %c", c);
+		printf("%c", c);	
 	      }
-
 	    else
 	      {
-		printf("%c", c);
+		// start to ignore ...
+		printf("<ignore %c", c);
 	      }
 	  }
 	ctx->internal_flags |= JSON_FLAG_IGNORE;
@@ -399,7 +400,8 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
       default:
 	if ( ctx->debug_level > 0 )
 	  {
-	    if ((ctx->internal_flags & JSON_FLAG_IGNORE) != 0 )
+	    // we were ignoring and now will we stop ...
+	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
 		printf("ignore>");
 	      }
@@ -407,7 +409,7 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	ctx->internal_flags &= !JSON_FLAG_IGNORE;
       };
 
-    if ((ctx->internal_flags & JSON_FLAG_IGNORE) == 0 )
+    if ( ! FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
       {
 	switch(c)
 	  {

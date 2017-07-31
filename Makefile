@@ -8,7 +8,7 @@ BUILD=build
 
 libsrc=c/json_parser.c c/json.c c/json_import_internal.c
 src=c/main.c
-libraries=json alsave altest allist aldev alhash
+libraries=json alsave altest allist aldev alhash alcommon
 
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
@@ -31,12 +31,14 @@ $(BUILD)/lib/libjson.a: $(BUILD)/obj/json_parser.o $(BUILD)/obj/json.o  $(BUILD)
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
 	ar rccs $@ $<
-
 $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test.h
 	ar rccs $@ $<
 
 $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/todo.o $(BUILD)/include/todo.h
 	ar rccs $@ $<
+
+$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o $(BUILD)/include/inputstream.h $(BUILD)/include/outputstream.h $(BUILD)/include/alcommon.h
+	ar rccs $@ $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o
 
 $(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/include/alhash.h
 	ar rccs $@ $<
