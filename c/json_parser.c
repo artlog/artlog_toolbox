@@ -124,12 +124,6 @@ int add_char(struct json_ctx * ctx, char token, char c)
   return 0;
 }
 
-void memory_shortage(struct json_ctx * ctx)
-{
-  fprintf(stderr,"Memory heap shortage. Exiting \n");
-  exit(2);
-}
-
 void debug_tag(struct json_ctx *ctx,char c)
 {
   if (json_context_get_debug(ctx))

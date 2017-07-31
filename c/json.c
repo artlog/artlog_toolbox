@@ -4,6 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "alcommon.h"
 #include "json.h"
 
 #ifdef JSON_TODO
@@ -57,7 +58,7 @@ struct json_object * new_json_error(struct json_parser_ctx * parser, enum json_s
     }
   else
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   return object;
 }
@@ -71,7 +72,7 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   struct json_ctx * ctx = parser->tokenizer;
   if ( err_buf == NULL )
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   struct json_object * err_object = new_json_error(parser,erroridx);
   c = ctx->next_char(ctx, data);
@@ -130,7 +131,7 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
     }
   else
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   return object;
 }
@@ -151,7 +152,7 @@ struct json_object * new_growable(struct json_parser_ctx * ctx, char final_type)
    }
  else
    {
-     memory_shortage(ctx->tokenizer);
+     memory_shortage(NULL);
    }
  return object;
 }
@@ -166,7 +167,7 @@ struct json_link * new_link(struct json_parser_ctx * ctx)
    }
  else
    {
-     memory_shortage(ctx->tokenizer);
+     memory_shortage(NULL);
    }
  return link;
 }
@@ -250,7 +251,7 @@ struct json_object * new_pair_key(struct json_parser_ctx * parser, struct json_o
     }
   else
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   return object;
 }
@@ -272,7 +273,7 @@ struct json_object * new_variable(struct json_parser_ctx * parser, struct json_o
     }
   else
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   return object;
 }
@@ -280,7 +281,6 @@ struct json_object * new_variable(struct json_parser_ctx * parser, struct json_o
 // should set owner of values to new object
 struct json_object * create_json_list(struct json_parser_ctx * parser, struct json_object * obj)
 {
-  struct json_ctx * ctx = parser->tokenizer;
   struct json_growable * growable = &obj->growable;
   struct json_link * link=NULL;
   int size=growable->size;
@@ -314,19 +314,19 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
     }
   else
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   return object;
 }
 
-// collect only pairs
+// collect only pairs, used by json_concrete to obtain a dict from a growable '{'
 // should set owner of values to new object
 struct json_object * create_json_dict(struct json_parser_ctx * parser, struct json_object * obj)
 {
-  struct json_ctx * ctx = parser->tokenizer;
   struct json_growable * growable= &obj->growable;
   struct json_link * link=NULL;
   int size=growable->size;
+  // index of element keypair in dict.
   int i=0;
   struct json_object * object=malloc(sizeof(struct json_object) + size*sizeof(struct json_pair *)); // a little bigger than needed
   if (object != NULL)
@@ -371,7 +371,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
     }
   else
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   return object;
 }
@@ -423,7 +423,7 @@ struct json_object * new_json_constant_object(struct json_parser_ctx * parser, c
     }
   else
     {
-      memory_shortage(ctx);
+      memory_shortage(NULL);
     }
   return object;  
 }

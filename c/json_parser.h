@@ -81,8 +81,6 @@ struct json_ctx
 /** Initialize json_context **/
 void json_context_initialize(struct json_ctx *json_context);
 
-void memory_shortage(struct json_ctx * ctx);
-
 /** set debug level 0 : none 
 return previous debug flags
 */
