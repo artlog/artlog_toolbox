@@ -2,12 +2,13 @@
 #include <string.h>
 #include <assert.h>
 
+#include "alcommon.h"
 #include "json_import_internal.h"
 
 char json_import_next_char(struct json_ctx* ctx, void * data)
 {
   struct json_import_context_data * json_import_data = (struct json_import_context_data *) data;
-  if ( ( json_import_data->flags &  ALSFLAG_PUSHBACK ) != 0 )
+  if ( FLAG_IS_SET( json_import_data->flags,ALSFLAG_PUSHBACK ) )
     {
       json_import_data->flags ^= ALSFLAG_PUSHBACK;
       return json_import_data->last;
@@ -39,10 +40,10 @@ void json_import_pushback_char(struct json_ctx *ctx, void *data, char pushback)
 
   // should not pushback something else than previous char. programming error
   assert( (ctx->pos>0) && (pushback == json_import_data->last ));
-  if ( ( json_import_data->flags &  ALSFLAG_PUSHBACK ) != 0 )
+  if ( FLAG_IS_SET( json_import_data->flags, ALSFLAG_PUSHBACK ) )
     {
       // two pushback ... NOT SUPPORTED
-      fprintf(stderr,"2 pushbacks line %i column %i\n", ctx->pos_info.line, ctx->pos_info.column);
+      fprintf(stderr,"[ERROR] 2 pushbacks line %i column %i. NOT SUPPORTED.\n", ctx->pos_info.line, ctx->pos_info.column);
     }    
   json_import_data->flags |= ALSFLAG_PUSHBACK;
   ctx->pos--;
@@ -50,8 +51,7 @@ void json_import_pushback_char(struct json_ctx *ctx, void *data, char pushback)
 
 void json_import_context_initialize(struct json_ctx *ctx)
 {
-  json_context_initialize( ctx);
-  ctx->next_char=json_import_next_char;
+  json_context_initialize( ctx, json_import_next_char);
   ctx->pushback_char=json_import_pushback_char;
   ctx->pos_info.column=0;
   ctx->pos_info.line=0;

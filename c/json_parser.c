@@ -57,10 +57,8 @@ struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * d
   return NULL;
 }
 
-
-
 /** Initialize json_context **/
-void json_context_initialize(struct json_ctx *json_context)
+void json_context_initialize(struct json_ctx *json_context, get_next_char next_char)
 {
   json_context->next_char=next_char;
   json_context->pushback_char=pushback_char;
@@ -414,23 +412,23 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	    JSON_TOKEN(CLOSE_PARENTHESIS);
 	    break;
 	  case '[':
-	    JSON_TOKEN(OPEN_BRAKET);
+	    JSON_TOKEN(OPEN_BRACKET);
 	    break;
 	  case ']':
-	    JSON_TOKEN(CLOSE_BRAKET);
+	    JSON_TOKEN(CLOSE_BRACKET);
 	    break;
 	  case '"':
 	    return tokenizer_DQUOTE(ctx,data);
 	    // else should be handled by ':', ',' or '}' or ']' ie any close.
 	    break;
 	  case ',':
-	    JSON_TOKEN(COMA);
+	    JSON_TOKEN(COMMA);
 	    break;
 	  case '?':
 	    return tokenizer_VARIABLE(ctx,data);
 	    break;
 	  case ':':
-	    JSON_TOKEN(DOUBLE_POINT);
+	    JSON_TOKEN(COLON);
 	    break;
 	  case '\'':
 	    return tokenizer_SQUOTE(ctx,data);

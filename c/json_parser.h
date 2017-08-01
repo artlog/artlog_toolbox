@@ -17,17 +17,22 @@ enum json_token_id {
   JSON_TOKEN_EOF_ID,
   JSON_TOKEN_OPEN_PARENTHESIS_ID,
   JSON_TOKEN_CLOSE_PARENTHESIS_ID,
-  JSON_TOKEN_OPEN_BRAKET_ID,
-  JSON_TOKEN_CLOSE_BRAKET_ID,
-  JSON_TOKEN_COMA_ID,
-  JSON_TOKEN_DOUBLE_POINT_ID,
+  JSON_TOKEN_OPEN_BRACKET_ID,
+  JSON_TOKEN_CLOSE_BRACKET_ID,
+  JSON_TOKEN_COMMA_ID,
+  JSON_TOKEN_COLON_ID,
   JSON_TOKEN_DQUOTE_ID,
   JSON_TOKEN_SQUOTE_ID,
   JSON_TOKEN_VARIABLE_ID,
   JSON_TOKEN_NUMBER_ID,
   JSON_TOKEN_TRUE_ID,
   JSON_TOKEN_FALSE_ID,
-  JSON_TOKEN_NULL_ID
+  JSON_TOKEN_NULL_ID,
+  JSON_TOKEN_SEMI_COLON_ID,
+  JSON_TOKEN_COMMENT_ID,
+  JSON_TOKEN_QUESTION_ID,
+  JSON_TOKEN_WORD_ID,
+  JSON_TOKEN_PUSHBACK_ID
 };
 
 enum json_internal_flags {
@@ -68,8 +73,11 @@ struct json_ctx
   { ctx->last_token.token=JSON_TOKEN_ ##token_name ##_ID;\
     return &ctx->last_token; }
 
+#define TOKEN_DECLARE_TOKENIZER(__token__,__char__) \
+  struct al_token * tokenizer_ ## __token__ (struct json_ctx * ctx, void * data)
+
 #define TOKEN_DEFINE_TOKENIZER(__token__,__char__) \
-  struct al_token * tokenizer_ ## __token__ (struct json_ctx * ctx, void * data) \
+  TOKEN_DECLARE_TOKENIZER(__token__,__char__) \
 {\
   int result = parse_until_escaped_level(ctx,data,__char__,'\\');\
   if ( result ) { \
@@ -79,7 +87,7 @@ struct json_ctx
 }\
 
 /** Initialize json_context **/
-void json_context_initialize(struct json_ctx *json_context);
+void json_context_initialize(struct json_ctx *json_context, get_next_char next_char);
 
 /** set debug level 0 : none 
 return previous debug flags
@@ -120,5 +128,7 @@ int parse_until_escaped_level(struct json_ctx * ctx, void * data, char stop, cha
 
 struct al_token * json_tokenizer(struct json_ctx * ctx, void * data);
 
+
+struct al_token * tokenizer_NUMBER(struct json_ctx * ctx, char first, void * data);
 
 #endif

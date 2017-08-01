@@ -116,7 +116,7 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
       if ( (ctx->bufpos + 1) < ctx->bufsize )
 	{
 	  // reduce it...
-	  if ( json_debug > 0 )
+	  if ( FLAG_IS_SET(json_debug,1)  )
 	    {
 	      printf("(%s,%s,%i) reduce string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,ctx->buf,ctx->bufsize,ctx->bufpos+1);
 	    }
@@ -480,7 +480,7 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
 	      }
 	    return json_concrete(ctx,parent);
 	    break;
-	  case JSON_TOKEN_OPEN_BRAKET_ID:
+	  case JSON_TOKEN_OPEN_BRACKET_ID:
 	    JSON_OPEN(ctx,braket,object);
 	    object=parse_level(ctx,data,object); // expects to parse until ']' included
 	    if (parent == NULL)
@@ -488,7 +488,7 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
 		return object;
 	      }
 	    break;
-	  case JSON_TOKEN_CLOSE_BRAKET_ID:
+	  case JSON_TOKEN_CLOSE_BRACKET_ID:
 	    JSON_CLOSE(ctx,braket);
 	    if (object !=NULL)
 	      {
@@ -534,7 +534,7 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
 		todo("else should be handled by ':', ',' or '}' or ']' ie any close.");
 	      }
 	    break;
-	  case JSON_TOKEN_COMA_ID:
+	  case JSON_TOKEN_COMMA_ID:
 	    if (object !=NULL)
 	      {
 		if ( json_debug > 0 )
@@ -600,7 +600,7 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
 		  }
 	      }
 	    break;
-	  case JSON_TOKEN_DOUBLE_POINT_ID:
+	  case JSON_TOKEN_COLON_ID:
 	    // object pair : replace current object with a pair...
 	    // previous should be a string
 	    if (object !=NULL)
@@ -701,22 +701,6 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
   return json_concrete(ctx,object);
 }
 
-char next_char(struct json_ctx* ctx, void * data)
-{
-  struct json_string * str = (struct json_string *) data;
-  if ( json_debug > 0 )
-  {
-    printf("P%u,",ctx->pos);
-  }
-  if ( ctx->pos < str->length )
-    {
-      return str->chars[ctx->pos++];
-    }
-  else
-    {
-      return 0;
-    }
-}
 
 
 
