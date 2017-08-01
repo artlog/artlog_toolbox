@@ -1,12 +1,14 @@
 #ifndef __JSON_IMPORT_INTERNAL_HEADER__
 #define __JSON_IMPORT_INTERNAL_HEADER__
 
+#include "inputstream.h"
 #include "json.h"
 
 /** fully rely on stream buffering */
 struct json_import_context_data {
   char last;
   FILE * f;
+  struct inputstream * inputstream;
   int flags;
   int debug;
 };

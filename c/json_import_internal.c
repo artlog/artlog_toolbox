@@ -5,16 +5,36 @@
 #include "alcommon.h"
 #include "json_import_internal.h"
 
+char json_read_char(struct json_import_context_data * json_import_data)
+{
+  if (json_import_data->inputstream != NULL )
+    {
+       json_import_data->last = inputstream_readuchar(json_import_data->inputstream);
+    }
+  else
+    {
+      if ( fread(&json_import_data->last, 1, 1, json_import_data->f) != 1 )
+	{
+	  return 0;
+	}
+    }
+  return json_import_data->last;
+}
+
 char json_import_next_char(struct json_ctx* ctx, void * data)
 {
   struct json_import_context_data * json_import_data = (struct json_import_context_data *) data;
   if ( FLAG_IS_SET( json_import_data->flags,ALSFLAG_PUSHBACK ) )
     {
+      if ( FLAG_IS_SET( ctx->debug_level, TOKENIZER_DEBUG_PUSHBACK) )
+	{
+	  printf("<pushback>%c</pushback>\n",json_import_data->last);
+	}
       json_import_data->flags ^= ALSFLAG_PUSHBACK;
       return json_import_data->last;
     }
     
-  if ( fread(&json_import_data->last, 1, 1, json_import_data->f) == 1 )
+  if ( json_read_char(json_import_data) != 0 )
     {
       if ( json_import_data->last ==  0x0a )
 	{	  

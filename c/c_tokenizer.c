@@ -8,6 +8,7 @@
 TOKEN_DECLARE_TOKENIZER(DQUOTE,'"');
 TOKEN_DECLARE_TOKENIZER(SQUOTE,'\'');
 
+  
 // match everything until */
 struct al_token * c_tokenizer_eat_up_to_end_of_comment(struct json_ctx * ctx, void * data)
 {
@@ -49,6 +50,7 @@ struct al_token * c_tokenizer_eat_up_to_end_of_comment(struct json_ctx * ctx, vo
 	break;
       }
     ctx->add_char(ctx,c,c);
+    c = ctx->next_char(ctx, data);
   }
   JSON_TOKEN(EOF);
 }
@@ -61,7 +63,8 @@ struct al_token * c_tokenizer_eat_up_word(struct json_ctx * ctx, void * data)
   while (c != 0)
   {
     if ( (( c >= 'a' ) && ( c <= 'z' ))
-	 || (( c >= 'A' ) && ( c <= 'Z' )) )
+	 || (( c >= 'A' ) && ( c <= 'Z' ))
+	 || ( c == '_' ) )
       {
 	text=1;
 	ctx->add_char(ctx,c,c);
@@ -70,7 +73,7 @@ struct al_token * c_tokenizer_eat_up_word(struct json_ctx * ctx, void * data)
       {
 	if ( ( text > 0 ) &&
 	     (    ( ( c>='0' ) && (c<='9') )
-	       || ( c == '_' ) )
+	     )
 	   )
 	  {
 	    ctx->add_char(ctx,c,c);
@@ -80,7 +83,8 @@ struct al_token * c_tokenizer_eat_up_word(struct json_ctx * ctx, void * data)
 	    ctx->pushback_char(ctx,data,c);
 	    JSON_TOKEN(WORD);
 	  }
-      }    
+      }
+    c = ctx->next_char(ctx, data);
   }
   JSON_TOKEN(EOF);
 
@@ -101,15 +105,20 @@ struct al_token * c_tokenizer_eat_up_to_end_of_line(struct json_ctx * ctx, void 
 	JSON_TOKEN(COMMENT);
       }
       ctx->add_char(ctx,c,c);
-      
+      c = ctx->next_char(ctx, data);
   }
   JSON_TOKEN(EOF);
+}
+
+struct al_token * c_pragma_handler(struct json_ctx * ctx, void * data)
+{
+  struct al_token * token =  c_tokenizer_eat_up_to_end_of_line(ctx,data);
+  JSON_TOKEN(PRAGMA);
 }
 
 // expect to enter here while a first '/' has been hit...
 struct al_token * c_tokenizer_potential_comment(struct json_ctx * ctx, void * data)
 {
-  todo("potential comment");
   char c = ctx->next_char(ctx, data);
 
   // main loop char by char, delegate to sub parser in many cases.
@@ -140,10 +149,35 @@ struct al_token * c_tokenizer_potential_comment(struct json_ctx * ctx, void * da
   JSON_TOKEN(EOF);
 
 }
-  
+
+struct al_token * c_tokenizer_starting_with_minus(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      return tokenizer_NUMBER(ctx,c,data);
+      break;
+    case '>':
+      ctx->add_char(ctx,'-',c);
+      JSON_TOKEN(RIGHT_ARROW);
+      break;
+    default:
+      JSON_TOKEN(EOF);
+    }
+}
 struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 {
   char c = ctx->next_char(ctx, data);
+  ctx->internal_flags &= !JSON_FLAG_IGNORE;
 
   // main loop char by char, delegate to sub parser in many cases.
   while (c != 0)  {
@@ -205,10 +239,18 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
       {
 	switch(c)
 	  {
+	  case '#':
+	    return c_pragma_handler(ctx,data);
 	  case '{':
-	    JSON_TOKEN(OPEN_PARENTHESIS);
+	    JSON_TOKEN(OPEN_BRACE);
 	    break;
 	  case '}':
+	    JSON_TOKEN(CLOSE_BRACE);
+	    break;
+	  case '(':
+	    JSON_TOKEN(OPEN_PARENTHESIS);
+	    break;
+	  case ')':
 	    JSON_TOKEN(CLOSE_PARENTHESIS);
 	    break;
 	  case '[':
@@ -247,6 +289,8 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	    JSON_TOKEN(SEMI_COLON);
 	    break;
 	  case '-':
+	    // NOT THAT EASY ... -> is not number ...
+	    return c_tokenizer_starting_with_minus(ctx,data);
 	  case '0':
 	  case '1':
 	  case '2':
@@ -259,11 +303,35 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	  case '9':
 	    return tokenizer_NUMBER(ctx,c,data);
 	    break;
+	  case '&':
+	    JSON_TOKEN(AMPERSAND);
+	    break;
+	  case '.':
+	    JSON_TOKEN(DOT);
+	    break;
+	  case '*':
+	    JSON_TOKEN(STAR);
+	  case '>':
+	    JSON_TOKEN(SUPERIOR);
+	    break;
+	  case '<':
+	    JSON_TOKEN(INFERIOR);
+	    break;
+	  case '=':
+	    JSON_TOKEN(EQUAL);
+	    break;
+	  case '%':
+	    JSON_TOKEN(PERCENT);
+	    break;
+	  case '!':
+	    JSON_TOKEN(EXCLAMATION);
+	    break;
 	  case 0:
 	    // force failure programming error
 	    assert(c!=0);
 	    break;
 	  default: // 'normal' word
+	    ctx->add_char(ctx,c,c);
 	    return c_tokenizer_eat_up_word(ctx, data);
 	  }
       }

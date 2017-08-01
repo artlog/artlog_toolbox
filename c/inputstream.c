@@ -46,7 +46,7 @@ unsigned int inputstream_readuint32(struct inputstream * stream)
 
 unsigned char inputstream_readuchar(struct inputstream * stream)
 {
-  unsigned char result;
+  unsigned char result = 0;
   read(stream->fd,&result,1);
   return result;
 }

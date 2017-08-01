@@ -4,6 +4,10 @@
 #include "alcommon.h"
 #include "json_parser.h"
 
+#define TOKEN_BUFSIZE_MIN 256
+#define TOKEN_BUFSIZE_WARNING 8192
+#define TOKEN_BUFSIZE_MAX 128000
+
 TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
 TOKEN_DEFINE_TOKENIZER(SQUOTE,'\'')
 TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
@@ -84,15 +88,14 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
     }
 }
 
+// keep a growable buffer in ctx, grow it as needed
 int add_char(struct json_ctx * ctx, char token, char c)
 {
-  int bufsize=256;
-#ifdef DEBUGALL
-  if ( json_context_get_debug(ctx) )
+  int bufsize=TOKEN_BUFSIZE_MIN;
+  if ( FLAG_IS_SET(json_context_get_debug(ctx),TOKENIZER_DEBUG_ADD) )
     {
       printf("%c", c);
     }
-#endif
   if (ctx->buf == NULL)
     {
       ctx->buf=calloc(1,bufsize);
@@ -103,6 +106,15 @@ int add_char(struct json_ctx * ctx, char token, char c)
   if (ctx->bufpos+1>=ctx->bufsize)
     {
       bufsize=ctx->bufsize + ctx->bufsize / 2;
+      if ( bufsize > TOKEN_BUFSIZE_MAX )
+	{
+	  fprintf(stderr,"[FATAL] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_MAX);
+	  exit(0);
+	}
+      if ( bufsize > TOKEN_BUFSIZE_WARNING )
+	{
+	  fprintf(stderr,"[WARNING] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_WARNING);
+	}
       char * newbuf=realloc(ctx->buf,bufsize);
       if (newbuf != NULL)
 	{
