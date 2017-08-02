@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "inputstream.h"
 #include "json_import_internal.h"
 
 /**
@@ -36,6 +37,7 @@ int main(int argc, char ** argv)
   struct print_ctx print_context;
 
   struct json_import_context_data data;
+  struct inputstream inputstream;
 
   json_import_context_initialize( &json_tokenizer);
   json_context.tokenizer=&json_tokenizer;
@@ -128,6 +130,8 @@ int main(int argc, char ** argv)
       if ( data.f != NULL )
 	{
 	  struct json_object * root=NULL;
+	  inputstream_init(&inputstream,fileno(data.f));
+	  data.inputstream=&inputstream;
 	  root=parse_level(&json_context,&data,root);
 	  fclose(data.f);
 	  //dump_ctx(&json_context);
