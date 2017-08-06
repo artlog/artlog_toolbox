@@ -29,7 +29,6 @@ struct al_token * c_tokenizer_eat_up_to_end_of_comment(struct json_ctx * ctx, vo
 	  }
 	m=c;
 	match=1;
-	continue;
 	break;
       case '/':
 	if (match==1)
@@ -174,6 +173,25 @@ struct al_token * c_tokenizer_starting_with_minus(struct json_ctx * ctx, void * 
       JSON_TOKEN(EOF);
     }
 }
+
+struct al_token * c_tokenizer_starting_with_equal(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case 0:
+      JSON_TOKEN(EQUAL);
+      break;
+    case '=':
+      ctx->add_char(ctx,'=',c);
+      JSON_TOKEN(COMPARE_EQUAL);
+      break;
+    default:
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(EQUAL);
+      break;
+    }
+}
+
 struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 {
   char c = ctx->next_char(ctx, data);
@@ -318,8 +336,7 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	    JSON_TOKEN(INFERIOR);
 	    break;
 	  case '=':
-	    JSON_TOKEN(EQUAL);
-	    break;
+	    return c_tokenizer_starting_with_equal(ctx,data);
 	  case '%':
 	    JSON_TOKEN(PERCENT);
 	    break;
