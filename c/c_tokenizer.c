@@ -174,6 +174,60 @@ struct al_token * c_tokenizer_starting_with_minus(struct json_ctx * ctx, void * 
     }
 }
 
+struct al_token * c_tokenizer_starting_with_and(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case 0:
+      JSON_TOKEN(EQUAL);
+      break;
+    case '&':
+      ctx->add_char(ctx,'&',c);
+      JSON_TOKEN(LOGICAL_AND);
+      break;
+    default:
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(AMPERSAND);
+      break;
+    }
+}
+
+struct al_token * c_tokenizer_starting_with_exclamation(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case 0:
+      JSON_TOKEN(EQUAL);
+      break;
+    case '=':
+      ctx->add_char(ctx,'!',c);
+      JSON_TOKEN(COMPARE_DIFFERENT);
+      break;
+    default:
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(EXCLAMATION);
+      break;
+    }
+}
+
+struct al_token * c_tokenizer_starting_with_or(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case 0:
+      JSON_TOKEN(EQUAL);
+      break;
+    case '|':
+      ctx->add_char(ctx,'|',c);
+      JSON_TOKEN(LOGICAL_OR);
+      break;
+    default:
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(PIPE);
+      break;
+    }
+}
+
 struct al_token * c_tokenizer_starting_with_equal(struct json_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
@@ -322,8 +376,10 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	    return tokenizer_NUMBER(ctx,c,data);
 	    break;
 	  case '&':
-	    JSON_TOKEN(AMPERSAND);
+	    return c_tokenizer_starting_with_and(ctx,data);
 	    break;
+	  case '|':
+	    return c_tokenizer_starting_with_or(ctx,data);
 	  case '.':
 	    JSON_TOKEN(DOT);
 	    break;
@@ -341,8 +397,7 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	    JSON_TOKEN(PERCENT);
 	    break;
 	  case '!':
-	    JSON_TOKEN(EXCLAMATION);
-	    break;
+	    return c_tokenizer_starting_with_exclamation(ctx, data);
 	  case 0:
 	    // force failure programming error
 	    assert(c!=0);
