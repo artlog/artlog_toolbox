@@ -2,6 +2,7 @@
 #define _C_PARSER_H_
 
 #include "c_tokenizer.h"
+#include "alhash.h"
 
 // reserved c words
 enum c_word_token {
@@ -46,6 +47,12 @@ struct c_parser_ctx {
   void * tokenizer_data;
   enum c_word_token last_type;
   enum c_word_token last_word;
+
+  struct alhash_table dict;
+  int words;
+  int word_buffer_length;
+  int word_buffer_pos;
+  char * word_buffer;
 };
 
 struct c_type_list {
@@ -67,7 +74,7 @@ struct c_dict_entry {
 
 struct c_declaration_info {
   struct c_type_list * first;
-  int dict_index;
+  void * dict_index;
 };
 
 struct c_declaration_info_list {
@@ -76,12 +83,12 @@ struct c_declaration_info_list {
 };
 
 struct c_struct_info {
-  int dict_index;
+  void * dict_index;
   struct c_declaration_info_list * first;
 };
 
 struct c_enum_value {
-  int dict_index;
+  void * dict_index;
 };
   
 struct c_enum_value_list {
@@ -90,7 +97,7 @@ struct c_enum_value_list {
 };
 
 struct c_enum_info {
-  int dict_index;
+  void * dict_index;
   struct c_declaration_info_list * first;
 };
 

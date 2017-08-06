@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "c_parser.h"
 #include "todo.h"
 #include "json_import_internal.h"
-
 
 void usage()
 {
@@ -17,19 +17,56 @@ void reset_tokenizer_buffer(struct json_ctx * tokenizer)
   tokenizer->bufpos=0;
 }
 
-/* return an index in global dict_index table
- */
-// test
-int cut_token_string(struct json_ctx * tokenizer)
+int c_grow_word_buffer(struct c_parser_ctx * parser)
 {
+  // should allocate a new buffer
+  // should read all entries then re-add them in new dict to free the previous one.
+  todo("[FATAL] grow word buffer . not implemented");
+  exit(1);
+}
+
+/* return an entry pointer in global dict_index table
+ */
+void * c_cut_token_string(struct c_parser_ctx * parser)
+{
+  struct json_ctx * tokenizer = parser->tokenizer;
   char * buffer = tokenizer->buf;
   int length = tokenizer->bufpos;
-  // todo("create an entry in dict...")
+
   buffer[length]=0;
   printf("%s",buffer);
 
+  struct alhash_datablock key;
+  struct alhash_datablock * value;
+
+  // todo("create an entry in dict...")
+  key.length=length;
+  key.data=&parser->word_buffer[parser->word_buffer_pos];
+  if ( parser->word_buffer_pos + length < parser->word_buffer_length )
+    {
+      memcpy(key.data,buffer,length);
+    }
+  else
+    {
+      fprintf(stderr,"[WARNING] internal buffer for words full %i+%i>%i",parser->word_buffer_pos,length,parser->word_buffer_length);
+      c_grow_word_buffer(parser);
+    }
+  
+  struct alhash_entry * entry = alhash_get_entry(&parser->dict, &key);
+  if ( entry == NULL )
+    {
+      ++parser->words;
+      parser->word_buffer_pos+=length;
+      value=&key;
+      entry = alhash_put(&parser->dict, &key, value);
+    }
+  else
+    {
+      // printf("SAME TOKEN SEEN\n");
+    }
+
   reset_tokenizer_buffer(tokenizer);
-  return 0;
+  return entry->value.data;
 }
 
 void print_c_token(enum c_word_token c_token)
@@ -302,21 +339,21 @@ void c_parse_any(struct c_parser_ctx * parser,   struct al_token* token)
       break;
 
     case JSON_TOKEN_NUMBER_ID:
-      cut_token_string(tokenizer);
+      c_cut_token_string(parser);
       break;
     case JSON_TOKEN_DQUOTE_ID:
       printf("\"");
-      cut_token_string(tokenizer);
+      c_cut_token_string(parser);
       printf("\"");
       break;
     case JSON_TOKEN_SQUOTE_ID:
       printf("'");
-      cut_token_string(tokenizer);
+      c_cut_token_string(parser);
       printf("'");
       break;
     case JSON_TOKEN_WORD_ID:
       {
-	cut_token_string(tokenizer);
+	c_cut_token_string(parser);
 	break;
       }
     case JSON_TOKEN_COMMENT_ID:
@@ -325,7 +362,7 @@ void c_parse_any(struct c_parser_ctx * parser,   struct al_token* token)
       break;
     case JSON_TOKEN_PRAGMA_ID:
       printf("#");
-      cut_token_string(tokenizer);
+      c_cut_token_string(parser);
       printf("\n");
       break;
     case JSON_TOKEN_EOF_ID:
@@ -334,7 +371,7 @@ void c_parse_any(struct c_parser_ctx * parser,   struct al_token* token)
     default:
       printf("\n<%i>",token->token);
       // lazzy cut_string...
-      cut_token_string(tokenizer);
+      c_cut_token_string(parser);
       printf("</%i>",token->token);
     }  
 
@@ -939,7 +976,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
     default:
       printf("\n<%i>",token->token);
       // lazzy cut_string...
-      cut_token_string(tokenizer);
+      c_cut_token_string(parser);
       printf("</%i>",token->token);
     }  
 
@@ -997,7 +1034,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		{
 		  if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
-		      struct_info.dict_index = cut_token_string(tokenizer);
+		      struct_info.dict_index = c_cut_token_string(parser);
 		      parser->state=C_STATE_STRUCT_NAME_ID;
 		      printf(" ");
 		    }
@@ -1034,7 +1071,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
-		      int dict_index = cut_token_string(tokenizer);
+		      void * dict_index = c_cut_token_string(parser);
 		      parser->state=C_STATE_STRUCT_DECLARATION_ID;
 		    }
 		  else
@@ -1051,7 +1088,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
-		      int dict_index = cut_token_string(tokenizer);
+		      void * dict_index = c_cut_token_string(parser);
 		      parser->state=C_STATE_STRUCT_DECLARATION_ID;
 		    }
 		  else
@@ -1098,7 +1135,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		{
 		  if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
-		      enum_info.dict_index = cut_token_string(tokenizer);
+		      enum_info.dict_index = c_cut_token_string(parser);
 		      parser->state=C_STATE_ENUM_NAME_ID;
 		      printf(" ");
 		    }
@@ -1141,7 +1178,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
-		      int dict_index = cut_token_string(tokenizer);
+		      void * dict_index = c_cut_token_string(parser);
 		      parser->state=C_STATE_ENUM_DECLARATION_ID;
 		    }
 		  else
@@ -1157,7 +1194,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
-		      int dict_index = cut_token_string(tokenizer);
+		      void * dict_index = c_cut_token_string(parser);
 		      parser->state=C_STATE_ENUM_DECLARATION_ID;
 		    }
 		  else
@@ -1294,6 +1331,23 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 }
 
 
+int init_c_parser(  struct c_parser_ctx* parser, struct json_ctx* tokenizer, void * data)
+{
+  parser->state=C_STATE_START_ID;
+  parser->tokenizer=tokenizer;
+  parser->tokenizer_data=data;
+  parser->last_type=-1;
+  parser->last_word=-1;
+  // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
+  // long (*alhash_func) (void * value, int length));
+  alhash_init(&parser->dict, 0, NULL);
+  
+  parser->word_buffer_length=4096;
+  parser->word_buffer_pos=0;
+  parser->word_buffer=malloc(parser->word_buffer_length);
+  return 1;
+}
+
 int main(int argc,char ** argv)
 {
   struct c_parser_ctx parser;
@@ -1302,9 +1356,10 @@ int main(int argc,char ** argv)
   struct inputstream inputstream;
   FILE * file = NULL;
 
-  parser.state=C_STATE_START_ID;
-  parser.tokenizer=&tokenizer;
-  parser.tokenizer_data=&importer;
+  bzero(&tokenizer,sizeof(tokenizer));
+  bzero(&importer,sizeof(importer));
+      
+  init_c_parser(&parser,&tokenizer,&importer);
   
   if ( argc > 1 )
     {

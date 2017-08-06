@@ -19,6 +19,6 @@ clean:
 	rm -rf savetest
 
 c_parser: c_parser.c c_tokenizer.c json_parser.c json_import_internal.c
-	gcc -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -Wl,-Bdynamic
+	gcc -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -lalhash -Wl,-Bdynamic
 
 .PHONY: tests clean

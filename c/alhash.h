@@ -53,6 +53,7 @@ return entry owning same key content ( content of key->data over length bytes)
 struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key);
 
 // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
+// if allhsh_func is set to NULL then default string hash is used (alhash_hash_string)
 void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length));
 
 // walk entry and all collisions.
