@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
+
 #include <assert.h>
 #include "alcommon.h"
 #include "json_parser.h"
@@ -33,7 +35,7 @@ struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * d
       if ( json_ctx_consume(ctx,data,"rue") )
 	{
 	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(ctx);
+	  flush_char_buffer(&ctx->token_buf);
 	  JSON_TOKEN(TRUE);
 	}
       break;
@@ -41,7 +43,7 @@ struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * d
 	if (json_ctx_consume(ctx,data,"alse") )
 	  {
 	    ctx->add_char(ctx,first,first);
-	    flush_char_buffer(ctx);
+	    flush_char_buffer(&ctx->token_buf);
 	    JSON_TOKEN(FALSE);
 	  }
       break;
@@ -49,7 +51,7 @@ struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * d
       if ( json_ctx_consume(ctx,data,"ull") )
 	{
 	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(ctx);
+	  flush_char_buffer(&ctx->token_buf);
 	  JSON_TOKEN(NULL);
 	}
       break;
@@ -64,14 +66,10 @@ struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * d
 /** Initialize json_context **/
 void json_context_initialize(struct json_ctx *json_context, get_next_char next_char)
 {
+  bzero(json_context,sizeof(*json_context));
   json_context->next_char=next_char;
   json_context->pushback_char=pushback_char;
   json_context->add_char=add_char;
-  json_context->pos=0;
-  json_context->buf=NULL;
-  json_context->bufsize=0;
-  json_context->bufpos=0;
-  json_context->debug_level=0;
 }
 
 void pushback_char(struct json_ctx *ctx, void *data, char pushback)
@@ -88,15 +86,10 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
     }
 }
 
-// keep a growable buffer in ctx, grow it as needed
-int add_char(struct json_ctx * ctx, char token, char c)
+int token_char_buffer_add_char(struct token_char_buffer * ctx, char token, char c)
 {
   int bufsize=TOKEN_BUFSIZE_MIN;
-  if ( FLAG_IS_SET(json_context_get_debug(ctx),TOKENIZER_DEBUG_ADD) )
-    {
-      printf("%c", c);
-    }
-  if (ctx->buf == NULL)
+   if (ctx->buf == NULL)
     {
       ctx->buf=calloc(1,bufsize);
       //ctx->buf[bufsize-1]=0;
@@ -134,6 +127,16 @@ int add_char(struct json_ctx * ctx, char token, char c)
   return 0;
 }
 
+// keep a growable buffer in ctx, grow it as needed
+int add_char(struct json_ctx * ctx, char token, char c)
+{
+  if ( FLAG_IS_SET(json_context_get_debug(ctx),TOKENIZER_DEBUG_ADD) )
+    {
+      printf("%c", c);
+    }
+  return token_char_buffer_add_char(&ctx->token_buf,token,c);
+}
+
 void debug_tag(struct json_ctx *ctx,char c)
 {
   if (json_context_get_debug(ctx))
@@ -142,7 +145,7 @@ void debug_tag(struct json_ctx *ctx,char c)
     }
 }
 
-void flush_char_buffer(struct json_ctx * ctx)
+void flush_char_buffer(struct token_char_buffer * ctx)
 {
   if (ctx->buf != NULL )
     {
@@ -469,7 +472,9 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	    break;
 	  default: // unexpected char ?
 	    // PUSHBACK ? TO CHECK
-	    ctx->pushback_char(ctx,data,c);
+	    fprintf(stderr,"[ERROR] unexpected char %c\n,",c);
+	    JSON_TOKEN(EOF);
+	    // ctx->pushback_char(ctx,data,c);
 	  }
       }
     

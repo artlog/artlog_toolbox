@@ -106,28 +106,30 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   return err_object;
 }
 
+
+// borrow buf buffer of json_ctx and set it into a json_string
+// reset json_ctx buffer.
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
 {
   struct json_object * object=calloc(1,sizeof(struct json_object));
   if ( object != NULL)
     {
       object->type=objtype;
+      struct token_char_buffer * tb = &ctx->token_buf;
       // warning, should keep a place for final 0
-      if ( (ctx->bufpos + 1) < ctx->bufsize )
+      if ( (tb->bufpos + 1) < tb->bufsize )
 	{
-	  // reduce it...
+	  // realloc for one character ... too bad.
 	  if ( FLAG_IS_SET(json_debug,1)  )
 	    {
-	      printf("(%s,%s,%i) reduce string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,ctx->buf,ctx->bufsize,ctx->bufpos+1);
+	      printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,tb->buf,tb->bufsize,tb->bufpos+1);
 	    }
-	  ctx->buf=realloc(ctx->buf,ctx->bufpos+1);
-	  ctx->bufsize=ctx->bufpos;
-	}
-      object->string.chars=ctx->buf;
-      object->string.length=ctx->bufsize;
-      ctx->buf=NULL;
-      ctx->bufpos=0;
-      ctx->bufsize=0;
+	  tb->buf=realloc(tb->buf,tb->bufpos+1);
+	  tb->bufsize=tb->bufpos;
+	}      
+      object->string.chars=tb->buf;
+      object->string.length=tb->bufsize;
+      bzero(&ctx->token_buf, sizeof(ctx->token_buf));
     }
   else
     {

@@ -7,7 +7,6 @@
 /** fully rely on stream buffering */
 struct json_import_context_data {
   char last;
-  FILE * f;
   struct inputstream * inputstream;
   int flags;
   int debug;

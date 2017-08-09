@@ -2,6 +2,7 @@
 #define _JSON_PARSER_H_
 
 // everything for tokenizing.
+// todo rename me as json_tokenizer.h
 // does not know json_object at all.
 
 #define JSON_PATH_MAX_CHARS 4096
@@ -75,16 +76,26 @@ struct json_pos_info
   int column;
 };
 
+struct token_char_buffer {
+  // internal buffer to collect default add_char 
+  char * buf;
+  // position of token buffer where to add char
+  int bufpos;
+  // buffer size to be grown if needed ( see default add_char )
+  int bufsize;
+};
+  
 struct json_ctx
 {
   get_next_char next_char;
   set_pushback_char pushback_char;
   al_tokenizer_func tokenizer;
-  add_token_char add_char;
-  char * buf;
   int debug_level;
-  int bufpos;
-  int bufsize;
+  // add a char to currently parsed token.
+  add_token_char add_char;
+  // for add_char usage
+  struct token_char_buffer token_buf;
+  // byte position within 'possible' input stream
   int pos;
   int internal_flags;
   struct al_token last_token;
@@ -131,7 +142,7 @@ int add_char(struct json_ctx * ctx, char token, char c);
 
 char next_char(struct json_ctx* ctx, void * data);
 
-void flush_char_buffer(struct json_ctx * ctx);
+void flush_char_buffer(struct token_char_buffer * token_char_buffer);
 
 // consume str and check all consumed chars string equals str content
 int json_ctx_consume(struct json_ctx * ctx, void * data, char * str);

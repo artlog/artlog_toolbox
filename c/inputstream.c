@@ -44,9 +44,16 @@ unsigned int inputstream_readuint32(struct inputstream * stream)
   return (*(unsigned int*) result);
 }
 
+// WARNING 0 char considered as EOF.
 unsigned char inputstream_readuchar(struct inputstream * stream)
 {
   unsigned char result = 0;
-  read(stream->fd,&result,1);
-  return result;
+  if ( read(stream->fd,&result,1) == 1 )
+    {
+      return result;
+    }
+  else
+    {
+      return 0;
+    }
 }

@@ -13,10 +13,7 @@ char json_read_char(struct json_import_context_data * json_import_data)
     }
   else
     {
-      if ( fread(&json_import_data->last, 1, 1, json_import_data->f) != 1 )
-	{
-	  return 0;
-	}
+      return 0;
     }
   return json_import_data->last;
 }
@@ -59,7 +56,7 @@ void json_import_pushback_char(struct json_ctx *ctx, void *data, char pushback)
   struct json_import_context_data * json_import_data = (struct json_import_context_data *) data;
 
   // should not pushback something else than previous char. programming error
-  assert( (ctx->pos>0) && (pushback == json_import_data->last ));
+  assert((ctx->pos>0) && (pushback == json_import_data->last ));
   if ( FLAG_IS_SET( json_import_data->flags, ALSFLAG_PUSHBACK ) )
     {
       // two pushback ... NOT SUPPORTED

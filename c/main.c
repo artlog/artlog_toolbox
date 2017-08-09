@@ -21,6 +21,7 @@ void usage()
 /**
 main
 First argument : filename to open in read only mode to parse in json.
+Second argument : filename to open in read only mode to parse in json for template
 
 Output : dump parsed json to standard output
  **/
@@ -32,12 +33,16 @@ int main(int argc, char ** argv)
   int debug = 0;
   int path = 0;
 
+  FILE * data_file;
+  FILE * template_file;
+
   struct json_parser_ctx json_context;
   struct json_ctx json_tokenizer;
   struct print_ctx print_context;
 
   struct json_import_context_data data;
   struct inputstream inputstream;
+  struct inputstream template_inputstream;
 
   json_import_context_initialize( &json_tokenizer);
   json_context.tokenizer=&json_tokenizer;
@@ -126,14 +131,14 @@ int main(int argc, char ** argv)
 	}
       data.last=0;
       data.flags=0;
-      data.f = fopen(json_filename,"r");
-      if ( data.f != NULL )
+      data_file = fopen(json_filename,"r");
+      if ( data_file != NULL )
 	{
 	  struct json_object * root=NULL;
-	  inputstream_init(&inputstream,fileno(data.f));
+	  inputstream_init(&inputstream,fileno(data_file));
 	  data.inputstream=&inputstream;
 	  root=parse_level(&json_context,&data,root);
-	  fclose(data.f);
+	  fclose(data_file);
 	  //dump_ctx(&json_context);
 	  dump_object(&json_context,root,&print_context);
 	  printf("\n");
@@ -158,12 +163,14 @@ int main(int argc, char ** argv)
 		}
 	      template_data.last=0;
 	      template_data.flags=0;
-	      template_data.f = fopen(json_template,"r");
-	      if ( template_data.f != NULL )
+	      template_file = fopen(json_template,"r");
+	      if ( template_file != NULL )
 		{
 		  struct json_object * template_root=NULL;
+		  inputstream_init(&template_inputstream,fileno(template_file));
+		  template_data.inputstream=&inputstream;
 		  template_root=parse_level(&json_template_context,&template_data,template_root);
-		  fclose(template_data.f);
+		  fclose(template_file);
 		  dump_object(&json_template_context,template_root,&print_template_context);
 		  printf("\n");
 		  if ( json_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )

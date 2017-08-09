@@ -14,7 +14,7 @@ void usage()
 void reset_tokenizer_buffer(struct json_ctx * tokenizer)
 {
   // reset
-  tokenizer->bufpos=0;
+  tokenizer->token_buf.bufpos=0;
 }
 
 int c_grow_word_buffer(struct c_parser_ctx * parser)
@@ -30,8 +30,9 @@ int c_grow_word_buffer(struct c_parser_ctx * parser)
 void * c_cut_token_string(struct c_parser_ctx * parser)
 {
   struct json_ctx * tokenizer = parser->tokenizer;
-  char * buffer = tokenizer->buf;
-  int length = tokenizer->bufpos;
+  struct token_char_buffer * tb = &tokenizer->token_buf;
+  char * buffer = tb->buf;
+  int length = tb->bufpos;
 
   buffer[length]=0;
   printf("%s",buffer);
@@ -127,8 +128,10 @@ void print_c_token(enum c_word_token c_token)
     }
 }
 
-enum c_word_token get_word_token(char * buffer, int length)
+enum c_word_token get_word_token(struct token_char_buffer * tb)
 {
+  char * buffer = tb->buf;
+  int length = tb->bufpos; 
   if ( length == 2)
     {
       if ((buffer[0]=='i')&&(buffer[1]=='f'))
@@ -388,7 +391,7 @@ struct al_token * c_parse_variable(struct c_parser_ctx * parser,struct al_token 
     {
       return token;
     }
-  int c_token = get_word_token(tokenizer->buf,tokenizer->bufpos);
+  int c_token = get_word_token(&tokenizer->token_buf);
   if ( c_token == TOKEN_C_NOMATCH_ID )
     {
       c_parse_any(parser,token);
@@ -420,7 +423,7 @@ struct al_token * c_parse_left_type(struct c_parser_ctx * parser, struct al_toke
 	  break;
 	case JSON_TOKEN_WORD_ID:
 	  {
-	    int c_token = get_word_token(tokenizer->buf,tokenizer->bufpos);
+	    int c_token = get_word_token(&tokenizer->token_buf);
 	    switch(c_token)
 	      {
 	      case TOKEN_C_STRUCT_ID:
@@ -985,7 +988,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
       printf("[ERROR] a new statement should start with a word. got token %i \n",token->token);
       return token;
     }
-  int c_token = get_word_token(tokenizer->buf,tokenizer->bufpos);
+  int c_token = get_word_token(&tokenizer->token_buf);
   if ( c_token == TOKEN_C_NOMATCH_ID )
     {
       printf("// a variable or function name\n");
