@@ -13,7 +13,8 @@ void usage()
 
 void reset_tokenizer_buffer(struct json_ctx * tokenizer)
 {
-  // reset
+  // reset when word is parsed and recognized as either a reserved word or stored in variable dict with cut_string.
+  // printf("//reset token buffer\n");
   tokenizer->token_buf.bufpos=0;
 }
 
@@ -34,8 +35,27 @@ void * c_cut_token_string(struct c_parser_ctx * parser)
   char * buffer = tb->buf;
   int length = tb->bufpos;
 
-  buffer[length]=0;
-  printf("%s",buffer);
+  if (buffer == NULL )
+    {
+      todo("[FATAL] corrupted parser token char buffer NULL");
+      return NULL;
+    }
+
+  if (length == 0 )
+    {
+      printf("[FATAL] corrupted parser empty char buffer\n");
+      return NULL;
+    }
+  if(length>=0)
+    {
+      buffer[length]=0;
+      printf("%s",buffer);
+    }
+  else
+    {
+      fprintf(stderr,"[FATAL] corrupted parser token char buffer lenght %i <=0\n",length);
+      return NULL;
+    }
 
   struct alhash_datablock key;
   struct alhash_datablock * value;
@@ -43,7 +63,7 @@ void * c_cut_token_string(struct c_parser_ctx * parser)
   // todo("create an entry in dict...")
   key.length=length;
   key.data=&parser->word_buffer[parser->word_buffer_pos];
-  if ( parser->word_buffer_pos + length < parser->word_buffer_length )
+  if ( (parser->word_buffer_pos + length) < parser->word_buffer_length )
     {
       memcpy(key.data,buffer,length);
     }
@@ -67,10 +87,12 @@ void * c_cut_token_string(struct c_parser_ctx * parser)
     }
 
   reset_tokenizer_buffer(tokenizer);
+  parser->last_word=TOKEN_C_DICTENTRY_ID;
+  
   return entry->value.data;
 }
 
-void print_c_token(enum c_word_token c_token)
+void print_c_token(struct c_parser_ctx * parser, enum c_word_token c_token)
 {
   switch(c_token)
     {
@@ -128,22 +150,31 @@ void print_c_token(enum c_word_token c_token)
     }
 }
 
+  
 enum c_word_token get_word_token(struct token_char_buffer * tb)
 {
   char * buffer = tb->buf;
-  int length = tb->bufpos; 
+  int length = tb->bufpos;
+  enum c_word_token word_token = TOKEN_C_NOMATCH_ID;
+  
+  if ( ( length == 0 )  || (buffer == NULL))
+    {
+      printf("[ERROR] empty or null buffer for get_word_token %p %i", buffer, length);
+      return TOKEN_C_NOMATCH_ID;
+    }
+
   if ( length == 2)
     {
       if ((buffer[0]=='i')&&(buffer[1]=='f'))
 	{
-	  return TOKEN_C_IF_ID;
+	  word_token = TOKEN_C_IF_ID;
 	}
     }
   else  if ( length == 3 )
     {
       if ((buffer[0]=='i')&&(buffer[1]=='n')&&(buffer[2]=='t'))
 	{
-	  return TOKEN_C_INT_ID;
+	  word_token = TOKEN_C_INT_ID;
 	}
     }
   else
@@ -155,20 +186,20 @@ enum c_word_token get_word_token(struct token_char_buffer * tb)
 	      {
 		if ((buffer[2]=='u')&&(buffer[3]=='m'))
 		  {
-		    return TOKEN_C_ENUM_ID;
+		    word_token = TOKEN_C_ENUM_ID;
 		  }
 	      }
 	    else
 	    if ((buffer[1]=='l')&&(buffer[2]=='s')&&(buffer[3]=='e'))
 	      {
-		return TOKEN_C_ELSE_ID;
+		word_token = TOKEN_C_ELSE_ID;
 	      }
 	  }
 	else if (buffer[0]=='v')
 	  {
 	    if ((buffer[1]=='o')&&(buffer[2]=='i')&&(buffer[3]=='d'))
 	      {
-		return TOKEN_C_VOID_ID;
+		word_token = TOKEN_C_VOID_ID;
 	      }
 	  }
 	else if (buffer[0]=='c')
@@ -177,14 +208,14 @@ enum c_word_token get_word_token(struct token_char_buffer * tb)
 	      {
 		if ((buffer[2]=='a')&&(buffer[3]=='r'))
 		  {
-		    return TOKEN_C_CHAR_ID;
+		    word_token = TOKEN_C_CHAR_ID;
 		  }
 	      }
 	    else if (buffer[1]=='a')
 	      {
 		if ((buffer[2]=='s')&&(buffer[3]=='e'))
 		  {
-		    return TOKEN_C_CASE_ID;
+		    word_token = TOKEN_C_CASE_ID;
 		  }
 	      }
 	  }
@@ -192,7 +223,7 @@ enum c_word_token get_word_token(struct token_char_buffer * tb)
 	  {
 	    if ((buffer[1]=='h')&&(buffer[2]=='a')&&(buffer[3]=='r'))
 	      {
-		return TOKEN_C_LONG_ID;
+		word_token = TOKEN_C_LONG_ID;
 	      }	    
 	  }
       }
@@ -201,19 +232,19 @@ enum c_word_token get_word_token(struct token_char_buffer * tb)
 	{
 	  if ((buffer[0]=='f')&&(buffer[1]=='l')&&(buffer[2]=='o')&&(buffer[3]=='a')&&(buffer[4]=='t'))
 	    {
-	      return TOKEN_C_FLOAT_ID;
+	      word_token = TOKEN_C_FLOAT_ID;
 	    }
 	  if ((buffer[0]=='w')&&(buffer[1]=='h')&&(buffer[2]=='i')&&(buffer[3]=='l')&&(buffer[4]=='e'))
 	    {
-	      return TOKEN_C_WHILE_ID;
+	      word_token = TOKEN_C_WHILE_ID;
 	    }
 	  if ((buffer[0]=='b')&&(buffer[1]=='r')&&(buffer[2]=='e')&&(buffer[3]=='a')&&(buffer[4]=='k'))
 	    {
-	      return TOKEN_C_BREAK_ID;
+	      word_token = TOKEN_C_BREAK_ID;
 	    }
 	  if ((buffer[0]=='u')&&(buffer[1]=='n')&&(buffer[2]=='i')&&(buffer[3]=='o')&&(buffer[4]=='n'))
 	    {
-	      return TOKEN_C_UNION_ID;
+	      word_token = TOKEN_C_UNION_ID;
 	    }
 
 	}
@@ -226,21 +257,21 @@ enum c_word_token get_word_token(struct token_char_buffer * tb)
 		  {
 		    if ((buffer[2]=='i')&&(buffer[3]=='t')&&(buffer[4]=='c')&&(buffer[5]=='h'))
 		      {
-			return TOKEN_C_SWITCH_ID;
+			word_token = TOKEN_C_SWITCH_ID;
 		      }
 		  }
 		else if (buffer[1] =='i')
 		  {
 		    if ((buffer[2]=='g')&&(buffer[3]=='n')&&(buffer[4]=='e')&&(buffer[5]=='d'))
 		      {
-			return TOKEN_C_SIGNED_ID;
+			word_token = TOKEN_C_SIGNED_ID;
 		      }
 		  }
 		else if (buffer[1] =='t')
 		  {
 		    if ((buffer[2]=='r')&&(buffer[3]=='u')&&(buffer[4]=='c')&&(buffer[5]=='t'))
 		      {
-			return TOKEN_C_STRUCT_ID;
+			word_token = TOKEN_C_STRUCT_ID;
 		      }
 		  }
 	      }
@@ -248,7 +279,7 @@ enum c_word_token get_word_token(struct token_char_buffer * tb)
 	      {
 		if ((buffer[1]=='e')&&(buffer[2]=='t')&&(buffer[3]=='u')&&(buffer[4]=='r')&&(buffer[5]=='n'))
 		  {
-		    return TOKEN_C_RETURN_ID;
+		    word_token = TOKEN_C_RETURN_ID;
 		  }
 	      }
 	  }
@@ -256,17 +287,34 @@ enum c_word_token get_word_token(struct token_char_buffer * tb)
 	  {
 	    if ( strncmp(buffer,"default",length) == 0 )
 	      {
-		return TOKEN_C_DEFAULT_ID;
+		word_token = TOKEN_C_DEFAULT_ID;
 	      }
 	  }
 	else if (length == 8)
 	  {
 	    if ( strncmp(buffer,"unsigned",length) == 0 )
 	      {
-		return TOKEN_C_UNSIGNED_ID;
+		word_token = TOKEN_C_UNSIGNED_ID;
 	      }
 	  }
-  return TOKEN_C_NOMATCH_ID;
+  return word_token;
+}
+
+
+enum c_word_token c_parse_word_token(struct c_parser_ctx * parser)
+{
+  enum c_word_token word_token = get_word_token(&parser->tokenizer->token_buf);
+  parser->last_word=word_token;
+  if ( word_token == TOKEN_C_NOMATCH_ID )
+    {
+      // will require a c_cut_string
+    }
+  else
+    {
+      // printf("// c_parse_word_token %i", word_token);
+      reset_tokenizer_buffer(parser->tokenizer);
+    }
+  return word_token;
 }
 
 void c_parse_any(struct c_parser_ctx * parser,   struct al_token* token)
@@ -371,13 +419,47 @@ void c_parse_any(struct c_parser_ctx * parser,   struct al_token* token)
     case JSON_TOKEN_EOF_ID:
       printf("EOF id reached\n");
       break;
+    case JSON_TOKEN_PLUS_ID:
+      printf(" + ");
+      break;
+    case JSON_TOKEN_INCREMENT_ID:
+      printf("++");
+      break;
+    case JSON_TOKEN_ADD_ID:
+      printf("+=");
+      break;
     default:
       printf("\n<%i>",token->token);
       // lazzy cut_string...
       c_cut_token_string(parser);
       printf("</%i>",token->token);
-    }  
+    }
+}
 
+
+struct al_token * c_parse_next(struct c_parser_ctx * parser)
+{
+  struct json_ctx* tokenizer = parser->tokenizer;
+  struct al_token * token;
+
+  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+  if ( token != NULL )
+    {
+      // printf("//next %i %i , %i\n", parser->last_word, parser->last_token, token->token);
+      parser->last_token = token->token;
+      parser->last_word=TOKEN_C_NOTWORD_ID;
+      if ( token->token == JSON_TOKEN_WORD_ID )
+	{
+	  // will set last_word
+	  c_parse_word_token(parser);
+	}
+    }
+  else
+    {
+      parser->last_token = JSON_TOKEN_EOF_ID;
+      parser->last_word=TOKEN_C_NOTWORD_ID;
+    }
+  return token;
 }
 
 struct al_token * c_parse_variable(struct c_parser_ctx * parser,struct al_token * token)
@@ -385,32 +467,34 @@ struct al_token * c_parse_variable(struct c_parser_ctx * parser,struct al_token 
   struct json_ctx* tokenizer = parser->tokenizer;
   if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token = c_parse_next(parser);
     }
   if ( token->token != JSON_TOKEN_WORD_ID )
     {
       return token;
     }
-  int c_token = get_word_token(&tokenizer->token_buf);
-  if ( c_token == TOKEN_C_NOMATCH_ID )
+  if ( parser->last_word == TOKEN_C_NOMATCH_ID )
     {
-      c_parse_any(parser,token);
+      printf("// variable\n");
+      c_cut_token_string(parser);
       return NULL;
     }
   else
     {
-      printf("c_token %i\n",c_token);
+      printf("c_token %i\n", parser->last_word);
+      reset_tokenizer_buffer(tokenizer);
       return token;
     }
 }
 
-struct al_token * c_parse_left_type(struct c_parser_ctx * parser, struct al_token * token )
+struct al_token * c_parse_left_type(struct c_parser_ctx * parser, struct al_token * token, int c_token)
 {
   struct json_ctx* tokenizer = parser->tokenizer;
   int c_type = -1;
   if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token = c_parse_next(parser);
+      c_token= parser->last_token;
     }      
   while ( token != NULL )
     {
@@ -423,28 +507,42 @@ struct al_token * c_parse_left_type(struct c_parser_ctx * parser, struct al_toke
 	  break;
 	case JSON_TOKEN_WORD_ID:
 	  {
-	    int c_token = get_word_token(&tokenizer->token_buf);
 	    switch(c_token)
 	      {
 	      case TOKEN_C_STRUCT_ID:
 	      case TOKEN_C_UNION_ID:
 	      case TOKEN_C_ENUM_ID:
-	      case TOKEN_C_CHAR_ID:
 	      case TOKEN_C_INT_ID:
-	      case TOKEN_C_FLOAT_ID:
 	      case TOKEN_C_LONG_ID:
-	      case TOKEN_C_VOID_ID:
 		if ( c_type == -1 )
 		  {
 		    // recognized a type.
-		    c_parse_any(parser,token);
+		    print_c_token(parser,c_token);
 		    printf(" ");
 		    c_type = c_token;
 		    parser->last_type=c_type;
 		  }
 		else
 		  {
-		    printf("[ERROR] conflcting types %i != %i", c_type, c_token);
+		    printf("[ERROR] conflicting types %i != %i", c_type, c_token);
+		    return token;
+		  }
+		break;		
+	      case TOKEN_C_CHAR_ID:
+	      case TOKEN_C_FLOAT_ID:
+	      case TOKEN_C_VOID_ID:
+		if ( c_type == -1 )
+		  {
+		    // recognized a type.
+		    print_c_token(parser,c_token);
+		    printf(" ");
+		    c_type = c_token;
+		    parser->last_type=c_type;
+		    return NULL;
+		  }
+		else
+		  {
+		    printf("[ERROR] conflicting types %i != %i", c_type, c_token);
 		    return token;
 		  }
 		break;
@@ -472,14 +570,17 @@ struct al_token * c_parse_left_type(struct c_parser_ctx * parser, struct al_toke
 	default:
 	  return token;
 	}
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      {
+	token = c_parse_next(parser);
+	c_token= parser->last_token;
+      }
     }
   return token;
 }
 
 struct al_token * c_parse_struct_member(struct c_parser_ctx * parser, struct c_struct_info * struct_info)
 {
-  return c_parse_statement(parser);
+  return c_parse_statement(parser,NULL,TOKEN_C_NOMATCH_ID,C_STATE_START_ID);
 }
 
 struct al_token * c_parse_rhs(struct c_parser_ctx * parser, struct al_token * token);
@@ -488,38 +589,54 @@ struct al_token * c_parse_call_parameters(struct c_parser_ctx * parser, struct a
 struct al_token * c_parse_lhs(struct c_parser_ctx * parser, struct al_token * token)
 {
   struct json_ctx* tokenizer = parser->tokenizer;
+  int c_token = 0;
   if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token = c_parse_next(parser);
+      c_token= parser->last_token;
     }
   while ( token != NULL )
     {
-      token = c_parse_left_type(parser,token);
+      token = c_parse_left_type(parser,token,c_token);
       if ( token == NULL )
 	{
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	  token = c_parse_next(parser);
+	  c_token= parser->last_token;
 	}
       if (c_parse_variable(parser,token) == NULL)
 	{
-	  if ( (token = c_tokenizer(tokenizer,parser->tokenizer_data)) != NULL )
+	  token = c_parse_next(parser);
+	  c_token= parser->last_token;
+	  
+	  if ( token != NULL )
 	    {
 	      if ( token == NULL )
 		{
-		  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+		  token = c_parse_next(parser);
+		  c_token= parser->last_token;
 		}
 	      if  ( token->token == JSON_TOKEN_RIGHT_ARROW_ID )
+		{
+		  c_parse_any(parser,token);
+		}
+	      else if ( token->token == JSON_TOKEN_DOT_ID )
 		{
 		  c_parse_any(parser,token);
 		}
 	      else if ( token->token == JSON_TOKEN_OPEN_BRACKET_ID )
 		{
 		  c_parse_any(parser,token);
-		  if ((token = c_tokenizer(tokenizer,parser->tokenizer_data)) != NULL )
+		  
+		  token = c_parse_next(parser);
+		  c_token= parser->last_token;
+		  
+		  if ( token != NULL )
 		    {
 		      token=c_parse_rhs(parser,token);
 		      if ( token == NULL )
 			{
-			  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+			  token = c_parse_next(parser);
+			  c_token= parser->last_token;
 			}
 		      if ( token != NULL )
 			{
@@ -545,7 +662,8 @@ struct al_token * c_parse_lhs(struct c_parser_ctx * parser, struct al_token * to
 	{
 	  return token;
 	}
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token = c_parse_next(parser);
+      c_token= parser->last_token;
     }
   return token;
 }
@@ -575,8 +693,8 @@ struct al_token * c_parse_rhs(struct c_parser_ctx * parser, struct al_token * to
 {
   struct json_ctx* tokenizer = parser->tokenizer;
   if (token == NULL)
-    {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+    {     
+      token = c_parse_next(parser);
     }
   // printf("//start rhs\n");
   while ( token != NULL )
@@ -586,6 +704,25 @@ struct al_token * c_parse_rhs(struct c_parser_ctx * parser, struct al_token * to
 	  break;
 	}
       else {
+	// rhs is a '(' ...')'
+	if ( token->token == JSON_TOKEN_OPEN_PARENTHESIS_ID )
+	  {
+	    c_parse_any(parser,token);  
+	    token = c_parse_rhs(parser,NULL);
+	    if ( token == NULL )
+	      {
+		token = c_parse_next(parser);
+	      }
+	    if ( token != NULL )
+	      {
+		if ( token->token == JSON_TOKEN_CLOSE_PARENTHESIS_ID )
+		  {
+		    c_parse_any(parser,token);
+		    return NULL;
+		  }
+	      }
+	    return token;		
+	  }
 	token=c_parse_lhs(parser,token);
 	// is it a function call ?
 	if ( token != NULL )
@@ -596,7 +733,7 @@ struct al_token * c_parse_rhs(struct c_parser_ctx * parser, struct al_token * to
 		token = c_parse_call_parameters(parser,NULL);
 		if ( token == NULL )
 		  {
-		    token = c_tokenizer(tokenizer,parser->tokenizer_data);
+		    token = c_parse_next(parser);
 		  }
 		if ( token != NULL )
 		  {
@@ -608,13 +745,19 @@ struct al_token * c_parse_rhs(struct c_parser_ctx * parser, struct al_token * to
 		  }
 		return token;
 	      }
-	  }
+	    else if (token->token == JSON_TOKEN_PLUS_ID )
+	      {
+		c_parse_any(parser,token);
+		token=c_parse_lhs(parser,NULL);
+		return token;
+	      }	      
+	  }	  	    
 	if ( token != NULL )
 	  {
 	    break;
 	  }
       }
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token = c_parse_next(parser);
     }
   return token;
 }
@@ -626,7 +769,7 @@ struct al_token * c_parse_rhs_semi_colon(struct c_parser_ctx * parser, struct al
 
    if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token = c_parse_next(parser);
     }
   if ( token != NULL)
     {
@@ -649,13 +792,13 @@ struct al_token * c_parse_call_definition_parameters(struct c_parser_ctx * parse
   struct json_ctx* tokenizer = parser->tokenizer;
   struct al_token * token = NULL;
   int i=0;
-  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+  token = c_parse_next(parser);  
   while (token != NULL )
     {
       token = c_parse_rhs(parser,token);
       if ( token == NULL )
 	{
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	  token = c_parse_next(parser);
 	}
       if ( token !=NULL)
 	{
@@ -672,7 +815,7 @@ struct al_token * c_parse_call_definition_parameters(struct c_parser_ctx * parse
 	{
 	  return token;
 	}
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token = c_parse_next(parser);
     }
   printf("// def param %i end token %i\n",i, token->token);
   return token;
@@ -687,14 +830,14 @@ struct al_token * c_parse_call_parameters(struct c_parser_ctx * parser, struct a
   int i=0;
   if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      ;
     }
   while (token  != NULL )
     {
       token = c_parse_rhs(parser,token);
       if ( token == NULL )
 	{
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	  token=c_parse_next(parser);
 	}
       if ( token !=NULL)
 	{
@@ -711,7 +854,7 @@ struct al_token * c_parse_call_parameters(struct c_parser_ctx * parser, struct a
 	{
 	  return token;
 	}
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token=c_parse_next(parser);
     }
   printf("// call param %i end\n",i);
   return token;
@@ -723,39 +866,21 @@ struct al_token * c_parse_simple_boolean_expression(struct c_parser_ctx * parser
   struct json_ctx* tokenizer = parser->tokenizer;
   if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token=c_parse_next(parser);
     }
-  if ( token->token == JSON_TOKEN_OPEN_PARENTHESIS_ID )
+
+  token = c_parse_rhs(parser,token);
+  if ( token == NULL )
+    {
+      token=c_parse_next(parser);
+    }
+  if ( ( token->token == JSON_TOKEN_COMPARE_EQUAL_ID )
+       || ( token->token == JSON_TOKEN_COMPARE_DIFFERENT_ID )
+       || ( token->token == JSON_TOKEN_SUPERIOR_ID )
+       || ( token->token == JSON_TOKEN_INFERIOR_ID ) )
     {
       c_parse_any(parser,token);  
       token = c_parse_simple_boolean_expression(parser,NULL);
-      if ( token == NULL )
-	{
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
-	}
-      if ( token != NULL )
-	{
-	  if ( token->token == JSON_TOKEN_CLOSE_PARENTHESIS_ID )
-	    {
-	      c_parse_any(parser,token);
-	      return NULL;
-	    }
-	}
-    }
-   else 
-    {
-      token = c_parse_rhs(parser,token);
-      if ( token == NULL )
-	{
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
-	}
-      if ( ( token->token == JSON_TOKEN_COMPARE_EQUAL_ID )
-	   || ( token->token == JSON_TOKEN_COMPARE_DIFFERENT_ID ) )
-	{
-	  c_parse_any(parser,token);  
-	  token = c_parse_simple_boolean_expression(parser,NULL);
-	}
-      return token;
     }
   return token;
   
@@ -767,14 +892,14 @@ struct al_token * c_parse_logical_expression(struct c_parser_ctx * parser,struct
   struct json_ctx* tokenizer = parser->tokenizer;
   if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token=c_parse_next(parser);
     }
   while ( token != NULL )
     {
       token = c_parse_simple_boolean_expression(parser,token);
       if ( token == NULL )
 	{
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	  token=c_parse_next(parser);
 	}
       if ( token != NULL )
 	{
@@ -787,7 +912,7 @@ struct al_token * c_parse_logical_expression(struct c_parser_ctx * parser,struct
 	       || ( token->token == JSON_TOKEN_LOGICAL_OR_ID ) )
 	    {
 	      c_parse_any(parser,token);
-	      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	      token=c_parse_next(parser);
 	    }
 	  else
 	    {
@@ -803,7 +928,7 @@ struct al_token * c_parse_enum_member(struct c_parser_ctx * parser, struct c_enu
 {
   struct json_ctx* tokenizer = parser->tokenizer;
   struct al_token * token = NULL;
-  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+  token=c_parse_next(parser);
   if ( token == NULL )
     {
       tokenizer->last_token.token=JSON_TOKEN_EOF_ID;
@@ -821,7 +946,7 @@ struct al_token * c_parse_enum_member(struct c_parser_ctx * parser, struct c_enu
     {
       return token;
     }
-  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+  token=c_parse_next(parser);
   if ( token == NULL )
     {
       tokenizer->last_token.token=JSON_TOKEN_EOF_ID;
@@ -838,19 +963,61 @@ struct al_token * c_parse_enum_member(struct c_parser_ctx * parser, struct c_enu
     }
 }
 
-struct al_token * c_parse_block(struct c_parser_ctx * parser, struct al_token * token)
+
+// parse statements *; case => excluded.
+struct al_token * c_parse_case(struct c_parser_ctx * parser, struct al_token * token)
 {
   struct json_ctx* tokenizer = parser->tokenizer;
+  int ca = 0;
+  parser->state = C_STATE_START_ID;
+  if (token == NULL)
+    {
+      token=c_parse_next(parser);      
+    }
+  while ( (token=c_parse_statement(parser,NULL,TOKEN_C_NOMATCH_ID,C_STATE_START_ID)) == NULL )
+    {
+      ++ca;
+      printf("// within case line %i\n", ca);
+    }
+  if ( token != NULL )
+    {
+      if (token->token == JSON_TOKEN_WORD_ID )
+	{
+	  int c_token = parser->last_word;
+	  if ( c_token == TOKEN_C_CASE_ID )
+	    {
+	      print_c_token(parser,c_token);
+	      return token;
+	    }
+	  else
+	    {
+	      printf("// exit case line %i NOT a case %i \n", ca, c_token);
+	    }
+	}
+    }
+  printf("// exit case line %i\n", ca);
+  return token;
+}
+
+// parse '{' statements* '}' , returns NULL if block parsting is ok.
+struct al_token * c_parse_block(struct c_parser_ctx * parser, struct al_token * token, enum c_parser_state state)
+{
+  struct json_ctx* tokenizer = parser->tokenizer;
+  printf("//block start\n");
   if ( token == NULL )
     {
-      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+      token=c_parse_next(parser);
     }
   if ( token != NULL )
     {
       if (token->token == JSON_TOKEN_OPEN_BRACE_ID)
 	{
 	  printf("{\n");
-	  while ( (token=c_parse_statement(parser)) == NULL );
+	  printf("//block line (state %i)\n", state);
+	  while ( (token=c_parse_statement(parser,NULL,TOKEN_C_NOMATCH_ID,state)) == NULL )
+	    {
+	      printf("//block line (state %i)\n", state);
+	    }
 	  if ( token != NULL )
 	    {
 	      if (token->token == JSON_TOKEN_CLOSE_BRACE_ID )
@@ -863,6 +1030,11 @@ struct al_token * c_parse_block(struct c_parser_ctx * parser, struct al_token * 
 		return token;
 	      }
 	    }
+	}
+      else
+	{
+	  // a block should start with a '{'
+	  return token;
 	}
       // FIXME this is an error we expect a } close
       return NULL;
@@ -891,7 +1063,7 @@ struct al_token * c_parse_function_params(struct c_parser_ctx * parser,   struct
        {
 	 // function call
 	 printf(")");
-	 if ( (token = c_tokenizer(tokenizer,parser->tokenizer_data)) != NULL)
+	 if ( (token=c_parse_next(parser)) != NULL)
 	   {
 	     printf("// %i\n", token->token);
 	     if ( token->token == JSON_TOKEN_SEMI_COLON_ID )
@@ -901,8 +1073,8 @@ struct al_token * c_parse_function_params(struct c_parser_ctx * parser,   struct
 		 return NULL;
 	       }
 	     else {
-	       // function definition
-	       token = c_parse_block(parser,token);
+	       // function definition	       
+	       token = c_parse_block(parser,token,C_STATE_FUNCTION_DEFINITION_ID);
 	     }
 	     return token;
 	   }
@@ -910,11 +1082,11 @@ struct al_token * c_parse_function_params(struct c_parser_ctx * parser,   struct
        }
      else {
        // declaration
-       while ( (token = c_parse_statement(parser) ) == NULL);
+       while ( (token = c_parse_statement(parser,NULL,TOKEN_C_NOMATCH_ID,C_STATE_START_ID) ) == NULL);
        if  ( token->token == JSON_TOKEN_CLOSE_PARENTHESIS_ID )
 	 {
 	   printf(")");
-	   return c_parse_block(parser,NULL);
+	   return c_parse_block(parser,NULL,C_STATE_FUNCTION_DECLARATION_ID);
 	 }
        else
 	 {
@@ -926,20 +1098,26 @@ struct al_token * c_parse_function_params(struct c_parser_ctx * parser,   struct
 }
 // return NULL if parsing is ok and all token at eat
 // else returns token that causes non prsing
-struct al_token * c_parse_statement(struct c_parser_ctx * parser)
+struct al_token * c_parse_statement(struct c_parser_ctx * parser, struct al_token * token, int c_token, enum c_parser_state level_state)
 {
   struct json_ctx* tokenizer = parser->tokenizer;
-  struct al_token * token = NULL;
-  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+  if ( token == NULL )
+    {
+      token=c_parse_next(parser);
+      c_token = parser->last_word;
+    }
+  
   if ( token == NULL )
     {
       tokenizer->last_token.token=JSON_TOKEN_EOF_ID;
       return &tokenizer->last_token;
     }
 
-    switch(token->token)
+  switch(token->token)
     {
     case JSON_TOKEN_WORD_ID:
+      break;
+    case JSON_TOKEN_INCREMENT_ID:
       break;
 
     case JSON_TOKEN_OPEN_PARENTHESIS_ID:
@@ -985,10 +1163,31 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 
   if ( token->token != JSON_TOKEN_WORD_ID )
     {
-      printf("[ERROR] a new statement should start with a word. got token %i \n",token->token);
-      return token;
+      if ( token->token == JSON_TOKEN_INCREMENT_ID )
+	{
+	  c_parse_any(parser,token);
+	  token = c_parse_lhs(parser,NULL);
+	  if ( token == NULL )
+	    {
+	      token=c_parse_next(parser);
+	    }
+	  if ( token != NULL )
+	    {
+	      if ( token->token == JSON_TOKEN_SEMI_COLON_ID)		
+		{
+		  c_parse_any(parser,token);
+		  return NULL;
+		}
+	    }
+	  return token;
+	}
+      else
+	{
+	  printf("[ERROR] a new statement should start with a word. got token %i \n",token->token);
+	  return token;
+	}
     }
-  int c_token = get_word_token(&tokenizer->token_buf);
+
   if ( c_token == TOKEN_C_NOMATCH_ID )
     {
       printf("// a variable or function name\n");
@@ -996,18 +1195,15 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 
       if ( token == NULL )
 	{
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	  token=c_parse_next(parser);
 	}
-
       if ( token != NULL )
 	{
-	  if ( token->token == JSON_TOKEN_EQUAL_ID )
+	  if ( ( token->token == JSON_TOKEN_EQUAL_ID )
+	       || (token->token == JSON_TOKEN_ADD_ID ) )
 	    {
 	      c_parse_any(parser,token);
-	      if ( (token = c_tokenizer(tokenizer,parser->tokenizer_data) ) != NULL)
-		{
-		   token = c_parse_rhs_semi_colon(parser,token);
-		}
+	      token = c_parse_rhs_semi_colon(parser,NULL);
 	    }
 	  else
 	  if ( token->token == JSON_TOKEN_OPEN_PARENTHESIS_ID )
@@ -1023,22 +1219,99 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
     }
   else
     {
-      reset_tokenizer_buffer(tokenizer);
+      if ( c_token == TOKEN_C_ELSE_ID )      
+	{
+	  if (parser->state == C_STATE_IF_BLOCK_ID )
+	    {
+	      c_parse_any(parser,token);
+	      parser->state = C_STATE_START_ID;
+	      token = c_parse_block(parser,NULL,C_STATE_START_ID);
+	    }
+	  else
+	    {
+	      printf("[ERROR] else statement not following a if block (state %i)",parser->state);
+	    }
+	  return token;
+	}
+      else
+	if ( c_token == TOKEN_C_CASE_ID )
+	{	  
+	  if (level_state == C_STATE_SWITCH_ID )
+	    {
+	      print_c_token(parser,c_token);
+	      token = c_parse_rhs(parser,NULL);
+	      if ( token != NULL )
+		{
+		  if (token->token == JSON_TOKEN_COLON_ID )
+		    {
+		      c_parse_any(parser,token);
+		      return NULL;
+		    }
+		  else
+		    {
+		      printf("wrong token for case %i\n", token-token);
+		    }
+		}
+	      return token;
+	    }
+	  else
+	    {
+	      printf("[ERROR] case statement not within a switch block (state %i %i)",parser->state, level_state);
+	    }
+	  return token;
+	}
+      else
+	if ( c_token == TOKEN_C_DEFAULT_ID )
+	  {	  
+	    if (level_state == C_STATE_SWITCH_ID )
+	      {
+		print_c_token(parser,c_token);
+		token=c_parse_next(parser);
+		if ( token != NULL )
+		  {
+		    if (token->token == JSON_TOKEN_COLON_ID )
+		      {
+			c_parse_any(parser,token);
+			return NULL;
+		      }
+		    else
+		      {
+			printf("wrong token for case %i\n", token-token);
+		      }
+		  }
+		return token;
+	      }
+	    else
+	      {
+		printf("[ERROR] default statement not within a switch block (state %i;%i)\n", parser->state,level_state);
+	      }
+	    return token;	    
+	  }
+      else
+      if ( c_token == TOKEN_C_RETURN_ID )
+	{
+      	  print_c_token(parser,c_token);
+	  token=c_parse_rhs_semi_colon(parser,NULL);
+	  parser->state = C_STATE_START_ID;
+	  return token;
+        }
+      else
       // struct definition or declaration
       if ( c_token == TOKEN_C_STRUCT_ID )
 	{
-	  print_c_token(c_token);
-	  parser->state=C_STATE_STRUCT_ID;
+	  print_c_token(parser,c_token);
+	  level_state=C_STATE_STRUCT_ID;
 	  struct al_token * token;
 	  struct c_struct_info struct_info;
-	  while ( (token = c_tokenizer(tokenizer,parser->tokenizer_data)) != NULL )
+	  while ( (token=c_parse_next(parser)) != NULL )
 	    {
-	      if ( parser->state==C_STATE_STRUCT_ID )
+	      if ( level_state==C_STATE_STRUCT_ID )
 		{
 		  if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
 		      struct_info.dict_index = c_cut_token_string(parser);
-		      parser->state=C_STATE_STRUCT_NAME_ID;
+		      // name of struct as given ( not name of struct variable )
+		      level_state=C_STATE_STRUCT_NAME_ID;
 		      printf(" ");
 		    }
 		  else
@@ -1046,18 +1319,18 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		      printf("[ERROR] struct name expected got token %i \n",token->token);
 		    }
 		}
-	      else if ( parser->state==C_STATE_STRUCT_NAME_ID)
+	      else if ( level_state==C_STATE_STRUCT_NAME_ID)
 		{
 		  if (token->token == JSON_TOKEN_OPEN_BRACE_ID)
 		    {
 		      printf("{\n");
-		      parser->state=C_STATE_STRUCT_DEFINITION_ID;
+		      level_state=C_STATE_STRUCT_DEFINITION_ID;
 		      while ( (token=c_parse_struct_member(parser,&struct_info)) == NULL );
 		      if ( token != NULL )
 			{
 			  if (token->token == JSON_TOKEN_CLOSE_BRACE_ID )
 			    {
-			      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+			      token=c_parse_next(parser);
 			      if ( (token != NULL) && (token->token != JSON_TOKEN_SEMI_COLON_ID ) )
 				{
 				  printf("[ERROR] expected ; to close struct  ... {} name expected got token %i \n",token->token);
@@ -1070,29 +1343,29 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		  else if ( token->token == JSON_TOKEN_STAR_ID )
 		    {
 		      c_parse_any(parser,token);
-		      parser->state=C_STATE_DECLARE_TYPE_ID;
+		      level_state=C_STATE_DECLARE_TYPE_ID;
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
 		      void * dict_index = c_cut_token_string(parser);
-		      parser->state=C_STATE_STRUCT_DECLARATION_ID;
+		      level_state=C_STATE_STRUCT_DECLARATION_ID;
 		    }
 		  else
 		    {
 		      printf("[ERROR] struct definition or declaration expected, got token %i\n", token->token);
 		    }
 		}
-	      else if ( parser->state==C_STATE_DECLARE_TYPE_ID)
+	      else if ( level_state==C_STATE_DECLARE_TYPE_ID)
 		{
 		  if ( token->token == JSON_TOKEN_STAR_ID )
 		    {
 		      c_parse_any(parser,token);
-		      parser->state=C_STATE_DECLARE_TYPE_ID;
+		      level_state=C_STATE_DECLARE_TYPE_ID;
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
 		      void * dict_index = c_cut_token_string(parser);
-		      parser->state=C_STATE_STRUCT_DECLARATION_ID;
+		      level_state=C_STATE_STRUCT_DECLARATION_ID;
 		    }
 		  else
 		    {
@@ -1105,14 +1378,20 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		    printf(";\n");
 		    break;
 		  }
+		else
 		if ( token->token == JSON_TOKEN_EQUAL_ID )
 		  {
-		    token=c_parse_rhs(parser,NULL);
+		    c_parse_any(parser,token);
+		    token=c_parse_rhs_semi_colon(parser,NULL);
+		    level_state=C_STATE_START_ID;
+		    return token;
 		  }
+		else
 		if ( token->token == JSON_TOKEN_OPEN_PARENTHESIS_ID )
 		  {
 		    return c_parse_function_params(parser,token);
 		  }
+		else
 		if ( token->token == JSON_TOKEN_COMMA_ID )
 		  {
 		    printf(",\n");
@@ -1128,18 +1407,18 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 	}
       else if ( c_token == TOKEN_C_ENUM_ID )
 	{
-	  print_c_token(c_token);
-	  parser->state=C_STATE_ENUM_ID;
+	  print_c_token(parser,c_token);
+	  level_state=C_STATE_ENUM_ID;
 	  struct al_token * token;
 	  struct c_enum_info enum_info;
-	  while ( (token = c_tokenizer(tokenizer,parser->tokenizer_data)) != NULL )
+	  while ( (token=c_parse_next(parser)) != NULL )
 	    {
-	      if ( parser->state==C_STATE_ENUM_ID )
+	      if ( level_state==C_STATE_ENUM_ID )
 		{
 		  if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
 		      enum_info.dict_index = c_cut_token_string(parser);
-		      parser->state=C_STATE_ENUM_NAME_ID;
+		      level_state=C_STATE_ENUM_NAME_ID;
 		      printf(" ");
 		    }
 		  else
@@ -1147,12 +1426,12 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		      printf("[ERROR] struct name expected got token %i \n",token->token);
 		    }
 		}
-	      else if ( parser->state==C_STATE_ENUM_NAME_ID)
+	      else if ( level_state==C_STATE_ENUM_NAME_ID)
 		{
 		  if (token->token == JSON_TOKEN_OPEN_BRACE_ID)
 		    {
 		      printf("{\n");
-		      parser->state=C_STATE_ENUM_DEFINITION_ID;
+		      level_state=C_STATE_ENUM_DEFINITION_ID;
 		      int index = 0;
 		      token=c_parse_enum_member(parser,&enum_info,index);
 		      while ( token == NULL )
@@ -1164,7 +1443,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 			{
 			  if (token->token == JSON_TOKEN_CLOSE_BRACE_ID )
 			    {
-			      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+			      token=c_parse_next(parser);
 			      if ( (token != NULL) && (token->token != JSON_TOKEN_SEMI_COLON_ID ) )
 				{
 				  printf("[ERROR] expected ; to close struct  ... {} name expected got token %i \n",token->token);
@@ -1177,28 +1456,28 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		  else if ( token->token == JSON_TOKEN_STAR_ID )
 		    {
 		      c_parse_any(parser,token);
-		      parser->state=C_STATE_DECLARE_TYPE_ID;
+		      level_state=C_STATE_DECLARE_TYPE_ID;
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
 		      void * dict_index = c_cut_token_string(parser);
-		      parser->state=C_STATE_ENUM_DECLARATION_ID;
+		      level_state=C_STATE_ENUM_DECLARATION_ID;
 		    }
 		  else
 		    {
 		      printf("[ERROR] enum definition or declaration expected, got token %i\n", token->token);
 		    }
 		}
-	      else if ( parser->state==C_STATE_DECLARE_TYPE_ID)
+	      else if ( level_state==C_STATE_DECLARE_TYPE_ID)
 		{
 		  if ( token->token == JSON_TOKEN_STAR_ID )
 		    {
-		      parser->state=C_STATE_DECLARE_TYPE_ID;
+		      level_state=C_STATE_DECLARE_TYPE_ID;
 		    }
 		  else if ( token->token == JSON_TOKEN_WORD_ID )
 		    {
 		      void * dict_index = c_cut_token_string(parser);
-		      parser->state=C_STATE_ENUM_DECLARATION_ID;
+		      level_state=C_STATE_ENUM_DECLARATION_ID;
 		    }
 		  else
 		    {
@@ -1225,10 +1504,10 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 	}
       else if ( c_token == TOKEN_C_IF_ID )
 	{
-	  printf("IF START\n");
-	  print_c_token(c_token);
+	  printf("// IF START\n");
+	  print_c_token(parser,c_token);
 	  printf(" ");
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	  token=c_parse_next(parser);
 	  if ( token != NULL )
 	    {
 	      if ( token->token == JSON_TOKEN_OPEN_PARENTHESIS_ID )
@@ -1237,23 +1516,24 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		  token = c_parse_logical_expression(parser,NULL);
 		  if ( token == NULL )
 		    {
-		      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+		      token=c_parse_next(parser);
 		    }
 		  if ( token->token == JSON_TOKEN_CLOSE_PARENTHESIS_ID )
 		    {
 		      c_parse_any(parser,token);
-		      token = c_parse_block(parser,NULL);
+		      token = c_parse_block(parser,NULL,C_STATE_START_ID);
 		    }
 		}
 	    }
-	  printf("IF END\n");
+	  printf("// IF END\n");
+	  parser->state=C_STATE_IF_BLOCK_ID;
 	  return token;
 	}
       else if ( c_token == TOKEN_C_WHILE_ID )
 	{
-	  print_c_token(c_token);
+	  print_c_token(parser,c_token);
 	  printf(" ");
-	  token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	  token=c_parse_next(parser);
 	  if ( token != NULL )
 	    {
 	      if ( token->token == JSON_TOKEN_OPEN_PARENTHESIS_ID )
@@ -1262,12 +1542,36 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		  token = c_parse_logical_expression(parser,NULL);
 		  if ( token == NULL )
 		    {
-		      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+		      token=c_parse_next(parser);
 		    }
 		  if ( token->token == JSON_TOKEN_CLOSE_PARENTHESIS_ID )
 		    {
 		      c_parse_any(parser,token);
-		      token = c_parse_block(parser,NULL);
+		      token = c_parse_block(parser,NULL,C_STATE_START_ID);
+		    }
+		}
+	    }
+	  return token;
+	}
+      else if ( c_token == TOKEN_C_SWITCH_ID )
+	{
+	  print_c_token(parser,c_token);
+	  printf(" ");
+	  token=c_parse_next(parser);
+	  if ( token != NULL )
+	    {
+	      if ( token->token == JSON_TOKEN_OPEN_PARENTHESIS_ID )
+		{
+		  c_parse_any(parser,token);	  
+		  token = c_parse_rhs(parser,NULL);
+		  if ( token == NULL )
+		    {
+		      token=c_parse_next(parser);
+		    }
+		  if ( token->token == JSON_TOKEN_CLOSE_PARENTHESIS_ID )
+		    {
+		      c_parse_any(parser,token);
+		      token = c_parse_block(parser,NULL,C_STATE_SWITCH_ID);
 		    }
 		}
 	    }
@@ -1275,40 +1579,33 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 	}
       else	
 	{
-	  // non struct,enum,if or while
-	  token = c_parse_left_type(parser,token);
+	  // non struct,enum,if,while or switch
+	  token = c_parse_left_type(parser,token,c_token);
 	  if ( token == NULL )
 	    {
-	      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	      token=c_parse_next(parser);
 	    }
-	  printf("\n// wild parsing start\n");
-	  print_c_token(c_token);
+	  ++parser->nested;
+	  int nested = parser->nested;
+	  printf("\n// [%i] wild parsing start \n", nested);
+	  // should have been done in c_parser_left_type ...
+	  // print_c_token(c_token);
 	  while ( token != NULL )
 	    {
 	      if (token->token == JSON_TOKEN_OPEN_BRACE_ID)
 		{
-		  c_parse_any(parser,token);
-		  printf("\n// wild parsing statements start\n");
-		  token = c_parse_statement(parser);
-		  while (token == NULL)
+		  token=c_parse_block(parser,token,C_STATE_START_ID);
+		  if ( token != NULL )
 		    {
-		      token = c_parse_statement(parser);
+      printf("//[%i] wild parsing statements blocks ends badly\n",nested);
+		      return token;
 		    }
-		  printf("\n// wild parsing statements end\n");
-		  if (token->token == JSON_TOKEN_CLOSE_BRACE_ID)
-		    {
-		      printf("}\n");
-		      break;
-		    }
-		  else
-		    {
-		      printf("unmatched { got token %i\n",token->token);
-		    }
+		  return NULL;
 		}
 	      if (token->token == JSON_TOKEN_EQUAL_ID)
 		{
 		  c_parse_any(parser,token);
-		  if ( (token = c_tokenizer(tokenizer,parser->tokenizer_data)) != NULL )
+		  if ( (token=c_parse_next(parser)) != NULL )
 		    {
 		      token=c_parse_rhs_semi_colon(parser,token);
 		    }
@@ -1325,9 +1622,10 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 		  break;
 		}
 	      c_parse_any(parser,token);
-	      token = c_tokenizer(tokenizer,parser->tokenizer_data);
+	      token=c_parse_next(parser);
 	    }
-	  printf("\n// wild parsing end\n");
+	  printf("\n//[%i/%i] wild parsing end\n", nested, parser->nested);
+	  parser->nested --;
 	}
     }
   return NULL;
@@ -1336,6 +1634,7 @@ struct al_token * c_parse_statement(struct c_parser_ctx * parser)
 
 int init_c_parser(  struct c_parser_ctx* parser, struct json_ctx* tokenizer, void * data)
 {
+  bzero(parser,sizeof(*parser));
   parser->state=C_STATE_START_ID;
   parser->tokenizer=tokenizer;
   parser->tokenizer_data=data;
@@ -1379,7 +1678,7 @@ int main(int argc,char ** argv)
       json_ctx_set_debug(&tokenizer,0);
 
       struct al_token * token = NULL;
-      while ( ( token = c_parse_statement(&parser)) == NULL );
+      while ( ( token = c_parse_statement(&parser,NULL,TOKEN_C_NOMATCH_ID,C_STATE_START_ID)) == NULL );
 
       if (token->token != JSON_TOKEN_EOF_ID )
 	{

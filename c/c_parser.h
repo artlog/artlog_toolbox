@@ -6,7 +6,9 @@
 
 // reserved c words
 enum c_word_token {
-  TOKEN_C_NOMATCH_ID,
+  TOKEN_C_NOTWORD_ID, // something that is not recognized as a word ( ie from another JSON_TOKEN than JSON_TOKEN_WORD_ID )
+  TOKEN_C_NOMATCH_ID, // not match with reserved word, can be converted to TOKEN_C_DICTENTRY_ID
+  TOKEN_C_DICTENTRY_ID, // an internal entry was created for this.
   TOKEN_C_STRUCT_ID,
   TOKEN_C_UNION_ID,
   TOKEN_C_ENUM_ID,
@@ -39,12 +41,17 @@ enum c_parser_state {
   C_STATE_ENUM_DECLARATION_ID,
   C_STATE_ENUM_DEFINITION_ID,
   C_STATE_TYPE_ID,
+  C_STATE_IF_BLOCK_ID,
+  C_STATE_SWITCH_ID,
+  C_STATE_FUNCTION_DECLARATION_ID,
+  C_STATE_FUNCTION_DEFINITION_ID,
 };
 
 struct c_parser_ctx {
   enum c_parser_state state;
   struct json_ctx* tokenizer;
   void * tokenizer_data;
+  enum json_token_id last_token;
   enum c_word_token last_type;
   enum c_word_token last_word;
 
@@ -53,6 +60,7 @@ struct c_parser_ctx {
   int word_buffer_length;
   int word_buffer_pos;
   char * word_buffer;
+  int nested;
 };
 
 struct c_type_list {
@@ -102,6 +110,6 @@ struct c_enum_info {
 };
 
 // return NULL if parsed, else return unrecognized left token
-struct al_token * c_parse_statement(struct c_parser_ctx * parser);
+struct al_token * c_parse_statement(struct c_parser_ctx * parser, struct al_token * token, int c_token, enum c_parser_state level_state);
 
 #endif

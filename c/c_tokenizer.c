@@ -166,7 +166,7 @@ struct al_token * c_tokenizer_starting_with_minus(struct json_ctx * ctx, void * 
       return tokenizer_NUMBER(ctx,c,data);
       break;
     case '>':
-      ctx->add_char(ctx,'-',c);
+      //ctx->add_char(ctx,'-',c);
       JSON_TOKEN(RIGHT_ARROW);
       break;
     default:
@@ -197,7 +197,7 @@ struct al_token * c_tokenizer_starting_with_exclamation(struct json_ctx * ctx, v
     char c = ctx->next_char(ctx, data);
     switch (c)  {
     case 0:
-      JSON_TOKEN(EQUAL);
+      JSON_TOKEN(EOF);
       break;
     case '=':
       ctx->add_char(ctx,'!',c);
@@ -206,6 +206,28 @@ struct al_token * c_tokenizer_starting_with_exclamation(struct json_ctx * ctx, v
     default:
       ctx->pushback_char(ctx,data,c);
       JSON_TOKEN(EXCLAMATION);
+      break;
+    }
+}
+
+struct al_token * c_tokenizer_starting_with_plus(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case 0:
+      JSON_TOKEN(EOF);
+      break;
+    case '=':
+      // ctx->add_char(ctx,'+',c);
+      JSON_TOKEN(ADD);
+      break;
+    case '+':
+      // ctx->add_char(ctx,'+',c);
+      JSON_TOKEN(INCREMENT);
+      break;
+    default:
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(PLUS);
       break;
     }
 }
@@ -236,7 +258,7 @@ struct al_token * c_tokenizer_starting_with_equal(struct json_ctx * ctx, void * 
       JSON_TOKEN(EQUAL);
       break;
     case '=':
-      ctx->add_char(ctx,'=',c);
+      // ctx->add_char(ctx,'=',c);
       JSON_TOKEN(COMPARE_EQUAL);
       break;
     default:
@@ -398,6 +420,8 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	    break;
 	  case '!':
 	    return c_tokenizer_starting_with_exclamation(ctx, data);
+	  case '+':
+	    return c_tokenizer_starting_with_plus(ctx, data);
 	  case 0:
 	    // force failure programming error
 	    assert(c!=0);
