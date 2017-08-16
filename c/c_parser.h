@@ -9,6 +9,7 @@ enum c_word_token {
   TOKEN_C_NOTWORD_ID, // something that is not recognized as a word ( ie from another JSON_TOKEN than JSON_TOKEN_WORD_ID )
   TOKEN_C_NOMATCH_ID, // not match with reserved word, can be converted to TOKEN_C_DICTENTRY_ID
   TOKEN_C_DICTENTRY_ID, // an internal entry was created for this.
+  TOKEN_C_TYPEDEF_ID,
   TOKEN_C_STRUCT_ID,
   TOKEN_C_UNION_ID,
   TOKEN_C_ENUM_ID,
@@ -54,6 +55,7 @@ struct c_parser_ctx {
   enum json_token_id last_token;
   enum c_word_token last_type;
   enum c_word_token last_word;
+  struct alhash_datablock * dict_value;
 
   struct alhash_table dict;
   int words;
