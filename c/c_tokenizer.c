@@ -51,6 +51,11 @@ struct al_token * c_tokenizer_eat_up_to_end_of_comment(struct json_ctx * ctx, vo
     ctx->add_char(ctx,c,c);
     c = ctx->next_char(ctx, data);
   }
+  if ( c != 0 )
+    {
+      // suspicious case
+      printf("// EOF in comment due to '%c' \n",c);
+    }
   JSON_TOKEN(EOF);
 }
 
@@ -85,6 +90,11 @@ struct al_token * c_tokenizer_eat_up_word(struct json_ctx * ctx, void * data)
       }
     c = ctx->next_char(ctx, data);
   }
+  if ( c != 0 )
+    {
+      // suspicious case
+      printf("// EOF in word due to '%c' \n",c);
+    }
   JSON_TOKEN(EOF);
 
 }
@@ -106,6 +116,11 @@ struct al_token * c_tokenizer_eat_up_to_end_of_line(struct json_ctx * ctx, void 
       ctx->add_char(ctx,c,c);
       c = ctx->next_char(ctx, data);
   }
+  if ( c != 0 )
+    {
+      // suspicious case
+      printf("// EOF in end of line due to '%c' \n",c);
+    }
   JSON_TOKEN(EOF);
 }
 
@@ -144,7 +159,11 @@ struct al_token * c_tokenizer_potential_comment(struct json_ctx * ctx, void * da
 	  }
       }
   }
-  
+  if ( c != 0 )
+    {
+      // suspicious case
+      printf("// EOF in potential commen due to '%c' \n",c);
+    }
   JSON_TOKEN(EOF);
 
 }
@@ -166,11 +185,17 @@ struct al_token * c_tokenizer_starting_with_minus(struct json_ctx * ctx, void * 
       return tokenizer_NUMBER(ctx,c,data);
       break;
     case '>':
-      //ctx->add_char(ctx,'-',c);
       JSON_TOKEN(RIGHT_ARROW);
       break;
+    case '-':
+      JSON_TOKEN(DECREMENT);
+      break;
+    case '=':
+      JSON_TOKEN(SUBTRACT);
+      break;
     default:
-      JSON_TOKEN(EOF);
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(MINUS);
     }
 }
 

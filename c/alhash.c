@@ -156,7 +156,11 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 		 ( entry != NULL ) // internal error ... how could it be NULL this a place within the bucket.
 		 && ( entry != initial_entry) // loop containing initial entry : normal ring structure.
 		 && ( guard > 0) // if loop or other bad content
-		 ); 
+		 );
+	  if ( guard <= 0 )
+	    {
+	      fprintf(stderr,"[FATAL] alhash guard reached hashtable full %p size %i\n",table, table->bucket_size);
+	    }
 
 	}
       return NULL;

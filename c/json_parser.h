@@ -49,10 +49,13 @@ enum json_token_id {
   JSON_TOKEN_PRAGMA_ID,
   JSON_TOKEN_EXCLAMATION_ID,
   JSON_TOKEN_COMPARE_DIFFERENT_ID,
+  JSON_TOKEN_MINUS_ID, // -  hyphen
   JSON_TOKEN_RIGHT_ARROW_ID, // ->
   JSON_TOKEN_PLUS_ID,
   JSON_TOKEN_INCREMENT_ID, // ++
   JSON_TOKEN_ADD_ID, // +=
+  JSON_TOKEN_DECREMENT_ID, // --
+  JSON_TOKEN_SUBTRACT_ID, // -= yes subtract and not substract which is frenglish.
   JSON_TOKEN_PUSHBACK_ID
 };
 
@@ -66,6 +69,7 @@ enum json_internal_flags {
   JSON_FLAG_IGNORE=1
 };
 
+// invalid typedef char (*)(struct json_ctx *ctx, void *data) get_next_char;
 typedef char (*get_next_char)(struct json_ctx *ctx, void *data);
 typedef void (*set_pushback_char)(struct json_ctx *ctx, void *data, char pushback);
 typedef struct al_token* (*al_tokenizer_func) (struct json_ctx *ctx, void *data);

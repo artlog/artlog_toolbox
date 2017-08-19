@@ -28,6 +28,7 @@ enum c_word_token {
   TOKEN_C_CHAR_ID,
   TOKEN_C_SIGNED_ID,
   TOKEN_C_UNSIGNED_ID,
+  TOKEN_C_CONTINUE_ID
 };
 
 enum c_parser_state {
@@ -46,12 +47,14 @@ enum c_parser_state {
   C_STATE_SWITCH_ID,
   C_STATE_FUNCTION_DECLARATION_ID,
   C_STATE_FUNCTION_DEFINITION_ID,
+  C_STATE_ERROR
 };
 
 struct c_parser_ctx {
   enum c_parser_state state;
   struct json_ctx* tokenizer;
   void * tokenizer_data;
+  void * lhs_variable_data;
   enum json_token_id last_token;
   enum c_word_token last_type;
   enum c_word_token last_word;
@@ -63,6 +66,8 @@ struct c_parser_ctx {
   int word_buffer_pos;
   char * word_buffer;
   int nested;
+  // allow progress checking 
+  int token_count;
 };
 
 struct c_type_list {
@@ -112,6 +117,6 @@ struct c_enum_info {
 };
 
 // return NULL if parsed, else return unrecognized left token
-struct al_token * c_parse_statement(struct c_parser_ctx * parser, struct al_token * token, int c_token, enum c_parser_state level_state);
+struct al_token * c_parse_statement(struct c_parser_ctx * parser, struct al_token * token, enum c_parser_state level_state);
 
 #endif
