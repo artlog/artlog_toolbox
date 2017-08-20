@@ -204,7 +204,7 @@ struct al_token * c_tokenizer_starting_with_and(struct json_ctx * ctx, void * da
     char c = ctx->next_char(ctx, data);
     switch (c)  {
     case 0:
-      JSON_TOKEN(EQUAL);
+      JSON_TOKEN(LOGICAL_AND);
       break;
     case '&':
       ctx->add_char(ctx,'&',c);
@@ -262,10 +262,10 @@ struct al_token * c_tokenizer_starting_with_or(struct json_ctx * ctx, void * dat
     char c = ctx->next_char(ctx, data);
     switch (c)  {
     case 0:
-      JSON_TOKEN(EQUAL);
+      JSON_TOKEN(LOGICAL_OR);
       break;
     case '|':
-      ctx->add_char(ctx,'|',c);
+      // ctx->add_char(ctx,'|',c);
       JSON_TOKEN(LOGICAL_OR);
       break;
     default:
@@ -280,7 +280,7 @@ struct al_token * c_tokenizer_starting_with_equal(struct json_ctx * ctx, void * 
     char c = ctx->next_char(ctx, data);
     switch (c)  {
     case 0:
-      JSON_TOKEN(EQUAL);
+      JSON_TOKEN(SUPERIOR);
       break;
     case '=':
       // ctx->add_char(ctx,'=',c);
@@ -289,6 +289,42 @@ struct al_token * c_tokenizer_starting_with_equal(struct json_ctx * ctx, void * 
     default:
       ctx->pushback_char(ctx,data,c);
       JSON_TOKEN(EQUAL);
+      break;
+    }
+}
+
+struct al_token * c_tokenizer_starting_with_superior(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case 0:
+      JSON_TOKEN(SUPERIOR);
+      break;
+    case '=':
+      // ctx->add_char(ctx,'=',c);
+      JSON_TOKEN(SUPERIOR_EQUAL);
+      break;
+    default:
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(SUPERIOR);
+      break;
+    }
+}
+
+struct al_token * c_tokenizer_starting_with_inferior(struct json_ctx * ctx, void * data)
+{
+    char c = ctx->next_char(ctx, data);
+    switch (c)  {
+    case 0:
+      JSON_TOKEN(INFERIOR);
+      break;
+    case '=':
+      // ctx->add_char(ctx,'=',c);
+      JSON_TOKEN(INFERIOR_EQUAL);
+      break;
+    default:
+      ctx->pushback_char(ctx,data,c);
+      JSON_TOKEN(INFERIOR);
       break;
     }
 }
@@ -433,10 +469,10 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	  case '*':
 	    JSON_TOKEN(STAR);
 	  case '>':
-	    JSON_TOKEN(SUPERIOR);
+	    return c_tokenizer_starting_with_superior(ctx,data);
 	    break;
 	  case '<':
-	    JSON_TOKEN(INFERIOR);
+	    return c_tokenizer_starting_with_inferior(ctx,data);	    
 	    break;
 	  case '=':
 	    return c_tokenizer_starting_with_equal(ctx,data);

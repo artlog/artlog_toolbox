@@ -47,7 +47,15 @@ enum c_parser_state {
   C_STATE_SWITCH_ID,
   C_STATE_FUNCTION_DECLARATION_ID,
   C_STATE_FUNCTION_DEFINITION_ID,
-  C_STATE_ERROR
+  C_STATE_ERROR,
+  C_STATE_REJECT
+};
+
+struct c_error {
+  struct json_pos_info where;
+  enum json_token_id last_token;
+  enum c_word_token last_type;
+  enum c_word_token last_word;  
 };
 
 struct c_parser_ctx {
