@@ -67,6 +67,7 @@ struct c_parser_ctx {
   enum c_word_token last_type;
   enum c_word_token last_word;
   struct alhash_datablock * dict_value;
+  int flags;
 
   struct alhash_table dict;
   int words;
