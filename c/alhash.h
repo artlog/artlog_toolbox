@@ -1,6 +1,8 @@
 #ifndef __ALHASH_HEADER__
 #define __ALHASH_HEADER__
 
+#include "alstrings.h"
+
 /**
 a fixed hash table
 you can add and retrieve keyed values in it ( but not removal ).
@@ -8,12 +10,6 @@ you can add and retrieve keyed values in it ( but not removal ).
 
 // minimal hash
 #define ALHASH_BUCKET_SIZE 127
-
-/** data pointing on a contiguous block of length bytes */
-struct alhash_datablock {
-  int length; // > 0 , EMPTY BLOCK NOT VALID
-  void * data; // NULL value NOT VALID.
-};
   
 struct alhash_entry {
   long hash_key;
@@ -65,5 +61,9 @@ int alhash_walk_collisions(struct alhash_entry * entry, alhash_callback callback
 // if callback returns a value != 0 it stops.
 // return number of elements accepted by callback ( for which callback return value was 0 ).
 int alhash_walk_table( struct alhash_table * table, alhash_callback callback, void * data);
+
+void alhash_set_debug(int debug);
+
+void alhash_release(struct alhash_table * table);
 
 #endif

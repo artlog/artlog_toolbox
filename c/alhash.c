@@ -23,6 +23,11 @@ static unsigned int al_get_index(long hash, int length)
   return index;
 }
 
+void alhash_set_debug(int debug)
+{
+  alhash_debug=debug;
+  if ( alhash_debug ) {printf("alhash debug activated.\n");}
+}
 /**
 return if key matches entry ( see enum alhash_match_result comments )
 **/
@@ -58,6 +63,7 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 	    }
 	  else
 	    {
+	      if (alhash_debug) {printf("DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
 	      return  ALH_MR_NOT_EQUAL;
 	    }
 	}
@@ -112,8 +118,21 @@ void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (v
   table->used = 0;
 }
 
+void alhash_release(struct alhash_table * table)
+{
+  if ( table->inner != NULL)
+    {
+      free(table->inner);
+      table->inner=NULL;
+    }
+  table->alhash_func=NULL;
+  table->bucket_size=0;
+  table->used = 0xdeadbeef;
+}
+
 struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_datablock * key, struct alhash_datablock * value)  
 {
+  if ( alhash_debug ) {printf("alhash put entry .\n");}
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
       long hash = table->alhash_func(key->data,key->length);
@@ -170,6 +189,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 
 struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key)
 {
+  if ( alhash_debug ) {printf("alhash get entry .\n");}
   if (( table != NULL ) && ( key != NULL ))
     {
       // first should compute hash key

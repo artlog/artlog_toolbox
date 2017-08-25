@@ -20,7 +20,7 @@ libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
 all: libs tests libinclude
 
-libinclude: $(BUILD)/include/json.h $(BUILD)/include/json_errors.h $(BUILD)/include/json_import_internal.h $(BUILD)/include/json_parser.h
+libinclude: $(BUILD)/include/json.h $(BUILD)/include/json_errors.h $(BUILD)/include/json_import_internal.h $(BUILD)/include/json_parser.h $(BUILD)/include/alstrings.h
 
 
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h

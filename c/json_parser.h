@@ -1,6 +1,8 @@
 #ifndef _JSON_PARSER_H_
 #define _JSON_PARSER_H_
 
+#include "alstrings.h"
+
 // everything for tokenizing.
 // todo rename me as json_tokenizer.h
 // does not know json_object at all.
@@ -83,15 +85,6 @@ struct json_pos_info
 {
   int line;
   int column;
-};
-
-struct token_char_buffer {
-  // internal buffer to collect default add_char 
-  char * buf;
-  // position of token buffer where to add char
-  int bufpos;
-  // buffer size to be grown if needed ( see default add_char )
-  int bufsize;
 };
   
 struct json_ctx

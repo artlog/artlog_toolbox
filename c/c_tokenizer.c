@@ -5,10 +5,55 @@
 #include "todo.h"
 #include "c_tokenizer.h"
 
-TOKEN_DECLARE_TOKENIZER(DQUOTE,'"');
-TOKEN_DECLARE_TOKENIZER(SQUOTE,'\'');
+char get_aslash(char c)
+{
+  switch(c)
+    {
+    case '0':
+      return '\0';
+    case 'b':
+      return '\b';
+    case 'r':
+      return '\r';
+    case 'a':
+      return '\a';
+    case 'n':
+      return '\n';
+    case 't':
+      return '\t';
+    case '\\':
+      return '\\';
+    case '\'':
+      return '\'';
+    case '"':
+      return '"';
+    default:
+      return c;
+    }
+}
 
-  
+int c_tokenize_string_until(struct json_ctx * ctx, void * data, char stop)
+{
+  char c = ctx->next_char(ctx, data);
+  while ( c != 0)
+    {
+      if ( c == stop )
+	{
+	  return 1;
+	}
+      else if ( c == '\\' )
+	{
+	  c=ctx->next_char(ctx, data);
+	  if ( c != 0 ) ctx->add_char(ctx,stop, get_aslash(c));
+	}
+      else {
+	ctx->add_char(ctx,stop, c);
+      }
+      c=ctx->next_char(ctx, data);
+    }
+  return 0;
+}
+
 // match everything until */
 struct al_token * c_tokenizer_eat_up_to_end_of_comment(struct json_ctx * ctx, void * data)
 {
@@ -414,8 +459,17 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	  case ']':
 	    JSON_TOKEN(CLOSE_BRACKET);
 	    break;
+	  case '\'':
+	    if (c_tokenize_string_until(ctx,data,c))
+	      {
+		JSON_TOKEN(SQUOTE);
+	      }
+	    break;
 	  case '"':
-	    return tokenizer_DQUOTE(ctx,data);
+	    if (c_tokenize_string_until(ctx,data,c))
+	      {
+		JSON_TOKEN(DQUOTE);
+	      }
 	    // else should be handled by ':', ',' or '}' or ']' ie any close.
 	    break;
 	  case ',':
@@ -426,9 +480,6 @@ struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
 	    break;
 	  case ':':
 	    JSON_TOKEN(COLON);
-	    break;
-	  case '\'':
-	    return tokenizer_SQUOTE(ctx,data);
 	    break;
 	  case '\\':
 	    // - multiline ( + crlf )
