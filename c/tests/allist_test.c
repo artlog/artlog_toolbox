@@ -12,11 +12,11 @@
 #include <time.h>
 
 #include "check_test.h"
-#include "allist.h"
+#include "../allist.h"
 // direct acces to internal implementation
-#include "allist_internal.h"
+#include "../allist_internal.h"
 // dump
-#include "dump.h"
+#include "../dump.h"
 
 #define PRIMCOUNT 25
 

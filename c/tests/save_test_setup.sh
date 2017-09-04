@@ -1,6 +1,9 @@
 #!/bin/bash
 
-
+# test code setup to validate small library to move files aways
+#    prefix.extension will be moved to prefix.1.extension
+#    and any overlapping prefix.i.extension will be moved to prefix.(i+i).extension.
+    
 dir=savetest
 rm -rf $dir
 
