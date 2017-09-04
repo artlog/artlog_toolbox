@@ -747,7 +747,9 @@ c_is_typedef (struct c_parser_ctx *parser)
 */
 
 struct al_token *
-c_parse_left_type (struct c_parser_ctx *parser, struct al_token *token,
+c_parse_left_type (struct c_parser_ctx *parser,
+		   struct c_full_type * type,
+		   struct al_token *token,
 		   int c_token)
 {
   struct json_ctx *tokenizer = parser->tokenizer;
@@ -945,21 +947,34 @@ struct al_token *c_parse_define_type (struct c_parser_ctx *parser,
 				      struct al_token *token,
 				      int within_typedef);
 
+int c_struct_info_add_member(struct c_struct_info *struct_info,
+			 struct c_full_type * type,
+			 void * variable
+			 )
+{
+  // todo("");
+  return 0;
+}
+
 struct al_token *
 c_parse_struct_member (struct c_struct_info *struct_info,
-		       struct c_parser_ctx *parser, struct al_token *token)
+		       struct c_parser_ctx *parser, struct al_token *token, int index)
 {
+  struct c_full_type type;
   if (token == NULL)
     {
       token = c_parse_next (parser);
     }
-  token = c_parse_left_type (parser, token, parser->last_word);
+  token = c_parse_left_type (parser,&type,token, parser->last_word);
   if (token == NULL)
     {
       token = c_parse_next (parser);
     }
+  printf(" ");
   if (c_parse_variable (parser, token) == NULL)
     {
+      c_struct_info_add_member(struct_info,&type,NULL);
+      printf (" // struct member %i\n", index);
       token = c_parse_next (parser);
       if ((token != NULL) && (token->token == JSON_TOKEN_SEMI_COLON_ID))
 	{
@@ -1053,7 +1068,7 @@ c_parse_lhs (struct c_parser_ctx *parser, struct al_token *token)
     }
   while (token != NULL)
     {
-      token = c_parse_left_type (parser, token, parser->last_word);
+      token = c_parse_left_type (parser,NULL, token, parser->last_word);
       if (token == NULL)
 	{
 	  token = c_parse_next (parser);
@@ -1256,7 +1271,7 @@ c_parse_call_definition_parameters (struct c_parser_ctx *parser)
   token = c_parse_next (parser);
   while (token != NULL)
     {
-      token = c_parse_left_type (parser, token, parser->last_word);
+      token = c_parse_left_type (parser,NULL, token, parser->last_word);
       if (token == NULL)
 	{
 	  token = c_parse_next (parser);
@@ -1753,7 +1768,7 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
   struct json_ctx *tokenizer = parser->tokenizer;
   void *lhs_variable_data = NULL;
 
-  token = c_parse_left_type (parser, token, parser->last_word);
+  token = c_parse_left_type (parser,NULL, token, parser->last_word);
 
   // a full parsing of a function definition was done ...
   lhs_variable_data = parser->lhs_variable_data;
@@ -1781,8 +1796,7 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 		     && (token->token != JSON_TOKEN_CLOSE_BRACE_ID))
 		{
 		  // ??? c_parse_left_type + variable ?
-		  token = c_parse_struct_member (&struct_info, parser, token);
-		  printf ("// struct member %i", index);
+		  token = c_parse_struct_member (&struct_info, parser, token, index);
 		  ++index;
 		  // always move forward ( unless parses same token forever... )
 		  // if ( token == NULL )

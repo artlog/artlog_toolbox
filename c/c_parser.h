@@ -126,6 +126,12 @@ struct c_enum_info {
   struct c_declaration_info_list * first;
 };
 
+struct c_full_type {
+  enum c_word_token word_type;
+  int array;
+  int dereference;
+};
+
 // return NULL if parsed, else return unrecognized left token
 struct al_token * c_parse_statement(struct c_parser_ctx * parser, struct al_token * token, enum c_parser_state level_state);
 
