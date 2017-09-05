@@ -3,7 +3,7 @@
 #include <assert.h>
 
 #include "inputstream.h"
-#include "json_import_internal.h"
+#include "aljson_import_internal.h"
 
 /**
 a complicated json stream ( one char ahead ) parser 

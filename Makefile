@@ -6,9 +6,9 @@ CPPFLAGS=-g
 
 BUILD=build
 
-libsrc=c/json_parser.c c/json.c c/json_import_internal.c
-src=c/main.c
-libraries=json alsave altest allist aldev alhash alcommon
+libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c
+src=c/aljson_main.c
+libraries=aljson alsave altest allist aldev alhash alcommon
 
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
@@ -17,17 +17,16 @@ libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 # default target is to build libraries
 libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
-
 all: libs tests libinclude
 
-libinclude: $(BUILD)/include/json.h $(BUILD)/include/json_errors.h $(BUILD)/include/json_import_internal.h $(BUILD)/include/json_parser.h $(BUILD)/include/alstrings.h
+libinclude: $(BUILD)/include/aljson.h $(BUILD)/include/aljson_errors.h $(BUILD)/include/aljson_import_internal.h $(BUILD)/include/aljson_parser.h $(BUILD)/include/alstrings.h
 
 
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
-$(BUILD)/lib/libjson.a: $(BUILD)/obj/json_parser.o $(BUILD)/obj/json.o  $(BUILD)/obj/json_import_internal.o
-	ar rccs $@ $(BUILD)/obj/json_parser.o $(BUILD)/obj/json.o $(BUILD)/obj/json_import_internal.o
+$(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o
+	ar rccs $@ $^
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
 	ar rccs $@ $<
@@ -48,7 +47,7 @@ $(BUILD)/checksave: $(BUILD)/obj/save_main.o $(BUILD)/lib/libalsave.a
 
 $(BUILD)/test_auto_c_gen:  $(BUILD)/obj/json_to_c_stub.o
 	@echo link json objects $^ and libjson
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -ljson -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -Wl,-Bdynamic
 
 $(objects): | $(BUILD)/obj
 
@@ -77,7 +76,7 @@ testjson:$(BUILD)/json
 
 $(BUILD)/json: $(objects)
 	@echo link json objects $(objects) and libjson
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -ljson -lalcommon -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -Wl,-Bdynamic
 
 $(BUILD)/obj:
 	mkdir -p $@

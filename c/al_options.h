@@ -1,7 +1,7 @@
 #ifndef _AL_OPTIONS_H_
 #define _AL_OPTIONS_H_
 
-#include "json.h"
+#include "aljson.h"
 #include "alhash.h"
 
 struct al_options {

@@ -4,7 +4,7 @@
 
 #include <assert.h>
 #include "alcommon.h"
-#include "json_parser.h"
+#include "aljson_parser.h"
 
 #define TOKEN_BUFSIZE_MIN 256
 #define TOKEN_BUFSIZE_WARNING 8192

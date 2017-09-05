@@ -1,8 +1,8 @@
-#ifndef __JSON_HEADER__
-#define __JSON_HEADER__
+#ifndef __ALJSON_HEADER__
+#define __ALJSON_HEADER__
 
-#include "json_parser.h"
-#include "json_errors.h"
+#include "aljson_parser.h"
+#include "aljson_errors.h"
 
 #define JSON_PATH_DEPTH 1024
 

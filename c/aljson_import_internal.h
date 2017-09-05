@@ -2,7 +2,7 @@
 #define __JSON_IMPORT_INTERNAL_HEADER__
 
 #include "inputstream.h"
-#include "json.h"
+#include "aljson.h"
 
 /** fully rely on stream buffering */
 struct json_import_context_data {

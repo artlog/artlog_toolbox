@@ -5,7 +5,7 @@
 #include <assert.h>
 
 #include "alcommon.h"
-#include "json.h"
+#include "aljson.h"
 
 #ifdef JSON_TODO
 #include "todo.h"
