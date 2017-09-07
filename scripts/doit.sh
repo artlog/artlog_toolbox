@@ -255,13 +255,21 @@ do
     DIALOG=$(which $DIALOG)
     if [[ -x $DIALOG ]]
     then
-	break
+	$DIALOG --menu "Ultra Light IDE" 20 80 2 "select me to validate $DIALOG" justfortest
+	rc=$?
+	if [[ $rc != 0 ]]
+	then
+	    echo "[ERROR] $DIALOG return code $rc : can't use it" >&2
+	else
+	    break
+	fi
     fi
 done
 
 if [[ -z $DIALOG ]]
 then
     echo "[ERROR] no console gui support (no dialog tool found within $possible_console_gui)  => no menus " >&2
+    echo "[INFO] this can happen under emacs within shell or eshell, please use term then"
     exit 1
 fi
 
@@ -284,17 +292,34 @@ fi
 setup
 
 action=initial
+# count successives failures.
+failed_commands_count=0
 
 while [[ $action != quit ]]
 do
+    # should detect that dialog failed
     if [[ -z $NOJAVA ]]
     then
 	# should be cleaned up from specific laby project targets.
-	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  ${specific_menus[@]} test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
+	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  ${specific_menus[@]} test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" info "Info" quit "Quit" 3>&1 1>&2 2>&3)	
     else
 	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" run "Run it"  test "Test it" ${specific_menus[@]} code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
-    fi
+    fi    
 
+    rc=$?
+    if [[ $rc == 0 ]]
+    then
+	failed_commands_count=0
+    else
+	failed_commands_count=$(( failed_commands_count + 1 ))
+    fi
+    if (( $failed_commands_count > 10 ))
+    then
+	echo "[ERROR] more than 10 successive failures ( $failed_commands_count > 10 )" >&2
+	echo "[INFO] Check if your environment supports $DIALOG"	
+	action=quit
+    fi    
+    
     if [[ $action == run ]]
     then
 	if [[ -z $NOJAVA ]]
@@ -372,7 +397,7 @@ do
     elif [[ $action == quit ]]
     then
 	echo "[INFO] quit requested"
-    else
+    else	
 	specific_run $action
     fi
 done
