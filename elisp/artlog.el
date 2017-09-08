@@ -33,7 +33,7 @@ leave mark at previous position."
   (define-key al-menu-bar-menu [al-cmd2]
     '(menu-item "Go back to mark" jump-to-mark :help "Do what al-cmd1 does"))
   (define-key al-menu-bar-menu [al-terminal]
-    '(menu-item "Launch terminal" term :help "Launch terminal within emacs"))
+    '(menu-item "Launch terminal" term-doit :help "Launch terminal within emacs"))
 
 )
 
@@ -42,4 +42,9 @@ leave mark at previous position."
   (remove-artlog-menuf))
 
 (create-artlog-menu)
+
+(defun term-doit ()
+  (interactive)
+  (ansi-term "./doit.sh")
+)
 

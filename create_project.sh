@@ -127,6 +127,10 @@ function create_makefile_for()
 THIS_TOOL=$0
 ARTLOG_TOOLBOX=$(dirname $(pwd)/$THIS_TOOL)
 
+source ./scripts/locate_artlog_toolbox.sh
+
+select_artlog_toolbox artlog_toolbox
+
 echo "Using ARTLOG_TOOLBOX=$ARTLOG_TOOLBOX"
 
 if [[ $# == 0 ]]
@@ -173,27 +177,39 @@ then
     echo "[ERROR] creationg of $project_name directory failed" >&2
     exit 1
 fi
-pushd $project_name >/dev/null
-cat <<EOF >init.sh
-#!/bin/bash
+
+cp $ARTLOG_TOOLBOX/scripts/locate_artlog_toolbox.sh $project_name/init.sh
+
+cat <<EOF >>$project_name/init.sh
+
+# AFTER function copied from $ARTLOG_TOOLBOX/scripts/locate_artlog_toolbox.sh
 
 if [[ -z \$ARTLOG_TOOLBOX ]]
 then
    ARTLOG_TOOLBOX=\$(pwd)/artlog_toolbox
-   echo "no ARTLOG_TOOLBOX found, use a dedicated one\$ARTLOG_TOOLBOX"
+   select_artlog_toolbox artlog_toolbox
+   echo "no ARTLOG_TOOLBOX found, use a dedicated one \$ARTLOG_TOOLBOX"
 fi
+
 
 if [[ ! -d \$ARTLOG_TOOLBOX ]]
 then
     git clone https://github.com/artlog/artlog_toolbox.git \$ARTLOG_TOOLBOX
-    pushd \$ARTLOG_TOOLBOX
-    git checkout master
-    popd
+    if [[ -d \$ARTLOG_TOOLBOX ]]
+    then
+      pushd \$ARTLOG_TOOLBOX
+      git checkout master
+      popd
+    else
+      echo "[ERROR] git creation of \$ARTLOG_TOOLBOX failed" >&2
+      exit 1
+    fi
 fi
 echo "ARTLOG_TOOLBOX=\$ARTLOG_TOOLBOX" >toolbox.param
 \$ARTLOG_TOOLBOX/deploy.sh
 EOF
 
+pushd $project_name >/dev/null
 chmod u+x init.sh
 if [[ ! -x ./init.sh ]]
 then
