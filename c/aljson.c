@@ -36,6 +36,7 @@ int json_set_debug(int debug)
 
 /**
 a complicated json stream ( one char ahead ) parser 
+rely on calling stack for in-depth parsing
 **/
 
 JSON_DEFINE_TOGGLE(squote,'\'')

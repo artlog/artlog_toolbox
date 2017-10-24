@@ -32,6 +32,7 @@ int main(int argc, char ** argv)
   char * json_path = NULL;
   int debug = 0;
   int path = 0;
+  int checkonly = 0;
 
   FILE * data_file;
   FILE * template_file;
@@ -111,6 +112,9 @@ int main(int argc, char ** argv)
 		case 'd':
 		  debug=1;
 		  break;
+		case 'c':
+		  checkonly=1;
+		  break;
 		case 'p':
 		  path=1;
 		}		  
@@ -139,9 +143,17 @@ int main(int argc, char ** argv)
 	  data.inputstream=&inputstream;
 	  root=parse_level(&json_context,&data,root);
 	  fclose(data_file);
-	  //dump_ctx(&json_context);
-	  dump_object(&json_context,root,&print_context);
-	  printf("\n");
+	  if ( checkonly == 0 )
+	    {
+	      //dump_ctx(&json_context);
+	      dump_object(&json_context,root,&print_context);
+	      printf("\n");
+	    }
+	  else
+	    {
+	      printf("parsing complete\n");
+	    }
+	    
 	  if ( json_path != NULL )
 	    {
 	      struct json_object * found = json_walk_path(json_path, &json_context,root);

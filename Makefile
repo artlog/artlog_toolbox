@@ -8,7 +8,7 @@ BUILD=build
 
 libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c
 src=c/aljson_main.c
-libraries=aljson alsave altest allist aldev alhash alcommon
+libraries=aljson alsave altest allist aldev alhash alcommon alstack
 
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
@@ -42,6 +42,9 @@ $(BUILD)/lib/libalcommon.a: $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream
 $(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/include/alhash.h
 	ar rccs $@ $<
 
+$(BUILD)/lib/libalstack.a:  $(BUILD)/obj/alstack.o $(BUILD)/include/alstack.h
+	ar rccs $@ $<
+
 $(BUILD)/checksave: $(BUILD)/obj/save_main.o $(BUILD)/lib/libalsave.a
 	$(LD) -o $@ $(LDFLAGS) $(BUILD)/obj/save_main.o -L$(BUILD)/lib -Wl,-Bstatic -lalsave -Wl,-Bdynamic
 
@@ -49,13 +52,17 @@ $(BUILD)/test_auto_c_gen:  $(BUILD)/obj/json_to_c_stub.o
 	@echo link json objects $^ and libjson
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -Wl,-Bdynamic
 
+$(BUILD)/test_alstack:  $(BUILD)/obj/test_alstack.o
+	@echo link test objects $^ and libalstack
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -Wl,-Bdynamic
+
 $(objects): | $(BUILD)/obj
 
 
 $(libobjects): | $(BUILD)/lib
 
 
-tests: testjson testhash
+tests: testjson testhash $(BUILD)/test_alstack
 
 
 testhash: $(BUILD)/hash
