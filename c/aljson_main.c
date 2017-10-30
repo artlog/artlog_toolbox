@@ -47,6 +47,7 @@ int main(int argc, char ** argv)
 
   json_import_context_initialize( &json_tokenizer);
   json_context.tokenizer=&json_tokenizer;
+  json_context.max_depth=10000;
 
   /* tabs
   print_context.do_indent = 1;

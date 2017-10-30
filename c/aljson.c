@@ -1382,6 +1382,16 @@ void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object
 
 void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
+  static int depth = 0;
+
+  ++depth; 
+  if ( depth > ctx->max_depth )
+    {
+      printf("... depth > %i ...\n", ctx->max_depth);
+      --depth;
+      return;
+    }
+  
   if (object != NULL)
     {
       // printf("%p[%c]",object,object->type);
@@ -1427,6 +1437,8 @@ void dump_object(struct json_parser_ctx * ctx, struct json_object * object, stru
     {
       printf(" NULL ");
     }
+
+  --depth;
 }
 
 
