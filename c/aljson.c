@@ -6,6 +6,7 @@
 
 #include "alcommon.h"
 #include "aljson.h"
+#include "alstack.h"
 
 #ifdef JSON_TODO
 #include "todo.h"
@@ -431,15 +432,13 @@ struct json_object * new_json_constant_object(struct json_parser_ctx * parser, c
   return object;  
 }
 
-
-// new implementation, rely on tokenizer.
-struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
+// rely on tokenizer.
+struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
 {
   struct al_token * last_token;
-
-  last_token = json_tokenizer(ctx->tokenizer,data);
-  
   struct json_object * object=NULL;
+    
+  last_token = json_tokenizer(ctx->tokenizer,data);
 
   while (last_token != NULL)  {
  
@@ -704,8 +703,392 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
   return json_concrete(ctx,object);
 }
 
+struct json_object * check_parent_is_pair(struct json_parser_ctx * ctx, void * data, struct alstack * stack, struct json_object * parent, struct json_object ** object)
+{
+  struct alstackelement * element;
+  if ( object == NULL )
+    {
+      // FATAL coding error
+      return NULL;
+    }
+  
+  if ( ( parent != NULL ) && (parent->type == ':' ) )
+    {
+      if ( json_debug > 0 )
+      {
+	printf( "process pair \n");
+      }
 
+      parent->pair.value=*object;
+      if ( *object == NULL )
+	{
+	  syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,*object,parent);
+	}
+      else
+	{
+	  // where value knows its name.
+	  (*object)->owner=parent;
+	  // replace object
+	  *object=parent;
+	}
+      element = alstack_pop(stack);
+      if ( element != NULL )
+	{
+	  parent = element->reference;
+	}
+      else
+	{
+	  parent = NULL;
+	}
+    }
+  return parent;
+}
 
+// rely on tokenizer and uses an internal stack to avoid recursive call.
+struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
+{
+  struct al_token * last_token;
+  struct alstack * stack;
+  struct alstackelement * element;
+  struct json_object * object=NULL; // previous object on same parsing level
+  
+  stack = alstack_allocate();
+  element = NULL;
+
+  if ( stack == NULL )
+    {
+      return NULL;
+    }
+
+  if ( parent != NULL )
+    {
+      alstack_push_ref(stack,(void *) parent);
+      parent = NULL;
+    }
+
+  last_token = json_tokenizer(ctx->tokenizer,data);
+
+  // what is object : previous object on same parsing level
+  // what is parent : direct parent of object
+  
+  while (last_token != NULL)  {
+
+    if ( json_debug > 0 )
+      {
+	printf( "process token %i\n",last_token->token);
+      }
+
+    switch(last_token->token)
+      {
+      case JSON_TOKEN_OPEN_PARENTHESIS_ID:
+	// create object 
+	JSON_OPEN(ctx,parenthesis,object);
+	alstack_push_ref(stack,(void *) object);
+	// expects to parse until '}' included
+	break;
+      case JSON_TOKEN_CLOSE_PARENTHESIS_ID:
+	JSON_CLOSE(ctx,parenthesis);
+	element = alstack_pop(stack);
+	if ( element != NULL )
+	  {
+	    parent = element->reference;
+	    // object is there to be added in parent later with '}',']' or ','
+	    parent = check_parent_is_pair(ctx,data,stack,parent,&object);
+	  }
+
+	// last object for this } group
+	if (object !=NULL)
+	  {
+	    if ((parent != NULL) && ( parent->type=='G'))
+	      {
+		if ( parent->growable.final_type == '{')
+		  {
+		    if ( json_debug > 0 )
+		      {
+			printf("LOOK HERE 0\n");
+			dump_object(ctx,object,NULL);
+		      }
+
+		    add_to_growable(ctx,&parent->growable,object);
+		  }
+		else
+		  {
+		    syntax_error(ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
+		  }
+	      }
+	    else
+	      {
+		syntax_error(ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
+	      }
+	    object=NULL;
+	  }
+	else
+	  {
+	    if ( json_debug > 0 )
+	      {
+		printf( "} hit NULL object");
+	      }
+	  }
+	if ( json_debug > 0 )
+	  {
+	    // before concrete
+	    dump_object(ctx,parent,NULL);
+	  }
+	object = json_concrete(ctx,parent);
+	if ( json_debug > 0 )
+	  {
+	    // after concrete
+	    dump_object(ctx,object,NULL);
+	  }
+	break;
+      case JSON_TOKEN_OPEN_BRACKET_ID:
+	JSON_OPEN(ctx,braket,object);
+	alstack_push_ref( stack, (void *) object);
+	object = NULL;
+	// expects to parse until ']' included
+	break;
+      case JSON_TOKEN_CLOSE_BRACKET_ID:
+	JSON_CLOSE(ctx,braket);
+	element = alstack_pop(stack);
+	if ( element != NULL )
+	  {
+	    parent = element->reference;
+	    if ( ( parent != NULL ) && (parent->type == ':' ) )
+	      {
+		// ERROR no reason to end a pair in an array.
+		syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
+	      }
+	  }
+
+	if (object !=NULL)
+	  {
+	    if ( parent !=NULL ) 
+	      {
+		if (parent->type=='G')
+		  {
+		    if ( parent->growable.final_type == '[')
+		      {
+			add_to_growable(ctx,&parent->growable,object);
+		      }
+		    else
+		      {
+			syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
+		      }
+		  }
+		else
+		  {
+		    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
+		  }
+	      }
+	    else
+	      {
+		syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
+	      }
+	    object=NULL;
+	  }
+	object=json_concrete(ctx,parent);
+	break;
+      case JSON_TOKEN_DQUOTE_ID:
+	if ( object != NULL )
+	  {
+	    // should be a syntax error
+	    fprintf(stderr,"%s\n","WARNING non attached object before string");
+	  }
+	object=cut_string_object(ctx->tokenizer,'"');
+	if ( json_debug > 0 )
+	  {
+	    printf("LOOK HERE \"\n");
+	    dump_object(ctx,object,NULL);
+	  }		
+	break;
+      case JSON_TOKEN_COMMA_ID:
+	if (object !=NULL)
+	  {
+	    // TODO could just fetch it (but poped then should be pushed again)
+	    element = alstack_pop(stack);
+	    if ( element != NULL )
+	      {
+		parent = element->reference;		    
+		parent = check_parent_is_pair(ctx,data,stack,parent,&object);		    
+	      }
+
+	    if ( json_debug > 0 )
+	      {
+		printf("(%i parent:%p object:%p",last_token->token,parent,object);
+	      }
+
+	    if (parent !=NULL) 
+	      {
+		if ( parent->type=='G')
+		  {
+		    add_to_growable(ctx,&parent->growable,object);
+		  }
+		else
+		  {
+		    syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
+		  }
+		// readd parent [ since poped ]
+		alstack_push_ref(stack, (void *) parent);
+	      }
+	    object=NULL;
+	  }
+	else
+	  {
+	    if (json_debug > 0 )
+	      {
+		// should be a syntax error ( coma wihtout anything ).
+		printf("(ignore , NULL object)");
+	      }
+	  }
+	break;
+      case JSON_TOKEN_VARIABLE_ID:
+	if ( object != NULL )
+	  {
+	    syntax_error(ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
+	  }
+	else
+	  {
+	    debug_tag(ctx->tokenizer,'?');
+	    JSON_TOGGLE(ctx,variable);
+	    struct json_object * variable_name = cut_string_object(ctx->tokenizer,'?');	  
+	    if (variable_name == NULL )
+	      {
+		syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
+	      }
+	    else
+	      {
+		// need to set type to '$' due to parse_variable_level that is defined for '?'
+		variable_name->type='$';
+		if ( json_debug > 0 )
+		  {
+		    printf("new variable key %p\n", variable_name);
+		  }
+		object = new_variable(ctx,variable_name);
+		// else should be handled by ':', ',' or '}' or ']' ie any close.	      
+	      }
+	  }
+	break;
+      case JSON_TOKEN_COLON_ID:
+	// object pair : replace current object with a pair...
+	// previous should be a string
+	if (object !=NULL)
+	  {
+	    if (object->type == '\"') 
+	      {
+		struct json_object * pair=new_pair_key(ctx,object);
+
+		// rely on unstacking to detect pair.
+		alstack_push_ref(stack,(void *) pair);
+
+		// next object will be value, detected at '}' or ','
+		object = NULL;
+    
+	      }
+	    else
+	      {
+		debug_tag(ctx->tokenizer,object->type);
+		syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
+		object=NULL;
+	      }
+	  }
+	else
+	  {
+	    debug_tag(ctx->tokenizer,'#');
+	    syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
+	  }
+	break;
+      case JSON_TOKEN_SQUOTE_ID:
+	if ( object != NULL )
+	  {
+	    object=cut_string_object(ctx->tokenizer,'\'');
+	  }
+	else
+	  {
+	    // syntax error
+	    fprintf(stderr,"%s","syntax error string following an object without separator");
+	  }
+	break;
+      case JSON_TOKEN_NUMBER_ID:
+	if ( object == NULL )
+	  {
+	    object=cut_string_object(ctx->tokenizer,'0');
+	  }
+	else
+	  {
+	    return syntax_error(ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
+	  }
+	break;
+      case JSON_TOKEN_TRUE_ID:
+      case JSON_TOKEN_FALSE_ID:
+      case JSON_TOKEN_NULL_ID:
+	if ( object == NULL )
+	  {
+	    switch( last_token->token)
+	      {
+	      case JSON_TOKEN_TRUE_ID:
+		object=new_json_constant_object(ctx, 't',JSON_CONSTANT_TRUE);
+		break;
+	      case JSON_TOKEN_FALSE_ID:
+		object=new_json_constant_object(ctx, 'f',JSON_CONSTANT_FALSE);
+		break;
+	      case JSON_TOKEN_NULL_ID:
+		object=new_json_constant_object(ctx, 'n',JSON_CONSTANT_NULL);
+		break;
+	      } 
+	  }
+	else
+	  {
+	    return syntax_error(ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
+	  }
+	break;
+      case JSON_TOKEN_EOF_ID:
+	element = alstack_pop(stack);
+	if ( element != NULL )
+	  {
+	    fprintf(stderr,"EOF with parent \n");
+	  }
+	object=json_concrete(ctx,object);
+	return object;
+	
+      default:
+	if ( object != NULL )
+	  {
+	    return syntax_error(ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
+	  }
+	else
+	  {
+	    return syntax_error(ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
+	  }
+      }
+    last_token = json_tokenizer(ctx->tokenizer,data);
+  }
+
+  object=json_concrete(ctx,object);
+  return object;
+
+}
+
+// rely on tokenizer.
+struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
+{
+  struct al_token * last_token;
+  struct json_object * object=NULL;
+  
+  // TODO based on depth.
+  if ( ctx != NULL ) 
+    {
+       object=parse_level_non_recursive(ctx,data,parent);
+    }
+  else
+    {
+      object=parse_level_recursive(ctx,data,parent);
+    }
+  if ( object == NULL )
+    {
+      fprintf(stderr,"%s\n","parsing did return object NULL");
+    }
+  return object;
+}
 
 void dump_string(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
@@ -770,10 +1153,13 @@ void dump_indent(struct print_ctx * print_ctx)
 	  // commented out because print spaces before string ( ie does not repeat string )
 	  //	  printf("\n%*s",print_ctx->indent,print_ctx->s_indent);
 	  int i=print_ctx->indent;
-	  while ( i >0 )
-	    {	      
-	      printf("%s",print_ctx->s_indent);
-	      --i;
+	  if ( i < 80 )
+	    {
+	      while ( i >0 )
+		{	      
+		  printf("%s",print_ctx->s_indent);
+		  --i;
+		}
 	    }
 	}
       else

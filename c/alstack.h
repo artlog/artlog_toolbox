@@ -3,7 +3,7 @@
 
 /* alstack stack contract to cover reference or long */
 
-#define ALSTACK_CHUNK 32
+#define ALSTACK_CHUNK 4096
 
 struct alstackelement {
   void * reference;
