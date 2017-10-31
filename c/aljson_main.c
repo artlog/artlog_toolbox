@@ -16,6 +16,7 @@ void usage()
   printf("First argument : filename to open in read only mode to parse in json.\n");
   printf("Second argument : filename to open in read only mode to parse in json for template.\n");
   printf("Output : dump parsed json to standard output.\n");
+  printf("-d debug, -m non recursive, -p path, -c check only (no print)");
 }
 
 /**
@@ -46,8 +47,10 @@ int main(int argc, char ** argv)
   struct inputstream template_inputstream;
 
   json_import_context_initialize( &json_tokenizer);
+  
   json_context.tokenizer=&json_tokenizer;
   json_context.max_depth=10000;
+  json_context.parsing_depth=json_context.max_depth - 4;
 
   /* tabs
   print_context.do_indent = 1;
@@ -118,6 +121,11 @@ int main(int argc, char ** argv)
 		  break;
 		case 'p':
 		  path=1;
+		  break;
+		case 'm':
+		  // force non recursive.
+		  json_context.parsing_depth=json_context.max_depth;
+		  break;
 		}		  
 	    }
 	}

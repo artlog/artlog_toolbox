@@ -17,6 +17,11 @@ struct alstack * stack_init(struct alstack * stack, int init_flags)
   return stack;
 }
 
+int alstack_used(struct alstack * stack)
+{
+  return stack->index;
+}
+
 /*
 allocate dynamically first chunk for alstack
 will call init on alstack
@@ -185,7 +190,6 @@ int alstack_popall(struct alstack * stack, int (*callback)(struct alstackelement
 	    {
 	      alstack_error("non empty pop fails");
 	    }
-	  printf("last element\n");
 	}
     }
   return count;

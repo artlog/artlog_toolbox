@@ -55,4 +55,9 @@ return number of element unlinked
 */
 int alstack_destroy(struct alstack * stack, int (*unlink_element)(struct alstackelement * stackelement));
 
+/*
+return 0 if empty
+ */
+int alstack_used(struct alstack * stack);
+
 #endif

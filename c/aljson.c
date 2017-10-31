@@ -37,7 +37,8 @@ int json_set_debug(int debug)
 
 /**
 a complicated json stream ( one char ahead ) parser 
-rely on calling stack for in-depth parsing
+dual implementiation call stack and data stack 
+for in-depth parsing, if max-depth is hit tehn switch to non recursive implementation
 **/
 
 JSON_DEFINE_TOGGLE(squote,'\'')
@@ -432,12 +433,17 @@ struct json_object * new_json_constant_object(struct json_parser_ctx * parser, c
   return object;  
 }
 
+// forward defintion to fallback if depth is too big.
+struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, void * data, struct json_object * parent);
+
 // rely on tokenizer.
 struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
 {
   struct al_token * last_token;
   struct json_object * object=NULL;
-    
+
+  ++ctx->parsing_depth;
+  
   last_token = json_tokenizer(ctx->tokenizer,data);
 
   while (last_token != NULL)  {
@@ -449,6 +455,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    object=parse_level(ctx,data,object); // expects to parse until '}' included
 	    if (parent == NULL)
 	      {
+		--ctx->parsing_depth;
 		return object;
 	      }
 	    break;
@@ -480,6 +487,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		    printf( "} hit NULL object");
 		  }
 	      }
+	    --ctx->parsing_depth;
 	    return json_concrete(ctx,parent);
 	    break;
 	  case JSON_TOKEN_OPEN_BRACKET_ID:
@@ -487,6 +495,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    object=parse_level(ctx,data,object); // expects to parse until ']' included
 	    if (parent == NULL)
 	      {
+		--ctx->parsing_depth;
 		return object;
 	      }
 	    break;
@@ -518,6 +527,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		  }
 		object=NULL;
 	      }
+	    --ctx->parsing_depth;
 	    return json_concrete(ctx,parent);
 	    break;
 	  case JSON_TOKEN_DQUOTE_ID:
@@ -531,9 +541,9 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		object=cut_string_object(ctx->tokenizer,'"');
 		if (parent == NULL)
 		  {
+		    --ctx->parsing_depth;
 		    return object;
 		  }
-		todo("else should be handled by ':', ',' or '}' or ']' ie any close.");
 	      }
 	    break;
 	  case JSON_TOKEN_COMMA_ID:
@@ -559,6 +569,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		    // special case if parent is NULL then it is up to caller to retrieve parent to add this result into it.
 		    todo("special case if parent is NULL then it is up to caller to retrieve parent to add this result into it.");
 		    // somehow a ctx->pushback_token
+		    --ctx->parsing_depth;
 		    return object;
 		  }
 		object=NULL;
@@ -596,6 +607,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		    object = new_variable(ctx,variable_name);
 		    if (parent == NULL)
 		      {
+			--ctx->parsing_depth;
 			return object;
 		      }
 		    // else should be handled by ':', ',' or '}' or ']' ie any close.	      
@@ -624,6 +636,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		      }
 		    if (parent == NULL)
 		      {
+			--ctx->parsing_depth;
 			return object;
 		      }
 		  }
@@ -649,11 +662,13 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		object=cut_string_object(ctx->tokenizer,'0');
 		if (parent == NULL)
 		  {
+		    --ctx->parsing_depth;
 		    return object;
 		  }
 	      }
 	    else
 	      {
+		--ctx->parsing_depth;
 		return syntax_error(ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
 	      }
 	    break;
@@ -676,11 +691,13 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		  } 
 		if (parent == NULL)
 		  {
+		    --ctx->parsing_depth;
 		    return object;
 		  }
 	      }
 	    else
 	      {
+		--ctx->parsing_depth;
 		return syntax_error(ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
 	      }
 	    break;
@@ -689,17 +706,20 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	  default:
 	    if ( object != NULL )
 	      {
+		--ctx->parsing_depth;
 		return syntax_error(ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
 	      }
 	    else
 	      {
+		--ctx->parsing_depth;
 		return syntax_error(ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
 	      }
 	  }
-
-	  last_token = json_tokenizer(ctx->tokenizer,data);
+	  
+	last_token = json_tokenizer(ctx->tokenizer,data);
   }
 
+  --ctx->parsing_depth;
   return json_concrete(ctx,object);
 }
 
@@ -751,6 +771,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
   struct alstack * stack;
   struct alstackelement * element;
   struct json_object * object=NULL; // previous object on same parsing level
+  int stopwithparent = 0;
   
   stack = alstack_allocate();
   element = NULL;
@@ -764,6 +785,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
     {
       alstack_push_ref(stack,(void *) parent);
       parent = NULL;
+      stopwithparent = 1;
     }
 
   last_token = json_tokenizer(ctx->tokenizer,data);
@@ -784,6 +806,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	// create object 
 	JSON_OPEN(ctx,parenthesis,object);
 	alstack_push_ref(stack,(void *) object);
+	object=NULL;
 	// expects to parse until '}' included
 	break;
       case JSON_TOKEN_CLOSE_PARENTHESIS_ID:
@@ -893,13 +916,12 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	  {
 	    // should be a syntax error
 	    fprintf(stderr,"%s\n","WARNING non attached object before string");
+	    if ( json_debug > 0 )
+	      {
+		dump_object(ctx,object,NULL);
+	      }			    
 	  }
 	object=cut_string_object(ctx->tokenizer,'"');
-	if ( json_debug > 0 )
-	  {
-	    printf("LOOK HERE \"\n");
-	    dump_object(ctx,object,NULL);
-	  }		
 	break;
       case JSON_TOKEN_COMMA_ID:
 	if (object !=NULL)
@@ -1015,6 +1037,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	  }
 	else
 	  {
+	    alstack_destroy(stack, NULL);
 	    return syntax_error(ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
 	  }
 	break;
@@ -1038,6 +1061,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	  }
 	else
 	  {
+	    alstack_destroy(stack, NULL);
 	    return syntax_error(ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
 	  }
 	break;
@@ -1048,11 +1072,13 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    fprintf(stderr,"EOF with parent \n");
 	  }
 	object=json_concrete(ctx,object);
+	alstack_destroy(stack, NULL);
 	return object;
 	
       default:
+	alstack_destroy(stack, NULL);
 	if ( object != NULL )
-	  {
+	  {	    
 	    return syntax_error(ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
 	  }
 	else
@@ -1060,34 +1086,33 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    return syntax_error(ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
 	  }
       }
+    
+    // case where a parent was given
+    if ( stopwithparent && (alstack_used(stack) == 0) )
+      {
+	break;
+      }
+
     last_token = json_tokenizer(ctx->tokenizer,data);
   }
 
   object=json_concrete(ctx,object);
+  alstack_destroy(stack, NULL);
   return object;
 
 }
 
-// rely on tokenizer.
+// try recursive only if depth is not > ctx->max_depth
 struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
 {
-  struct al_token * last_token;
-  struct json_object * object=NULL;
-  
-  // TODO based on depth.
-  if ( ctx != NULL ) 
+  if ( ctx->parsing_depth > ctx->max_depth)
     {
-       object=parse_level_non_recursive(ctx,data,parent);
+      return parse_level_non_recursive(ctx,data,parent);
     }
   else
     {
-      object=parse_level_recursive(ctx,data,parent);
+      return parse_level_recursive(ctx,data,parent);
     }
-  if ( object == NULL )
-    {
-      fprintf(stderr,"%s\n","parsing did return object NULL");
-    }
-  return object;
 }
 
 void dump_string(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
@@ -1380,6 +1405,7 @@ void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object
     }
 }
 
+// limited to ctx->max_depth since relying on code stack call.
 void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   static int depth = 0;

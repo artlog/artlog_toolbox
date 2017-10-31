@@ -30,6 +30,7 @@ struct json_parser_ctx
   struct json_level squote; // simple quote "'"
   struct json_level variable; // variable "?" ; to use existing framework JSON_TOGGLE not really sound yet.
   struct json_ctx * tokenizer;
+  int parsing_depth; // stack calll on recursive parsing.
   int max_depth; // protect stack calls.
 };
 
