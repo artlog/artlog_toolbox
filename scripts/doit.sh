@@ -52,6 +52,12 @@ devenv_setup()
     fi
 }
 
+# $1 variable $2 value
+save_parameter()
+{
+    echo "$1=\"$2\"" >> .params
+}
+
 info()
 {
     if [[ -z $NOJAVA ]]
@@ -248,31 +254,43 @@ then
     source ./specificdoit.sh
 fi
 
+if [[ -f .params ]]
+then
+    source .params
+fi
+
 LOG_OUTFILE=.log
-
-possible_console_gui="whiptail dialog"
-
-for DIALOG in $possible_console_gui
-do
-    DIALOG=$(which $DIALOG)
-    if [[ -x $DIALOG ]]
-    then
-	$DIALOG --menu "Ultra Light IDE" 20 80 2 "select me to validate $DIALOG" justfortest
-	rc=$?
-	if [[ $rc != 0 ]]
-	then
-	    echo "[ERROR] $DIALOG return code $rc : can't use it" >&2
-	else
-	    break
-	fi
-    fi
-done
 
 if [[ -z $DIALOG ]]
 then
-    echo "[ERROR] no console gui support (no dialog tool found within $possible_console_gui)  => no menus " >&2
-    echo "[INFO] this can happen under emacs within shell or eshell, please use term then"
-    exit 1
+    echo "[INFO] detecting dialog program"
+    
+    possible_console_gui="whiptail dialog"
+    
+    for DIALOG in $possible_console_gui
+    do
+	DIALOG=$(which $DIALOG)
+	if [[ -x $DIALOG ]]
+	then
+	    $DIALOG --menu "Ultra Light IDE" 20 80 2 "select me to validate $DIALOG" justfortest
+	    rc=$?
+	    if [[ $rc != 0 ]]
+	    then
+		echo "[ERROR] $DIALOG return code $rc : can't use it" >&2
+	    else
+		break
+	    fi
+	fi
+    done
+
+    if [[ -z $DIALOG ]]
+    then
+	echo "[ERROR] no console gui support (no dialog tool found within $possible_console_gui)  => no menus " >&2
+	echo "[INFO] this can happen under emacs within shell or eshell, please use term then"
+	exit 1
+    fi
+
+    save_parameter DIALOG "$DIALOG"
 fi
 
 possible_editor="emacs vi nano"
