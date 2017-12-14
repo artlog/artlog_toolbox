@@ -248,6 +248,8 @@ then
     source ./specificdoit.sh
 fi
 
+LOG_OUTFILE=.log
+
 possible_console_gui="whiptail dialog"
 
 for DIALOG in $possible_console_gui
@@ -336,7 +338,7 @@ do
     then
 	make -f ${JAVA_MAKEFILE} clean
 	make -f ${JAVA_MAKEFILE}
-	ant compile
+	ant compile >>.log 2>&1
     elif [[ $action == clean ]]
     then
 	if [[ -z $NOJAVA ]]
