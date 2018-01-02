@@ -4,6 +4,9 @@
 #include "c_tokenizer.h"
 #include "alhash.h"
 
+enum ALCPARSER_FLAGS {
+  ALCPARSER_DEBUG=1,
+};
 // reserved c words
 enum c_word_token {
   TOKEN_C_NOTWORD_ID, // something that is not recognized as a word ( ie from another JSON_TOKEN than JSON_TOKEN_WORD_ID )
@@ -59,26 +62,6 @@ struct c_error {
   enum c_word_token last_word;  
 };
 
-struct c_parser_ctx {
-  enum c_parser_state state;
-  struct json_ctx* tokenizer;
-  void * tokenizer_data;
-  void * lhs_variable_data;
-  enum json_token_id last_token;
-  enum c_word_token last_type;
-  enum c_word_token last_word;
-  struct alhash_datablock * dict_value;
-  int flags;
-
-  struct alhash_table dict;
-  int words;
-  int word_buffer_length;
-  int word_buffer_pos;
-  char * word_buffer;
-  int nested;
-  // allow progress checking 
-  int token_count;
-};
 
 struct c_type_list {
   void * data; // todo
@@ -131,6 +114,34 @@ struct c_full_type {
   int array;
   int dereference;
 };
+
+
+struct c_parser_ctx {
+  enum c_parser_state state;
+  struct json_ctx* tokenizer;
+  void * tokenizer_data;
+  void * lhs_variable_data;
+  enum json_token_id last_token;
+  enum c_word_token last_type;
+  enum c_word_token last_word;
+  struct alhash_datablock * dict_value;
+  int flags;
+
+  struct alhash_table dict;
+  int words;
+  int word_buffer_length;
+  int word_buffer_pos;
+  char * word_buffer;
+  int nested;
+  // allow progress checking 
+  int token_count;
+  
+  // will be alllocated
+  int allocated_structures;
+  int used_structures;  
+  struct c_struct_info * structure_array;
+};
+
 
 // return NULL if parsed, else return unrecognized left token
 struct al_token * c_parse_statement(struct c_parser_ctx * parser, struct al_token * token, enum c_parser_state level_state);

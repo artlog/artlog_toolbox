@@ -5,14 +5,22 @@
 
 #include "c_parser.h"
 #include "todo.h"
-#include "json_import_internal.h"
+#include "aljson_import_internal.h"
 #include "al_options.h"
+#include "alcommon.h"
 
 
 void
 usage()
 {
-  printf ("ex:./c_parser debug=true infile=./c_parser.c\n");
+  printf("\nUSAGE:\n");
+  printf("work in progress: first goal is to generate json stub from c struct definition see json_to_c_stub.c\n");
+
+  printf("ex:./c_parser infile=./input_for_c_parser.c outform=aljson_stub\n");
+
+  printf("more advanced goal is to be a c parser ... \n");
+  printf("ex:./c_parser debug=true infile=./c_parser.c\n");
+
 }
 
 
@@ -25,7 +33,7 @@ json_token_to_char (enum json_token_id token_id)
 int
 c_parser_is_debug (struct c_parser_ctx *parser)
 {
-  return parser->flags > 0;
+  return ALC_FLAG_IS_SET(parser->flags,ALCPARSER_DEBUG);
 }
 
 void
@@ -167,6 +175,7 @@ c_cut_token_string (struct c_parser_ctx *parser)
 
 char c_backslash[]="0123456a8tnbcnefghijklmdopqrs9uv";
 
+// get char ( to display with \ prefix ) mainly for first 32 ascii characters
 char c_getbackslash(char c)
 {
   if ( c > ' ' )
@@ -947,12 +956,79 @@ struct al_token *c_parse_define_type (struct c_parser_ctx *parser,
 				      struct al_token *token,
 				      int within_typedef);
 
-int c_struct_info_add_member(struct c_struct_info *struct_info,
-			 struct c_full_type * type,
-			 void * variable
-			 )
+struct c_struct_info *
+c_parser_ctx_allocate_c_struct_info(struct c_parser_ctx *parser)  
 {
-  // todo("");
+  struct c_struct_info * allocated = NULL;
+  if ( parser != NULL )
+    {
+      todo("fixme hardcoded 1000 structures");
+      int max_alloc = 1000;
+      if (
+	  (parser->allocated_structures == 0 )
+	  && ( parser->used_structures == 0 )
+	  && ( parser->structure_array == NULL ) )
+	{
+	  parser->structure_array = calloc(max_alloc,sizeof(struct c_struct_info));
+	  parser->allocated_structures = max_alloc;
+	}
+      if ( parser->used_structures <  max_alloc )
+	{
+	  allocated = &parser->structure_array[parser->used_structures];
+	  parser->used_structures ++;
+	}
+    }
+  return allocated;
+}
+
+struct c_declaration_info_list*
+c_parser_ctx_allocate_c_declaration_info_list(struct c_parser_ctx *parser)  
+{
+  return calloc(1,sizeof(struct c_declaration_info_list));
+}
+
+// add a new member in struct info, uses parser general allocation table.
+int c_struct_info_add_member(
+			     struct c_parser_ctx *parser,
+			     struct c_struct_info *struct_info,
+			     struct c_full_type * type,
+			     void * variable
+			     )
+{
+  if ( struct_info != NULL )
+    {
+      struct c_declaration_info_list* info = c_parser_ctx_allocate_c_declaration_info_list(parser);
+      if (info != NULL )
+	{
+	  struct c_declaration_info_list* last = struct_info->first;
+
+	  // info->info.first ???  type
+	  info->info.dict_index = variable;
+	  
+	  // add it after next...
+	  if ( last == NULL )
+	    {
+	      struct_info->first = info;
+	    }
+	  else
+	    {
+	      // protect against ... coder - ( linked list corruption / loop ).
+	      int max = 1000;
+	      struct c_declaration_info_list* next = last;	      
+	      while ( ( next != NULL ) && ( max > 0 ) )
+		{
+		  last = next;
+		  next = last->next;
+		  max --;
+		}
+	      if ( max > 0 )
+		{
+		  last->next = info;
+		}
+	    }
+	}
+    }
+  // todo("");  
   return 0;
 }
 
@@ -973,7 +1049,7 @@ c_parse_struct_member (struct c_struct_info *struct_info,
   printf(" ");
   if (c_parse_variable (parser, token) == NULL)
     {
-      c_struct_info_add_member(struct_info,&type,NULL);
+      c_struct_info_add_member(parser,struct_info,&type,NULL);
       printf (" // struct member %i\n", index);
       token = c_parse_next (parser);
       if ((token != NULL) && (token->token == JSON_TOKEN_SEMI_COLON_ID))
@@ -1783,20 +1859,29 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
       // struct or enum definition.
       if (token->token == JSON_TOKEN_OPEN_BRACE_ID)
 	{
-	  printf ("{ // type %i definition.\n", parser->last_type);
+	  printf ("{ // type %i definition. (code line %i)\n", parser->last_type, __LINE__);
 	  if (parser->last_type == TOKEN_C_STRUCT_ID)
 	    {
-	      struct c_struct_info struct_info;
+	      struct c_struct_info * struct_info = c_parser_ctx_allocate_c_struct_info(parser);
+	      if ( struct_info == NULL )
+		{
+		  fprintf(stderr,"can't allocate memory for structure .\n");
+		  exit(1);
+		}
+
 	      int index = 0;
 	      printf ("// struct definition \n");
 
 	      token = c_parse_next (parser);
 
+	      // name of struct ? lhs_variable_data ?
+	      struct_info->dict_index = lhs_variable_data;
+	      
 	      while ((token != NULL)
 		     && (token->token != JSON_TOKEN_CLOSE_BRACE_ID))
 		{
 		  // ??? c_parse_left_type + variable ?
-		  token = c_parse_struct_member (&struct_info, parser, token, index);
+		  token = c_parse_struct_member (struct_info, parser, token, index);
 		  ++index;
 		  // always move forward ( unless parses same token forever... )
 		  // if ( token == NULL )
@@ -3096,7 +3181,7 @@ main (int argc, char **argv)
   if ( debugdata != NULL )
     {
       // set debugging for parsing
-      parser.flags = 1;
+      ALC_SET_FLAG(parser.flags,ALCPARSER_DEBUG);
       // alhash_set_debug(1);
     }
 
@@ -3119,7 +3204,14 @@ main (int argc, char **argv)
     {
       fprintf(stderr,"[ERROR] missing argument infile= file to parse.");
     }
-	
+
+  struct alhash_datablock * outformdata = al_option_get(options,"outform");
+  if (outformdata != NULL)
+    {
+      printf("outform '%.*s'\n",outformdata->length,outformdata->data);
+      todo("support outform");
+    }
+
   al_options_release(options);
   options=NULL;
 
@@ -3165,6 +3257,21 @@ main (int argc, char **argv)
 	  c_show_info (&parser, "INFO", "expected eof got NULL");
 	}
 
+      if ( parser.used_structures != 0 )
+	{
+	  for (int i = 0; i< parser.used_structures; i++)
+	    {
+	      // todo
+	      printf("structure %i \n",i);
+	      int max = 1000;
+	      struct c_declaration_info_list * next = parser.structure_array[i].first;
+	      while (next != NULL)
+		{
+		  printf(".\n");
+		  next = next->next;
+		}
+	    }
+	}
       fflush (stdout);
     }
   else
