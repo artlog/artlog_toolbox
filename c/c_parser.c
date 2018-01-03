@@ -92,6 +92,12 @@ c_grow_word_buffer (struct c_parser_ctx *parser)
 }
 
 /* return an entry pointer in global dict_index table
+
+   and set last_word and dict_value.
+
+  parser->last_word = TOKEN_C_DICTENTRY_ID;
+  parser->dict_value = (struct alhash_datablock *) value;
+
  */
 void *
 c_cut_token_string (struct c_parser_ctx *parser)
@@ -1049,7 +1055,7 @@ c_parse_struct_member (struct c_struct_info *struct_info,
   printf(" ");
   if (c_parse_variable (parser, token) == NULL)
     {
-      c_struct_info_add_member(parser,struct_info,&type,NULL);
+      c_struct_info_add_member(parser,struct_info,&type,parser->dict_value);
       printf (" // struct member %i\n", index);
       token = c_parse_next (parser);
       if ((token != NULL) && (token->token == JSON_TOKEN_SEMI_COLON_ID))
@@ -1842,13 +1848,17 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 		     int within_typedef)
 {
   struct json_ctx *tokenizer = parser->tokenizer;
-  void *lhs_variable_data = NULL;
-
+  struct alhash_datablock * type_name_value;
+  void * lhs_variable_data;
+  
   token = c_parse_left_type (parser,NULL, token, parser->last_word);
 
   // a full parsing of a function definition was done ...
   lhs_variable_data = parser->lhs_variable_data;
 
+  // tentatively get name ...
+  type_name_value = parser->dict_value;
+  
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -1875,7 +1885,8 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 	      token = c_parse_next (parser);
 
 	      // name of struct ? lhs_variable_data ?
-	      struct_info->dict_index = lhs_variable_data;
+	      // struct_info->dict_index = lhs_variable_data;
+	      struct_info->dict_index = type_name_value;
 	      
 	      while ((token != NULL)
 		     && (token->token != JSON_TOKEN_CLOSE_BRACE_ID))
@@ -3212,9 +3223,6 @@ main (int argc, char **argv)
       todo("support outform");
     }
 
-  al_options_release(options);
-  options=NULL;
-
   if (inputstream != NULL)
     {
       json_import_context_initialize (&tokenizer);
@@ -3257,22 +3265,86 @@ main (int argc, char **argv)
 	  c_show_info (&parser, "INFO", "expected eof got NULL");
 	}
 
-      if ( parser.used_structures != 0 )
+      // don't care yet of what outform... 
+      if (outformdata != NULL)
 	{
-	  for (int i = 0; i< parser.used_structures; i++)
+	  // outform=aljson
+	  if ( parser.used_structures != 0 )
 	    {
-	      // todo
-	      printf("structure %i \n",i);
-	      int max = 1000;
-	      struct c_declaration_info_list * next = parser.structure_array[i].first;
-	      while (next != NULL)
+	      for (int i = 0; i< parser.used_structures; i++)
 		{
-		  printf(".\n");
-		  next = next->next;
+		  // todo
+		  printf("// structure %i\n" ,i);
+		  int max = 1000;
+		  struct alhash_datablock * datablock = (struct alhash_datablock *) parser.structure_array[i].dict_index ;
+		  // thanks to this format ... print non NULL terminated string
+		  printf("{\"%.*s\":{",datablock->length,datablock->data);
+		  struct c_declaration_info_list * next = parser.structure_array[i].first;
+		  while ((next != NULL)&&(max>0))
+		    {
+		      datablock = (struct alhash_datablock *) next->info.dict_index;
+		      if ( datablock != NULL )
+			{
+			  printf("\"%.*s\":0,\n",datablock->length,datablock->data);
+			}
+		      else
+			{
+			  printf(".\n");
+			}
+		      next = next->next;
+		      --max;
+		    }
+		  printf("}\n");
 		}
 	    }
+
+	  // outform=aljson_stub
+	  if ( parser.used_structures != 0 )
+	    {
+	      for (int i = 0; i< parser.used_structures; i++)
+		{
+		  int max = 1000;
+		  char * varname="outstructp";
+		  // todo
+		  char * vartype="unkown";
+		  struct alhash_datablock * datablock = (struct alhash_datablock *) parser.structure_array[i].dict_index ;
+
+		  printf("int json_c_%.*s_from_json_auto(",datablock->length,datablock->data);
+		  printf("struct %.*s * %s, ",datablock->length,datablock->data,varname);
+		  printf("struct json_object * json_object)\n{\n");
+		  struct c_declaration_info_list * next = parser.structure_array[i].first;
+		  while ((next != NULL)&&(max>0))
+		    {
+		      datablock = (struct alhash_datablock *) next->info.dict_index;
+		      if ( datablock != NULL )
+			{
+			  // we didn't capture type yet, so ... todo
+			  printf("AL_GET_JSON_INT_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+
+			  printf("AL_GET_JSON_STRING_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+
+			  printf("AL_GET_JSON_STRUCT(%s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype,varname,datablock->length,datablock->data);
+
+			  printf("AL_GET_JSON_STRUCT_POINTER(%s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype,varname,datablock->length,datablock->data);
+
+			}
+		      else
+			{
+			  printf("//.\n");
+			}
+		      next = next->next;
+		      --max;
+		    }
+		  printf("return 1;}\n");
+		}
+	    }
+
 	}
       fflush (stdout);
+
+      al_options_release(options);
+      options=NULL;
+
     }
   else
     {
