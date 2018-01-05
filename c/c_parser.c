@@ -759,8 +759,8 @@ c_is_typedef (struct c_parser_ctx *parser)
 }
 
 /*
+will populate type with parsed type
 */
-
 struct al_token *
 c_parse_left_type (struct c_parser_ctx *parser,
 		   struct c_full_type * type,
@@ -894,6 +894,7 @@ c_parse_left_type (struct c_parser_ctx *parser,
 		    print_c_token (parser, c_token);
 		    printf (" ");
 		    c_type = c_token;
+		    type->word_type = c_type;
 		    parser->last_type = c_type;
 		  }
 		else
@@ -1009,6 +1010,8 @@ int c_struct_info_add_member(
 	  struct c_declaration_info_list* last = struct_info->first;
 
 	  // info->info.first ???  type
+	  // copy type.
+	  memcpy(&info->info.full_type,type,sizeof(info->info.full_type));
 	  info->info.dict_index = variable;
 	  
 	  // add it after next...
@@ -1150,7 +1153,8 @@ c_parse_lhs (struct c_parser_ctx *parser, struct al_token *token)
     }
   while (token != NULL)
     {
-      token = c_parse_left_type (parser,NULL, token, parser->last_word);
+      struct c_full_type type;
+      token = c_parse_left_type (parser, &type, token, parser->last_word);
       if (token == NULL)
 	{
 	  token = c_parse_next (parser);
@@ -1353,7 +1357,8 @@ c_parse_call_definition_parameters (struct c_parser_ctx *parser)
   token = c_parse_next (parser);
   while (token != NULL)
     {
-      token = c_parse_left_type (parser,NULL, token, parser->last_word);
+      struct c_full_type type;
+      token = c_parse_left_type (parser, &type, token, parser->last_word);
       if (token == NULL)
 	{
 	  token = c_parse_next (parser);
@@ -1849,9 +1854,10 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 {
   struct json_ctx *tokenizer = parser->tokenizer;
   struct alhash_datablock * type_name_value;
+  struct c_full_type type;
   void * lhs_variable_data;
   
-  token = c_parse_left_type (parser,NULL, token, parser->last_word);
+  token = c_parse_left_type (parser, &type, token, parser->last_word);
 
   // a full parsing of a function definition was done ...
   lhs_variable_data = parser->lhs_variable_data;
@@ -3318,14 +3324,26 @@ main (int argc, char **argv)
 		      datablock = (struct alhash_datablock *) next->info.dict_index;
 		      if ( datablock != NULL )
 			{
-			  // we didn't capture type yet, so ... todo
-			  printf("AL_GET_JSON_INT_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+			  // better than nothing, still does not recognize arrays or pointers
+			  switch(next->info.full_type.word_type)
+			    {
+			    case TOKEN_C_INT_ID:
+			    case TOKEN_C_LONG_ID:
+			      printf("AL_GET_JSON_INT_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+			      break;
+			      
+			    case TOKEN_C_CHAR_ID:
+			      printf("AL_GET_JSON_STRING_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+			      break;
 
-			  printf("AL_GET_JSON_STRING_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+			     case TOKEN_C_STRUCT_ID: 
+			       printf("AL_GET_JSON_STRUCT(%s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype,varname,datablock->length,datablock->data);
+			       break;
 
-			  printf("AL_GET_JSON_STRUCT(%s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype,varname,datablock->length,datablock->data);
-
-			  printf("AL_GET_JSON_STRUCT_POINTER(%s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype,varname,datablock->length,datablock->data);
+			    default:
+			      printf("AL_GET_JSON_STRUCT_POINTER(%s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype,varname,datablock->length,datablock->data);
+			      break;
+			    }
 
 			}
 		      else

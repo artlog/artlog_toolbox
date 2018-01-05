@@ -63,10 +63,12 @@ struct c_error {
 };
 
 
+/** needed , isn't full_type enough ?
 struct c_type_list {
   void * data; // todo
   struct c_type_list * next;
 };
+*/
 
 enum c_dict_flags {
   C_DICT_FLAG_NULTERMINATED,
@@ -80,8 +82,14 @@ struct c_dict_entry {
   int flags;
 };
 
+struct c_full_type {
+  enum c_word_token word_type;
+  int array;
+  int dereference;
+};
+
 struct c_declaration_info {
-  struct c_type_list * first;
+  struct c_full_type full_type;
   void * dict_index;
 };
 
@@ -108,13 +116,6 @@ struct c_enum_info {
   void * dict_index;
   struct c_declaration_info_list * first;
 };
-
-struct c_full_type {
-  enum c_word_token word_type;
-  int array;
-  int dereference;
-};
-
 
 struct c_parser_ctx {
   enum c_parser_state state;
