@@ -43,6 +43,26 @@ int json_c_test_1_from_json_auto( struct test_1* test, struct json_object * json
   return 1;
 }
 
+struct json_object * json_c_test_1_to_json_auto(  struct test_2* test)
+{
+  struct json_parser_ctx * ctx = NULL;
+  // 1. allocate json_object
+  struct json_object * growable = aljson_new_growable(ctx,'{');
+  // 2. add members
+  // value... test->a
+  // TODO
+  struct token_char_buffer char_buffer;
+  struct json_object * object = aljson_new_json_string(ctx->tokenizer, '0', &char_buffer);
+  // should create json pair with name of field ...
+  struct json_object * key = aljson_new_json_string(ctx->tokenizer, '"', &char_buffer);
+  struct json_object * pair = aljson_new_pair_key(ctx, pair);
+  pair->pair.value=object;
+  aljson_add_to_growable(ctx,&growable->growable,pair);
+  // 3. concretize ( struct can't grow or be edited anymore ).
+  return aljson_concrete(ctx, growable);
+
+}
+
 int json_c_test_2_from_json_auto( struct test_2* test, struct json_object * json_object)
 {
   if AL_JSON_IS_DICT(json_object)

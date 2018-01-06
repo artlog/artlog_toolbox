@@ -38,7 +38,7 @@ int json_set_debug(int debug)
 /**
 a complicated json stream ( one char ahead ) parser 
 dual implementiation call stack and data stack 
-for in-depth parsing, if max-depth is hit tehn switch to non recursive implementation
+for in-depth parsing, if max-depth is hit then switch to non recursive implementation
 **/
 
 JSON_DEFINE_TOGGLE(squote,'\'')
@@ -109,32 +109,14 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   return err_object;
 }
 
-
-// allocate a new json_object
-// borrow buf buffer of json_ctx and set it into a json_string
-// reset json_ctx buffer.
-struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
+struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct token_char_buffer * tb)
 {
   struct json_object * object=calloc(1,sizeof(struct json_object));
-  if ( object != NULL)
+  if (object != NULL)
     {
       object->type=objtype;
-      struct token_char_buffer * tb = &ctx->token_buf;
-      // warning, should keep a place for final 0
-      if ( (tb->bufpos + 1) < tb->bufsize )
-	{
-	  // realloc for one character ... too bad.
-	  if ( FLAG_IS_SET(json_debug,1)  )
-	    {
-	      printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,tb->buf,tb->bufsize,tb->bufpos+1);
-	    }
-	  tb->buf=realloc(tb->buf,tb->bufpos+1);
-	  tb->bufsize=tb->bufpos;
-	}      
       object->string.chars=tb->buf;
       object->string.length=tb->bufsize;
-      // buffer will be re-allocated -> where is it done ?
-      bzero(&ctx->token_buf, sizeof(ctx->token_buf));
     }
   else
     {
@@ -143,7 +125,33 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
   return object;
 }
 
-struct json_object * new_growable(struct json_parser_ctx * ctx, char final_type)
+// allocate a new json_object
+// borrow buf buffer of json_ctx and set it into a json_string
+// reset json_ctx buffer.
+struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
+{
+  struct json_object * object=NULL;
+  struct token_char_buffer * tb = &ctx->token_buf;
+  // warning, should keep a place for final 0
+  if ( (tb->bufpos + 1) < tb->bufsize )
+    {
+      // realloc for one character ... too bad.
+      if ( FLAG_IS_SET(json_debug,1)  )
+	{
+	  printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,tb->buf,tb->bufsize,tb->bufpos+1);
+	}
+      tb->buf=realloc(tb->buf,tb->bufpos+1);
+      tb->bufsize=tb->bufpos;
+    }
+  object = aljson_new_json_string(ctx,objtype,tb);
+
+  // buffer will be re-allocated -> where is it done ?
+  bzero(&ctx->token_buf, sizeof(ctx->token_buf));
+      
+  return object;
+}
+
+struct json_object * aljson_new_growable(struct json_parser_ctx * ctx, char final_type)
 {
  struct json_object * object=malloc(sizeof(struct json_object));
  if (object != NULL)
@@ -203,7 +211,7 @@ void json_release_object(struct json_object * object)
 
 void dump_growable(struct json_parser_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx);
 
-void add_to_growable(struct json_parser_ctx * ctx,struct json_growable * growable,struct json_object * object)
+void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * growable,struct json_object * object)
 {
   if (json_debug > 0 )
     {
@@ -244,7 +252,7 @@ void add_to_growable(struct json_parser_ctx * ctx,struct json_growable * growabl
     }
 }
 
-struct json_object * new_pair_key(struct json_parser_ctx * parser, struct json_object * key)
+struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct json_object * key)
 {
   struct json_ctx * ctx = parser->tokenizer;
   struct json_object * object=malloc(sizeof(struct json_object));
@@ -285,6 +293,7 @@ struct json_object * new_variable(struct json_parser_ctx * parser, struct json_o
   return object;
 }
 
+// used by aljson_concrete for json_list case
 // should set owner of values to new object
 struct json_object * create_json_list(struct json_parser_ctx * parser, struct json_object * obj)
 {
@@ -326,7 +335,7 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
   return object;
 }
 
-// collect only pairs, used by json_concrete to obtain a dict from a growable '{'
+// collect only pairs, used by aljson_concrete to obtain a dict from a growable '{'
 // should set owner of values to new object
 struct json_object * create_json_dict(struct json_parser_ctx * parser, struct json_object * obj)
 {
@@ -384,7 +393,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 }
 
 /** Where growables becomes real json objects **/
-struct json_object * json_concrete(struct json_parser_ctx * parser, struct json_object * object)
+struct json_object * aljson_concrete(struct json_parser_ctx * parser, struct json_object * object)
 {
   if (object !=NULL)
     {
@@ -469,7 +478,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		  {
 		    if ( parent->growable.final_type == '{')
 		      {
-			add_to_growable(ctx,&parent->growable,object);
+			aljson_add_to_growable(ctx,&parent->growable,object);
 		      }
 		    else
 		      {
@@ -490,7 +499,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		  }
 	      }
 	    --ctx->parsing_depth;
-	    return json_concrete(ctx,parent);
+	    return aljson_concrete(ctx,parent);
 	    break;
 	  case JSON_TOKEN_OPEN_BRACKET_ID:
 	    JSON_OPEN(ctx,braket,object);
@@ -511,7 +520,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		      {
 			if ( parent->growable.final_type == '[')
 			  {
-			    add_to_growable(ctx,&parent->growable,object);
+			    aljson_add_to_growable(ctx,&parent->growable,object);
 			  }
 			else
 			  {
@@ -530,7 +539,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		object=NULL;
 	      }
 	    --ctx->parsing_depth;
-	    return json_concrete(ctx,parent);
+	    return aljson_concrete(ctx,parent);
 	    break;
 	  case JSON_TOKEN_DQUOTE_ID:
 	    if ((parent != NULL) && (parent->type == '"'))
@@ -559,7 +568,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		  {
 		    if ( parent->type=='G')
 		      {
-			add_to_growable(ctx,&parent->growable,object);
+			aljson_add_to_growable(ctx,&parent->growable,object);
 		      }
 		    else
 		      {
@@ -722,7 +731,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
   }
 
   --ctx->parsing_depth;
-  return json_concrete(ctx,object);
+  return aljson_concrete(ctx,object);
 }
 
 struct json_object * check_parent_is_pair(struct json_parser_ctx * ctx, void * data, struct alstack * stack, struct json_object * parent, struct json_object ** object)
@@ -834,7 +843,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 			dump_object(ctx,object,NULL);
 		      }
 
-		    add_to_growable(ctx,&parent->growable,object);
+		    aljson_add_to_growable(ctx,&parent->growable,object);
 		  }
 		else
 		  {
@@ -859,7 +868,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    // before concrete
 	    dump_object(ctx,parent,NULL);
 	  }
-	object = json_concrete(ctx,parent);
+	object = aljson_concrete(ctx,parent);
 	if ( json_debug > 0 )
 	  {
 	    // after concrete
@@ -893,7 +902,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		  {
 		    if ( parent->growable.final_type == '[')
 		      {
-			add_to_growable(ctx,&parent->growable,object);
+			aljson_add_to_growable(ctx,&parent->growable,object);
 		      }
 		    else
 		      {
@@ -911,7 +920,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	      }
 	    object=NULL;
 	  }
-	object=json_concrete(ctx,parent);
+	object=aljson_concrete(ctx,parent);
 	break;
       case JSON_TOKEN_DQUOTE_ID:
 	if ( object != NULL )
@@ -945,7 +954,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	      {
 		if ( parent->type=='G')
 		  {
-		    add_to_growable(ctx,&parent->growable,object);
+		    aljson_add_to_growable(ctx,&parent->growable,object);
 		  }
 		else
 		  {
@@ -1073,7 +1082,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	  {
 	    fprintf(stderr,"EOF with parent \n");
 	  }
-	object=json_concrete(ctx,object);
+	object=aljson_concrete(ctx,object);
 	alstack_destroy(stack, NULL);
 	return object;
 	
@@ -1098,7 +1107,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
     last_token = json_tokenizer(ctx->tokenizer,data);
   }
 
-  object=json_concrete(ctx,object);
+  object=aljson_concrete(ctx,object);
   alstack_destroy(stack, NULL);
   return object;
 

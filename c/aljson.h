@@ -154,12 +154,17 @@ struct json_path {
 
 struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
+// create a json string object from a given buffer
+struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct token_char_buffer * tb);
+  
 // create a json string object from context buffer
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype);
 
-struct json_object * new_growable(struct json_parser_ctx * ctx, char final_type);
+struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct json_object * key);
+  
+struct json_object * aljson_new_growable(struct json_parser_ctx * ctx, char final_type);
 
-#define JSON_DEFINE_NEW(__member__,__char__) struct json_object * new_ ## __member__(struct json_parser_ctx * ctx) { return new_growable(ctx,__char__);};
+#define JSON_DEFINE_NEW(__member__,__char__) struct json_object * aljson_new_ ## __member__(struct json_parser_ctx * ctx) { return aljson_new_growable(ctx,__char__);};
 
   
 void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
@@ -236,8 +241,11 @@ int json_get_int(struct json_object * object );
 
 char * json_get_string(struct json_object * object);
 
+/** add a json object to a growable */
+void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * growable,struct json_object * object);
+
 /** Where growables becomes real json objects **/
-struct json_object * json_concrete(struct json_parser_ctx * ctx, struct json_object * object);
+struct json_object * aljson_concrete(struct json_parser_ctx * ctx, struct json_object * object);
 
 /**
  Actual parsing step
@@ -250,7 +258,7 @@ return a json_concret'ized object representing full parsing for this level.
  **/
 struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent);
 
-#define JSON_OPEN(ctx,__member__,object)   ctx->__member__.open_level++;ctx-> __member__ .max_open_level++;object=new_ ## __member__(ctx);
+#define JSON_OPEN(ctx,__member__,object)   ctx->__member__.open_level++;ctx-> __member__ .max_open_level++;object=aljson_new_ ## __member__(ctx);
 #define JSON_CLOSE(ctx,__member__)   ctx->__member__.open_level--;ctx-> __member__.max_close_level++;
 #define JSON_TOGGLE(ctx,__member__)   ctx->__member__.open_level++;ctx->__member__.max_open_level++; 
 
