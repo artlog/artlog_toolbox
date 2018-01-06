@@ -84,6 +84,7 @@ struct c_dict_entry {
 
 struct c_full_type {
   enum c_word_token word_type;
+  void * dict_index;
   int array;
   int dereference;
 };
