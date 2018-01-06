@@ -73,6 +73,21 @@ enum json_internal_flags {
   JSON_FLAG_IGNORE=1
 };
 
+enum aljson_number_parser_state {
+  ALJSON_NPSTATE_ERROR= -1,
+  ALJSON_NPSTATE_INIT = 0,
+  ALJSON_NPSTATE_POSITIVE = 1,
+  ALJSON_NPSTATE_INTEGER = 2,
+  ALJSON_NPSTATE_COMA = 3,
+  ALJSON_NPSTATE_FLOAT = 4,
+  ALJSON_NPSTATE_EXP = 5,
+  ALJSON_NPSTATE_EXP2 = 6,
+  ALJSON_NPSTATE_EXP3 = 7,
+  ALJSON_NPSTATE_COMPLETING = 8,
+  ALJSON_NPSTATE_COMPLETE = 9
+  
+};
+
 // invalid typedef char (*)(struct json_ctx *ctx, void *data) get_next_char;
 typedef char (*get_next_char)(struct json_ctx *ctx, void *data);
 typedef void (*set_pushback_char)(struct json_ctx *ctx, void *data, char pushback);

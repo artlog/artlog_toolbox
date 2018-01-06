@@ -20,7 +20,7 @@ TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
 struct al_token * tokenizer_NUMBER(struct json_ctx * ctx, char first, void * data)
 {
   int state = parse_number_level(ctx, first, data);
-  if ( state == 9 )
+  if ( state == ALJSON_NPSTATE_COMPLETE )
     {
       JSON_TOKEN(NUMBER);
     }
@@ -86,6 +86,7 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
     }
 }
 
+// add a char within token char buffer that will be flush at cut_string_object or flush_cahr_buffer
 int token_char_buffer_add_char(struct token_char_buffer * ctx, char token, char c)
 {
   int bufsize=TOKEN_BUFSIZE_MIN;
@@ -205,13 +206,13 @@ int json_ctx_consume(struct json_ctx * ctx, void * data, char * str)
 
 
 /**
- return internal parsing state. 9 means parsing did find a number.
+ return internal parsing state. ALJSON_NPSTATE_COMPLETE means parsing did find a number.
 */
-int parse_number_level(struct json_ctx * ctx, char first, void * data)
+enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char first, void * data)
 {
-  int state = 0;
+  enum aljson_number_parser_state state = ALJSON_NPSTATE_INIT;
   char c = first;
-  while ( state >= 0 )
+  while ( state >= ALJSON_NPSTATE_INIT )
     {
       if ( json_context_get_debug(ctx) > 3 )
 	{
@@ -219,89 +220,90 @@ int parse_number_level(struct json_ctx * ctx, char first, void * data)
 	}
       switch(state)
 	{
-	case 0:
+	case ALJSON_NPSTATE_INIT:
 	  if ( c == '-' )
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
 	    }
-	  state = 1;
+	  state = ALJSON_NPSTATE_POSITIVE;
 	  break;
-	case 1:
+	case ALJSON_NPSTATE_POSITIVE:
 	  if ( c == '0' )
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
-	      state = 3;
+	      state = ALJSON_NPSTATE_COMA;
 	    }
 	  else if ( ( c > '0' ) && ( c <='9' ) )
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
-	      state = 2;	      
+	      state = ALJSON_NPSTATE_INTEGER;	      
 	    }
 	  else
 	    {
-	      state = -1;
+	      state = ALJSON_NPSTATE_ERROR;
 	    }
 	  break;
-	case 2:
+	case  ALJSON_NPSTATE_INTEGER:
 	  while ( ( c >= '0' ) && ( c <='9' ) )
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
 	    }
-	  state=3;
+	  state=ALJSON_NPSTATE_COMA;
 	  break;
-	case 3:
+	case ALJSON_NPSTATE_COMA:
 	  if ( c == '.' )
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
-	      state = 4;
+	      state = ALJSON_NPSTATE_FLOAT;
 	    }
 	  else
 	    {
-	      state = 5;
+	      state = ALJSON_NPSTATE_EXP;
 	    }
 	  break;
-	case 4:
+	case ALJSON_NPSTATE_FLOAT:
 	  while ( ( c >= '0' ) && ( c <='9' ) )
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
 	    }
-	  state = 5;
+	  state = ALJSON_NPSTATE_EXP;
 	  break;
-	case 5:
+	case ALJSON_NPSTATE_EXP:
 	  if (( c=='e') || (c =='E'))
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
-	      state = 6;
+	      state = ALJSON_NPSTATE_EXP2;
 	    }
 	  else
 	    {
-	      state = 8;
+	      state = ALJSON_NPSTATE_COMPLETING;
 	    }
 	  break;
-	case 6:
+	  // there is an exposant
+	case ALJSON_NPSTATE_EXP2:
 	  if (( c=='+') || (c =='-'))
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
 	    }
-	  state=7;
+	  state=ALJSON_NPSTATE_EXP3;
 	  // no break on purpose
-	case 7:
+	case ALJSON_NPSTATE_EXP3:
 	  while ( ( c >= '0' ) && ( c <='9' ) )
 	    {
 	      ctx->add_char(ctx,'0',c);
 	      c = ctx->next_char(ctx,data);
 	    }
-	  state=8;
+	  state=ALJSON_NPSTATE_COMPLETING;
 	  // no break on purpose
-	case 8:
+	case ALJSON_NPSTATE_COMPLETING:
 	  // this char is NOT part of our number
 	  ctx->pushback_char(ctx,data,c);
 	  if ( json_context_get_debug(ctx) > 0 )
@@ -314,10 +316,10 @@ int parse_number_level(struct json_ctx * ctx, char first, void * data)
 		}
 	      ctx->pushback_char(ctx,data,c);
 	    }
-	  state = 9;
+	  state = ALJSON_NPSTATE_COMPLETE;
 	  return state;
 	default:
-	  state = -1;
+	  state = ALJSON_NPSTATE_ERROR;
 	  // this is an error
 	}
     }

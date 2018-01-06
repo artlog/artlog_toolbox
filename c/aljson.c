@@ -110,6 +110,7 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
 }
 
 
+// allocate a new json_object
 // borrow buf buffer of json_ctx and set it into a json_string
 // reset json_ctx buffer.
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
@@ -132,6 +133,7 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
 	}      
       object->string.chars=tb->buf;
       object->string.length=tb->bufsize;
+      // buffer will be re-allocated -> where is it done ?
       bzero(&ctx->token_buf, sizeof(ctx->token_buf));
     }
   else
