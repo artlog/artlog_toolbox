@@ -82,30 +82,12 @@ reset_tokenizer_buffer (struct json_ctx *tokenizer)
   tokenizer->token_buf.bufpos = 0;
 }
 
-int
-c_grow_word_buffer (struct c_parser_ctx *parser)
-{
-  // should allocate a new buffer
-  // should read all entries then re-add them in new dict to free the previous one.
-  todo ("[FATAL] grow word buffer . not implemented");
-  exit (1);
-}
 
 /* return an entry pointer in global dict_index table
-
-   and set last_word and dict_value.
-
-  parser->last_word = TOKEN_C_DICTENTRY_ID;
-  parser->dict_value = (struct alhash_datablock *) value;
-
  */
-void *
-c_cut_token_string (struct c_parser_ctx *parser)
+struct alhash_entry *
+alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int length)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
-  struct token_char_buffer *tb = &tokenizer->token_buf;
-  char *buffer = tb->buf;
-  int length = tb->bufpos;
 
   if (buffer == NULL)
     {
@@ -134,12 +116,12 @@ c_cut_token_string (struct c_parser_ctx *parser)
     }
 
   struct alhash_datablock key;
-  struct alhash_datablock *value;
-
-  // todo("create an entry in dict...")
+  struct alhash_datablock *valuep;
+  
+  //  create an entry in dict
   key.length = length;
-  key.data = &parser->word_buffer[parser->word_buffer_pos];
-  if ((parser->word_buffer_pos + length) < parser->word_buffer_length)
+  key.data = &alparser->word_buffer.buf[alparser->word_buffer.bufpos];
+  if ((alparser->word_buffer.bufpos + length) < alparser->word_buffer.bufsize)
     {
       memcpy (key.data, buffer, length);
     }
@@ -147,22 +129,25 @@ c_cut_token_string (struct c_parser_ctx *parser)
     {
       fprintf (stderr,
 	       "[WARNING] internal char buffer for words full %i+%i>%i",
-	       parser->word_buffer_pos, length, parser->word_buffer_length);
-      c_grow_word_buffer (parser);
+	       alparser->word_buffer.bufpos, length, alparser->word_buffer.bufsize);
+      // alparser_grow_word_buffer (alparser);
+      todo ("[FATAL] grow word buffer . not implemented");
+      exit (1);
     }
 
-  struct alhash_entry *entry = alhash_get_entry (&parser->dict, &key);
+  struct alhash_entry *entry = alhash_get_entry (&alparser->dict, &key);
   if (entry == NULL)
     {
-      ++parser->words;
-      parser->word_buffer_pos += length;
-      value = &key;
-      entry = alhash_put (&parser->dict, &key, value);
+      // no entry found, create it
+      ++alparser->words;
+      alparser->word_buffer.bufpos += length;
+      valuep = &key;
+      entry = alhash_put (&alparser->dict, &key, valuep);
       if (entry == NULL)
 	{
 	  fprintf (stderr,
 		   "[FATAL] FAIL to insert '%s' into word buffer %p \n",
-		   buffer, &parser->dict);
+		   buffer, &alparser->dict);
 	  exit (1);
 	}
     }
@@ -171,12 +156,44 @@ c_cut_token_string (struct c_parser_ctx *parser)
       // printf("SAME TOKEN SEEN\n");
     }
 
-  reset_tokenizer_buffer (tokenizer);
+  return entry;
+}
+
+/* return an entry pointer in global dict_index table
+
+  and set last_word and dict_value.
 
   parser->last_word = TOKEN_C_DICTENTRY_ID;
-  parser->dict_value = &entry->value;
+  parser->dict_value = (struct alhash_datablock *) value;
 
-  return entry->value.data;
+  tokenizer internal token_char_buffer will be flushed.
+ */
+void *
+c_cut_token_string (struct c_parser_ctx *parser)
+{
+  struct json_ctx *tokenizer = parser->tokenizer;
+  struct token_char_buffer *tb = &tokenizer->token_buf;
+  char *buffer = tb->buf;
+  int length = tb->bufpos;
+
+  struct alparser_ctx *alparser = &parser->alparser;
+
+  struct alhash_entry *entry = alparser_dict_add_string(alparser, buffer, length);
+    
+  if (entry != NULL)
+    {
+        parser->last_word = TOKEN_C_DICTENTRY_ID;
+	parser->dict_value = &entry->value;
+	
+	reset_tokenizer_buffer (tokenizer);
+	
+	return entry->value.data;
+    }
+  else
+    {
+      return NULL;
+    }
+
 }
 
 char c_backslash[]="0123456a8tnbcnefghijklmdopqrs9uv";
@@ -747,7 +764,7 @@ c_is_typedef (struct c_parser_ctx *parser)
       return 1;
     }
 
-  struct alhash_entry *entry = alhash_get_entry (&parser->dict, &key);
+  struct alhash_entry *entry = alhash_get_entry (&parser->alparser.dict, &key);
   if (entry != NULL)
     {
       c_show_info (parser, "INFO",
@@ -3168,16 +3185,12 @@ init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
   parser->tokenizer_data = data;
   parser->last_type = -1;
   parser->last_word = -1;
-  // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
-  // long (*alhash_func) (void * value, int length));
+
+  struct alparser_ctx * alparser = &parser->alparser;
   todo ("support a growable hashtable. here limited to 1024 words");
-  alhash_init (&parser->dict, 1024, NULL);
-
   todo ("support a growable word buffer. here limited to 10240 characters");
-  parser->word_buffer_length = 10240;
-  parser->word_buffer_pos = 0;
-  parser->word_buffer = malloc (parser->word_buffer_length);
-
+  alparser_init(alparser,1024,10240);
+  
   // no debugging by default
   parser->flags = 0;
   return 1;

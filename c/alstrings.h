@@ -8,7 +8,7 @@ struct alhash_datablock {
   void * data; // NULL value NOT VALID.
 };
 
-// to rename since borrwoed from json_parser project
+// to rename since borrowed from json_parser project
 struct token_char_buffer {
   // internal buffer to collect data
   char * buf;

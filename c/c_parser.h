@@ -119,8 +119,12 @@ struct c_enum_info {
 };
 
 struct c_parser_ctx {
-  enum c_parser_state state;
+
   struct json_ctx* tokenizer;
+  struct alparser_ctx alparser;
+  
+  enum c_parser_state state;
+
   void * tokenizer_data;
   void * lhs_variable_data;
   enum json_token_id last_token;
@@ -129,11 +133,7 @@ struct c_parser_ctx {
   struct alhash_datablock * dict_value;
   int flags;
 
-  struct alhash_table dict;
-  int words;
-  int word_buffer_length;
-  int word_buffer_pos;
-  char * word_buffer;
+  
   int nested;
   // allow progress checking 
   int token_count;

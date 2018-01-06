@@ -109,14 +109,16 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   return err_object;
 }
 
-struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct token_char_buffer * tb)
-{
+// todo use struct alhash_entry *
+// alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int length)
+struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct alhash_datablock * data)
+{  
   struct json_object * object=calloc(1,sizeof(struct json_object));
   if (object != NULL)
     {
       object->type=objtype;
-      object->string.chars=tb->buf;
-      object->string.length=tb->bufsize;
+      object->string.chars=data->data;
+      object->string.length=data->length;
     }
   else
     {
@@ -143,7 +145,11 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
       tb->buf=realloc(tb->buf,tb->bufpos+1);
       tb->bufsize=tb->bufpos;
     }
-  object = aljson_new_json_string(ctx,objtype,tb);
+  
+  struct alhash_datablock  data;
+  data.data = tb->buf;
+  data.length = tb->bufpos;
+  object = aljson_new_json_string(ctx,objtype,&data);
 
   // buffer will be re-allocated -> where is it done ?
   bzero(&ctx->token_buf, sizeof(ctx->token_buf));
@@ -632,7 +638,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	      {
 		if (object->type == '\"') 
 		  {
-		    struct json_object * pair=new_pair_key(ctx,object);
+		    struct json_object * pair=aljson_new_pair_key(ctx,object);
 		    object=pair;
 		    struct json_object * value=parse_level(ctx,data,NULL);
 		    object->pair.value=value;
@@ -1008,7 +1014,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	  {
 	    if (object->type == '\"') 
 	      {
-		struct json_object * pair=new_pair_key(ctx,object);
+		struct json_object * pair=aljson_new_pair_key(ctx,object);
 
 		// rely on unstacking to detect pair.
 		alstack_push_ref(stack,(void *) pair);

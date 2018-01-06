@@ -32,6 +32,13 @@ struct alhash_table {
   long (*alhash_func) (void * value, int length);
 };
 
+// allocation of words, dict
+struct alparser_ctx {
+  struct token_char_buffer word_buffer;
+  struct alhash_table dict;
+  int words;
+};
+
 long alhash_hash_string(void * string, int length);
 
 // callback to use as a filter, when it returns 0 it means OK any other value is filtered out
@@ -66,4 +73,6 @@ void alhash_set_debug(int debug);
 
 void alhash_release(struct alhash_table * table);
 
+// init word buffer todo rename it.
+int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
 #endif

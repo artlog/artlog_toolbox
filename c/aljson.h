@@ -3,6 +3,7 @@
 
 #include "aljson_parser.h"
 #include "aljson_errors.h"
+#include "alhash.h"
 
 #define JSON_PATH_DEPTH 1024
 
@@ -24,6 +25,8 @@ struct json_level
 
 struct json_parser_ctx
 {
+  struct alparser_ctx alparser;
+  
   struct json_level parenthesis; // parenthesis '(' ')' 
   struct json_level braket; // brakets '[' ']' 
   struct json_level dquote; // double quote '"'
@@ -155,7 +158,7 @@ struct json_path {
 struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
 // create a json string object from a given buffer
-struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct token_char_buffer * tb);
+struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct alhash_datablock  * data);
   
 // create a json string object from context buffer
 struct json_object * cut_string_object(struct json_ctx * ctx, char objtype);

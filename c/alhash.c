@@ -289,3 +289,16 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
     }
   return step;
 }
+
+int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
+{
+  // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
+  // long (*alhash_func) (void * value, int length));
+  alhash_init (&alparser->dict, words, NULL);
+
+  alparser->word_buffer.bufsize = chars;
+  alparser->word_buffer.bufpos = 0;
+  alparser->word_buffer.buf = malloc (alparser->word_buffer.bufsize);
+
+  return 1;
+}
