@@ -39,8 +39,8 @@ $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/todo.o $(BUILD)/include/todo.h
 $(BUILD)/lib/libalcommon.a: $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o $(BUILD)/obj/alcommon.o $(BUILD)/include/inputstream.h $(BUILD)/include/outputstream.h $(BUILD)/include/alcommon.h
 	ar rccs $@ $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o $(BUILD)/obj/alcommon.o
 
-$(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/include/alhash.h
-	ar rccs $@ $<
+$(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o $(BUILD)/include/alhash.h
+	ar rccs $@  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o
 
 $(BUILD)/lib/libalstack.a:  $(BUILD)/obj/alstack.o $(BUILD)/include/alstack.h
 	ar rccs $@ $<

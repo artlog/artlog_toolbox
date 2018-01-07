@@ -120,10 +120,10 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
   
   //  create an entry in dict
   key.length = length;
-  key.data = &alparser->word_buffer.buf[alparser->word_buffer.bufpos];
+  key.data.ptr = &alparser->word_buffer.buf[alparser->word_buffer.bufpos];
   if ((alparser->word_buffer.bufpos + length) < alparser->word_buffer.bufsize)
     {
-      memcpy (key.data, buffer, length);
+      memcpy (key.data.ptr, buffer, length);
     }
   else
     {
@@ -187,7 +187,7 @@ c_cut_token_string (struct c_parser_ctx *parser)
 	
 	reset_tokenizer_buffer (tokenizer);
 	
-	return entry->value.data;
+	return entry->value.data.ptr;
     }
   else
     {
@@ -756,7 +756,7 @@ c_is_typedef (struct c_parser_ctx *parser)
   struct alhash_datablock key;
 
   key.length = length;
-  key.data = buffer;
+  key.data.ptr = buffer;
 
   if (strncmp (buffer, "FILE", 4) == 0)
     {
@@ -3225,7 +3225,7 @@ main (int argc, char **argv)
   if ( infiledata != NULL )
     {
       printf("file to parse '%.*s'\n",infiledata->length,infiledata->data);
-      file = fopen((char *)infiledata->data, "r");
+      file = fopen((char *)infiledata->data.ptr, "r");
       if ( file == NULL )
 	{
 	  fprintf(stderr,"[ERROR] fail to open '%s'\n",infiledata->data);

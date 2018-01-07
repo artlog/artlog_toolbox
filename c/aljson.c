@@ -90,14 +90,15 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
 	}      
       c = ctx->next_char(ctx, data);
     }
-  err_object->error.string.chars=err_buf;
+  err_object->error.string.internal.type=ALTYPE_OPAQUE;
+  err_object->error.string.internal.data.ptr=err_buf;
   // always null terminated
   if ( buf_idx >= max_buff )
     {
       buf_idx=max_buff-1;
     }
   err_buf[buf_idx]=0;  
-  err_object->error.string.length=buf_idx;  
+  err_object->error.string.internal.length=buf_idx;  
   if ( ctx->debug_level > 0 )
     {
       dump_object(parser,err_object,NULL);
@@ -117,8 +118,7 @@ struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype,
   if (object != NULL)
     {
       object->type=objtype;
-      object->string.chars=data->data;
-      object->string.length=data->length;
+      memcpy(&object->string.internal,data,sizeof(object->string.internal));
     }
   else
     {
@@ -147,7 +147,7 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
     }
   
   struct alhash_datablock  data;
-  data.data = tb->buf;
+  data.data.ptr = tb->buf;
   data.length = tb->bufpos;
   object = aljson_new_json_string(ctx,objtype,&data);
 
@@ -1139,11 +1139,11 @@ void dump_string(struct json_parser_ctx * ctx, struct json_object * object, stru
       struct json_string * string = &object->string;
       if ( ( object->type != '$' ) && ( object->type != '0') )
 	{
-	  printf("%c%s%c",object->type,string->chars,object->type);
+	  printf("%c%.*s%c",object->type,string->internal.length,(char *) string->internal.data.ptr,object->type);
 	}
       else
 	{
-	  printf("%s",string->chars);
+	  printf("%.*s",string->internal.length,(char *) string->internal.data.ptr);
 	}      
     }
   else
@@ -1313,7 +1313,7 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
 	  struct json_pair * pair = object->dict.items[i];
 	  if ( pair != NULL )
 	    {
-	      if ( strcmp( pair->key->string.chars, keyname) == 0 )
+	      if ( strcmp( pair->key->string.internal.data.ptr, keyname) == 0 )
 		{
 		  value = pair->value;
 		}
@@ -1334,9 +1334,9 @@ struct json_object * json_dict_path_get_value(struct json_path * path, struct js
 	  struct json_pair * pair = object->dict.items[i];
 	  if ( pair != NULL )
 	    {
-	      if ( path->string.length == pair->key->string.length )
+	      if ( path->string.internal.length == pair->key->string.internal.length )
 		{
-		  if ( strncmp( pair->key->string.chars, path->string.chars, path->string.length) == 0 )
+		  if ( strncmp( pair->key->string.internal.data.ptr, path->string.internal.data.ptr, path->string.internal.length) == 0 )
 		    {
 		      value = pair->value;
 		    }
@@ -1408,12 +1408,12 @@ void dump_constant_object(struct json_parser_ctx * ctx, struct json_object * obj
 
 void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
-  if (( object != NULL) && (object->error.string.chars != NULL ))
+  if (( object != NULL) && (object->error.string.internal.data.ptr != NULL ))
     {
       printf("syntax error %u (line:%i,column:%i)\n%.*s\n",
 	     object->error.erroridx,
 	     object->error.where.line,object->error.where.column,
-	     object->error.string.length,object->error.string.chars
+	     object->error.string.internal.length,(char *) object->error.string.internal.data.ptr
 	     );
     }
   else
@@ -1492,9 +1492,9 @@ int json_unify_string(struct json_parser_ctx * ctx, struct json_object * object,
   if ( ( object != NULL) && (other_object != NULL ) )
     {
       struct json_string * string = &object->string;
-      if ( strcmp(string->chars, other_object->string.chars) == 0 )
+      if ( strcmp(string->internal.data.ptr, other_object->string.internal.data.ptr) == 0 )
 	{
-	  printf("%c%s%c",object->type,string->chars,object->type);
+	  printf("%c%.*s%c",object->type,string->internal.length,(char *)string->internal.data.ptr,object->type);
 	  return 1;
 	}
       else
@@ -1754,7 +1754,7 @@ void json_print_object_name(struct json_parser_ctx * ctx, struct json_object * o
 	      json_print_object_name(ctx,object->owner,print_ctx);
 	      if ( object->type == ':' )
 		{
-		  printf(".%s",object->pair.key->string.chars);
+		  printf(".%.*s",object->pair.key->string.internal.length,(char *)object->pair.key->string.internal.data.ptr);
 		}
 	      else if ( object->owner->type  == '[' )
 		{
@@ -1775,7 +1775,7 @@ void dump_json_path(struct json_path * json_path)
   while ( ( json_path != NULL ) && ( watchguard > 0 ) )    
     {
       ++ watchguard;
-      printf(".%.*s", json_path->string.length, json_path->string.chars);
+      printf(".%.*s", json_path->string.internal.length, (char *) json_path->string.internal.data.ptr);
       json_path = json_path->child;
     }
 }
@@ -1840,17 +1840,17 @@ struct json_path * create_json_path(int maxlength, char * json_path, struct json
 		  json_path_index = 0;
 		}
 	      pathes[json_path_index].child = NULL;
-	      if (pathes[json_path_index].string.chars == NULL )
+	      if (pathes[json_path_index].string.internal.data.ptr == NULL )
 		{
 		  pathes[json_path_index].type = next_type;
-		  pathes[json_path_index].string.chars = current;
-		  pathes[json_path_index].string.length = 1;
+		  pathes[json_path_index].string.internal.data.ptr = current;
+		  pathes[json_path_index].string.internal.length = 1;
 		  pathes[json_path_index].index = 0;
 		  digits=1;
 		}
 	      else
 		{
-		  pathes[json_path_index].string.length ++;
+		  pathes[json_path_index].string.internal.length ++;
 		}
 	      if ( json_path_index > 0 )
 		{
@@ -1903,7 +1903,7 @@ struct json_object * json_walk_path(char * json_path, struct json_parser_ctx * c
 		  struct json_object * value = json_dict_path_get_value(current_path, current_object);
 		  if ( value == NULL )
 		    {
-		      printf("[ERROR] path keyname %.*s not found\n", current_path->string.length, current_path->string.chars);
+		      printf("[ERROR] path keyname %.*s not found\n", current_path->string.internal.length, (char *) current_path->string.internal.data.ptr);
 		      current_object = NULL;
 		    }
 		  else
@@ -1956,6 +1956,8 @@ void json_flatten(struct json_parser_ctx * ctx, struct json_object * object, str
   todo("json_flatten could be done with a special print_ctx and rely on dump");
 }
 
+// convert a string value into an int value...
+// here assume encoded as string
 int json_get_int(struct json_object * object )
 {
   int cumul = 0;
@@ -1964,17 +1966,18 @@ int json_get_int(struct json_object * object )
   if ( ( object != NULL ) && ( object->type = '0' ) )
     {
       struct json_string * number = &object->string;
-      if ( number->chars != NULL )
+      char * chars = (char *) number->internal.data.ptr;
+      if ( chars != NULL )
 	{
 	  int i =0;
-	  if ( number->chars[0] == '-' )
+	  if ( chars[0] == '-' )
 	    {
 	      negative=1;
 	      i=1;	      
 	    }
-	  for (; i < number->length ; i++)
+	  for (; i < number->internal.length ; i++)
 	    {
-	      char c = number->chars[i];
+	      char c = chars[i];
 	      if ( ( c >= '0' ) && ( c <= '9' ) )
 		{
 		  cumul = result*10 + (c - '0');
@@ -2002,11 +2005,12 @@ int json_get_int(struct json_object * object )
   return result;
 }
 
+// use with caution, final \0 might be missing
 char * json_get_string(struct json_object * object)
 {
   if ( ( object != NULL ) && ( ( object->type = '"' ) || ( object->type = '\'' ) ) )
     {
-      return  object->string.chars;
+      return  (char *) object->string.internal.data.ptr;
     }
   return NULL;
 }

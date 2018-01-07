@@ -70,8 +70,7 @@ struct json_growable
 
 /* a json_object that is a string */
 struct json_string {
-  int length;
-  char * chars;
+  struct alhash_datablock internal;
 };
 
 /* a json list of nitems json objects */

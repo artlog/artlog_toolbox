@@ -10,17 +10,17 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
   struct alhash_datablock key;
   int withnullbyte=1; // include null byte '\0'
   key.length = strlen(ikey) + withnullbyte; 
-  key.data = ikey;
+  key.data.ptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry(&options->table, &key);
   if (entry == NULL)
     {
       struct alhash_datablock value;
       printf("add '%s'='%s' in options\n",ikey,ivalue);
-      key.data=al_copy_block(&options->buffer, &key);
+      key.data.ptr=al_copy_block(&options->buffer, &key);
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
-      value.data =ivalue;
-      value.data=al_copy_block(&options->buffer,&value);
+      value.data.ptr=ivalue;
+      value.data.ptr=al_copy_block(&options->buffer,&value);
 
       entry = alhash_put (&options->table, &key, &value);
       if (entry == NULL)
@@ -45,8 +45,7 @@ void al_options_init(struct al_options * options)
   todo ("support a growable options. here limited to 1024 options");
   alhash_init (&options->table, 1024, NULL);
   todo ("support a growable word buffer. here limited to 10240 characters");
-  options->buffer.bufsize = 10240;
-  options->buffer.buf= malloc(options->buffer.bufsize);  
+  al_token_char_buffer_init(&options->buffer,10240);
 }
 
 void al_options_release(struct al_options * options)
@@ -86,7 +85,7 @@ struct alhash_datablock * al_option_get(struct al_options * options, char * ikey
 {
   struct alhash_datablock key;
   key.length = strlen(ikey);
-  key.data = ikey;
+  key.data.ptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry (&options->table, &key);
   if (entry == NULL)
     {

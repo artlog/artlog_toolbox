@@ -43,16 +43,31 @@ int json_c_test_1_from_json_auto( struct test_1* test, struct json_object * json
   return 1;
 }
 
-struct json_object * json_c_test_1_to_json_auto(  struct test_2* test)
+struct json_object * json_c_test_1_to_json_auto(  struct test_1* test)
 {
   struct json_parser_ctx * ctx = calloc(1,sizeof(struct json_parser_ctx));
+
+  char * wb = {"test_1abcdtest_2"};
+  char * buffer;
   
+  // allocate  100 words, 1024 characters
+  alparser_init(&ctx->alparser,100,1024);
+  buffer=ctx->alparser.word_buffer.buf;
+  memcpy(buffer,wb,32);
+    
   // 1. allocate json_object
   struct json_object * growable = aljson_new_growable(ctx,'{');
   // 2. add members
   struct alhash_datablock char_buffer;
-  
+
+  // todo should convert an int to json int char representation
+  char_buffer.data=buffer;
+  char_buffer.length=6;
+    
   struct json_object * object = aljson_new_json_string(ctx->tokenizer, '0', &char_buffer);
+
+  char_buffer.data=buffer+6;
+  char_buffer.length=1;
   // should create json pair with name of field ...
   struct json_object * key = aljson_new_json_string(ctx->tokenizer, '"', &char_buffer);
   struct json_object * pair = aljson_new_pair_key(ctx, pair);

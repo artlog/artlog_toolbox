@@ -3,6 +3,7 @@ a hash within your tools allow you to do smoke tests
 **/
 
 #include "alhash.h"
+#include "alcommon.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +29,26 @@ void alhash_set_debug(int debug)
   alhash_debug=debug;
   if ( alhash_debug ) {printf("alhash debug activated.\n");}
 }
+
+int aldatablock_embeded(struct alhash_datablock * key)
+{
+  // return ALC_FLAG_IS_SET(key->type,ALTYPE_FLAG_EMBED);
+  return 0;
+}
+
+int aldatablock_valid(struct alhash_datablock * key)
+{
+  // valid if positive length  and ( either embeded value or ptr is non null )
+  // this means that embeded 0 value is OK.
+  if ( key->length  < 0 )
+    {
+      fprintf(stderr," key->length %i < 0\n",key->length);
+      exit(1);
+    }
+  // return (key->length >0) && ( aldatablock_embeded(key) || (key->data.ptr != NULL));
+  return (key->length >0) && (key->data.ptr != NULL);
+}
+
 /**
 return if key matches entry ( see enum alhash_match_result comments )
 **/
@@ -35,36 +56,54 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 {
   if ( (key != NULL) && (entry != NULL) )
     {
-      if ( ( key->data == NULL )  || ( entry->key.data == NULL ) )
+      if ( ! aldatablock_valid(key)  || ! aldatablock_valid( &entry->key ) )
 	{
-	  // NULL values are wrong.
+	  // NULL or EMTPY BLOCKS NOT VALID values are wrong.
 	  if ( alhash_debug ) {printf("NULL values are wrong.\n");}
 	  return ALH_MR_INVALID;
 	}
-      if ( (key->length <= 0) || (entry->key.length <= 0) )
+      if ( key->type != entry->key.type )
 	{
-	  // EMTPY BLOCKS NOT VALID
-	  if (alhash_debug) {printf("EMTPY BLOCKS NOT VALID.\n");}
-	  return ALH_MR_INVALID;
+	  if (alhash_debug) {printf("DIFFERENT KEY TYPE %i!=%i \n", key->type,entry->key.type);}
+	  return  ALH_MR_NOT_EQUAL;
 	}
       if (key->length == entry->key.length)
-	{	  
-	  if ( key->data == entry->key.data )
+	{
+	  // if one is embed the other tto since type have been checked to be the same
+	  if ( aldatablock_embeded(key))
 	    {
-	      // obvious case, point on very same value of same size.
-	      if (alhash_debug) {printf("IDENTICAL KEY\n");}
-	      return ALH_MR_EQUAL;
-	    }
-	  else if ( hash == entry->hash_key )
-	    {
-	      // should be the very same key.
-	      if (alhash_debug) {printf("SAME KEY\n");}
-	      return (memcmp(entry->key.data, key->data, key->length) == 0) ? ALH_MR_EQUAL : ALH_MR_NOT_EQUAL;
+	      // Don't even care of hash, use number.
+	      if ( key->data.number == entry->key.data.number )
+		{
+		  // obvious case, point on very same value of same size.
+		  if (alhash_debug) {printf("IDENTICAL VALUES\n");}
+		  return ALH_MR_EQUAL;
+		}
+	      else
+		{
+		  if (alhash_debug) {printf("DIFFERENT VALUES\n");}
+		  return  ALH_MR_NOT_EQUAL;
+		}	      
 	    }
 	  else
 	    {
-	      if (alhash_debug) {printf("DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
-	      return  ALH_MR_NOT_EQUAL;
+	      if ( key->data.ptr == entry->key.data.ptr )
+		{
+		  // obvious case, point on very same value of same size.
+		  if (alhash_debug) {printf("IDENTICAL KEY\n");}
+		  return ALH_MR_EQUAL;
+		}
+	      else if ( hash == entry->hash_key )
+		{
+		  // should be the very same key.
+		  if (alhash_debug) {printf("SAME KEY\n");}
+		  return (memcmp(entry->key.data.ptr, key->data.ptr, key->length) == 0) ? ALH_MR_EQUAL : ALH_MR_NOT_EQUAL;
+		}
+	      else
+		{
+		  if (alhash_debug) {printf("DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
+		  return  ALH_MR_NOT_EQUAL;
+		}
 	    }
 	}
       if (alhash_debug) {printf("DIFFERENT SIZE\n");}
@@ -135,7 +174,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
   if ( alhash_debug ) {printf("alhash put entry .\n");}
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
-      long hash = table->alhash_func(key->data,key->length);
+      long hash = table->alhash_func(key->data.ptr,key->length);
       int index = al_get_index(hash,table->bucket_size);
       struct alhash_bucket * bucket = table->inner;
       if ( bucket != NULL )
@@ -146,14 +185,12 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 	  struct alhash_entry * entry = initial_entry;
 	  do 
 	    {
-	      if ( ( entry->key.length == 0 ) && ( entry->key.data == NULL ) && ( entry->collision_ring == NULL) )
+	      if ( ( entry->key.length == 0 ) && ( entry->key.data.ptr == NULL ) && ( entry->collision_ring == NULL) )
 		{
 		  // found an empty place
 		  entry->hash_key=hash;
-		  entry->key.length = key->length;
-		  entry->key.data = key->data;
-		  entry->value.length = value->length;
-		  entry->value.data = value->data;
+		  memcpy(&entry->key,key, sizeof(entry->key));
+		  memcpy(&entry->value, value, sizeof(entry->value));
 		  // append this entry in ring of initial entry ( ie where it should have been ).		  
 		  if ( entry != initial_entry )
 		    {
@@ -195,7 +232,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
       // first should compute hash key
       if ( table->alhash_func != NULL )
 	{
-	  long hash = table->alhash_func(key->data,key->length);
+	  long hash = table->alhash_func(key->data.ptr,key->length);
 	  unsigned int index = al_get_index(hash,table->bucket_size);
 	  struct alhash_bucket * bucket = table->inner;
 	  if ( bucket != NULL )
@@ -203,7 +240,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 	      int guard = table->bucket_size;
 	      struct alhash_entry * initial_entry = &bucket->entries[index];
 	      struct alhash_entry * entry = initial_entry;
-	      if ( entry->key.data != NULL )
+	      if ( aldatablock_valid(&entry->key) )
 		{
 		  do {		
 		    if ( alhash_match(key, entry, hash) == ALH_MR_EQUAL )
@@ -246,7 +283,7 @@ int alhash_walk_collisions(struct alhash_entry * entry, alhash_callback callback
       struct alhash_entry * initial_entry = entry;
       do
 	{
-	  if ( ( entry->key.length != 0 ) && ( entry->key.data != NULL ) )
+	  if ( aldatablock_valid(&entry->key) )
 	    {
 	      if ( callback(entry,data,step) != 0 ) 
 		{
@@ -276,7 +313,7 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 	  for (int index =0 ; index < table->bucket_size; index ++)
 	    {
 	      struct alhash_entry * entry = &bucket->entries[index];
-	      if ( ( entry->key.length != 0 ) && ( entry->key.data != NULL ) )
+	      if ( aldatablock_valid(&entry->key) )
 		{
 		  if ( callback(entry,data,step) != 0 )
 		    {
@@ -295,10 +332,7 @@ int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
   // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
   // long (*alhash_func) (void * value, int length));
   alhash_init (&alparser->dict, words, NULL);
-
-  alparser->word_buffer.bufsize = chars;
-  alparser->word_buffer.bufpos = 0;
-  alparser->word_buffer.buf = malloc (alparser->word_buffer.bufsize);
+  al_token_char_buffer_init(&alparser->word_buffer,chars);
 
   return 1;
 }
