@@ -45,6 +45,12 @@ int aldatablock_valid(struct alhash_datablock * key)
       fprintf(stderr," key->length %i < 0\n",key->length);
       exit(1);
     }
+  // don't accept unknow types
+  if ( key->type > ALTYPE_MAX )
+    {
+      fprintf(stderr,"key->type %i > ALTYPE_MAX(%i) \n", key->type, ALTYPE_MAX);
+      exit(1);
+    }
   // return (key->length >0) && ( aldatablock_embeded(key) || (key->data.ptr != NULL));
   return (key->length >0) && (key->data.ptr != NULL);
 }

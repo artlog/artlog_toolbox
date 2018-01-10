@@ -7,6 +7,7 @@ enum altype {
   ALTYPE_CINTBE=2, // NYI c integer in big endian, length is externaly defined in bytes
   ALTYPE_STR0=3, // NYI c string \0 terminated
   ALTYPE_FLAG_EMBED=64, // NFI(not fully implemented) value is not a pointer in data.ptr but might be a number see aldatablock_embeded
+  ALTYPE_MAX=128,
 };
 
 /** data pointing on a contiguous block of length bytes */

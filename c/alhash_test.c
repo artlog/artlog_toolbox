@@ -9,7 +9,7 @@ int alhash_walk_callback_collision(struct alhash_entry * entry, void * data, int
     {
       if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
 	{
-	  printf("'%.*s',",entry->key.length, (char *) entry->key.data.ptr);
+	  printf("(%i)'%.*s',",entry->key.type, entry->key.length, (char *) entry->key.data.ptr);
 	}
     }
   return 0;
@@ -21,7 +21,7 @@ void dump_entry_as_string(struct alhash_entry * entry)
     {
       if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
 	{
-	  printf( "%p '%.*s' = '%.*s' (hash=%lx) (collisions=", entry, entry->key.length, (char *) entry->key.data.ptr,  entry->value.length, (char *)  entry->value.data.ptr, entry->hash_key);
+	  printf( "%p (%i)'%.*s' = (%i)'%.*s' (hash=%lx) (collisions=", entry, entry->key.type, entry->key.length, (char *) entry->key.data.ptr,  entry->value.type, entry->value.length, (char *)  entry->value.data.ptr, entry->hash_key);
 	  int collisions = alhash_walk_collisions(entry, alhash_walk_callback_collision, NULL);
 	  printf( "#%i)\n",collisions);
 	}
@@ -70,6 +70,7 @@ int main(int argc, char ** argv)
 		    {
 		      struct alhash_datablock key;
 		      struct alhash_datablock value;
+		      key.type=ALTYPE_OPAQUE;
 		      key.length=i;
 		      key.data.ptr=line;
 		      struct alhash_entry * entry = alhash_get_entry(&table, &key);

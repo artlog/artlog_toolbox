@@ -119,6 +119,7 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
   struct alhash_datablock *valuep;
   
   //  create an entry in dict
+  key.type = ALTYPE_OPAQUE;
   key.length = length;
   key.data.ptr = &alparser->word_buffer.buf[alparser->word_buffer.bufpos];
   if ((alparser->word_buffer.bufpos + length) < alparser->word_buffer.bufsize)
@@ -755,6 +756,7 @@ c_is_typedef (struct c_parser_ctx *parser)
 
   struct alhash_datablock key;
 
+  key.type = ALTYPE_OPAQUE;
   key.length = length;
   key.data.ptr = buffer;
 
@@ -3205,6 +3207,8 @@ main (int argc, char **argv)
   struct inputstream main_inputstream;
   struct inputstream * inputstream = NULL;
   FILE *file = NULL;
+
+  alhash_set_debug(255);
 
   struct al_options * options = al_create_options(argc,argv);
     

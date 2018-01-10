@@ -9,6 +9,7 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
 {
   struct alhash_datablock key;
   int withnullbyte=1; // include null byte '\0'
+  key.type = ALTYPE_STR0;
   key.length = strlen(ikey) + withnullbyte; 
   key.data.ptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry(&options->table, &key);
@@ -16,6 +17,8 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
     {
       struct alhash_datablock value;
       printf("add '%s'='%s' in options\n",ikey,ivalue);
+      // not true given length provided but type should the same
+      key.type = ALTYPE_STR0;
       key.data.ptr=al_copy_block(&options->buffer, &key);
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
@@ -84,6 +87,8 @@ struct al_options * al_create_options(int argc, char ** argv)
 struct alhash_datablock * al_option_get(struct al_options * options, char * ikey)
 {
   struct alhash_datablock key;
+  // not true, since strlen does not include '\0'
+  key.type = ALTYPE_STR0;
   key.length = strlen(ikey);
   key.data.ptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry (&options->table, &key);
