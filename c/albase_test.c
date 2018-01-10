@@ -11,7 +11,7 @@ int main(int argc, char ** argv)
   datablock.length=4096;
   datablock.data.ptr=buffer;
 
-  for (int i = 0; i < 200; i ++)
+  for (int i = 0; i < 200; i += 17)
     {
       int j = i*i*i +3;
       aljson_build_string_from_int(j,2,&datablock);

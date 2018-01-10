@@ -82,6 +82,10 @@ struct json_object * json_c_test_1_to_json_auto(  struct test_1* test)
 
 int json_c_test_2_from_json_auto( struct test_2* test, struct json_object * json_object)
 {
+  if (( test == NULL ) || (json_object == NULL))
+    {
+      return -1;
+    }
   if AL_JSON_IS_DICT(json_object)
     {
       AL_GET_JSON_INT_WITH_NAME(test,a,json_object);
@@ -103,7 +107,7 @@ int main(int argc, char ** argv)
 
   todo("parse input stream and run test_1 parsing of a given json test");
   todo("then code C struct parser ... ");
-  printf("NOT YET implemented");
+  printf("NOT YET implemented\n");
 
   // stupid test : do we survive to NULL entries ?
   json_c_test_2_from_json_auto( NULL, NULL);
