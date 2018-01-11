@@ -44,38 +44,54 @@ int json_c_test_1_from_json_auto( struct test_1* test, struct json_object * json
   return 1;
 }
 
-// create a json_object direclty from struct test_1
-struct json_object * json_c_test_1_to_json_auto(  struct test_1* test)
+// json_object pair type.
+struct json_object * json_c_add_int_member(char * name, int value, struct json_parser_ctx * ctx, struct token_char_buffer * allocator)
 {
-  struct json_parser_ctx * ctx = calloc(1,sizeof(struct json_parser_ctx));
-
-  char * wb = {"test_1abcdtest_2"};
-  char * buffer;
+  struct alhash_datablock data;
   
-  // allocate  100 words, 1024 characters
-  alparser_init(&ctx->alparser,100,1024);
-  buffer=ctx->alparser.word_buffer.buf;
-  memcpy(buffer,wb,32);
+  data.data.ptr = name;
+  data.type=ALTYPE_OPAQUE;
+  data.length = strlen(data.data.ptr);
+  data.data.ptr = al_copy_block(allocator, &data);
+
+  printf("key:%.*s\n",data.length,data.data.ptr);
+  // create json pair with name of field
+  struct json_object * key = aljson_new_json_object(ctx->tokenizer, '"',  allocator, &data);
+  struct json_object * pair = aljson_new_pair_key(ctx, pair);
+  pair->pair.key=key;
+  if (( pair != NULL ) && (key != NULL ))
+    {
+      // convert int to json int char representation
+      aljson_build_string_from_int(value, 10, allocator, &data);
+      data.type=ALTYPE_OPAQUE;
+      struct json_object * object = aljson_new_json_object(ctx->tokenizer, '0', allocator, &data);
+  
+      pair->pair.value=object;
+    }
+
+  return pair;
+}
+
+// create a json_object direclty from struct test_1
+struct json_object * json_c_test_1_to_json_auto(  struct test_1* test, struct json_parser_ctx * ctx, struct token_char_buffer * allocator)
+{
     
   // 1. allocate json_object
   struct json_object * growable = aljson_new_growable(ctx,'{');
   // 2. add members
-  struct alhash_datablock char_buffer;
 
-  // todo should convert an int to json int char representation
-  char_buffer.data.ptr=buffer;
-  char_buffer.length=6;
-    
-  struct json_object * object = aljson_new_json_string(ctx->tokenizer, '0', &char_buffer);
+  struct json_object * pair = NULL;
 
-  char_buffer.data.ptr=buffer+6;
-  char_buffer.length=1;
-  // should create json pair with name of field ...
-  struct json_object * key = aljson_new_json_string(ctx->tokenizer, '"', &char_buffer);
-  struct json_object * pair = aljson_new_pair_key(ctx, pair);
-  pair->pair.value=object;
+  pair = json_c_add_int_member("a", test->a, ctx, allocator);
   aljson_add_to_growable(ctx,&growable->growable,pair);
-  // 3. concretize ( struct can't grow or be edited anymore ).
+
+  pair = json_c_add_int_member("b", test->b, ctx, allocator);
+  aljson_add_to_growable(ctx,&growable->growable,pair);
+
+  pair = json_c_add_int_member("c", test->c, ctx, allocator);
+  aljson_add_to_growable(ctx,&growable->growable,pair);
+
+  // 3. concretize ( struct can't grow or be edited anymore ).      
   return aljson_concrete(ctx, growable);
 
 }
@@ -107,9 +123,38 @@ int main(int argc, char ** argv)
 
   todo("parse input stream and run test_1 parsing of a given json test");
   todo("then code C struct parser ... ");
-  printf("NOT YET implemented\n");
 
-  // stupid test : do we survive to NULL entries ?
-  json_c_test_2_from_json_auto( NULL, NULL);
+  albase_set_debug(1);
+    
+  struct token_char_buffer * allocator = al_token_char_buffer_alloc(10);
+  if ( allocator != NULL )
+    {
+      struct test_1 test1;
+      struct json_ctx json_tokenizer;
+      struct print_ctx print_context;
+      struct json_parser_ctx * ctx = calloc(1,sizeof(struct json_parser_ctx));
+      ctx->tokenizer=&json_tokenizer;
+      json_context_initialize(&json_tokenizer, NULL);
+
+     
+      // allocate  100 words, 1024 characters
+      alparser_init(&ctx->alparser,100,1024);      
+
+      al_token_char_buffer_init(allocator,1024);
+      // stupid test : do we survive to NULL entries ?
+      json_c_test_2_from_json_auto( NULL, NULL);
+
+      test1.a = 1024;
+      struct json_object * json_object =  json_c_test_1_to_json_auto( &test1, ctx, allocator);
+
+        // two spaces
+      print_context.do_indent = 2;
+      print_context.indent = 0;
+      print_context.s_indent = " ";
+
+      ctx->max_depth=4;
+      dump_object(ctx,json_object,&print_context);
+
+    }
   return 0;
 }

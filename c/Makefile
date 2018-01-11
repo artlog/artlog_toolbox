@@ -3,7 +3,7 @@ BUILD=../build
 c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c
 	gcc -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -lalhash -Wl,-Bdynamic
 
-albase: albase.c albase_test.c 
+albase: albase.c albase_test.c  alstrings.c
 	gcc -o $@ $^
 
 json_to_c_stub: json_to_c_stub.c albase.c

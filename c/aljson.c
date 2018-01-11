@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -123,6 +122,21 @@ struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype,
   else
     {
       memory_shortage(NULL);
+    }
+  return object;
+}
+
+struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype, struct token_char_buffer * allocator, struct alhash_datablock * data)
+{
+  struct alhash_datablock ref;
+  struct json_object * object=(struct json_object *) al_alloc_block(allocator,sizeof(struct json_object));
+  if (object != NULL)
+    {
+      object->type=objtype;
+      if ( data != NULL )
+	{
+	  memcpy(&object->string.internal,data,sizeof(object->string.internal));
+	}
     }
   return object;
 }

@@ -156,6 +156,10 @@ struct json_path {
 
 struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
+// create a json object allocated from allocator
+// if data is non NULL it is copied as json_object.string.internal.
+struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype, struct token_char_buffer * allocator, struct alhash_datablock  * data);
+
 // create a json string object from a given buffer
 struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct alhash_datablock  * data);
   

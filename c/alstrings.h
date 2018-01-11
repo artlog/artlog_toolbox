@@ -52,6 +52,10 @@ it should not change existing allocation ( that are pointed to )
  */
 struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * buffer, int length);
 
+// allocate length byte within buffer, does not zero them ( keep content ).
+// return pointer on first char in buffer
+char * al_alloc_block(struct token_char_buffer * buffer, int length);
+  
 // copy data content into token_char_buffer, return pointer on first char within buffer ( to update within data.ptr )
 char * al_copy_block(struct token_char_buffer * buffer,  struct alhash_datablock * data);
 
