@@ -66,6 +66,10 @@ int aljson_build_string_from_int(int integer, int base, struct token_char_buffer
     }
       
   int length = LOCAL_BUFFER_SIZE - p;
+  if (albase_debug != 0)
+    {
+      printf("build string length %i\n",length);
+    }
   out->data.ptr = &s[p];
   out->length =  length;
   if ( ( out->data.ptr = al_copy_block(allocator,out) ) != NULL )
@@ -73,8 +77,12 @@ int aljson_build_string_from_int(int integer, int base, struct token_char_buffer
       if (albase_debug != 0 )
 	{
 	  // double check with libc implementation
-	  printf("%i,%x=%s=%.*s\n",integer,integer,&s[p],length,out->data.ptr);
+	  printf("%i,%x=%s=%.*s\n",integer,integer,&s[p],length,(char *) out->data.ptr);
 	}
+    }
+  else
+    {
+      fprintf(stderr,"length %i allocation failure\n",length);
     }
   
   // should be 0 if everything went fine

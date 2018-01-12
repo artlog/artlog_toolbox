@@ -42,8 +42,10 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	    {
 	      bufsize = length;
 	    }
+	  next->bufpos=0;
 	  next->bufsize = bufsize;
 	  next->buf = calloc(1,bufsize);
+	  printf("next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
 	  return next;
 	}
       else
@@ -51,6 +53,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	  // found a place, no need to grow
 	  if ( ( next->bufsize - next->bufpos ) >= length )
 	    {
+	      printf("next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
 	      return next;
 	    }
 	}
@@ -61,6 +64,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
       next = next->next;
     }
 
+  printf("allocate no next !\n");
   return next;
 }
 
@@ -70,16 +74,16 @@ char * al_alloc_block(struct token_char_buffer * buffer, int length)
     {
       if ( buffer != NULL )
 	{
-	  char * buf = &buffer->buf[buffer->bufpos];
 	  if ((buffer->bufpos + length) >= buffer->bufsize)
 	    {
 	      fprintf (stderr,
-		       "[WARNING] internal char buffer for words full (%i+%i)>=%i",
+		       "[WARNING] internal char buffer for words full (%i+%i)>=%i\n",
 		       buffer->bufpos, length, buffer->bufsize);
 	      buffer = al_token_char_buffer_grow(buffer, length);
 	    }
 	  if ( buffer != NULL )
-	    {	  
+	    {
+	      char * buf = &buffer->buf[buffer->bufpos];
 	      buffer->bufpos += length;
 	      return buf;
 	    }
