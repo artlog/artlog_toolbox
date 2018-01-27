@@ -128,7 +128,6 @@ struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype,
 
 struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype, struct token_char_buffer * allocator, struct alhash_datablock * data)
 {
-  struct alhash_datablock ref;
   struct json_object * object=(struct json_object *) al_alloc_block(allocator,sizeof(struct json_object));
   if (object != NULL)
     {

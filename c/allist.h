@@ -1,6 +1,13 @@
 /**
-   A multiple list of elements that could belong to multiple list.
-   every element knows its membership.
+  A multiple list of elements that could belong to multiple list.
+  every element knows its membership.
+  an element has data and can have attached data for each membership.
+
+  relations :
+  X,M,D
+  element (x,d)
+  membership (x,m,d)
+  how is list ordered ? => in the order of add ( list FIFO )
 */
 
 #define INDEXSET_COUNT 64
@@ -42,10 +49,11 @@ struct allistextlink {
 
 struct allistelement {
   /**
-    maximum number of memberhsip this element can have
+    maximum number of memberhsip this element -can- have
     this is number of elements in link.
    */
   int memberships;
+  /** element data */
   void * data;
   /**
      indexset global index can be found from
@@ -53,7 +61,7 @@ struct allistelement {
      or
      indexset_getabsindex(indexset,i);
   */
-  struct indexset indexset; // what indexes in global membership it belongs to, currently limited to first 64 memberships
+  struct indexset indexset; // what indexes in global membership it belongs to, currently limited to first 64 (INDEXSET_COUNT) memberships
   /**
     when a call to shrink is done, it is no more possible to add membership
     all links will be used and flag ALLIST_SHRUNK will be set.
@@ -74,13 +82,17 @@ struct allistof {
   struct allistelement * head; // head of list
   struct allistelement * tail; // tail of list
   int count; // number of elements in this list
-  int membership_id; // this list link membership absolute index
+  int membership_id; // this list link membership absolute index within allistcontext
   int errors; // number of errors ( one is enough, corrupted data )
 };
 
+/** context records all possible memberships
+each membership is a allistof == multi-chained list of allistelement
+*/
 struct allistcontext {
   unsigned int membership_reservation;
   unsigned int next_membership;
+  /** all memberships */
   struct allistof list[1]; // growable
 };
 
@@ -125,13 +137,13 @@ int allistelement_release(struct allistelement * this);
 
 int allist_set_debug( int d);
 
-
 int indexset_get(struct  indexset * indexset, int pabs);
 
 int indexset_reset(struct indexset * indexset, int pabs);
 
 int indexset_set(struct indexset * indexset, int pabs);
 
+/** number of membershipd of this */
 int allistelement_get_all_memberships(struct allistelement * this);
 
 /** for each element of list call callback 
