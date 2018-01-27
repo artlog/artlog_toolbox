@@ -36,8 +36,8 @@ $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test
 $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/todo.o $(BUILD)/include/todo.h
 	ar rccs $@ $<
 
-$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o $(BUILD)/obj/alcommon.o $(BUILD)/include/inputstream.h $(BUILD)/include/outputstream.h $(BUILD)/include/alcommon.h
-	ar rccs $@ $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o $(BUILD)/obj/alcommon.o
+$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o $(BUILD)/include/inputstream.h $(BUILD)/include/outputstream.h $(BUILD)/include/alcommon.h
+	ar rccs $@ $(BUILD)/obj/outputstream.o $(BUILD)/obj/inputstream.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o
 
 $(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o $(BUILD)/include/alhash.h
 	ar rccs $@  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o
@@ -56,13 +56,21 @@ $(BUILD)/test_alstack:  $(BUILD)/obj/test_alstack.o
 	@echo link test objects $^ and libalstack
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -Wl,-Bdynamic
 
+$(BUILD)/testbtree: $(BUILD)/obj/albtree.o $(BUILD)/obj/albtreetest.o
+	$(LD) -o $@ $(LDFLAGS) $^
+
+
+testbtree: $(BUILD)/testbtree
+	$(BUILD)/testbtree ceci est un test depuis le makefile
+
+
 $(objects): | $(BUILD)/obj
 
 
 $(libobjects): | $(BUILD)/lib
 
 
-tests: testjson testhash $(BUILD)/test_alstack
+tests: testjson testhash $(BUILD)/test_alstack testbtree
 
 
 testhash: $(BUILD)/hash
