@@ -44,6 +44,24 @@ struct albtree * albtree_get_left(struct albtree * btree);
 /** get right binary tree */
 struct albtree * albtree_get_right(struct albtree * btree);
 
+struct albtreepath {
+  // depth.
+  int depth;
+  // bit to 0 means left else right.
+  int path;
+  // index when using a walkprocess;
+  int index;
+  enum albtreewalkprocess walkprocess;
+  // to find or found
+  struct albtree * found;
+  // data to find
+  void * data;
+};
+  
+// this requires to walk full tree
+/** will find child or data within child by walking whole tree */
+struct albtreepath * albtree_get_path(struct albtree * btree, struct albtree * child, void * data);
+
 /** return tree constructed with data and set to left of btree */
 struct albtree * albtree_insert_left(struct albtree * btree, void * data);
 

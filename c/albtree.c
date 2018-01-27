@@ -1,5 +1,6 @@
 #include "albtree.h"
 #include <stdlib.h>
+#include <string.h>
 
 /** allocate a binary tree */
 struct albtree * albtree_allocate()
@@ -146,4 +147,42 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
  void albtree_walk(struct albtree * btree, enum albtreewalkprocess walkprocess, void (* data_process) (void * data, void * contextdata, struct albtree * btree), void * contextdata, int depth)
 {
   albtree_walk_recursive(btree, walkprocess,data_process,contextdata, depth);
+}
+
+// to complete, need for more inputs.
+void searchprocess(void * data, void * datacontext, struct albtree * btree)
+{
+  if ( btree != NULL )
+    {
+      if ( datacontext != NULL )
+	{
+	  struct  albtreepath * path = (struct albtreepath *) datacontext;
+	  if ( btree == path->found )
+	    {
+	    }
+	  else if ( data == path->data )
+	    {
+	      if ( path->found != NULL )
+		{
+		  path->found = btree;
+		}
+	    }
+	}
+    }
+}
+
+struct albtreepath * albtree_get_path(struct albtree * btree, struct albtree * child, void * data)
+{
+  struct albtreepath path;
+
+  path.found=child;
+  path.data=data;
+  path.depth=0;
+  path.index=0;
+  path.walkprocess = ALBTREE_WP_SLR;
+  
+  albtree_walk(btree,path.walkprocess,searchprocess,&path,64);
+  struct albtreepath * result = malloc(sizeof(*result));
+  memcpy(&path,result,sizeof(path));
+  return result;
 }
