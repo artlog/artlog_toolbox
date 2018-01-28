@@ -1,5 +1,6 @@
 #include "albtree.h"
 #include <stdio.h>
+#include <string.h>
 
 void process_element(void * data, void * datacontext, struct albtree * btree)
 {
@@ -44,7 +45,39 @@ void basic_test()
     }
 
 }
-		     
+
+int string_comparator(void * left, void * right)
+{
+  return strcmp( (const char *) left, (const char *) right );
+}
+
+int test_insert_sorted(int argc, char ** argv)
+{
+  struct albtree * root = albtree_allocate();
+  struct albtree * leaf = NULL;
+
+  printf("=== sorted test ===\n");
+  
+  leaf=albtree_init(root, argv[0], NULL, NULL);
+
+  for (int i=1;i<argc;i++)
+    {
+      leaf = albtree_insert(root,string_comparator,argv[i]);
+      if ( leaf == NULL )
+	{
+	  printf("[FATAL] insert sorted NULL");
+	  break;
+	}
+	 
+    }
+  albtree_walk(root, ALBTREE_WP_LSR, process_element, NULL,argc);
+  int count = albtree_freeall(root);
+  if ( count != argc )
+    {
+      printf("[ERROR] %i freed != %i allocated ", count,argc);
+    }
+}
+
 int main(int argc, char ** argv)
 {
   basic_test();
@@ -66,4 +99,7 @@ int main(int argc, char ** argv)
 	printf("[ERROR] %i freed != %i allocated ", count,argc);
       }
   }
+
+  test_insert_sorted(argc,argv);
+  
 }
