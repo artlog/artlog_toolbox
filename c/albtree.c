@@ -40,7 +40,7 @@ int albtree_freeall(struct albtree * btree)
 /** init btree  */
 struct albtree * albtree_init(struct albtree * btree, void * data, struct albtree * left, struct albtree * right)
 {
-  btree->data = data;
+  btree->data=data;
   btree->left=left;
   btree->right=right;
   return btree;
@@ -72,7 +72,7 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 {
   struct albtree * righttree = albtree_allocate();
   // if there is already a right  part then this is inserted before it.
-  albtree_init(righttree,data,btree->right,NULL);
+  albtree_init(righttree,data,NULL,btree->right);
   btree->right=righttree;
   return righttree;
 }
@@ -185,4 +185,41 @@ struct albtreepath * albtree_get_path(struct albtree * btree, struct albtree * c
   struct albtreepath * result = malloc(sizeof(*result));
   memcpy(&path,result,sizeof(path));
   return result;
+}
+
+// warning stack overflow risk ( no depth limit given )
+struct albtree * albtree_insert_recursive( struct albtree * btree, alcomparator_t comparator, void * data)
+{
+  struct albtree * result;
+  result = btree;
+
+  if ( btree == NULL )
+    {
+      result = albtree_allocate();
+      result = albtree_init(result,data,NULL,NULL);
+    }
+  else
+    {
+      int diff = comparator(data,btree->data);
+      if ( diff == 0 )
+	{
+	  /// oups was already there ?
+	  return result;
+	}
+      if ( diff < 0 )
+	{
+	  result->left=albtree_insert_recursive(btree->left,comparator,data);
+	}
+      else
+	{
+	  // insert right
+	  result->right=albtree_insert_recursive(btree->right,comparator,data);
+	}
+    }
+  return result;
+}
+
+struct albtree * albtree_insert( struct albtree * btree, alcomparator_t comparator, void * data)
+{
+  return albtree_insert_recursice(btree,comparator,data);
 }

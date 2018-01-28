@@ -72,4 +72,11 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data);
     for a maximum depth limit of depth ( MANDATORY ) */
 void albtree_walk(struct albtree * btree, enum albtreewalkprocess walkprocess, void (* data_process) (void * data, void * contextdata, struct albtree * btree), void * contextdata, int depth);
 
+
+/** comparator return < 0 if value(left)<value(right) ; 0 if value(left)== value(right) and > 0 else */
+typedef int (*alcomparator_t) (void * left, void * right);
+
+/** insert data into btree using comparator */
+struct albtree * albtree_insert( struct albtree * btree, alcomparator_t comparator, void * data);
+
 #endif // #ifndef __ALBTREE_H__
