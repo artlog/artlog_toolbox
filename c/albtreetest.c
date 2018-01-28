@@ -76,6 +76,7 @@ int test_insert_sorted(int argc, char ** argv)
     {
       printf("[ERROR] %i freed != %i allocated ", count,argc);
     }
+  return count;
 }
 
 int main(int argc, char ** argv)
