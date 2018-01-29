@@ -1156,6 +1156,8 @@ void dump_string(struct json_parser_ctx * ctx, struct json_object * object, stru
 	}
       else
 	{
+	  // NULL terminated string ?
+	  // todo("implement ALTYPE_STR0 for string->internal.type");
 	  printf("%.*s",string->internal.length,(char *) string->internal.data.ptr);
 	}      
     }
@@ -1315,6 +1317,7 @@ void dump_dict_object(struct json_parser_ctx * ctx, struct json_object * object,
   printf("}");
 }
 
+// todo shouldn't it use hash ?
 struct json_object * json_dict_get_value(char * keyname, struct json_object * object)
 {
   int i;
@@ -1326,9 +1329,14 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
 	  struct json_pair * pair = object->dict.items[i];
 	  if ( pair != NULL )
 	    {
-	      if ( strcmp( pair->key->string.internal.data.ptr, keyname) == 0 )
+	      // handle non zero terminated pair key internal string
+	      int len = strlen(keyname);
+	      if ( len ==  pair->key->string.internal.length )
 		{
-		  value = pair->value;
+		  if ( strncmp( pair->key->string.internal.data.ptr, keyname, len) == 0 )
+		    {
+		      value = pair->value;
+		    }
 		}
 	    }
 	}
@@ -1976,14 +1984,14 @@ int json_get_int(struct json_object * object )
   int cumul = 0;
   int result = 0;
   int negative = 0;
-  if ( ( object != NULL ) && ( object->type = '0' ) )
+  if ( ( object != NULL ) && ( object->type == '0' ) )
     {
       struct json_string * number = &object->string;
       char * chars = (char *) number->internal.data.ptr;
       if ( chars != NULL )
 	{
 	  int i =0;
-	  if ( chars[0] == '-' )
+	  if (( number->internal.length > 0 ) && ( chars[0] == '-' ))
 	    {
 	      negative=1;
 	      i=1;	      
@@ -1991,12 +1999,25 @@ int json_get_int(struct json_object * object )
 	  for (; i < number->internal.length ; i++)
 	    {
 	      char c = chars[i];
+	      if ( c == '\0' )
+		{
+		  if ( i ==  number->internal.length - 1 )
+		    {
+		      // c string NULL terminated bypass
+		      continue;
+		    }
+		  else
+		    {
+		      fprintf(stderr,"[FATAL] unexpected NUL terminated string in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
+		    }
+		}
 	      if ( ( c >= '0' ) && ( c <= '9' ) )
 		{
 		  cumul = result*10 + (c - '0');
 		  if ( cumul < result )
 		    {
 		      // overflow.
+		      todo("[ERROR] should handle overflow for json_get_int(..)");
 		      break;
 		    }
 		  else
@@ -2006,6 +2027,8 @@ int json_get_int(struct json_object * object )
 		}
 	      else
 		{
+		  todo("[ERROR] should handle non integer character for json_get_int(..)");
+		  fprintf(stderr,"[FATAL] unexpected in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
 		  break;
 		}
 	    }
@@ -2015,15 +2038,47 @@ int json_get_int(struct json_object * object )
 	    }
 	}
     }
+  else
+    {
+      todo("[ERROR] should handle wrong object type or NULL for json_get_int(..)");
+    }
   return result;
 }
 
 // use with caution, final \0 might be missing
 char * json_get_string(struct json_object * object)
 {
-  if ( ( object != NULL ) && ( ( object->type = '"' ) || ( object->type = '\'' ) ) )
+  if ( ( object != NULL ) && ( ( object->type == '"' ) || ( object->type == '\'' ) ) )
     {
       return  (char *) object->string.internal.data.ptr;
     }
   return NULL;
+}
+
+// Q&D fix, should use an allocator...
+char * json_get_cstring(struct json_object * object)
+{
+  char * cstring =  json_get_string(object);
+  // fixme use internal.type ALTYPE_STR0
+  if ( cstring != NULL )
+    {
+      // ugly,  memory leak
+      if ( object->string.internal.length > 0 )
+	{
+	  if ( cstring[object->string.internal.length-1] != '\0' )
+	    {
+	      char * newstring = malloc(object->string.internal.length+1);
+	      memcpy(newstring,cstring,object->string.internal.length);
+	      newstring[object->string.internal.length]='\0';
+	      cstring = newstring;
+	      fprintf(stderr,"[WARNING] converted to cstring '%s'\n",newstring);
+	    }
+	}
+      else
+	{
+	  fprintf(stderr,"[WARNING] cstring converted from string with empty length\n");
+	  cstring = NULL;
+	}
+    }
+  return cstring;
 }

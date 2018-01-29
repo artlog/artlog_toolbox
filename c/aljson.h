@@ -247,6 +247,9 @@ int json_get_int(struct json_object * object );
 
 char * json_get_string(struct json_object * object);
 
+/** make sure to get a c string, allocate it if needed ...*/
+char * json_get_cstring(struct json_object * object);
+
 /** add a json object to a growable */
 void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * growable,struct json_object * object);
 

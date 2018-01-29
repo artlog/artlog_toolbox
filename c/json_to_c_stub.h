@@ -19,19 +19,24 @@ by order :
 [1,2,3]
 */
 
+/* ===== READING JSON === */
+
 #define AL_JSON_IS_DICT(json_object) (json_object->type == '{')
 
 #define AL_JSON_IS_LIST(json_object) (json_object->type == '[')
 
 #define AL_JSON_IS_NULL_CONST(json_object) (json_object->type == 'n')
 
-#define AL_GET_WITH_NAME(a,json_object,index) json_dict_get_value(#a, json_object)
+// 'unused' because arguments should match with AL_GET_BY_ORDER ( AL_GET ##kind )
+#define AL_GET_WITH_NAME(a,json_object,unused) json_dict_get_value(#a, json_object)
 
 #define AL_GET_BY_ORDER(a,json_object,index) json_list_get(json_object,index)
 
 #define AL_GET_JSON_INT(test,a,json_object,index,kind)			\
-  { struct json_object * local_json_ ##a = AL_GET_ ##kind(a, json_object,index); \
-    test->a = json_get_int(local_json_ ##a); }
+  { struct json_object * local_json_ ##a = AL_GET_ ##kind(a, json_object,index);\
+    if ( local_json_ ##a != NULL ) {\
+      test->a = json_get_int(local_json_ ##a);}\
+  }
 
 #define AL_GET_JSON_INT_WITH_NAME(test,a,json_object) AL_GET_JSON_INT(test,a,json_object,0,WITH_NAME)
 
@@ -39,7 +44,7 @@ by order :
   
 #define AL_GET_JSON_STRING(test,a,json_object,index,kind)			\
   { struct json_object * local_json_ ##a = AL_GET_ ##kind(a, json_object,index); \
-    test->a = json_get_string(local_json_ ##a); }
+    test->a = json_get_cstring(local_json_ ##a); }
 
 #define AL_GET_JSON_STRING_WITH_NAME(test,a,json_object) AL_GET_JSON_STRING(test,a,json_object,0,WITH_NAME)
 
@@ -59,6 +64,36 @@ by order :
       { \
 	json_c_ ##struct_name ##_from_json_auto(&test->d,local_json_ ##d); \
       }
+
+
+/* ========= WRITING JSON =========== */
+
+/**
+ construct a new json pair named by key 'name' and with json_object value 'value'
+ return a json pair type 
+*/
+struct json_object * json_c_add_json_object_member
+       ( char * name,
+	 struct json_object * value,
+	 struct json_parser_ctx * ctx,
+	 struct token_char_buffer * allocator );
+
+
+// json_object pair type.
+struct json_object * json_c_add_int_member
+       ( char * name,
+	 int value,
+	 struct json_parser_ctx * ctx,
+	 struct token_char_buffer * allocator );
+
+
+// json_object pair type.
+// capture char value content.
+struct json_object * json_c_add_string_member
+       ( char * name,
+	 char * value,
+	 struct json_parser_ctx * ctx,
+	 struct token_char_buffer * allocator );
 
 
 #endif
