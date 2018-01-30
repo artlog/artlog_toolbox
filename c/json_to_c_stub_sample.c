@@ -115,7 +115,7 @@ struct json_object * json_c_test_2_to_json_auto(struct test_2* test, struct json
   // actualy cheating, should have a method to find json path of existing value.
   if ( test->f != NULL )
     {
-      pair = json_c_add_string_member("&f", "<struct test1 *>/e", ctx, allocator);  
+      pair = json_c_add_string_member("&f", "&e", ctx, allocator);  
       aljson_add_to_growable(ctx,&growable->growable,pair);
     }
 
@@ -134,13 +134,15 @@ int json_c_test_2_from_json_auto( struct test_2* test, struct json_object * json
     {
       AL_GET_JSON_INT_WITH_NAME(test,a,json_object);
       AL_GET_JSON_STRUCT( test_1, test,c,json_object,1,WITH_NAME);
-      AL_GET_JSON_STRUCT_POINTER( test_1, test,e,json_object,2,WITH_NAME);
+      AL_GET_JSON_STRUCT_POINTER_WITH_NAME( test_1, test,e,json_object);
+      AL_GET_JSON_STRUCT_POINTER_WITH_NAME( test_1, test,f,json_object);
     }
   else if AL_JSON_IS_LIST(json_object)
     {
       AL_GET_JSON_INT_BY_ORDER(test,a,json_object,0);
       AL_GET_JSON_STRUCT( test_1, test,c,json_object,1,BY_ORDER);
       AL_GET_JSON_STRUCT_POINTER( test_1, test,e,json_object,2,BY_ORDER);
+      AL_GET_JSON_STRUCT_POINTER( test_1, test,f,json_object,3,BY_ORDER);
     }
   return 1;
 }
@@ -193,6 +195,18 @@ void verify_test_1(struct json_object * json_object_test_1)
 
   printf("\n DUMP test_1 \n");
   dump_test_1(&test_1_verify);
+}
+
+void verify_test_2(struct json_object * json_object_test_2)
+{
+  struct test_2 test_2_verify;
+  bzero(&test_2_verify,sizeof(test_2_verify));
+
+  json_c_test_2_from_json_auto(&test_2_verify,json_object_test_2);
+
+  printf("\n DUMP test_2 \n");
+  dump_test_2(&test_2_verify);
+
 }
 
 int main(int argc, char ** argv)
@@ -265,9 +279,8 @@ int main(int argc, char ** argv)
       }
       dump_object(ctx,json_object,&print_context);
 
-
-
       verify_test_1(json_object_test_1);
+      verify_test_2(json_object);
     }
   return 0;
 }

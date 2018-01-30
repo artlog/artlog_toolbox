@@ -65,3 +65,17 @@ struct json_object * json_c_add_string_member(char * name, char * value, struct 
 
   return json_c_add_json_object_member(name, object, ctx, allocator);
 }
+
+struct json_object * json_to_c_stub_get_ref( struct json_object * json_ref, struct json_object * json_root)
+{
+  char * key = json_get_cstring(json_ref);
+  if ( key[0] =='&' )
+    {
+      return json_dict_get_value(key,json_root);
+    }
+  else
+    {
+      fprintf(stderr,"[ERROR] key reference '%s' without &\n",key);
+      return NULL;
+    }
+}

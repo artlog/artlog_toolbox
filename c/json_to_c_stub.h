@@ -25,6 +25,9 @@ by order :
 
 #define AL_JSON_IS_LIST(json_object) (json_object->type == '[')
 
+// to complete, to check + ref info
+#define AL_JSON_IS_REF(json_object) (json_object->type == '"')
+
 #define AL_JSON_IS_NULL_CONST(json_object) (json_object->type == 'n')
 
 // 'unused' because arguments should match with AL_GET_BY_ORDER ( AL_GET ##kind )
@@ -52,11 +55,31 @@ by order :
 
 #define AL_GET_JSON_STRUCT_POINTER(struct_name, test,d,json_object,index, kind) \
   struct json_object * local_json_ ##d = AL_GET_ ##kind(d,json_object,index);		\
-  if ( AL_JSON_IS_NULL_CONST(local_json_ ##d) ) {  test->d = NULL;}	\
-      else { \
+  if ( local_json_ ##d != NULL ) \
+    {\
+      if ( AL_JSON_IS_NULL_CONST(local_json_ ##d) ) {  test->d = NULL;}	\
+      else {								\
 	  test->d=malloc(sizeof(*test->d)); \
 	  if ( test->d != NULL ) { json_c_ ##struct_name ##_from_json_auto(test->d,local_json_ ##d);} \
-	}
+	}\
+    }
+
+#define AL_GET_JSON_NEW_STRUCT(struct_name, test,d)			\
+  {									\
+    test->d=malloc(sizeof(*test->d));					\
+    if ( test->d != NULL ) { json_c_ ##struct_name ##_from_json_auto(test->d,local_json_ ##d);} \
+  }
+
+#define AL_GET_JSON_STRUCT_POINTER_WITH_NAME(struct_name, test,d,json_object) \
+  struct json_object * local_json_ ##d = json_dict_get_value("&" #d, json_object); \
+  if ( local_json_ ##d != NULL ) \
+    {\
+      if ( AL_JSON_IS_NULL_CONST(local_json_ ##d) ) {  test->d = NULL;}	\
+      else { \
+	if ( AL_JSON_IS_REF(local_json_ ##d) ) {   local_json_ ##d = json_to_c_stub_get_ref(local_json_ ##d, json_object); } \
+          AL_GET_JSON_NEW_STRUCT(struct_name,test,d)		\
+	  }							\
+   }
 
 #define AL_GET_JSON_STRUCT(struct_name, test,d,json_object,index, kind) \
   struct json_object * local_json_ ##d = AL_GET_ ##kind(d,json_object,index); \
@@ -95,5 +118,6 @@ struct json_object * json_c_add_string_member
 	 struct json_parser_ctx * ctx,
 	 struct token_char_buffer * allocator );
 
+struct json_object * json_to_c_stub_get_ref( struct json_object * json_ref, struct json_object * json_root);
 
 #endif
