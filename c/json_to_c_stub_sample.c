@@ -164,6 +164,26 @@ void dump_test_1(struct test_1 * test )
   
 }
 
+
+void dump_test_2(struct test_2 * test )
+{
+  if ( test !=NULL )
+    {
+      printf("struct test_2 {\n\
+  int a=%i;\n\
+  struct test_1 c;\n\
+  struct test_1 * e;\n\
+  struct test_1 * f;\n\
+};\n",test->a);
+      printf("c=\n");
+      dump_test_1(&test->c);
+      printf("e=\n");
+      dump_test_1(test->e);
+      printf("f=\n");
+      dump_test_1(test->f);
+    }
+}
+
 void verify_test_1(struct json_object * json_object_test_1)
 {
   struct test_1 test_1_verify;
@@ -240,8 +260,12 @@ int main(int argc, char ** argv)
 	test2.f=&test1;
 	//test2.e=NULL;
 	json_object = json_c_test_2_to_json_auto( &test2, ctx, allocator);
+
+	dump_test_2(&test2);
       }
       dump_object(ctx,json_object,&print_context);
+
+
 
       verify_test_1(json_object_test_1);
     }
