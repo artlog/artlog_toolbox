@@ -16,7 +16,7 @@ usage()
   printf("\nUSAGE:\n");
   printf("work in progress: first goal is to generate json stub from c struct definition see json_to_c_stub.c\n");
 
-  printf("ex:./c_parser infile=./input_for_c_parser.c outform=aljson_stub\n");
+  printf("ex:./c_parser infile=./input_for_c_parser.h outform=aljson_stub\n");
 
   printf("more advanced goal is to be a c parser ... \n");
   printf("ex:./c_parser debug=true infile=./c_parser.c\n");
@@ -3198,6 +3198,77 @@ init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
   return 1;
 }
 
+void generate_aljson_stub( struct c_parser_ctx * parser)
+{
+  for (int i = 0; i< parser->used_structures; i++)
+    {
+      int max = 1000;
+      char * varname="outstructp";
+      // todo
+      struct alhash_datablock * vartype;
+      struct alhash_datablock * datablock = (struct alhash_datablock *) parser->structure_array[i].dict_index ;
+      vartype = NULL;
+
+      // generate read side : json_c_xxxx_from_json_auto
+      
+      printf("int json_c_%.*s_from_json_auto(",datablock->length,datablock->data);
+      printf("struct %.*s * %s, ",datablock->length,datablock->data,varname);
+      printf("struct json_object * json_object)\n{\n");
+      struct c_declaration_info_list * next = parser->structure_array[i].first;
+      while ((next != NULL)&&(max>0))
+	{
+	  datablock = (struct alhash_datablock *) next->info.dict_index;
+	  if ( datablock != NULL )
+	    {
+	      // better than nothing, still does not recognize arrays or pointers
+	      switch(next->info.full_type.word_type)
+		{
+		case TOKEN_C_INT_ID:
+		case TOKEN_C_LONG_ID:
+		  printf("AL_GET_JSON_INT_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+		  break;
+			      
+		case TOKEN_C_CHAR_ID:
+		  printf("AL_GET_JSON_STRING_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+		  break;
+
+		case TOKEN_C_STRUCT_ID:
+		  vartype = next->info.full_type.dict_index;
+		  if (vartype != NULL)
+		    {
+		      if ( next->info.full_type.dereference == 0)
+			{				    
+			  printf("AL_GET_JSON_STRUCT(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data,varname,datablock->length,datablock->data);
+			}
+		      else
+			{
+			  printf("AL_GET_JSON_STRUCT_POINTER(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data,varname,datablock->length,datablock->data);
+			}
+		    }
+		  else
+		    {
+		      printf("// unknwon struct name for %.*s \n", datablock->length,datablock->data);
+		    }
+		  break;
+		default:
+		  printf("// unsupported type %i.\n", next->info.full_type.word_type);
+		  break;
+		}
+
+	    }
+	  else
+	    {
+	      printf("//.\n");
+	    }
+	  next = next->next;
+	  --max;
+	}
+      printf("return 1;}\n");
+    }
+
+}
+
+
 int
 main (int argc, char **argv)
 {
@@ -3330,69 +3401,7 @@ main (int argc, char **argv)
 	  // outform=aljson_stub
 	  if ( parser.used_structures != 0 )
 	    {
-	      for (int i = 0; i< parser.used_structures; i++)
-		{
-		  int max = 1000;
-		  char * varname="outstructp";
-		  // todo
-		  struct alhash_datablock * vartype;
-		  struct alhash_datablock * datablock = (struct alhash_datablock *) parser.structure_array[i].dict_index ;
-		  vartype = NULL;
-
-		  printf("int json_c_%.*s_from_json_auto(",datablock->length,datablock->data);
-		  printf("struct %.*s * %s, ",datablock->length,datablock->data,varname);
-		  printf("struct json_object * json_object)\n{\n");
-		  struct c_declaration_info_list * next = parser.structure_array[i].first;
-		  while ((next != NULL)&&(max>0))
-		    {
-		      datablock = (struct alhash_datablock *) next->info.dict_index;
-		      if ( datablock != NULL )
-			{
-			  // better than nothing, still does not recognize arrays or pointers
-			  switch(next->info.full_type.word_type)
-			    {
-			    case TOKEN_C_INT_ID:
-			    case TOKEN_C_LONG_ID:
-			      printf("AL_GET_JSON_INT_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
-			      break;
-			      
-			    case TOKEN_C_CHAR_ID:
-			      printf("AL_GET_JSON_STRING_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
-			      break;
-
-			     case TOKEN_C_STRUCT_ID:
-			       vartype = next->info.full_type.dict_index;
-			       if (vartype != NULL)
-				 {
-				   if ( next->info.full_type.dereference == 0)
-				     {				    
-				       printf("AL_GET_JSON_STRUCT(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data,varname,datablock->length,datablock->data);
-				     }
-				   else
-				     {
-				       printf("AL_GET_JSON_STRUCT_POINTER(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data,varname,datablock->length,datablock->data);
-				     }
-				 }
-			       else
-				 {
-				   printf("// unknwon struct name for %.*s \n", datablock->length,datablock->data);
-				 }
-			       break;
-			    default:
-			      printf("// unsupported type %i.\n", next->info.full_type.word_type);
-			      break;
-			    }
-
-			}
-		      else
-			{
-			  printf("//.\n");
-			}
-		      next = next->next;
-		      --max;
-		    }
-		  printf("return 1;}\n");
-		}
+	      generate_aljson_stub(&parser);
 	    }
 
 	}

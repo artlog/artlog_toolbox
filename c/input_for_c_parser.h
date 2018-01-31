@@ -13,5 +13,6 @@ struct test_2 {
   int a;
   struct test_1 c;
   struct test_1 * e;
+  struct test_1 * f;
 };
 
