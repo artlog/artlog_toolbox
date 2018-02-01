@@ -45,8 +45,8 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
 void al_options_init(struct al_options * options)
 {
   bzero(options,sizeof(*options));
-  todo ("support a growable options. here limited to 1024 options");
-  alhash_init (&options->table, 1024, NULL);
+  // alhash is autogrowing by default.
+  alhash_init (&options->table, 0, NULL);
   todo ("support a growable word buffer. here limited to 10240 characters");
   al_token_char_buffer_init(&options->buffer,10240);
 }

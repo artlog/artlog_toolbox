@@ -8,10 +8,12 @@ a fixed hash table
 you can add and retrieve keyed values in it ( but not removal ).
 **/
 
-// minimal hash
-#define ALHASH_BUCKET_SIZE 127
+// minimal/default bucket_size
+//#define ALHASH_BUCKET_SIZE 127
+#define ALHASH_BUCKET_SIZE 32
   
 struct alhash_entry {
+  // hash key of key within key datablock
   long hash_key;
   struct alhash_datablock key;
   struct alhash_datablock value;
@@ -28,6 +30,7 @@ struct alhash_bucket {
 struct alhash_table {
   int bucket_size; // number of possible entries in this table
   int used; // number of entries in  use
+  int autogrow; // 0 don't grow automatically, else grow if alhash_get_free < autogrow.
   struct alhash_bucket * inner;
   long (*alhash_func) (void * value, int length);
 };
@@ -56,7 +59,8 @@ return entry owning same key content ( content of key->data over length bytes)
 struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key);
 
 // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
-// if allhsh_func is set to NULL then default string hash is used (alhash_hash_string)
+// if length is 0 : AUTO : autogrowth is set and length = ALHASH_BUCKET_SIZE)
+// if alhash_func is set to NULL then default string hash is used (alhash_hash_string)
 void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length));
 
 // walk entry and all collisions.
@@ -71,8 +75,23 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 
 void alhash_set_debug(int debug);
 
+// release whole table glue ( ie does not free data content )
 void alhash_release(struct alhash_table * table);
 
 // init word buffer todo rename it.
 int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
+
+// allows to grow ( or shrink ) a table
+// return number of used element in new table, -1 means error
+int alhash_reinit(struct alhash_table * table, int length);
+
+// return number of element in use in this table
+int alhash_get_used(struct alhash_table * table);
+
+// return size of table
+int alhash_get_size(struct alhash_table * table);
+
+// return usage ( in 256th means 128 is half used 255 full)
+int alhash_get_usage(struct alhash_table * table);
+
 #endif

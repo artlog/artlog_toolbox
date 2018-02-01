@@ -75,6 +75,7 @@ tests: testjson testhash $(BUILD)/test_alstack testbtree
 
 testhash: $(BUILD)/hash
 	$^ alhashsample/sample2.txt
+	$^ c/c_parser.c
 
 $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -Wl,-Bdynamic

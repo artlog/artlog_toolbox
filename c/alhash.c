@@ -8,6 +8,7 @@ a hash within your tools allow you to do smoke tests
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
 
 enum alhash_match_result {
   ALH_MR_NOT_EQUAL=0, // it does not match
@@ -161,6 +162,15 @@ void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (v
   table->bucket_size=( length > ALHASH_BUCKET_SIZE ) ? length : ALHASH_BUCKET_SIZE;
   table->inner = (struct alhash_bucket *) (calloc(table->bucket_size,sizeof(struct alhash_entry)));
   table->used = 0;
+  if ( length == 0 )
+    {
+      // 78 % fill
+      table->autogrow = 200;
+    }
+  else
+    {
+      table->autogrow = 0;
+    }
 }
 
 void alhash_release(struct alhash_table * table)
@@ -178,8 +188,21 @@ void alhash_release(struct alhash_table * table)
 struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_datablock * key, struct alhash_datablock * value)  
 {
   if ( alhash_debug ) {printf("alhash put entry .\n");}
+  
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
+      // automatically grow table if over a % fill
+      if ( table->autogrow > 0 )
+	{
+	  if ( alhash_get_usage(table) > table->autogrow  )
+	    {
+	      if ( alhash_reinit(table, table->bucket_size * 2 ) <= 0 )
+		{
+		  return NULL;
+		}
+	    }
+	}
+      
       long hash = table->alhash_func(key->data.ptr,key->length);
       int index = al_get_index(hash,table->bucket_size);
       struct alhash_bucket * bucket = table->inner;
@@ -204,6 +227,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 		    }
 		  // if entry == initial_entry this is a loop over self.
 		  initial_entry->collision_ring = entry;
+		  table->used = table->used + 1;
 		  return entry;
 		}
 	      else
@@ -341,4 +365,97 @@ int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
   al_token_char_buffer_init(&alparser->word_buffer,chars);
 
   return 1;
+}
+
+int alhash_copyentry(struct alhash_entry * entry, void * data, int index)
+{
+  if (( entry != NULL ) && (data != NULL))
+    {
+      struct alhash_table * destination = (struct alhash_table *) data;
+      alhash_put(destination, &entry->key, &entry->value);
+      // continue
+      return 0;
+    }
+  // continue 
+  return 0;
+}
+
+int alhash_reinit(struct alhash_table * table, int length)
+{
+  int size = -1;
+  if ( alhash_debug )
+    {
+      fprintf(stderr,"REINIT lenght of hash table to %i\n", length);
+    }
+  // new table should have enough place
+  if (table != NULL)
+    {
+      if ( table->used <= length )
+	{
+          struct alhash_table temporary;
+	  alhash_init(&temporary,length,table->alhash_func);
+	  alhash_walk_table(table,alhash_copyentry,&temporary);
+	  // drink this soup
+	  if ( table->inner != NULL)
+	    {
+               free(table->inner);
+            }
+	  memcpy(table,&temporary,sizeof(*table));
+	  size =  alhash_get_size(table);
+      }
+      else
+	{
+      if ( alhash_debug ) {
+	fprintf(stderr,"alhash length %i requested for reinti too small < used %i \n",length, table->used);
+    }
+      }
+    }
+  return size;
+}
+
+int alhash_get_used(struct alhash_table * table)
+{
+  int use = -1;
+  if (table != NULL)
+    {
+      use = table->used;
+    }
+  return use;
+}
+
+
+int alhash_get_size(struct alhash_table * table)
+{
+  int size=0;
+  if (table != 0)
+    {
+      size = table->bucket_size;
+    }
+  return size;
+}
+
+int alhash_get_usage(struct alhash_table * table)
+{
+  int size=0;
+  if ( table != 0) 
+    {
+      if (table->bucket_size > 0 )
+	{
+	  size = table->bucket_size - table->used;
+	  if ( size > ( INT_MAX / 256 ) )
+	    {
+	      size = ( size / table->bucket_size ) * 256;
+	    }
+	  else
+	    {
+	      size = ( size * 256 ) / table->bucket_size;
+	    }
+	}
+      else
+	{
+	  size = 255;
+	}
+	
+    }
+  return size;
 }

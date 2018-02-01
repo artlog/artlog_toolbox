@@ -61,7 +61,7 @@ int main(int argc, char ** argv)
 	      alhash_init(&table,0,NULL);
 	      while ((read = getline(&line, &len, f)) != -1) {
 		int i = 0;
-		while ( (i<=read) && ( line[i] != 0 )  && ( line[i] != ' ' ))
+		while ( (i<=read) && ( line[i] != 0 )  && ( line[i] != ' ' ) && ( line[i] != '\t') )
 		  {
 		    i++;
 		  }
