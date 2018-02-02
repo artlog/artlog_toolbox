@@ -121,19 +121,16 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
   //  create an entry in dict
   key.type = ALTYPE_OPAQUE;
   key.length = length;
-  key.data.ptr = &alparser->word_buffer.buf[alparser->word_buffer.bufpos];
-  if ((alparser->word_buffer.bufpos + length) < alparser->word_buffer.bufsize)
-    {
-      memcpy (key.data.ptr, buffer, length);
-    }
-  else
+  key.data.ptr = buffer;
+  // use al_copy_block that support autogrow
+  key.data.ptr = al_copy_block(&alparser->word_buffer,&key);
+  if ( key.data.ptr== NULL )
     {
       fprintf (stderr,
 	       "[WARNING] internal char buffer for words full %i+%i>%i",
 	       alparser->word_buffer.bufpos, length, alparser->word_buffer.bufsize);
-      // alparser_grow_word_buffer (alparser);
-      todo ("[FATAL] grow word buffer . not implemented");
-      exit (1);
+      todo ("[FATAL] word buffer full");
+      return NULL;
     }
 
   struct alhash_entry *entry = alhash_get_entry (&alparser->dict, &key);
@@ -154,7 +151,7 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
     }
   else
     {
-      // printf("SAME TOKEN SEEN\n");
+      // fprintf(stderr,"SAME TOKEN SEEN\n");
     }
 
   return entry;
@@ -3189,9 +3186,9 @@ init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
   parser->last_word = -1;
 
   struct alparser_ctx * alparser = &parser->alparser;
-  todo ("support a growable hashtable. here limited to 1024 words");
-  todo ("support a growable word buffer. here limited to 10240 characters");
-  alparser_init(alparser,1024,10240);
+  // hashtable bucket will autogrow due to length 0
+  // word buffer will autogrow due to al_copy_block usage
+  alparser_init(alparser,0,1024);
   
   // no debugging by default
   parser->flags = 0;

@@ -79,6 +79,7 @@ void alhash_set_debug(int debug);
 void alhash_release(struct alhash_table * table);
 
 // init word buffer todo rename it.
+// number of words is used for length of alhash_init, so can be 0 then automatic.
 int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
 
 // allows to grow ( or shrink ) a table

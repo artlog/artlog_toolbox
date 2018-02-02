@@ -23,6 +23,7 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
       value.data.ptr=ivalue;
+      // using al_copy_block allows to have data block autogrowth.
       value.data.ptr=al_copy_block(&options->buffer,&value);
 
       entry = alhash_put (&options->table, &key, &value);
@@ -47,8 +48,8 @@ void al_options_init(struct al_options * options)
   bzero(options,sizeof(*options));
   // alhash is autogrowing by default.
   alhash_init (&options->table, 0, NULL);
-  todo ("support a growable word buffer. here limited to 10240 characters");
-  al_token_char_buffer_init(&options->buffer,10240);
+  // buffer with autogrow since we are using al_copy_block to put data within
+  al_token_char_buffer_init_autogrow(&options->buffer,15,1024);
 }
 
 void al_options_release(struct al_options * options)

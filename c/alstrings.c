@@ -23,6 +23,47 @@ void al_token_char_buffer_init(struct token_char_buffer * buffer, int chars)
   buffer->bufsize = chars;
   buffer->bufpos = 0;
   buffer->buf = malloc (buffer->bufsize);
+  // don't set first or next
+}
+
+// get last pointing on circular.
+struct token_char_buffer *  al_token_char_buffer_get_previous(struct token_char_buffer * circular)
+{
+  struct token_char_buffer * buffer = circular;
+  struct token_char_buffer * previous = circular;
+  struct token_char_buffer * next = buffer->next;
+  int max = 1000;
+  while ( ( next != NULL ) && ( next != buffer ) && ( max > 0) )
+    {      
+      previous = next;
+      next = next->next;
+      --max;
+    }
+  if ( max <= 0 )
+    {
+      fprintf(stderr,"[FATAL] long loop (infinite ? ) on  al_token_char_buffer_get_previous\n");
+      exit(1);
+    }
+  return previous;  
+}
+
+void al_token_char_buffer_rehead(struct token_char_buffer * newhead, struct token_char_buffer * circular)
+{
+  if ( ( newhead != NULL ) && ( circular != NULL ) && (newhead->next == NULL) )
+    {
+      // get last pointing on circular.
+      struct token_char_buffer * previous =  al_token_char_buffer_get_previous(circular);
+      // to make linus scream
+      if ( previous != NULL)
+	{
+	  previous->next=newhead;
+	}
+      else
+	{
+	  circular->next=newhead;
+	}
+      newhead->next=circular;
+    }
 }
 
 struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * buffer, int length)
@@ -64,7 +105,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
       next = next->next;
     }
 
-  printf("allocate no next !\n");
+  printf("allocate buffer (%p) next (%p) !\n", buffer, next);
   return next;
 }
 
@@ -130,4 +171,15 @@ char * al_copy_block(struct token_char_buffer * buffer, struct alhash_datablock 
 	}
     }
   return NULL;
+}
+
+
+void al_token_char_buffer_init_autogrow(struct token_char_buffer * statichead, int buckets, int firstbucketlength)
+{
+  
+  struct token_char_buffer * allocated = al_token_char_buffer_alloc(buckets);
+  statichead->next = NULL;
+  al_token_char_buffer_init(statichead,firstbucketlength);
+  al_token_char_buffer_rehead(statichead, allocated);
+
 }

@@ -59,7 +59,19 @@ char * al_alloc_block(struct token_char_buffer * buffer, int length);
 // copy data content into token_char_buffer, return pointer on first char within buffer ( to update within data.ptr )
 char * al_copy_block(struct token_char_buffer * buffer,  struct alhash_datablock * data);
 
+/* create a circular list of struct token_char_buffer of size times.
+useful for autogrowth */
 struct token_char_buffer * al_token_char_buffer_alloc(int times);
 
+/* init char buffer to a length of chars
+to use internally after al_token_char_buffer_alloc since it can't grow.
+ */
 void al_token_char_buffer_init(struct token_char_buffer * buffer, int chars);
+
+/* insert head to a circular buffer */
+void al_token_char_buffer_rehead(struct token_char_buffer * newhead, struct token_char_buffer * circular);
+
+/* allocate a circular buffer of buckets around an existing static anchor with inital bucket char length */
+void al_token_char_buffer_init_autogrow(struct token_char_buffer * statichead, int buckets, int firstbucketlength);
+
 #endif
