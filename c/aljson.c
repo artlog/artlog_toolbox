@@ -126,11 +126,9 @@ struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype,
   return object;
 }
 
-struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype, struct token_char_buffer * allocator, struct alhash_datablock * data)
+struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype, alstrings_ringbuffer_pointer * allocator, struct alhash_datablock * data)
 {
-  // horrible but by chance update of  allocator2  by alloc_block is only for performance purpose (yet) FIXME
-  alstrings_ringbuffer_pointer allocator2 = allocator;
-  struct json_object * object=(struct json_object *) al_alloc_block(&allocator2,sizeof(struct json_object));
+  struct json_object * object=(struct json_object *) al_alloc_block(allocator,sizeof(struct json_object));
   if (object != NULL)
     {
       object->type=objtype;
