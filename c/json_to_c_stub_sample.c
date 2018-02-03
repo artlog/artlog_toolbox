@@ -43,7 +43,7 @@ int json_c_test_1_from_json_auto( struct test_1* test, struct json_object * json
 
 
 // create a json_object direclty from struct test_1
-struct json_object * json_c_test_1_to_json_auto(  struct test_1* test, struct json_parser_ctx * ctx, struct token_char_buffer * allocator)
+struct json_object * json_c_test_1_to_json_auto(  struct test_1* test, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
     
   // 1. allocate json_object
@@ -73,7 +73,7 @@ struct json_object * json_c_test_1_to_json_auto(  struct test_1* test, struct js
 }
 
 // create a json_object directty from struct test_2
-struct json_object * json_c_test_2_to_json_auto(struct test_2* test, struct json_parser_ctx * ctx, struct token_char_buffer * allocator)
+struct json_object * json_c_test_2_to_json_auto(struct test_2* test, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
     
   // 1. allocate json_object
@@ -204,8 +204,9 @@ int main(int argc, char ** argv)
   todo("then code C struct parser ... ");
 
   albase_set_debug(1);
-    
-  struct token_char_buffer * allocator = al_token_char_buffer_alloc(10);
+
+  alstrings_ringbuffer_pointer allocator;
+
   if ( allocator != NULL )
     {
       struct test_1 test1;
@@ -219,7 +220,7 @@ int main(int argc, char ** argv)
       alparser_init(&ctx->alparser,100,1024);      
 
       // force small to create many buffers
-      al_token_char_buffer_init(allocator,8);
+      alstrings_ringbuffer_init_autogrow(&allocator,10,8);
 
       // stupid test : do we survive to NULL entries ?
       json_c_test_2_from_json_auto( NULL, NULL);
@@ -234,7 +235,7 @@ int main(int argc, char ** argv)
 	test1.c = 1;
 
 	dump_test_1(&test1);
-        json_object = json_c_test_1_to_json_auto( &test1, ctx, allocator);
+        json_object = json_c_test_1_to_json_auto( &test1, ctx, &allocator);
 
 	verify_test_1(json_object);
       }
@@ -261,7 +262,7 @@ int main(int argc, char ** argv)
 	test2.e=&test1;
 	test2.f=&test1;
 	//test2.e=NULL;
-	json_object = json_c_test_2_to_json_auto( &test2, ctx, allocator);
+	json_object = json_c_test_2_to_json_auto( &test2, ctx, &allocator);
 
 	dump_test_2(&test2);
       }

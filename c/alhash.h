@@ -37,7 +37,8 @@ struct alhash_table {
 
 // allocation of words, dict
 struct alparser_ctx {
-  struct token_char_buffer word_buffer;
+  // struct token_char_buffer word_buffer;
+  alstrings_ringbuffer_pointer ringbuffer;
   struct alhash_table dict;
   int words;
 };

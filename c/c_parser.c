@@ -122,23 +122,23 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
   key.type = ALTYPE_OPAQUE;
   key.length = length;
   key.data.ptr = buffer;
-  // use al_copy_block that support autogrow
-  key.data.ptr = al_copy_block(&alparser->word_buffer,&key);
-  if ( key.data.ptr== NULL )
-    {
-      fprintf (stderr,
-	       "[WARNING] internal char buffer for words full %i+%i>%i",
-	       alparser->word_buffer.bufpos, length, alparser->word_buffer.bufsize);
-      todo ("[FATAL] word buffer full");
-      return NULL;
-    }
 
+  // search directly with buffer key, don't allocate a new buffer string yet since it can already exists
   struct alhash_entry *entry = alhash_get_entry (&alparser->dict, &key);
   if (entry == NULL)
     {
       // no entry found, create it
       ++alparser->words;
-      alparser->word_buffer.bufpos += length;
+      // use al_copy_block that support autogrow
+      key.data.ptr = al_copy_block(&alparser->ringbuffer,&key);
+      if ( key.data.ptr== NULL )
+	{
+	  fprintf (stderr,
+		   "[WARNING] internal char buffer for words full %i+%i>%i",
+		   alparser->ringbuffer->bufpos, length, alparser->ringbuffer->bufsize);
+	  todo ("[FATAL] word buffer full");
+	  return NULL;
+	}
       valuep = &key;
       entry = alhash_put (&alparser->dict, &key, valuep);
       if (entry == NULL)

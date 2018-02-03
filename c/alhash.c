@@ -368,7 +368,8 @@ int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
   alhash_init (&alparser->dict, words, NULL);
   // autogrow
   alparser->dict.autogrow = 170;
-  al_token_char_buffer_init_autogrow(&alparser->word_buffer, 15, chars);
+  // WARNING will set alparser->ringbuffer content
+  alstrings_ringbuffer_init_autogrow(&alparser->ringbuffer, 15, chars);
 
   return 1;
 }
@@ -407,7 +408,8 @@ int alhash_reinit(struct alhash_table * table, int length)
 	  if ( table->inner != NULL)
 	    {
                free(table->inner);
-	       table->inner = 0xdeadbed1;
+	       // somehow a canary
+	       table->inner = (void *) 0xdeadbed1;
             }
 	  // set autogrow since copied back to table.
 	  temporary.autogrow=table->autogrow;

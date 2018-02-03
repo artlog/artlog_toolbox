@@ -10,7 +10,7 @@ keep options of a program
 
 struct al_options {
   struct alhash_table table;
-  struct token_char_buffer buffer;
+  alstrings_ringbuffer_pointer ringbuffer;
 };
 
 // create options from arguments

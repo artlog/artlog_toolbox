@@ -19,12 +19,12 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
       printf("add '%s'='%s' in options\n",ikey,ivalue);
       // not true given length provided but type should the same
       key.type = ALTYPE_STR0;
-      key.data.ptr=al_copy_block(&options->buffer, &key);
+      key.data.ptr=al_copy_block(&options->ringbuffer, &key);
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
       value.data.ptr=ivalue;
       // using al_copy_block allows to have data block autogrowth.
-      value.data.ptr=al_copy_block(&options->buffer,&value);
+      value.data.ptr=al_copy_block(&options->ringbuffer,&value);
 
       entry = alhash_put (&options->table, &key, &value);
       if (entry == NULL)
@@ -49,16 +49,14 @@ void al_options_init(struct al_options * options)
   // alhash is autogrowing by default.
   alhash_init (&options->table, 0, NULL);
   // buffer with autogrow since we are using al_copy_block to put data within
-  al_token_char_buffer_init_autogrow(&options->buffer,15,1024);
+  alstrings_ringbuffer_init_autogrow(&options->ringbuffer,15,1024);
 }
 
 void al_options_release(struct al_options * options)
 {
-  if (options->buffer.buf != NULL )
+  if (options->ringbuffer != NULL )
     {
-      free(options->buffer.buf);
-      options->buffer.buf=NULL;
-      options->buffer.bufsize=0;
+      alstrings_ringbuffer_release(&options->ringbuffer);
     }
   alhash_release(&options->table);
 }
