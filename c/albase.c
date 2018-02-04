@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "alstrings.h"
+#include "aldebug.h"
 
 #define LOCAL_BUFFER_SIZE 128
 
@@ -68,7 +69,7 @@ int aljson_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
   int length = LOCAL_BUFFER_SIZE - p;
   if (albase_debug != 0)
     {
-      aldebug_printf("build string length %i\n",length);
+      aldebug_printf(NULL,"build string length %i\n",length);
     }
   out->data.ptr = &s[p];
   out->length =  length;
@@ -77,7 +78,7 @@ int aljson_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
       if (albase_debug != 0 )
 	{
 	  // double check with libc implementation
-	  aldebug_printf("%i,%x=%s=%.*s\n",integer,integer,&s[p],length,(char *) out->data.ptr);
+	  aldebug_printf(NULL,"%i,%x=%s=%.*s\n",integer,integer,&s[p],length,(char *) out->data.ptr);
 	}
     }
   else
