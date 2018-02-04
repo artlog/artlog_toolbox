@@ -4,6 +4,7 @@
 
 #include "alstrings.h"
 #include "alcommon.h"
+#include "aldebug.h"
 
 enum alstrings_debug_flags {
   ALSTRINGS_DEBUG_FLAG = 1,
@@ -63,7 +64,7 @@ struct token_char_buffer *  al_token_char_buffer_get_previous(struct token_char_
     {
       if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	{
-	  fprintf(stderr,"[FATAL] long loop (infinite ? ) on  al_token_char_buffer_get_previous\n");
+	  aldebug_printf(NULL,"[FATAL] long loop (infinite ? ) on  al_token_char_buffer_get_previous\n");
 	}
       exit(1);
     }
@@ -97,7 +98,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 
   if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
     {
-      fprintf(stderr,"grow token_char_buffer %p %i/%i\n", buffer, buffer->bufpos, buffer->bufsize);
+      aldebug_printf(NULL,"grow token_char_buffer %p %i/%i\n", buffer, buffer->bufpos, buffer->bufsize);
     }
   // last point on first, circular
   while ( ( next != NULL ) && ( next != buffer ) )
@@ -115,7 +116,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	  next->buf = calloc(1,bufsize);
 	  if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	    {
-	      fprintf(stderr,"allocate new next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
+	      aldebug_printf(NULL,"allocate new next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
 	    }
 	  return next;
 	}
@@ -126,7 +127,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	    {
 	      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		{		  
-		  fprintf(stderr,"found place next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
+		  aldebug_printf(NULL,"found place next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
 		}
 	      return next;
 	    }
@@ -140,7 +141,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 
   if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
     {
-      fprintf(stderr,"allocate buffer (%p) next (%p) !\n", buffer, next);
+      aldebug_printf(NULL,"allocate buffer (%p) next (%p) !\n", buffer, next);
     }
   return next;
 }
@@ -179,7 +180,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 		{
 		  if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		    {
-		      fprintf(stderr,"[FATAL] token char buffer allocation shortage");
+		      aldebug_printf(NULL,"[FATAL] token char buffer allocation shortage");
 		    }
 		  exit(1);
 		}
@@ -188,7 +189,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 	    {
 	      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		{
-		  fprintf(stderr,"[FATAL] token char buffer is NULL");
+		  aldebug_printf(NULL,"[FATAL] token char buffer is NULL");
 		}
 	      exit(1);
 	    }
@@ -226,7 +227,7 @@ char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp, struct alhash_d
 	    {
 	      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		{
-		  fprintf(stderr,"[FATAL] token char buffer allocation shortage");
+		  aldebug_printf(NULL,"[FATAL] token char buffer allocation shortage");
 		}
 	      exit(1);
 	    }

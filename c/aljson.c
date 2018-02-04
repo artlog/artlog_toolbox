@@ -732,7 +732,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	      }
 	    break;
 	  case JSON_TOKEN_EOF_ID:
-	    fprintf(stderr,"EOF\n");
+	    aldebug_printf(NULL,"EOF\n");
 	  default:
 	    if ( object != NULL )
 	      {
@@ -945,7 +945,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	if ( object != NULL )
 	  {
 	    // should be a syntax error
-	    fprintf(stderr,"%s\n","WARNING non attached object before string");
+	    aldebug_printf(NULL,"%s\n","WARNING non attached object before string");
 	    if ( json_debug > 0 )
 	      {
 		dump_object(ctx,object,NULL);
@@ -1057,7 +1057,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	else
 	  {
 	    // syntax error
-	    fprintf(stderr,"%s","syntax error string following an object without separator");
+	    aldebug_printf(NULL,"%s","syntax error string following an object without separator");
 	  }
 	break;
       case JSON_TOKEN_NUMBER_ID:
@@ -1099,7 +1099,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	element = alstack_pop(stack);
 	if ( element != NULL )
 	  {
-	    fprintf(stderr,"EOF with parent \n");
+	    aldebug_printf(NULL,"EOF with parent \n");
 	  }
 	object=aljson_concrete(ctx,object);
 	alstack_destroy(stack, NULL);
@@ -2008,7 +2008,7 @@ int json_get_int(struct json_object * object )
 		    }
 		  else
 		    {
-		      fprintf(stderr,"[FATAL] unexpected NUL terminated string in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
+		      aldebug_printf(NULL,"[FATAL] unexpected NUL terminated string in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
 		    }
 		}
 	      if ( ( c >= '0' ) && ( c <= '9' ) )
@@ -2028,7 +2028,7 @@ int json_get_int(struct json_object * object )
 	      else
 		{
 		  todo("[ERROR] should handle non integer character for json_get_int(..)");
-		  fprintf(stderr,"[FATAL] unexpected in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
+		  aldebug_printf(NULL,"[FATAL] unexpected in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
 		  break;
 		}
 	    }
@@ -2071,12 +2071,12 @@ char * json_get_cstring(struct json_object * object)
 	      memcpy(newstring,cstring,object->string.internal.length);
 	      newstring[object->string.internal.length]='\0';
 	      cstring = newstring;
-	      fprintf(stderr,"[WARNING] converted to cstring '%s'\n",newstring);
+	      aldebug_printf(NULL,"[WARNING] converted to cstring '%s'\n",newstring);
 	    }
 	}
       else
 	{
-	  fprintf(stderr,"[WARNING] cstring converted from string with empty length\n");
+	  aldebug_printf(NULL,"[WARNING] cstring converted from string with empty length\n");
 	  cstring = NULL;
 	}
     }

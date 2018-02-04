@@ -6,6 +6,7 @@
 #include <fcntl.h>
 
 #include "save.h"
+#include "aldebug.h"
 
 int save_debug=0;
 
@@ -27,7 +28,7 @@ int save_file_exists(char * template)
       }
       else if ( errno == EINVAL )
 	{
-	  fprintf(stderr,"weird invalid argument, contact developper (in function %s:%i)\n",__func__,__LINE__);
+	  aldebug_printf(NULL,"weird invalid argument, contact developper (in function %s:%i)\n",__func__,__LINE__);
 	  return -2;
 	}
       else
@@ -201,7 +202,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 		  if ( renameat(dir_fd, oldpath,
 				dir_fd, newpath) != 0 )
 		    {
-		      fprintf(stderr,"error while renaming %s->%s  [%i] %s index min=%i\n",oldpath, newpath, errno, strerror(errno), index_min);
+		      aldebug_printf(NULL,"error while renaming %s->%s  [%i] %s index min=%i\n",oldpath, newpath, errno, strerror(errno), index_min);
 		      break;
 		    }
 		}
@@ -219,7 +220,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 	  if ( renameat(dir_fd, oldpath,
 			dir_fd, newpath) != 0 )
 	    {
-	      fprintf(stderr,"error while renaming %s->%s  [%i] %s\n",oldpath, newpath, errno, strerror(errno));
+	      aldebug_printf(NULL,"error while renaming %s->%s  [%i] %s\n",oldpath, newpath, errno, strerror(errno));
 	    }
 
 	}
@@ -235,7 +236,7 @@ int save_shift_file_name(struct savecontext * savecontext)
     }
   else
     {
-      fprintf(stderr,"can't open current dir ./ [%i] \n", errno);
+      aldebug_printf(NULL,"can't open current dir ./ [%i] \n", errno);
       return -1;
     }
 }

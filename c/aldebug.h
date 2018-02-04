@@ -32,4 +32,6 @@ int prefix ##_is_debug(member_type * m,int flag) \
 #define ALDEBUG_IF_DEBUG(object, prefix, debug)	\
   if ( prefix ##_is_debug( object, 1))
 
+void aldebug_printf(void * debugconfig, const char *format, ...);
+
 #endif // #ifndef __ALDEBUG_H__

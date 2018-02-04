@@ -33,11 +33,11 @@ $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
 $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test.h
 	ar rccs $@ $<
 
-$(BUILD)/lib/libaldev.a:  $(BUILD)/obj/todo.o $(BUILD)/include/todo.h
+$(BUILD)/lib/libaldev.a:  $(BUILD)/obj/altodo.o $(BUILD)/include/altodo.h
 	ar rccs $@ $<
 
-$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o $(BUILD)/include/alinput.h $(BUILD)/include/aloutput.h $(BUILD)/include/alcommon.h
-	ar rccs $@ $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o
+$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/aldebug.o $(BUILD)/obj/albtree.o $(BUILD)/include/alinput.h $(BUILD)/include/aloutput.h $(BUILD)/include/alcommon.h $(BUILD)/include/aldebug.h
+	ar rccs $@  $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o $(BUILD)/obj/aldebug.o
 
 $(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o $(BUILD)/include/alhash.h
 	ar rccs $@  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o
@@ -54,7 +54,7 @@ $(BUILD)/test_auto_c_gen:  $(BUILD)/obj/json_to_c_stub.o
 
 $(BUILD)/test_alstack:  $(BUILD)/obj/test_alstack.o
 	@echo link test objects $^ and libalstack
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -lalcommon -Wl,-Bdynamic
 
 $(BUILD)/testbtree: $(BUILD)/obj/albtree.o $(BUILD)/obj/albtreetest.o
 	$(LD) -o $@ $(LDFLAGS) $^
@@ -78,7 +78,7 @@ testhash: $(BUILD)/hash
 	$^ c/c_parser.c
 
 $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -lalcommon -Wl,-Bdynamic
 
 testjson:$(BUILD)/json
 	$^ test.json >test/parse1.json
@@ -92,7 +92,7 @@ testjson:$(BUILD)/json
 
 $(BUILD)/json: $(objects)
 	@echo link json objects $(objects) and libjson
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -lalstack -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson  -lalstack -lalcommon  -Wl,-Bdynamic
 
 $(BUILD)/obj:
 	mkdir -p $@

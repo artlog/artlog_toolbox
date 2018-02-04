@@ -100,7 +100,7 @@ int main(int argc, char ** argv)
 	}
       else
 	{
-	  fprintf(stderr,"%s not found", filename);
+	  aldebug_printf(NULL,"%s not found", filename);
 	}
     }
   else

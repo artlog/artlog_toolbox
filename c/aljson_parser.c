@@ -3,7 +3,6 @@
 #include <strings.h>
 
 #include <assert.h>
-#include "alcommon.h"
 #include "aljson_parser.h"
 
 #define TOKEN_BUFSIZE_MIN 256
@@ -84,7 +83,7 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
   ctx->pos--;
   ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
     {
-      fprintf(stderr,"[DEBUG] (pushback %c)\n",pushback);      
+      aldebug_printf(NULL,"[DEBUG] (pushback %c)\n",pushback);      
     }
 }
 
@@ -104,12 +103,12 @@ int token_char_buffer_add_char(struct token_char_buffer * ctx, char token, char 
       bufsize=ctx->bufsize + ctx->bufsize / 2;
       if ( bufsize > TOKEN_BUFSIZE_MAX )
 	{
-	  fprintf(stderr,"[FATAL] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_MAX);
+	  aldebug_printf(NULL,"[FATAL] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_MAX);
 	  exit(0);
 	}
       if ( bufsize > TOKEN_BUFSIZE_WARNING )
 	{
-	  fprintf(stderr,"[WARNING] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_WARNING);
+	  aldebug_printf(NULL,"[WARNING] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_WARNING);
 	}
       char * newbuf=realloc(ctx->buf,bufsize);
       if (newbuf != NULL)
@@ -289,7 +288,7 @@ enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char f
 	      char d = ctx->next_char(ctx,data);
 	      if ( d != c )
 		{
-		  fprintf(stderr,"(pushback end of number FAILS '%c'!='%c')\n",c, d);
+		  aldebug_printf(NULL,"(pushback end of number FAILS '%c'!='%c')\n",c, d);
 		}
 	      ctx->pushback_char(ctx,data,c);
 	    }
@@ -390,7 +389,7 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	    // we were ignoring and now will we stop ...
 	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
-		fprintf(stderr,"ignore>");
+		aldebug_printf(NULL,"ignore>");
 	      }
 	  }
 	ctx->internal_flags &= !JSON_FLAG_IGNORE;
@@ -452,7 +451,7 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	    break;
 	  default: // unexpected char ?
 	    // PUSHBACK ? TO CHECK
-	    fprintf(stderr,"[ERROR] unexpected char %c\n,",c);
+	    aldebug_printf(NULL,"[ERROR] unexpected char %c\n,",c);
 	    JSON_TOKEN(EOF);
 	    // ctx->pushback_char(ctx,data,c);
 	  }

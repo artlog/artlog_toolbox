@@ -4,6 +4,7 @@
 
 #include "alstack.h"
 #include "alcommon.h"
+#include "aldebug.h"
 
 /*
 setup a alstack, content of alstack is considered irrelevant (ie can be zeroed)
@@ -99,12 +100,12 @@ struct alstackelement * alstack_push_ref(struct alstack * stack, void * referenc
 
 void alstack_debug(char * text)
 {
-  fprintf(stderr,"[DEBUG] %s\n",text);
+  aldebug_printf(NULL,"[DEBUG] %s\n",text);
 }
 
 void alstack_error(char * text)
 {
-  fprintf(stderr,"[ERROR] %s\n",text);
+  aldebug_printf(NULL,"[ERROR] %s\n",text);
 }
 
 struct alstackelement * alstackchunk_pop(struct alstack * stack)

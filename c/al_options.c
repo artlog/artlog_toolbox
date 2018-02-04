@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "al_options.h"
-#include "todo.h"
+#include "altodo.h"
 
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 
@@ -38,7 +38,7 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
 	{
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	      fprintf(stderr,"[DEBUG] entry '%s'='%s'\n", entry->key.data, entry->value.data);
+	      aldebug_printf(NULL,"[DEBUG] entry '%s'='%s'\n", entry->key.data, entry->value.data);
 	    }
 	}
     }
@@ -46,7 +46,7 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
     {
       ALDEBUG_IF_DEBUG(options, al_options, debug)
 	{
-	  fprintf(stderr,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",ikey,ivalue);
+	  aldebug_printf(NULL,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",ikey,ivalue);
 	}
     }
 }
@@ -82,7 +82,7 @@ struct al_options * al_options_create(int argc, char ** argv)
 	{
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	  fprintf(stderr,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
+	  aldebug_printf(NULL,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
 	}
 	  al_option_add(options,key,value);
 	  free(key);
@@ -104,7 +104,7 @@ struct alhash_datablock * al_option_get(struct al_options * options, char * ikey
     {
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	      fprintf(stderr,"[DEBUG] option %s, NOT FOUND\n",ikey);
+	      aldebug_printf(NULL,"[DEBUG] option %s, NOT FOUND\n",ikey);
 	    }
       return NULL;
     }

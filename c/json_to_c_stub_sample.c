@@ -203,8 +203,6 @@ int main(int argc, char ** argv)
   todo("parse input stream and run test_1 parsing of a given json test");
   todo("then code C struct parser ... ");
 
-  albase_set_debug(1);
-
   alstrings_ringbuffer_pointer allocator;
 
   if ( allocator != NULL )

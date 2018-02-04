@@ -75,7 +75,7 @@ struct json_object * json_to_c_stub_get_ref( struct json_object * json_ref, stru
     }
   else
     {
-      fprintf(stderr,"[ERROR] key reference '%s' without &\n",key);
+      aldebug_printf(NULL,"[ERROR] key reference '%s' without &\n",key);
       return NULL;
     }
 }

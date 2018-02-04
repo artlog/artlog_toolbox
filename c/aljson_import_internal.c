@@ -60,7 +60,7 @@ void json_import_pushback_char(struct json_ctx *ctx, void *data, char pushback)
   if ( FLAG_IS_SET( json_import_data->flags, ALSFLAG_PUSHBACK ) )
     {
       // two pushback ... NOT SUPPORTED
-      fprintf(stderr,"[ERROR] 2 pushbacks line %i column %i. NOT SUPPORTED.\n", ctx->pos_info.line, ctx->pos_info.column);
+      aldebug_printf(NULL,"[ERROR] 2 pushbacks line %i column %i. NOT SUPPORTED.\n", ctx->pos_info.line, ctx->pos_info.column);
     }    
   json_import_data->flags |= ALSFLAG_PUSHBACK;
   ctx->pos--;

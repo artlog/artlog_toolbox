@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "alcommon.h"
+#include "aldebug.h"
 
 #include "dump.h"
 
@@ -32,7 +33,7 @@ int indexset_get(struct  indexset * indexset, int pabs)
 {
   if ( pabs >= INDEXSET_COUNT )
     {
-      fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
+      aldebug_printf(NULL,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
   return ( FLAG_IS_SET(indexset->set,(1L << pabs)) );
@@ -43,7 +44,7 @@ int indexset_reset(struct indexset * indexset, int pabs)
   assert( (indexset->tag[0]='I') || (indexset->tag[0]='E') );
   if ( pabs >= INDEXSET_COUNT )
     {
-      fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
+      aldebug_printf(NULL,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
   if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
@@ -64,7 +65,7 @@ int indexset_set(struct indexset * indexset, int pabs)
   assert( (indexset->tag[0]='I') || (indexset->tag[0]='E') );
   if ( pabs >= INDEXSET_COUNT )
     {
-      fprintf(stderr,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
+      aldebug_printf(NULL,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
   if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
@@ -101,7 +102,7 @@ int indexset_getrelindex(struct indexset * indexset, int pabs)
       return -1;
     }
   unsigned long long set = indexset->set;
-  if ( debug>1) {fprintf(stderr,"get relindex %p %i set 0x%llx\n",indexset, pabs, set);}
+  if ( debug>1) {aldebug_printf(NULL,"get relindex %p %i set 0x%llx\n",indexset, pabs, set);}
   if ( set == 0 )
     {
       return -1;
@@ -121,7 +122,7 @@ int indexset_getrelindex(struct indexset * indexset, int pabs)
   } else {
     p1 = popcount(set & (((unsigned int)(0xffffffff)) >> (31-pabs))) ;
   }
-  if (debug>2) {     fprintf(stderr,"indexset %llx %i %i %i \n", indexset->set, pabs, p1,p2); }
+  if (debug>2) {     aldebug_printf(NULL,"indexset %llx %i %i %i \n", indexset->set, pabs, p1,p2); }
   return p1 + p2 -1;
 }
   
@@ -231,9 +232,9 @@ int allistelement_release(struct allistelement * this)
 	  // make it clearly wrong to prevent reuse and help debugging
 	  if ( this == (void *) 0xdeadbeefL)
 	    {
-	      fprintf(stderr,"[WARNING] very suspicious element pointer %p to free\n", this);
+	      aldebug_printf(NULL,"[WARNING] very suspicious element pointer %p to free\n", this);
 	    }
-	  if (debug) {fprintf(stderr, "[DEBUG] release malloced element %p in %s:%i \n",this, __func__,__LINE__);}
+	  if (debug) {aldebug_printf(NULL, "[DEBUG] release malloced element %p in %s:%i \n",this, __func__,__LINE__);}
 	  this->memberships=-1;
 	  this->flags=0;
 	  this->data= (void *) 0xdeadbeefL;
@@ -245,7 +246,7 @@ int allistelement_release(struct allistelement * this)
 	}
       else
 	{
-	  fprintf(stderr, "[ERROR] try to release a non malloced element %p in %s:%i \n",this, __func__,__LINE__);
+	  aldebug_printf(NULL, "[ERROR] try to release a non malloced element %p in %s:%i \n",this, __func__,__LINE__);
 	  return -1;
 	}
     }
@@ -269,7 +270,7 @@ int allistelement_is_shrunk(struct allistelement * element)
 {
   if ( element == NULL )
     {
-      fprintf(stderr, "NULL element in %s:%i \n", __func__,__LINE__);
+      aldebug_printf(NULL, "NULL element in %s:%i \n", __func__,__LINE__);
       return -1;
     }
   return FLAG_IS_SET(element->flags,ALLIST_SHRUNK);
@@ -329,7 +330,7 @@ int allistelement_getrelindex( struct allistelement * current, int absindex)
     {
       if ( absindex > current->memberships )
 	{
-	  fprintf(stderr, "requesting %p membership %i outside boundaries of element in %s:%i \n", current, absindex, __func__,__LINE__);
+	  aldebug_printf(NULL, "requesting %p membership %i outside boundaries of element in %s:%i \n", current, absindex, __func__,__LINE__);
 	  return -1;
 	}
       else
@@ -363,14 +364,14 @@ int allistelement_get_memberships_ext(struct allistelement * this)
 	}
       if ( count != indexset_count( &ext->indexset))
 	{
-	  fprintf(stderr, "indexset mismatch %s:%i %i!=%i 0x%llx\n", __func__,__LINE__,count,indexset_count( &ext->indexset),ext->indexset.set);
+	  aldebug_printf(NULL, "indexset mismatch %s:%i %i!=%i 0x%llx\n", __func__,__LINE__,count,indexset_count( &ext->indexset),ext->indexset.set);
 	  for (int i=0; i<INDEXSET_COUNT; i++)
 	    {
 	      if ( ext->link[i].memberof != NULL )
 		{
-		  fprintf(stderr, "[DEBUG] ext %p first %i\n", ext, ext->first);
-		  fprintf(stderr, "[DEBUG] indexset membership %p %i\n", ext->link[i].memberof, ext->link[i].memberof->membership_id);
-		  fprintf(stderr, "[DEBUG] this %p %p\n", this, this->data);
+		  aldebug_printf(NULL, "[DEBUG] ext %p first %i\n", ext, ext->first);
+		  aldebug_printf(NULL, "[DEBUG] indexset membership %p %i\n", ext->link[i].memberof, ext->link[i].memberof->membership_id);
+		  aldebug_printf(NULL, "[DEBUG] this %p %p\n", this, this->data);
 		}
 	    }
 	}
@@ -379,7 +380,7 @@ int allistelement_get_memberships_ext(struct allistelement * this)
 
       if (extmemberships > MAXMEMBERSHIPS)
 	{
-	  fprintf(stderr, "[FATAL] number of memberships %i exceed hardcoded limit %i %s:%i\n", extmemberships, MAXMEMBERSHIPS, __func__, __LINE__ );
+	  aldebug_printf(NULL, "[FATAL] number of memberships %i exceed hardcoded limit %i %s:%i\n", extmemberships, MAXMEMBERSHIPS, __func__, __LINE__ );
 	}
     }      
   return extmemberships;
@@ -447,7 +448,7 @@ struct allistextlink * allistelement_get_extlink_ext(struct allistelement * elem
   int membership = list->membership_id;
   if (membership < INDEXSET_COUNT)
     {
-      if (debug) {fprintf(stderr,"suspicious get ext link for element %p list %p membership %i smaller than set %i\n", element, list, membership, INDEXSET_COUNT );}
+      if (debug) {aldebug_printf(NULL,"suspicious get ext link for element %p list %p membership %i smaller than set %i\n", element, list, membership, INDEXSET_COUNT );}
       
     }
   if ( FLAG_IS_SET(element->flags,ALLIST_EXT)  )
@@ -487,14 +488,14 @@ struct allistlink * allistelement_get_link_ext(struct allistelement * element, s
 	  else
 	    {
 	      // error
-	      if (debug) {fprintf(stderr,"ext membership of element %p set to another list %p!=%p \n", element, list, link->memberof);}
+	      if (debug) {aldebug_printf(NULL,"ext membership of element %p set to another list %p!=%p \n", element, list, link->memberof);}
 	      ++ list->errors;
 	    }
 	}
     }
   else
     {
-      if (debug) {fprintf(stderr,"requested ext link for element  %p %p list %p %i , no membership\n", element, element->data, list, list->membership_id);}
+      if (debug) {aldebug_printf(NULL,"requested ext link for element  %p %p list %p %i , no membership\n", element, element->data, list, list->membership_id);}
     }
   return NULL;
 }
@@ -559,7 +560,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	  element->extlink=ext;
 	  element->flags|=ALLIST_EXT;
 	  ext->first=membership - (membership % INDEXSET_COUNT);
-	  if (debug) {fprintf(stderr,"allocate ext link %p element.data %p first %i membership %i nextlink %p\n", ext, element->data, ext->first, membership, ext->nextextlink);}
+	  if (debug) {aldebug_printf(NULL,"allocate ext link %p element.data %p first %i membership %i nextlink %p\n", ext, element->data, ext->first, membership, ext->nextextlink);}
 	  ext->indexset.tag[0] = 'E';
 	  ext->indexset.tag[1] = 'X';
 	  ext->indexset.tag[2] = 'T';
@@ -567,7 +568,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	}
       else
 	{
-	  if (debug) { fprintf(stderr,"memory allocation failure for allistextlink %li bytes. memory shortage !\n", sizeof( struct allistextlink));}
+	  if (debug) { aldebug_printf(NULL,"memory allocation failure for allistextlink %li bytes. memory shortage !\n", sizeof( struct allistextlink));}
 	  return NULL;
 	}
     }
@@ -582,17 +583,17 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	    {
 	      if ( link->next != NULL )
 		{
-		  if (debug) { fprintf(stderr,"[ERROR] element %p in list %p has no membership but a next set %p\n", element, list, link->next);}
+		  if (debug) { aldebug_printf(NULL,"[ERROR] element %p in list %p has no membership but a next set %p\n", element, list, link->next);}
 		}
 	      // should add it.
 	      if ( list->tail != NULL )
 		{
-		  if (debug) { fprintf(stderr,"add ext %p in list %p list->tail %p  list->tail->data %p\n", ext, list, list->tail, list->tail->data);}
+		  if (debug) { aldebug_printf(NULL,"add ext %p in list %p list->tail %p  list->tail->data %p\n", ext, list, list->tail, list->tail->data);}
 		  struct allistelement * previous = list->tail;
 		  struct allistlink * plink = NULL;
 		  if ( list->head == NULL)
 		    {
-		      fprintf(stderr,"[ERROR] list %p with tail %p set but with a head null\n", list, list->tail);
+		      aldebug_printf(NULL,"[ERROR] list %p with tail %p set but with a head null\n", list, list->tail);
 		      ++ list->errors;
 		      list->head = element;
 		    }
@@ -609,7 +610,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 			}
 		      else
 			{
-			  fprintf(stderr,"[ERROR] element %p in list %p for membership > %i neither extended or shrunk \n", previous, list, INDEXSET_COUNT);
+			  aldebug_printf(NULL,"[ERROR] element %p in list %p for membership > %i neither extended or shrunk \n", previous, list, INDEXSET_COUNT);
 			}
 		    }
 		  else
@@ -624,27 +625,27 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 			}
 		      else
 			{
-			  fprintf(stderr,"[ERROR] list %p with tail %p set and tail next %p non null\n", list, list->tail, plink->next);
+			  aldebug_printf(NULL,"[ERROR] list %p with tail %p set and tail next %p non null\n", list, list->tail, plink->next);
 			  ++ list->errors;
 			}		      
 		    }
 		  else
 		    {
 		      if (debug) {
-			fprintf(stderr,"[WARNING] plink NULL  ext %p in list %p\n", ext, list);
-			fprintf(stderr,"[DEBUG] ext first %i in list previous.flags %x \n", ext->first, previous->flags);
-			fprintf(stderr,"[DEBUG] list membership %i ext ? %i\n", list->membership_id, allistelement_is_ext(previous, list->membership_id));
+			aldebug_printf(NULL,"[WARNING] plink NULL  ext %p in list %p\n", ext, list);
+			aldebug_printf(NULL,"[DEBUG] ext first %i in list previous.flags %x \n", ext->first, previous->flags);
+			aldebug_printf(NULL,"[DEBUG] list membership %i ext ? %i\n", list->membership_id, allistelement_is_ext(previous, list->membership_id));
 		      }
 		    }
 		  link->previous=list->tail;
 		}
 	      else
 		{
-		  if (debug) { fprintf(stderr,"add ext %p in list %p list->tail %p \n", ext, list, list->tail);}
+		  if (debug) { aldebug_printf(NULL,"add ext %p in list %p list->tail %p \n", ext, list, list->tail);}
 		  // if tail is null then list is empty, head should be null too
 		  if ( list->head != NULL)
 		    {
-		      fprintf(stderr,"list %p with null tail but with a head set %p\n", list, list->head);
+		      aldebug_printf(NULL,"list %p with null tail but with a head set %p\n", list, list->head);
 		      ++ list->errors;
 		      // leave it in dangling state...
 		    }
@@ -666,13 +667,13 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	  else
 	    {
 	      // error
-	      if (debug) {fprintf(stderr,"[ERROR] element %p ext %p already in list %p membership %i\n",element, ext, list, membership);}
+	      if (debug) {aldebug_printf(NULL,"[ERROR] element %p ext %p already in list %p membership %i\n",element, ext, list, membership);}
 	      ++ list->errors;
 	    }
 	}
       else
 	{
-	  if (debug) {fprintf(stderr,"[ERROR] ext %p first %i in wrong membership %i\n",ext, ext->first, membership);}
+	  if (debug) {aldebug_printf(NULL,"[ERROR] ext %p first %i in wrong membership %i\n",ext, ext->first, membership);}
 	}
     }
   return NULL;
@@ -685,7 +686,7 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
 
   if (list->errors > 0 )
     {
-      if (debug) {fprintf(stderr,"[WARNING] can't add an element %p in list %p have errors %i\n", element, list, list->errors);}
+      if (debug) {aldebug_printf(NULL,"[WARNING] can't add an element %p in list %p have errors %i\n", element, list, list->errors);}
       return NULL;
     }
   if (element == NULL)
@@ -694,7 +695,7 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
     }
   if ( allistelement_is_ext( element, list->membership_id))
     {
-      if (debug) {fprintf(stderr,"add_in_ext element  %p membership %i \n", element, list->membership_id);}
+      if (debug) {aldebug_printf(NULL,"add_in_ext element  %p membership %i \n", element, list->membership_id);}
       return allistelement_add_in_ext(element,list);
     }
   
@@ -707,7 +708,7 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
       if (allistelement_is_shrunk(element) )
 	{
 	  // can't add an element already shrunk into a new list.
-	  if (debug) {fprintf(stderr,"[WARNING] can't add an element %p already shrunk into a new list %p.\n", element, list);}
+	  if (debug) {aldebug_printf(NULL,"[WARNING] can't add an element %p already shrunk into a new list %p.\n", element, list);}
 	  return NULL;
 	}
       if ( (list->head == NULL) || (tail == NULL) )
@@ -811,7 +812,7 @@ int allistelement_is_in(struct allistelement * element, struct allistof * list)
   int rel_index = allistelement_getrelindex(element, list->membership_id);
   if ((rel_index < 0) || ( rel_index > list->membership_id ))
     {      
-      if (debug) {fprintf(stderr, "relindex %i < 0 or > membership %i element %p in %s:%i \n", rel_index, list->membership_id, element, __func__,__LINE__);}
+      if (debug) {aldebug_printf(NULL, "relindex %i < 0 or > membership %i element %p in %s:%i \n", rel_index, list->membership_id, element, __func__,__LINE__);}
       return 0; // should be -1 or something indicating an error.
     }
   return element->link[rel_index].memberof == list;
@@ -911,7 +912,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 
   if ( this == NULL)
     {
-      fprintf(stderr, "NULL element in %s:%i \n", __func__,__LINE__);
+      aldebug_printf(NULL, "NULL element in %s:%i \n", __func__,__LINE__);
       return NULL;
     }
 
@@ -925,20 +926,20 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
   // no gain... no pain !
   if ( memberships == this->memberships )
     {
-      if ( debug) { fprintf(stderr,"no gain no pain %p %i", this, memberships);}
+      if ( debug) { aldebug_printf(NULL,"no gain no pain %p %i", this, memberships);}
       return this;
     }
 
   if (allistelement_has_ext(this))
     {
       extmemberships =  allistelement_get_memberships_ext(this);;
-      if ( debug) { fprintf(stderr,"shrink of element that has extended memberships . %p %i.\n", this, extmemberships);}
+      if ( debug) { aldebug_printf(NULL,"shrink of element that has extended memberships . %p %i.\n", this, extmemberships);}
     }
   // current limit of indexset
   if ( allistelement_is_ext(this, memberships) )
     {
       // TODO support ext
-      if ( debug) { fprintf(stderr,"no shrink if requiring extended memberships . %p %i TODO \n", this, memberships);}
+      if ( debug) { aldebug_printf(NULL,"no shrink if requiring extended memberships . %p %i TODO \n", this, memberships);}
       return this;
     }
 
@@ -946,7 +947,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
   int linklength = sizeof(*this) + (sizeof(this->link) * (memberships-1));
   int newlength = linklength + (sizeof(this->link) * extmemberships);
 
-  if (debug>1) { fprintf(stderr,"[DEBUG] alloc %i bytes ( %i bytes fixed ) / old %i of element %p memberships %i extmemberships %i\n", newlength, linklength, oldlength , this, memberships, extmemberships);}
+  if (debug>1) { aldebug_printf(NULL,"[DEBUG] alloc %i bytes ( %i bytes fixed ) / old %i of element %p memberships %i extmemberships %i\n", newlength, linklength, oldlength , this, memberships, extmemberships);}
   struct allistelement * shrunk = calloc(1,newlength);
   if ( shrunk != NULL )
     {
@@ -955,7 +956,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
       // reset pointers to shrunk
       // i is absolute ( in this ) that is >= relative
       // shrunkpos is relative, in shrunk
-      if ( debug > 1 ) {fprintf(stderr,"this %p shrunk %p memberships %i\n",this, shrunk, this->memberships);}	  
+      if ( debug > 1 ) {aldebug_printf(NULL,"this %p shrunk %p memberships %i\n",this, shrunk, this->memberships);}	  
       for (int i=0; (i < this->memberships) && (shrunkerror==0); i++)
 	{
 	  if ( this->link[i].memberof != NULL )
@@ -965,7 +966,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		  if ( indexset_set(&shrunk->indexset, i) == 0)
 		    {
 		      // was already set
-		      if (debug) {fprintf(stderr,"indexset already set for %i",i);}
+		      if (debug) {aldebug_printf(NULL,"indexset already set for %i",i);}
 		    }
 		}
 	    }
@@ -976,19 +977,19 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		  if ( indexset_reset(&shrunk->indexset, i) != 0 )
 		    {
 		      // was set
-		      if (debug) {fprintf(stderr,"indexset set for %i ( should be 0) ",i);}
+		      if (debug) {aldebug_printf(NULL,"indexset set for %i ( should be 0) ",i);}
 		    }
 		}
 	      // we are not interested.
 	      continue;
 	    }
-	  if ( debug > 1 ) {fprintf(stderr,"this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
+	  if ( debug > 1 ) {aldebug_printf(NULL,"this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
 	  if ( shrunkpos < i )
 	    {
 	      if ( shrunkpos != indexset_getrelindex(&shrunk->indexset,i) )
 		{
 		  // might even be an assert , this means indexset implementation is wrong.
-		  fprintf(stderr,"internal error, indexset implementation inconsistent. contact developper (abs %i, rel %i != %i)\n",
+		  aldebug_printf(NULL,"internal error, indexset implementation inconsistent. contact developper (abs %i, rel %i != %i)\n",
 			  i,
 			  shrunkpos,
 			  indexset_getrelindex(&shrunk->indexset,i)
@@ -998,7 +999,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		  break;
 		}
 	      memcpy(&shrunk->link[shrunkpos], &this->link[i], sizeof(shrunk->link[1]));
-	      if ( debug) { fprintf(stderr,"link %i copied to %i\n", i, shrunkpos);}
+	      if ( debug) { aldebug_printf(NULL,"link %i copied to %i\n", i, shrunkpos);}
 	    }
 
 	  struct allistelement * next = shrunk->link[shrunkpos].next;
@@ -1006,31 +1007,31 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 
 	  if (( next !=NULL) && (allistelement_has_ext(next)))
 	    {
-	      if (debug) {fprintf(stderr,"next %p is extended\n", next );}
+	      if (debug) {aldebug_printf(NULL,"next %p is extended\n", next );}
 	    }
 
 	  if (( previous !=NULL) && (allistelement_has_ext(previous)))
 	    {
-	      if (debug) {fprintf(stderr,"previous %p is extended\n", previous );}
+	      if (debug) {aldebug_printf(NULL,"previous %p is extended\n", previous );}
 	    }
 
 	  if ( this->link[i].next != next )
 	    {
-	      if (debug) {fprintf(stderr,"shrunk %p and this %p next differs\n", this->link[i].next, next );}
+	      if (debug) {aldebug_printf(NULL,"shrunk %p and this %p next differs\n", this->link[i].next, next );}
 	      ++ shrunkerror;
 	    }
 
 	  if ( this->link[i].previous != previous )
 	    {
-	      if (debug) {fprintf(stderr,"shrunk %p and this %p previous differs\n", this->link[i].previous , previous );}
+	      if (debug) {aldebug_printf(NULL,"shrunk %p and this %p previous differs\n", this->link[i].previous , previous );}
 	      ++ shrunkerror;
 	    }
 
 	  if (debug)
 	    {
-	      fprintf(stderr,"%i, %i, %p %p\n",i, shrunkpos, shrunk->data, shrunk->link[shrunkpos].memberof);
-	      fprintf(stderr,"Next %p %p\n", next, (next !=NULL) ? next->data : NULL);
-	      fprintf(stderr,"Previous %p %p\n", previous, (previous !=NULL) ? previous->data : NULL);
+	      aldebug_printf(NULL,"%i, %i, %p %p\n",i, shrunkpos, shrunk->data, shrunk->link[shrunkpos].memberof);
+	      aldebug_printf(NULL,"Next %p %p\n", next, (next !=NULL) ? next->data : NULL);
+	      aldebug_printf(NULL,"Previous %p %p\n", previous, (previous !=NULL) ? previous->data : NULL);
 	    }
 	  ++shrunkpos;
 	}
@@ -1057,7 +1058,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	      }
 	    if ( shrunkpos != (memberships + extmemberships) )
 	      {
-		fprintf(stderr,"[ERROR] unexpected membership size %s:%i %i!=%i %i %i\n",__func__,__LINE__,shrunkpos,(memberships + extmemberships), count, extmemberships);
+		aldebug_printf(NULL,"[ERROR] unexpected membership size %s:%i %i!=%i %i %i\n",__func__,__LINE__,shrunkpos,(memberships + extmemberships), count, extmemberships);
 		shrunkerror++;		
 	      }	    
 	}
@@ -1072,11 +1073,11 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		next = ext->nextextlink;
 		if ( next ==  (void *) 0xdeadbebf )
 		  {
-		    fprintf(stderr,"[WARNING] very suspicious pointer ext %p\n", ext);
+		    aldebug_printf(NULL,"[WARNING] very suspicious pointer ext %p\n", ext);
 		  }
 		++nowayback;
 		ext->nextextlink = (void *) 0xdeadbebf;
-		if (debug > 1) {fprintf(stderr,"[DEBUG] free ext %p", ext);}
+		if (debug > 1) {aldebug_printf(NULL,"[DEBUG] free ext %p", ext);}
 		free(ext);
 		ext=next;
 	      }
@@ -1087,7 +1088,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	{
 	  if (  shrunk->link[shrunkpos].memberof == NULL )
 	    {
-	      fprintf(stderr,"[ERROR] unexpected null membership for element %p shrunk %p pos %i", this, shrunk, shrunkpos);
+	      aldebug_printf(NULL,"[ERROR] unexpected null membership for element %p shrunk %p pos %i", this, shrunk, shrunkpos);
 	      ++ shrunkerror;
 	      break;
 	    }
@@ -1106,7 +1107,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		}
 	      else
 		{
-		  fprintf(stderr, "[ERROR] head of owning list mismatch %p != %p %p \n", shrunk->link[shrunkpos].memberof->head, this, shrunk );
+		  aldebug_printf(NULL, "[ERROR] head of owning list mismatch %p != %p %p \n", shrunk->link[shrunkpos].memberof->head, this, shrunk );
 		  ++shrunkerror;
 		}	     
 	    }
@@ -1126,13 +1127,13 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		    }
 		  else
 		    {
-		      fprintf(stderr, "[ERROR] previous.next membership was not pointing on this %i %p != %p \n", i, plink->next, this);
+		      aldebug_printf(NULL, "[ERROR] previous.next membership was not pointing on this %i %p != %p \n", i, plink->next, this);
 		      ++shrunkerror;
 		    }		  
 		}
 	      else
 		{
-		  fprintf(stderr, "[ERROR] previous link is null membership %i element %p shrunk %p \n", i, this, shrunk);
+		  aldebug_printf(NULL, "[ERROR] previous link is null membership %i element %p shrunk %p \n", i, this, shrunk);
 		  dump_element_full(this);
 		  exit(0);
 		}
@@ -1146,7 +1147,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		}
 	      else
 		{
-		  fprintf(stderr, "[ERROR] tail of owning list mismatch  %p != %p %p \n", shrunk->link[shrunkpos].memberof->tail, this, shrunk );
+		  aldebug_printf(NULL, "[ERROR] tail of owning list mismatch  %p != %p %p \n", shrunk->link[shrunkpos].memberof->tail, this, shrunk );
 		  ++shrunkerror;
 		}
 	    }
@@ -1166,13 +1167,13 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		    }
 		  else
 		    {
-		      fprintf(stderr, "[ERROR] next.previous %i was not pointing on this %p != %p \n", i, nlink->next, this);
+		      aldebug_printf(NULL, "[ERROR] next.previous %i was not pointing on this %p != %p \n", i, nlink->next, this);
 		      ++shrunkerror;
 		    }		  
 		}
 	      else
 		{
-		  fprintf(stderr, "[ERROR] next link is null membership %i element %p shrunk %p \n", i, this, shrunk);
+		  aldebug_printf(NULL, "[ERROR] next link is null membership %i element %p shrunk %p \n", i, this, shrunk);
 		}
 	    }
 	}
@@ -1190,7 +1191,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	      free(shrunk);
 	    }
 	  // corrupted people should not be freed.
-	  fprintf(stderr,"[FATAL] corrupted links remains to this allocated space, should not free %p\n", shrunk);
+	  aldebug_printf(NULL,"[FATAL] corrupted links remains to this allocated space, should not free %p\n", shrunk);
 	}
       shrunk = NULL;
     }
@@ -1201,7 +1202,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
     }
   if ( shrunk != NULL )
     {
-      if ( debug > 1 ) {fprintf(stderr,"RETURN this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
+      if ( debug > 1 ) {aldebug_printf(NULL,"RETURN this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
     }
   return shrunk;      
 }

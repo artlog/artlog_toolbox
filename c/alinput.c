@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "alinput.h"
+#include "aldebug.h"
 
 void alinputstream_init(struct alinputstream * stream, int fd)
 {
@@ -39,7 +40,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
   result[3]=v[0];
   if ( stream->debug )
     {
-      fprintf(stderr,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
+      aldebug_printf(NULL,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
     }  
   return (*(unsigned int*) result);
 }

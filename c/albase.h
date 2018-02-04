@@ -2,9 +2,7 @@
 #define __ALBASE_H__
 
 #include "alstrings.h"
-
-// for debug display
-void albase_set_debug(int debug);
+#include "aldebug.h"
 
 // correct bases are 2 binary, 8 octal,10 decimal ,16 hexadecimal.
 // allocate buffer on allocator, result reference is in out.
