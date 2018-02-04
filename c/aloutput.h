@@ -3,17 +3,17 @@
 
 #include <stdio.h>
 
-struct outputstream {
+struct aloutputstream {
   FILE * file;
   int fd;
   int debug;
 };
 
-void outputstream_init(struct outputstream * stream, FILE * file);
+void aloutputstream_init(struct aloutputstream * stream, FILE * file);
 
-void outputstream_writeint32(struct outputstream * stream, int word);
+void aloutputstream_writeint32(struct aloutputstream * stream, int word);
 
-int outputstream_getfd(struct outputstream * stream);
+int aloutputstream_getfd(struct aloutputstream * stream);
 
-FILE * outputstream_file(struct outputstream * stream);
+FILE * aloutputstream_file(struct aloutputstream * stream);
 #endif

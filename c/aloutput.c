@@ -2,23 +2,23 @@
 #include <stdio.h>
 #include "aloutput.h"
 
-void outputstream_init(struct outputstream * stream, FILE * file)
+void aloutputstream_init(struct aloutputstream * stream, FILE * file)
 {
   stream->file=file;
   stream->fd = fileno(file);
 }
 
-int outputstream_getfd(struct outputstream * stream)
+int alaloutputstream_getfd(struct aloutputstream * stream)
 {
   return stream->fd;
 }
 
-FILE * outputstream_file(struct outputstream * stream)
+FILE * aloutputstream_file(struct aloutputstream * stream)
 {
   return stream->file;
 }
 
-void outputstream_writeint32(struct outputstream * stream, int word)
+void aloutputstream_writeint32(struct aloutputstream * stream, int word)
 {
   // warning little endian !
   int r = 0;
