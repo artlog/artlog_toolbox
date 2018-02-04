@@ -92,7 +92,7 @@ testjson:$(BUILD)/json
 
 $(BUILD)/json: $(objects)
 	@echo link json objects $(objects) and libjson
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson  -lalstack -lalcommon  -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson  -lalstack -lalhash -lalcommon  -Wl,-Bdynamic
 
 $(BUILD)/obj:
 	mkdir -p $@

@@ -41,8 +41,8 @@ struct alhash_table {
 
 // allocation of words, dict
 struct alparser_ctx {
-  ALDEBUG_DEFINE_FLAG(debug);
-  alstrings_ringbuffer_pointer ringbuffer;
+  ALDEBUG_DEFINE_FLAG(debug)
+  struct alallocation_ctx allocator;
   struct alhash_table dict;
   int words;
 };

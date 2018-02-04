@@ -8,7 +8,7 @@ void aldebug_printf(void * debugconfig, const char *format, ...)
   va_start(args, format);
 
   // todo prefix with [DEBUG]
-  vprintf(format, args);
+  vfprintf(stderr,format, args);
   
   va_end(args);
 }

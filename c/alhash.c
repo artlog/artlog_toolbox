@@ -385,7 +385,7 @@ int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
   // autogrow
   alparser->dict.autogrow = 170;
   // WARNING will set alparser->ringbuffer content
-  alstrings_ringbuffer_init_autogrow(&alparser->ringbuffer, 15, chars);
+  alstrings_ringbuffer_init_autogrow(&alparser->allocator.ringbuffer, 15, chars);
 
   return 1;
 }

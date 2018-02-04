@@ -14,7 +14,6 @@
 #define todo(text) printf("todo(%s)\n",text);
 #endif
 
-
 struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
   {
     {.value=JSON_CONSTANT_TRUE},
@@ -33,7 +32,6 @@ int json_set_debug(int debug)
   return previous;
 }
 
-
 /**
 a complicated json stream ( one char ahead ) parser 
 dual implementiation call stack and data stack 
@@ -46,11 +44,25 @@ JSON_DEFINE_NEW(parenthesis,'{')
 JSON_DEFINE_NEW(braket,'[')
 JSON_DEFINE_TOGGLE(variable,'?')
 
+struct json_object * aljson_new_json_string(struct json_parser_ctx * ctx, char objtype, struct alhash_datablock * data)
+{  
+  struct json_object * object=(struct json_object *) ALALLOC(ctx->alparser.allocator,sizeof(struct json_object));
+  if (object != NULL)
+    {
+      object->type=objtype;
+      memcpy(&object->string.internal,data,sizeof(object->string.internal));
+    }
+  else
+    {
+      memory_shortage(NULL);
+    }
+  return object;
+}
 
 struct json_object * new_json_error(struct json_parser_ctx * parser, enum json_syntax_error erroridx)
 {
   struct json_ctx * ctx = parser->tokenizer;
-  struct json_object * object = malloc(sizeof(struct json_object));
+  struct json_object * object = (struct json_object *) ALALLOC(parser->alparser.allocator,sizeof(struct json_object));
   if (object != NULL)
     {
       object->type='E';
@@ -109,23 +121,6 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   return err_object;
 }
 
-// todo use struct alhash_entry *
-// alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int length)
-struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct alhash_datablock * data)
-{  
-  struct json_object * object=calloc(1,sizeof(struct json_object));
-  if (object != NULL)
-    {
-      object->type=objtype;
-      memcpy(&object->string.internal,data,sizeof(object->string.internal));
-    }
-  else
-    {
-      memory_shortage(NULL);
-    }
-  return object;
-}
-
 struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype, alstrings_ringbuffer_pointer * allocator, struct alhash_datablock * data)
 {
   struct json_object * object=(struct json_object *) al_alloc_block(allocator,sizeof(struct json_object));
@@ -143,10 +138,10 @@ struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype,
 // allocate a new json_object
 // borrow buf buffer of json_ctx and set it into a json_string
 // reset json_ctx buffer.
-struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
+struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtype)
 {
   struct json_object * object=NULL;
-  struct token_char_buffer * tb = &ctx->token_buf;
+  struct token_char_buffer * tb = &ctx->tokenizer->token_buf;
   // warning, should keep a place for final 0
   if ( (tb->bufpos + 1) < tb->bufsize )
     {
@@ -165,7 +160,7 @@ struct json_object * cut_string_object(struct json_ctx * ctx, char objtype)
   object = aljson_new_json_string(ctx,objtype,&data);
 
   // buffer will be re-allocated -> where is it done ?
-  bzero(&ctx->token_buf, sizeof(ctx->token_buf));
+  bzero(&ctx->tokenizer->token_buf, sizeof(ctx->tokenizer->token_buf));
       
   return object;
 }
@@ -218,14 +213,16 @@ void json_growable_release_object(struct json_object * object)
 	  object->growable.size--;
 	}
     }
-  free(object);
+  // fixme
+  // free(object);
 }
 
 void json_release_object(struct json_object * object)
 {
   // FIXME since object might link to other objects...
   assert(object != NULL);
-  free(object);
+  // fixme
+  // free(object);
 }
 
 void dump_growable(struct json_parser_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx);
@@ -320,7 +317,7 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
   struct json_link * link=NULL;
   int size=growable->size;
   int i=0;  
-  struct json_object * object=malloc(sizeof(struct json_object) + size*sizeof(struct json_object *)); // a little bigger than needed
+  struct json_object * object= (struct json_object *) ALALLOC(parser->alparser.allocator,sizeof(struct json_object) + size*sizeof(struct json_object *)); // a little bigger than needed
   if (object != NULL)
     {
       struct json_list * list=&object->list;
@@ -363,7 +360,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
   int size=growable->size;
   // index of element keypair in dict.
   int i=0;
-  struct json_object * object=malloc(sizeof(struct json_object) + size*sizeof(struct json_pair *)); // a little bigger than needed
+  struct json_object * object= (struct json_object *) ALALLOC(parser->alparser.allocator,sizeof(struct json_object) + size*sizeof(struct json_pair *)); // a little bigger than needed
   if (object != NULL)
     {
       struct json_dict * dict=&object->dict;
@@ -442,7 +439,7 @@ struct json_object * aljson_concrete(struct json_parser_ctx * parser, struct jso
 struct json_object * new_json_constant_object(struct json_parser_ctx * parser, char t, enum json_internal_constant constant)
 {
   struct json_ctx * ctx = parser->tokenizer;
-  struct json_object * object=malloc(sizeof(struct json_object));
+  struct json_object * object= (struct json_object *) ALALLOC(parser->alparser.allocator,sizeof(struct json_object));
   debug_tag(ctx,t);
   if (object != NULL)
     {
@@ -568,7 +565,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	      }
 	    else
 	      {
-		object=cut_string_object(ctx->tokenizer,'"');
+		object=cut_string_object(ctx,'"');
 		if (parent == NULL)
 		  {
 		    --ctx->parsing_depth;
@@ -621,7 +618,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	      {
 		debug_tag(ctx->tokenizer,'?');
 		JSON_TOGGLE(ctx,variable);
-		struct json_object * variable_name = cut_string_object(ctx->tokenizer,'?');	  
+		struct json_object * variable_name = cut_string_object(ctx,'?');	  
 		if (variable_name == NULL )
 		  {
 		    syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
@@ -684,12 +681,12 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	      }
 	    break;
 	  case JSON_TOKEN_SQUOTE_ID:
-	    object=cut_string_object(ctx->tokenizer,'\'');
+	    object=cut_string_object(ctx,'\'');
 	    break;
 	  case JSON_TOKEN_NUMBER_ID:
 	    if ( object == NULL )
 	      {
-		object=cut_string_object(ctx->tokenizer,'0');
+		object=cut_string_object(ctx,'0');
 		if (parent == NULL)
 		  {
 		    --ctx->parsing_depth;
@@ -951,7 +948,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		dump_object(ctx,object,NULL);
 	      }			    
 	  }
-	object=cut_string_object(ctx->tokenizer,'"');
+	object=cut_string_object(ctx,'"');
 	break;
       case JSON_TOKEN_COMMA_ID:
 	if (object !=NULL)
@@ -1002,7 +999,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	  {
 	    debug_tag(ctx->tokenizer,'?');
 	    JSON_TOGGLE(ctx,variable);
-	    struct json_object * variable_name = cut_string_object(ctx->tokenizer,'?');	  
+	    struct json_object * variable_name = cut_string_object(ctx,'?');	  
 	    if (variable_name == NULL )
 	      {
 		syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
@@ -1052,7 +1049,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
       case JSON_TOKEN_SQUOTE_ID:
 	if ( object != NULL )
 	  {
-	    object=cut_string_object(ctx->tokenizer,'\'');
+	    object=cut_string_object(ctx,'\'');
 	  }
 	else
 	  {
@@ -1063,7 +1060,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
       case JSON_TOKEN_NUMBER_ID:
 	if ( object == NULL )
 	  {
-	    object=cut_string_object(ctx->tokenizer,'0');
+	    object=cut_string_object(ctx,'0');
 	  }
 	else
 	  {

@@ -130,12 +130,12 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
       // no entry found, create it
       ++alparser->words;
       // use al_copy_block that support autogrow
-      key.data.ptr = al_copy_block(&alparser->ringbuffer,&key);
+      key.data.ptr = al_copy_block(&alparser->allocator.ringbuffer,&key);
       if ( key.data.ptr== NULL )
 	{
 	  fprintf (stderr,
 		   "[WARNING] internal char buffer for words full %i+%i>%i",
-		   alparser->ringbuffer->bufpos, length, alparser->ringbuffer->bufsize);
+		   alparser->allocator.ringbuffer->bufpos, length, alparser->allocator.ringbuffer->bufsize);
 	  todo ("[FATAL] word buffer full");
 	  return NULL;
 	}

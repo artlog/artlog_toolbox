@@ -1,6 +1,8 @@
 #ifndef _AL_STRING_H_
 #define _AL_STRING_H_
 
+#include "aldebug.h"
+
 // type of one object (struct alhash_datablock ) within ( struct token_char_buffer )
 enum altype {
   ALTYPE_OPAQUE=0, // opaque type meaning no encoding type known.
@@ -50,6 +52,20 @@ struct token_char_buffer {
 
 // introduced alstrings_ringbuffer_pointer , that point to right token_char_buffer within ring.
 typedef struct token_char_buffer * alstrings_ringbuffer_pointer;
+
+// allocation context ( it can only grow or be fully released )
+struct alallocation_ctx {
+  ALDEBUG_DEFINE_FLAG(debug)
+  alstrings_ringbuffer_pointer ringbuffer;
+};
+
+#define ALALLOC(ctx, length) al_alloc_block(&ctx.ringbuffer, length)
+
+// just does nothing on ctx... only ALFREECTX can be used, but it releases ALL.
+// created to track possible repalcement with malloc/free
+#define ALRELEASE(ctx, object)
+		  
+#define ALFREECTX(ctx) alstrings_ringbuffer_release(&ctx->ringbuffer)
 
 /* non NULL if grown, else miss
 usualy double of size

@@ -21,12 +21,12 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
       printf("add '%s'='%s' in options\n",ikey,ivalue);
       // not true given length provided but type should the same
       key.type = ALTYPE_STR0;
-      key.data.ptr=al_copy_block(&options->context.ringbuffer, &key);
+      key.data.ptr=al_copy_block(&options->context.allocator.ringbuffer, &key);
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
       value.data.ptr=ivalue;
       // using al_copy_block allows to have data block autogrowth.
-      value.data.ptr=al_copy_block(&options->context.ringbuffer,&value);
+      value.data.ptr=al_copy_block(&options->context.allocator.ringbuffer,&value);
 
       entry = alhash_put (&options->context.dict, &key, &value);
       if (entry == NULL)
@@ -60,9 +60,9 @@ void al_options_init(struct al_options * options)
 void al_options_release(struct al_options * options)
 {
   // case of dedicated ringbuffer ... should check.
-  if (options->context.ringbuffer != NULL )
+  if (options->context.allocator.ringbuffer != NULL )
     {
-      alstrings_ringbuffer_release(&options->context.ringbuffer);
+      alstrings_ringbuffer_release(&options->context.allocator.ringbuffer);
     }
   alhash_release(&options->context.dict);
 }

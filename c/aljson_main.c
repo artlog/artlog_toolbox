@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <strings.h>
 
 #include "alinput.h"
 #include "aljson_import_internal.h"
@@ -17,6 +18,44 @@ void usage()
   printf("Second argument : filename to open in read only mode to parse in json for template.\n");
   printf("Output : dump parsed json to standard output.\n");
   printf("-d debug, -m non recursive, -p path, -c check only (no print)");
+}
+
+
+void aljson_init(
+	       struct json_parser_ctx * json_context,
+	       struct json_ctx * json_tokenizer,
+	       struct print_ctx * print_context)
+{
+    // clean ground
+  bzero(json_context, sizeof(*json_context));
+  bzero(json_tokenizer, sizeof(*json_tokenizer));
+
+  // allocator intialization
+  alparser_init(&json_context->alparser,10,1024);
+    
+  json_import_context_initialize(json_tokenizer);
+  
+  json_context->tokenizer=json_tokenizer;
+  json_context->max_depth=10000;
+  json_context->parsing_depth=json_context->max_depth - 4;
+
+  /* tabs
+  print_context.do_indent = 1;
+  print_context.indent = 0;
+  print_context.s_indent = "\t";
+  */
+
+  // two spaces
+  print_context->do_indent = 2;
+  print_context->indent = 0;
+  print_context->s_indent = " ";
+  
+  /* flat canonical
+  print_context.do_indent = 0;
+  print_context.indent = 0;
+  print_context.s_indent = NULL;
+  */
+
 }
 
 /**
@@ -42,46 +81,23 @@ int main(int argc, char ** argv)
   struct json_ctx json_tokenizer;
   struct print_ctx print_context;
 
-  struct json_import_context_data data;
-  struct alinputstream inputstream;
-  struct alinputstream template_inputstream;
+  aljson_init(&json_context,&json_tokenizer,&print_context);
 
-  json_import_context_initialize( &json_tokenizer);
-  
-  json_context.tokenizer=&json_tokenizer;
-  json_context.max_depth=10000;
-  json_context.parsing_depth=json_context.max_depth - 4;
-
-  /* tabs
-  print_context.do_indent = 1;
-  print_context.indent = 0;
-  print_context.s_indent = "\t";
-  */
-
-  // two spaces
-  print_context.do_indent = 2;
-  print_context.indent = 0;
-  print_context.s_indent = " ";
-  
-  /* flat canonical
-  print_context.do_indent = 0;
-  print_context.indent = 0;
-  print_context.s_indent = NULL;
-  */
-
-  struct json_ctx json_template_tokenizer;
   struct json_parser_ctx json_template_context;
+  struct json_ctx json_template_tokenizer;
   struct print_ctx print_template_context;
 
-  struct json_import_context_data template_data;
-
+  aljson_init(&json_template_context,&json_template_tokenizer,&print_template_context);
+  
+  
   json_import_context_initialize( &json_template_tokenizer);
   json_template_context.tokenizer=&json_template_tokenizer;
 
-  // two spaces
+  // no indent
   print_template_context.do_indent = 0;
   print_template_context.indent = 0;
   print_template_context.s_indent = "";
+
   
   if ( argc > 1 )
     {
@@ -135,7 +151,13 @@ int main(int argc, char ** argv)
   json_ctx_set_debug(&json_tokenizer,debug);
   json_ctx_set_debug(&json_template_tokenizer,debug);
   main_debug=debug;
-  
+
+  struct json_import_context_data data;
+  struct json_import_context_data template_data;
+
+  struct alinputstream inputstream;
+  struct alinputstream template_inputstream;
+
   if (json_filename != NULL)
     {
       if ( debug > 0)

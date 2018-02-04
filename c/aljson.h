@@ -160,12 +160,10 @@ struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_
 // if data is non NULL it is copied as json_object.string.internal.
 struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype,alstrings_ringbuffer_pointer * allocator, struct alhash_datablock  * data);
 
-// create a json string object from a given buffer
+/* internal only 
 struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct alhash_datablock  * data);
-  
-// create a json string object from context buffer
-struct json_object * cut_string_object(struct json_ctx * ctx, char objtype);
-
+*/
+ 
 struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct json_object * key);
   
 struct json_object * aljson_new_growable(struct json_parser_ctx * ctx, char final_type);
@@ -267,6 +265,8 @@ return a json_concret'ized object representing full parsing for this level.
  **/
 struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent);
 
+struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtype);
+
 #define JSON_OPEN(ctx,__member__,object)   ctx->__member__.open_level++;ctx-> __member__ .max_open_level++;object=aljson_new_ ## __member__(ctx);
 #define JSON_CLOSE(ctx,__member__)   ctx->__member__.open_level--;ctx-> __member__.max_close_level++;
 #define JSON_TOGGLE(ctx,__member__)   ctx->__member__.open_level++;ctx->__member__.max_open_level++; 
@@ -277,7 +277,7 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
   int result = parse_until_escaped_level(ctx->tokenizer,data,__char__,'\\');\
   if ( result ) { \
     JSON_TOGGLE(ctx,__member__);			\
-    return cut_string_object(ctx->tokenizer,__char__);		\
+    return cut_string_object(ctx,__char__);		\
   }							\
   return (struct json_object *) NULL;		\
 }\
