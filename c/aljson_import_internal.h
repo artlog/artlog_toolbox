@@ -1,13 +1,13 @@
 #ifndef __JSON_IMPORT_INTERNAL_HEADER__
 #define __JSON_IMPORT_INTERNAL_HEADER__
 
-#include "inputstream.h"
+#include "alinput.h"
 #include "aljson.h"
 
 /** fully rely on stream buffering */
 struct json_import_context_data {
   char last;
-  struct inputstream * inputstream;
+  struct alinputstream * inputstream;
   int flags;
   int debug;
 };

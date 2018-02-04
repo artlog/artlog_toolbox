@@ -1,16 +1,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
-#include "inputstream.h"
+#include "alinput.h"
 
-void inputstream_init(struct inputstream * stream, int fd)
+void alinputstream_init(struct alinputstream * stream, int fd)
 {
   stream->fd=fd;
   stream->eof=0;
   stream->debug=0;
 }
 
-unsigned int inputstream_readuint32(struct inputstream * stream)
+unsigned int alinputstream_readuint32(struct alinputstream * stream)
 {
   unsigned char v[4];
   unsigned char result[4];
@@ -45,7 +45,7 @@ unsigned int inputstream_readuint32(struct inputstream * stream)
 }
 
 // WARNING 0 char considered as EOF.
-unsigned char inputstream_readuchar(struct inputstream * stream)
+unsigned char alinputstream_readuchar(struct alinputstream * stream)
 {
   unsigned char result = 0;
   if ( read(stream->fd,&result,1) == 1 )

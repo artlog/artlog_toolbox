@@ -9,7 +9,7 @@ char json_read_char(struct json_import_context_data * json_import_data)
 {
   if (json_import_data->inputstream != NULL )
     {
-       json_import_data->last = inputstream_readuchar(json_import_data->inputstream);
+       json_import_data->last = alinputstream_readuchar(json_import_data->inputstream);
     }
   else
     {

@@ -1,6 +1,6 @@
 #include <unistd.h>
 #include <stdio.h>
-#include "outputstream.h"
+#include "aloutput.h"
 
 void outputstream_init(struct outputstream * stream, FILE * file)
 {

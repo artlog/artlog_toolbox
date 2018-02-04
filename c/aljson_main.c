@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "inputstream.h"
+#include "alinput.h"
 #include "aljson_import_internal.h"
 
 /**
@@ -43,8 +43,8 @@ int main(int argc, char ** argv)
   struct print_ctx print_context;
 
   struct json_import_context_data data;
-  struct inputstream inputstream;
-  struct inputstream template_inputstream;
+  struct alinputstream inputstream;
+  struct alinputstream template_inputstream;
 
   json_import_context_initialize( &json_tokenizer);
   
@@ -148,7 +148,7 @@ int main(int argc, char ** argv)
       if ( data_file != NULL )
 	{
 	  struct json_object * root=NULL;
-	  inputstream_init(&inputstream,fileno(data_file));
+	  alinputstream_init(&inputstream,fileno(data_file));
 	  data.inputstream=&inputstream;
 	  root=parse_level(&json_context,&data,root);
 	  fclose(data_file);
@@ -188,7 +188,7 @@ int main(int argc, char ** argv)
 	      if ( template_file != NULL )
 		{
 		  struct json_object * template_root=NULL;
-		  inputstream_init(&template_inputstream,fileno(template_file));
+		  alinputstream_init(&template_inputstream,fileno(template_file));
 		  template_data.inputstream=&inputstream;
 		  template_root=parse_level(&json_template_context,&template_data,template_root);
 		  fclose(template_file);

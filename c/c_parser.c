@@ -3272,8 +3272,8 @@ main (int argc, char **argv)
   struct c_parser_ctx parser;
   struct json_import_context_data importer;
   struct json_ctx tokenizer;
-  struct inputstream main_inputstream;
-  struct inputstream * inputstream = NULL;
+  struct alinputstream main_inputstream;
+  struct alinputstream * inputstream = NULL;
   FILE *file = NULL;
 
   struct al_options * options = al_options_create(argc,argv);
@@ -3305,7 +3305,7 @@ main (int argc, char **argv)
 	}
       else
 	{
-	  inputstream_init(&main_inputstream, fileno (file));
+	  alinputstream_init(&main_inputstream, fileno (file));
 	  inputstream=&main_inputstream;
 	}
     }
