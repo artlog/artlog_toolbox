@@ -5,6 +5,8 @@
 #include "al_options.h"
 #include "todo.h"
 
+ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
+
 void al_option_add(struct al_options * options, char * ikey, char * ivalue)
 {
   struct alhash_datablock key;
@@ -12,21 +14,21 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
   key.type = ALTYPE_STR0;
   key.length = strlen(ikey) + withnullbyte; 
   key.data.ptr = ikey;
-  struct alhash_entry *entry =  alhash_get_entry(&options->table, &key);
+  struct alhash_entry *entry =  alhash_get_entry(&options->context.dict, &key);
   if (entry == NULL)
     {
       struct alhash_datablock value;
       printf("add '%s'='%s' in options\n",ikey,ivalue);
       // not true given length provided but type should the same
       key.type = ALTYPE_STR0;
-      key.data.ptr=al_copy_block(&options->ringbuffer, &key);
+      key.data.ptr=al_copy_block(&options->context.ringbuffer, &key);
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
       value.data.ptr=ivalue;
       // using al_copy_block allows to have data block autogrowth.
-      value.data.ptr=al_copy_block(&options->ringbuffer,&value);
+      value.data.ptr=al_copy_block(&options->context.ringbuffer,&value);
 
-      entry = alhash_put (&options->table, &key, &value);
+      entry = alhash_put (&options->context.dict, &key, &value);
       if (entry == NULL)
 	{
 	  fprintf (stderr,
@@ -34,34 +36,38 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
 	}
       else
 	{
-	  printf("entry '%s'='%s'\n", entry->key.data, entry->value.data);
+	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	    {
+	      fprintf(stderr,"[DEBUG] entry '%s'='%s'\n", entry->key.data, entry->value.data);
+	    }
 	}
     }
   else
     {
-      printf("DON'T add '%s'='%s' in options, key entry already exists\n",ikey,ivalue);
+      ALDEBUG_IF_DEBUG(options, al_options, debug)
+	{
+	  fprintf(stderr,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",ikey,ivalue);
+	}
     }
 }
 
 void al_options_init(struct al_options * options)
 {
   bzero(options,sizeof(*options));
-  // alhash is autogrowing by default.
-  alhash_init (&options->table, 0, NULL);
-  // buffer with autogrow since we are using al_copy_block to put data within
-  alstrings_ringbuffer_init_autogrow(&options->ringbuffer,15,1024);
+  alparser_init(&options->context,15,1024);
 }
 
 void al_options_release(struct al_options * options)
 {
-  if (options->ringbuffer != NULL )
+  // case of dedicated ringbuffer ... should check.
+  if (options->context.ringbuffer != NULL )
     {
-      alstrings_ringbuffer_release(&options->ringbuffer);
+      alstrings_ringbuffer_release(&options->context.ringbuffer);
     }
-  alhash_release(&options->table);
+  alhash_release(&options->context.dict);
 }
 
-struct al_options * al_create_options(int argc, char ** argv)
+struct al_options * al_options_create(int argc, char ** argv)
 {
   struct al_options * options = malloc(sizeof(*options));
   al_options_init(options);
@@ -74,7 +80,10 @@ struct al_options * al_create_options(int argc, char ** argv)
       sscanf(argv[i],"%m[^=]=%m[^=]",&key,&value);      
       if ( ( key != NULL )  && (value != NULL))
 	{
-	  printf("option recognized : '%s'='%s'\n",key,value);
+	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	    {
+	  fprintf(stderr,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
+	}
 	  al_option_add(options,key,value);
 	  free(key);
 	  free(value);
@@ -90,10 +99,13 @@ struct alhash_datablock * al_option_get(struct al_options * options, char * ikey
   key.type = ALTYPE_STR0;
   key.length = strlen(ikey);
   key.data.ptr = ikey;
-  struct alhash_entry *entry =  alhash_get_entry (&options->table, &key);
+  struct alhash_entry *entry =  alhash_get_entry (&options->context.dict, &key);
   if (entry == NULL)
     {
-      printf("option %s, NOT FOUND\n",ikey);
+	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	    {
+	      fprintf(stderr,"[DEBUG] option %s, NOT FOUND\n",ikey);
+	    }
       return NULL;
     }
   else

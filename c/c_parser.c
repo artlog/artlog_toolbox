@@ -3276,9 +3276,10 @@ main (int argc, char **argv)
   struct inputstream * inputstream = NULL;
   FILE *file = NULL;
 
-  alhash_set_debug(255);
+  struct al_options * options = al_options_create(argc,argv);
 
-  struct al_options * options = al_create_options(argc,argv);
+  // don't set debug to options
+  al_options_set_debug(options,0);
     
   bzero (&tokenizer, sizeof (tokenizer));
   bzero (&importer, sizeof (importer));

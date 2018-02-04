@@ -2,6 +2,7 @@
 #define _JSON_PARSER_H_
 
 #include "alstrings.h"
+#include "aldebug.h"
 
 // everything for tokenizing.
 // todo rename me as json_tokenizer.h
@@ -107,7 +108,7 @@ struct json_ctx
   get_next_char next_char;
   set_pushback_char pushback_char;
   al_tokenizer_func tokenizer;
-  int debug_level;
+  ALDEBUG_DEFINE_FLAG(debug_level)
   // add a char to currently parsed token.
   add_token_char add_char;
   // for add_char usage
@@ -140,15 +141,9 @@ struct json_ctx
 /** Initialize json_context **/
 void json_context_initialize(struct json_ctx *json_context, get_next_char next_char);
 
-/** set debug level 0 : none 
-return previous debug flags
-*/
-int json_ctx_set_debug(struct json_ctx * ctx, int debug);
-
-int json_context_get_debug(struct json_ctx *json_context);
+ALDEBUG_DECLARE_FUNCTIONS(struct json_ctx, json_ctx);
 
 void debug_tag(struct json_ctx *ctx,char c);
-
 
 /**
  used during parsing when a char should be re-parsed 

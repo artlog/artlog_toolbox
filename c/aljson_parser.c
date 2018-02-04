@@ -14,6 +14,8 @@ TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
 TOKEN_DEFINE_TOKENIZER(SQUOTE,'\'')
 TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
 
+ALDEBUG_DEFINE_FUNCTIONS(struct json_ctx, json_ctx,debug_level)
+
 /**
  return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
 */
@@ -80,9 +82,9 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
   assert( (ctx->pos>0) && (pushback == str->chars[ctx->pos-1]));
   */
   ctx->pos--;
-  if ( json_context_get_debug(ctx) )
+  ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
     {
-      printf("(pushback %c)",pushback);      
+      fprintf(stderr,"[DEBUG] (pushback %c)\n",pushback);      
     }
 }
 
@@ -131,7 +133,7 @@ int token_char_buffer_add_char(struct token_char_buffer * ctx, char token, char 
 // keep a growable buffer in ctx, grow it as needed
 int add_char(struct json_ctx * ctx, char token, char c)
 {
-  if ( FLAG_IS_SET(json_context_get_debug(ctx),TOKENIZER_DEBUG_ADD) )
+  if ( json_ctx_is_debug(ctx,TOKENIZER_DEBUG_ADD) )
     {
       printf("%c", c);
     }
@@ -140,7 +142,7 @@ int add_char(struct json_ctx * ctx, char token, char c)
 
 void debug_tag(struct json_ctx *ctx,char c)
 {
-  if (json_context_get_debug(ctx))
+  ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
     {
       printf("%c",c);
     }
@@ -154,32 +156,6 @@ void flush_char_buffer(struct token_char_buffer * ctx)
       ctx->buf=NULL;
       ctx->bufpos=0;
       ctx->bufsize=0;
-    }
-}
-
-int json_context_get_debug(struct json_ctx * ctx)
-{
-  if ( ctx != NULL )
-    {
-      return ctx->debug_level;
-    }
-  else
-    {
-      return 0;
-    }
-}
-			   
-int json_ctx_set_debug(struct json_ctx * ctx, int debug)
-{
-  if ( ctx != NULL )
-    {
-      int previous=ctx->debug_level;
-      ctx->debug_level = debug;
-      return previous;
-    }
-  else
-    {
-      return 0;
     }
 }
 
@@ -214,7 +190,8 @@ enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char f
   char c = first;
   while ( state >= ALJSON_NPSTATE_INIT )
     {
-      if ( json_context_get_debug(ctx) > 3 )
+      // fixme was > 3 now i s 1
+      ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
 	{
 	  printf("(number state %i)",state);
 	}
@@ -306,7 +283,7 @@ enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char f
 	case ALJSON_NPSTATE_COMPLETING:
 	  // this char is NOT part of our number
 	  ctx->pushback_char(ctx,data,c);
-	  if ( json_context_get_debug(ctx) > 0 )
+	  ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
 	    {
 	      printf("(pushback end of number %c)",c);
 	      char d = ctx->next_char(ctx,data);
@@ -357,7 +334,8 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 
   // main loop char by char, delegate to sub parser in many cases.
   while (c != 0)  {
-    if ( ctx->debug_level > 2 )
+    // fixme debug_level was > 2 no test with 1
+    ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
       {
 	switch(c)
 	  {
@@ -392,7 +370,7 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
       case 0x0c: // cr
       case 9: // tab
 	// ignore
-	if ( ctx->debug_level > 0 )
+	ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
 	  {
 	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
@@ -407,12 +385,12 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	ctx->internal_flags |= JSON_FLAG_IGNORE;
 	break;
       default:
-	if ( ctx->debug_level > 0 )
+	ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
 	  {
 	    // we were ignoring and now will we stop ...
 	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
-		printf("ignore>");
+		fprintf(stderr,"ignore>");
 	      }
 	  }
 	ctx->internal_flags &= !JSON_FLAG_IGNORE;

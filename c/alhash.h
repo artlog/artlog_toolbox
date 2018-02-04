@@ -2,6 +2,7 @@
 #define __ALHASH_HEADER__
 
 #include "alstrings.h"
+#include "aldebug.h"
 
 /**
 a fixed hash table
@@ -27,7 +28,10 @@ struct alhash_bucket {
   struct alhash_entry entries[ALHASH_BUCKET_SIZE];
 };
 
+struct alparser_ctx;
+
 struct alhash_table {
+  struct alparser_ctx * context;
   int bucket_size; // number of possible entries in this table
   int used; // number of entries in  use
   int autogrow; // 0 don't grow automatically, else grow if alhash_get_free < autogrow.
@@ -37,11 +41,13 @@ struct alhash_table {
 
 // allocation of words, dict
 struct alparser_ctx {
-  // struct token_char_buffer word_buffer;
+  ALDEBUG_DEFINE_FLAG(debug);
   alstrings_ringbuffer_pointer ringbuffer;
   struct alhash_table dict;
   int words;
 };
+
+ALDEBUG_DECLARE_FUNCTIONS(struct alparser_ctx, alparser_ctx);
 
 long alhash_hash_string(void * string, int length);
 
@@ -62,6 +68,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
 // if length is 0 : AUTO : autogrowth is set and length = ALHASH_BUCKET_SIZE)
 // if alhash_func is set to NULL then default string hash is used (alhash_hash_string)
+// DON'T use externally, use alparser_init ( taht comes with a dedicated context )
 void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length));
 
 // walk entry and all collisions.
@@ -73,8 +80,6 @@ int alhash_walk_collisions(struct alhash_entry * entry, alhash_callback callback
 // if callback returns a value != 0 it stops.
 // return number of elements accepted by callback ( for which callback return value was 0 ).
 int alhash_walk_table( struct alhash_table * table, alhash_callback callback, void * data);
-
-void alhash_set_debug(int debug);
 
 // release whole table glue ( ie does not free data content )
 void alhash_release(struct alhash_table * table);

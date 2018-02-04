@@ -2,19 +2,23 @@
 #define _AL_OPTIONS_H_
 
 /**
-keep options of a program
+keep options of a program 
+can be retrieved by c string key as c strings
  **/
 
 #include "aljson.h"
 #include "alhash.h"
+#include "aldebug.h"
 
 struct al_options {
-  struct alhash_table table;
-  alstrings_ringbuffer_pointer ringbuffer;
+  ALDEBUG_DEFINE_FLAG(debug);
+  struct alparser_ctx context;
 };
 
+ALDEBUG_DECLARE_FUNCTIONS(struct al_options, al_options);
+
 // create options from arguments
-struct al_options * al_create_options(int argc, char ** argv);
+struct al_options * al_options_create(int argc, char ** argv);
 
 // get one named option by key
 struct alhash_datablock * al_option_get(struct al_options * options, char * key);

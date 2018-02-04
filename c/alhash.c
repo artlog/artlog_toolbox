@@ -1,5 +1,7 @@
 /**
-a hash within your tools allow you to do smoke tests
+'a hash within your tools allow you to do smoke tests'
+
+implementation of a hashtable in a miserable way.
 **/
 
 #include "alhash.h"
@@ -16,19 +18,17 @@ enum alhash_match_result {
   ALH_MR_INVALID=2, // it does not match because one value is invalid ( internal error ).
 };
 
-static int alhash_debug = 0;
+struct alparser_ctx alparser_ctx_default = {
+  .debug = 1,
+};
+
+ALDEBUG_DEFINE_FUNCTIONS(struct alparser_ctx, alparser_ctx, debug);
 
 // make sure index is within bucket size
 static unsigned int al_get_index(long hash, int length)
 {
   unsigned int index = ((unsigned long) hash) % length;
   return index;
-}
-
-void alhash_set_debug(int debug)
-{
-  alhash_debug=debug;
-  if ( alhash_debug ) {fprintf(stderr,"alhash debug activated.\n");}
 }
 
 int aldatablock_embeded(struct alhash_datablock * key)
@@ -43,13 +43,13 @@ int aldatablock_valid(struct alhash_datablock * key)
   // this means that embeded 0 value is OK.
   if ( key->length  < 0 )
     {
-      fprintf(stderr," key->length %i < 0\n",key->length);
+      fprintf(stderr,"[FATAL] key->length %i < 0\n",key->length);
       exit(1);
     }
   // don't accept unknow types
   if ( key->type > ALTYPE_MAX )
     {
-      fprintf(stderr,"key->type %i > ALTYPE_MAX(%i) \n", key->type, ALTYPE_MAX);
+      fprintf(stderr,"[FATAL] key->type %i > ALTYPE_MAX(%i) \n", key->type, ALTYPE_MAX);
       exit(1);
     }
   // return (key->length >0) && ( aldatablock_embeded(key) || (key->data.ptr != NULL));
@@ -59,36 +59,36 @@ int aldatablock_valid(struct alhash_datablock * key)
 /**
 return if key matches entry ( see enum alhash_match_result comments )
 **/
-enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alhash_entry * entry, long hash)
+enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alhash_entry * entry, long hash, int alhash_debug)
 {
   if ( (key != NULL) && (entry != NULL) )
     {
       if ( ! aldatablock_valid(key)  || ! aldatablock_valid( &entry->key ) )
 	{
 	  // NULL or EMTPY BLOCKS NOT VALID values are wrong.
-	  if ( alhash_debug ) {fprintf(stderr,"NULL values are wrong.\n");}
+	  if ( alhash_debug ) {fprintf(stderr,"[DEBUG] NULL values are wrong.\n");}
 	  return ALH_MR_INVALID;
 	}
       if ( key->type != entry->key.type )
 	{
-	  if (alhash_debug) {fprintf(stderr,"DIFFERENT KEY TYPE %i!=%i \n", key->type,entry->key.type);}
+	  if (alhash_debug) {fprintf(stderr,"[DEBUG] DIFFERENT KEY TYPE %i!=%i \n", key->type,entry->key.type);}
 	  return  ALH_MR_NOT_EQUAL;
 	}
       if (key->length == entry->key.length)
 	{
-	  // if one is embed the other tto since type have been checked to be the same
+	  // if one is embed the other too since type have been checked to be the same
 	  if ( aldatablock_embeded(key))
 	    {
 	      // Don't even care of hash, use number.
 	      if ( key->data.number == entry->key.data.number )
 		{
 		  // obvious case, point on very same value of same size.
-		  if (alhash_debug) {fprintf(stderr,"IDENTICAL VALUES\n");}
+		  if (alhash_debug) {fprintf(stderr,"[DEBUG] IDENTICAL VALUES\n");}
 		  return ALH_MR_EQUAL;
 		}
 	      else
 		{
-		  if (alhash_debug) {fprintf(stderr,"DIFFERENT VALUES\n");}
+		  if (alhash_debug) {fprintf(stderr,"[DEBUG] DIFFERENT VALUES\n");}
 		  return  ALH_MR_NOT_EQUAL;
 		}	      
 	    }
@@ -97,23 +97,23 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 	      if ( key->data.ptr == entry->key.data.ptr )
 		{
 		  // obvious case, point on very same value of same size.
-		  if (alhash_debug) {fprintf(stderr,"IDENTICAL KEY\n");}
+		  if (alhash_debug) {fprintf(stderr,"[DEBUG] IDENTICAL KEY\n");}
 		  return ALH_MR_EQUAL;
 		}
 	      else if ( hash == entry->hash_key )
 		{
 		  // should be the very same key.
-		  if (alhash_debug) {fprintf(stderr,"SAME KEY\n");}
+		  if (alhash_debug) {fprintf(stderr,"[DEBUG] SAME KEY\n");}
 		  return (memcmp(entry->key.data.ptr, key->data.ptr, key->length) == 0) ? ALH_MR_EQUAL : ALH_MR_NOT_EQUAL;
 		}
 	      else
 		{
-		  if (alhash_debug) {fprintf(stderr,"DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
+		  if (alhash_debug) {fprintf(stderr,"[DEBUG] DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
 		  return  ALH_MR_NOT_EQUAL;
 		}
 	    }
 	}
-      if (alhash_debug) {fprintf(stderr,"DIFFERENT SIZE\n");}
+      if (alhash_debug) {fprintf(stderr,"[DEBUG] DIFFERENT SIZE\n");}
       return ALH_MR_NOT_EQUAL;
     }
   return ALH_MR_INVALID;
@@ -149,6 +149,7 @@ long alhash_hash_string(void * value, int length)
     : 0;
 }
 
+
 void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length))
 {
   if ( alhash_func == NULL )
@@ -160,6 +161,7 @@ void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (v
       table->alhash_func=alhash_func;
     }
   table->bucket_size=( length > ALHASH_BUCKET_SIZE ) ? length : ALHASH_BUCKET_SIZE;
+  // todo use context allocator.
   table->inner = (struct alhash_bucket *) (calloc(table->bucket_size,sizeof(struct alhash_entry)));
   table->used = 0;
   if ( length == 0 )
@@ -171,8 +173,21 @@ void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (v
     {
       table->autogrow = 0;
     }
+  table->context = &alparser_ctx_default;
+}
 
-  if ( alhash_debug ) {fprintf(stderr,"alhash init %p autogrow %i \n",table,table->autogrow );}
+void alparser_ctx_alhash_init(struct alparser_ctx * ctx, struct alhash_table * table, int length, long (*alhash_func) (void * value, int length))
+{
+  alhash_init(table,length,alhash_func);
+  // if set override current else use this of init (expecting default)
+  if ( ctx != NULL )
+    {
+      table->context = ctx;
+    }
+  
+  ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+    {fprintf(stderr,"[DEBUG] alhash init %p autogrow %i \n",table,table->autogrow );}
+
 }
 
 void alhash_release(struct alhash_table * table)
@@ -190,16 +205,17 @@ void alhash_release(struct alhash_table * table)
 struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_datablock * key, struct alhash_datablock * value)  
 {
 
-  if ( alhash_debug ) {fprintf(stderr,"alhash put entry .\n");}
-  
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
+        ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {fprintf(stderr,"[DEBUG] alhash put entry .\n");}
+	
       // automatically grow table if over a % fill
       if ( table->autogrow > 0 )
 	{
 	  if ( alhash_get_usage(table) > table->autogrow  )
 	    {
-	      if ( alhash_debug ) {fprintf(stderr,"alhash %p grow from %i to %i .\n", table, table->bucket_size, table->bucket_size * 2);}
+	      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+		{fprintf(stderr,"[DEBUG] alhash %p grow from %i to %i .\n", table, table->bucket_size, table->bucket_size * 2);}
 	      if ( alhash_reinit(table, table->bucket_size * 2 ) <= 0 )
 		{
 		  return NULL;
@@ -260,9 +276,9 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 
 struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key)
 {
-  if ( alhash_debug ) {fprintf(stderr,"alhash get entry .\n");}
   if (( table != NULL ) && ( key != NULL ))
     {
+      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {fprintf(stderr,"[DEBUG] alhash get entry .\n");}
       // first should compute hash key
       if ( table->alhash_func != NULL )
 	{
@@ -277,7 +293,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 	      if ( aldatablock_valid(&entry->key) )
 		{
 		  do {		
-		    if ( alhash_match(key, entry, hash) == ALH_MR_EQUAL )
+		    if ( alhash_match(key, entry, hash, alparser_ctx_is_debug(table->context,1)) == ALH_MR_EQUAL )
 		      {
 			return entry;
 		      }
@@ -365,7 +381,7 @@ int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
 {
   // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
   // long (*alhash_func) (void * value, int length));
-  alhash_init (&alparser->dict, words, NULL);
+  alparser_ctx_alhash_init(alparser, &alparser->dict, words, NULL);
   // autogrow
   alparser->dict.autogrow = 170;
   // WARNING will set alparser->ringbuffer content
@@ -390,19 +406,20 @@ int alhash_copyentry(struct alhash_entry * entry, void * data, int index)
 int alhash_reinit(struct alhash_table * table, int length)
 {
   int size = -1;
-  if ( alhash_debug )
-    {
-      fprintf(stderr,"REINIT length of hash table to %i current usage %i used %i\n", length, alhash_get_usage(table), alhash_get_used(table));
-    }
   // new table should have enough place
   if (table != NULL)
     {
+      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+	{
+	  fprintf(stderr,"[DEBUG] REINIT length of hash table to %i current usage %i used %i\n", length, alhash_get_usage(table), alhash_get_used(table));
+	}
+
       if ( table->used <= length )
 	{
           struct alhash_table temporary;
 	  bzero(&temporary, sizeof(temporary));
 	  // autogrow is NOT set ( else would be recursive )
-	  alhash_init(&temporary,length,table->alhash_func);
+	  alparser_ctx_alhash_init(table->context,&temporary,length,table->alhash_func);
 	  alhash_walk_table(table,alhash_copyentry,&temporary);
 	  // drink this soup
 	  if ( table->inner != NULL)
@@ -415,16 +432,16 @@ int alhash_reinit(struct alhash_table * table, int length)
 	  temporary.autogrow=table->autogrow;
 	  memcpy(table,&temporary,sizeof(*table));
 	  size =  alhash_get_size(table);
-
-	  if ( alhash_debug )
+	  ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
 	    {
-	      fprintf(stderr,"REINITIALIZED length of hash table to %i new usage %i used %i \n", length, alhash_get_usage(table), alhash_get_used(table));
+	      fprintf(stderr,"[DEBUG] REINITIALIZED length of hash table to %i new usage %i used %i \n", length, alhash_get_usage(table), alhash_get_used(table));
 	    }	  
       }
       else
 	{
-	  if ( alhash_debug ) {
-	    fprintf(stderr,"alhash length %i requested for reinit too small < used %i \n",length, table->used);
+	  ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+	    {
+	    fprintf(stderr,"[DEBUG] alhash length %i requested for reinit too small < used %i \n",length, table->used);
 	  }
       }
     }
