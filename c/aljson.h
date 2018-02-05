@@ -75,6 +75,7 @@ struct json_string {
 
 /* a json list of nitems json objects */
 struct json_list {
+  void * dummy;
   int nitems;
   struct json_object * value[];
 };
@@ -85,8 +86,10 @@ struct json_pair {
   struct json_object * value;
 };
 
-/** dict : TODO should provide a hash access **/
+/** dict and provide a hash access **/
 struct json_dict {
+  // contains hashtable dict, localcontext.dict.context can be NULL if unset
+  struct alparser_ctx localcontext;
   int nitems;
   struct json_pair * items[];
 };
@@ -179,6 +182,15 @@ void dump_ctx(struct json_parser_ctx * ctx);
   return value with key keyname in object
 **/
 struct json_object * json_dict_get_value(char * keyname, struct json_object * object);
+
+/**
+ for each element of json_dict in definition order
+ if callback returns NULL it continues, else it stops and return what callback returned
+ **/
+void * aljson_dict_foreach(
+			 struct json_object * object,
+			 void * (* callback) (struct json_object * key, struct json_object * value, void * data),
+			 void * data);
 
 /**
   return value at index in list

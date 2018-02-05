@@ -68,7 +68,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
 // if length is 0 : AUTO : autogrowth is set and length = ALHASH_BUCKET_SIZE)
 // if alhash_func is set to NULL then default string hash is used (alhash_hash_string)
-// DON'T use externally, use alparser_init ( taht comes with a dedicated context )
+// DON'T use externally, use alparser_init ( that comes with a dedicated context ) and use alparser_ctx->dict as hashtable.
 void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length));
 
 // walk entry and all collisions.

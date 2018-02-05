@@ -352,6 +352,54 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
   return object;
 }
 
+// fixeme, currently focus on string since used only for dict key (which is json_string )
+void aljson_fill_datablock(struct json_object * object, struct alhash_datablock * datablock)
+{
+  // todo depending on type
+  switch(object->type)
+    {
+    case '"':
+    case '\'':
+    case '$':
+      // is a string
+      memcpy(datablock, &object->string.internal, sizeof(*datablock));
+      break;
+    case 'G':
+      // growable
+    case '{':
+      // get datablock description for a dict
+    case '[':
+      // get datablock description for a list
+    case ':':
+    case ',':
+	     printf("#");
+    default:
+	     todo("data type no yet supported for datablock");
+	     aldebug_printf(NULL,"ERROR not supported datatype %c ",object->type);
+    }  
+  
+}
+
+void * json_dict_hashadd_callback (struct json_object * key, struct json_object * value, void * data)
+{
+  if ( data != NULL )
+    {
+      struct alhash_table * dict = (struct alhash_table *) data;
+      struct alhash_datablock key_datablock;
+      struct alhash_datablock value_datablock;
+      // key is really datablock content
+      aljson_fill_datablock(key, &key_datablock);
+      // value point to json_object
+      value_datablock.type=ALTYPE_OPAQUE;
+      value_datablock.data.ptr=value;
+      value_datablock.length = sizeof(struct json_object);
+      alhash_put(dict, &key_datablock, &value_datablock);
+      return NULL;
+    }
+  // something non NULL ...
+  return json_dict_hashadd_callback;
+}
+
 // collect only pairs, used by aljson_concrete to obtain a dict from a growable '{'
 // should set owner of values to new object
 struct json_object * create_json_dict(struct json_parser_ctx * parser, struct json_object * obj)
@@ -401,6 +449,14 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 	    }
 	};
       dict->nitems=i;
+
+      // this is where dict htable backend is populated
+      if ( dict->localcontext.dict.context == NULL )
+	{
+	  // twice the space to limit collisions, should not overflow
+	  alparser_init(&dict->localcontext, 1, dict->nitems * 2);
+	  aljson_dict_foreach(object, json_dict_hashadd_callback,&dict->localcontext.dict );
+	}
     }
   else
     {
@@ -1315,8 +1371,10 @@ void dump_dict_object(struct json_parser_ctx * ctx, struct json_object * object,
   printf("}");
 }
 
-// todo shouldn't it use hash ?
-struct json_object * json_dict_get_value(char * keyname, struct json_object * object)
+void * aljson_dict_foreach(
+			 struct json_object * object,
+			 void * (* callback) (struct json_object * key, struct json_object * value, void * data),
+			 void * data)				     
 {
   int i;
   struct json_object * value = NULL;
@@ -1327,17 +1385,92 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
 	  struct json_pair * pair = object->dict.items[i];
 	  if ( pair != NULL )
 	    {
-	      // handle non zero terminated pair key internal string
-	      int len = strlen(keyname);
-	      if ( len ==  pair->key->string.internal.length )
+	      void * result = callback( pair->key, pair->value, data);
+	      if ( result != NULL )
 		{
-		  if ( strncmp( pair->key->string.internal.data.ptr, keyname, len) == 0 )
-		    {
-		      value = pair->value;
-		    }
+		  return result;
 		}
 	    }
 	}
+    }
+  return NULL;
+}
+
+void * aljson_dict_match_value_callback(struct json_object * key, struct json_object * value, void * data)
+{
+  struct alhash_datablock * searchkey = (struct alhash_datablock *) data;
+
+  // handle non zero terminated pair key internal string
+  if ( searchkey->length ==  key->string.internal.length )
+    {
+      if ( strncmp( key->string.internal.data.ptr, searchkey->data.ptr, key->string.internal.length) == 0 )
+	{
+	  return value;
+	}
+    }  
+  return NULL;
+}
+
+// search in hashtable if created, fallback to list walk
+struct json_object * json_dict_get_value(char * keyname, struct json_object * object)
+{
+  if ( keyname == NULL )
+    {
+      return NULL;
+    }
+
+  int foundstatus = 0;
+  struct json_object * value = NULL;
+
+  struct alhash_datablock searchkey;
+  searchkey.length = strlen(keyname);
+  searchkey.type = ALTYPE_OPAQUE;
+  searchkey.data.ptr = keyname;  
+  
+  // htable search
+  if ( object->type == '{' )
+    {
+      // there is a hashtable bound.
+      if ( object->dict.localcontext.dict.context ==  &object->dict.localcontext )
+	{
+	  struct alhash_entry * alhash_entry = alhash_get_entry( &object->dict.localcontext.dict, &searchkey);
+	  if (alhash_entry != NULL )
+	    {
+	      if (alhash_entry->value.length == sizeof(struct json_object))
+		{
+		  // WE DID IT !
+		  aldebug_printf(NULL, "json_value for dict key '%s' FOUND  \n", keyname);
+		  value = (struct json_object *) alhash_entry->value.data.ptr;
+		  foundstatus = 255;
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"value in dict is not a json_object length %i pointer %p\n", alhash_entry->value.length, alhash_entry->value.data.ptr);
+		  foundstatus = 1;
+		}
+	    }
+	  else
+	    {
+	      foundstatus = 2;
+	    }
+	}
+    }
+
+  // it is not possible to find a NULL value since it points to a json structure
+  if ( value != NULL)
+    {
+      return value;
+    }
+
+  // fallback to foreach walk
+  value = (struct json_object *) aljson_dict_foreach(object,aljson_dict_match_value_callback,(void *) &searchkey);
+		      
+
+  // collect error case were not found  in hashtable but was in json_dict items
+  if ( ( foundstatus != 0 ) && ( value != NULL ) )
+    {
+      // this indicates an internal coding error or a memory corruption.
+      aldebug_printf(NULL,"[FATAL] key '%s' value is in json_dict items but not backed in hastable %p\n", keyname, object);
     }
   return value;
 }
