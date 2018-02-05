@@ -16,3 +16,8 @@ struct test_2 {
   struct test_1 * f;
 };
 
+struct flat_info {
+  char * name; // name
+  char * imafile; // full path to access ima file
+  char * cubemappingfile; // full path to access cube mapping file corresponding to imafile
+};

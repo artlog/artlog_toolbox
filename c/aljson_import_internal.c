@@ -81,3 +81,40 @@ void json_import_print_context_initialize(struct print_ctx * print_context)
   print_context->indent = 0;
   print_context->s_indent = " ";
 }
+
+void aljson_init(
+	       struct json_parser_ctx * json_context,
+	       struct json_ctx * json_tokenizer,
+	       struct print_ctx * print_context)
+{
+    // clean ground
+  bzero(json_context, sizeof(*json_context));
+  bzero(json_tokenizer, sizeof(*json_tokenizer));
+
+  // allocator intialization
+  alparser_init(&json_context->alparser,10,1024);
+    
+  json_import_context_initialize(json_tokenizer);
+  
+  json_context->tokenizer=json_tokenizer;
+  json_context->max_depth=10000;
+  json_context->parsing_depth=json_context->max_depth - 4;
+
+  /* tabs
+  print_context.do_indent = 1;
+  print_context.indent = 0;
+  print_context.s_indent = "\t";
+  */
+
+  // two spaces
+  print_context->do_indent = 2;
+  print_context->indent = 0;
+  print_context->s_indent = " ";
+  
+  /* flat canonical
+  print_context.do_indent = 0;
+  print_context.indent = 0;
+  print_context.s_indent = NULL;
+  */
+
+}

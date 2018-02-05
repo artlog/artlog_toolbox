@@ -47,6 +47,7 @@ JSON_DEFINE_TOGGLE(variable,'?')
 struct json_object * aljson_new_json_string(struct json_parser_ctx * ctx, char objtype, struct alhash_datablock * data)
 {  
   struct json_object * object=(struct json_object *) ALALLOC(ctx->alparser.allocator,sizeof(struct json_object));
+
   if (object != NULL)
     {
       object->type=objtype;
@@ -143,7 +144,7 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
   struct json_object * object=NULL;
   struct token_char_buffer * tb = &ctx->tokenizer->token_buf;
   // warning, should keep a place for final 0
-  if ( (tb->bufpos + 1) < tb->bufsize )
+  if ( (tb->bufpos + 1) > tb->bufsize )
     {
       // realloc for one character ... too bad.
       if ( FLAG_IS_SET(json_debug,1)  )

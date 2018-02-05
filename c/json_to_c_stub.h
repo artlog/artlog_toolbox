@@ -35,8 +35,8 @@ by order :
 
 #define AL_GET_BY_ORDER(a,json_object,index) json_list_get(json_object,index)
 
-#define AL_GET_JSON_INT(test,a,json_object,index,kind)			\
-  { struct json_object * local_json_ ##a = AL_GET_ ##kind(a, json_object,index);\
+#define AL_GET_JSON_INT(test,a,json_obj,index,kind)			\
+  { struct json_object * local_json_ ##a = AL_GET_ ##kind(a, json_obj,index);\
     if ( local_json_ ##a != NULL ) {\
       test->a = json_get_int(local_json_ ##a);}\
   }
@@ -45,16 +45,16 @@ by order :
 
 #define AL_GET_JSON_INT_BY_ORDER(test,a,json_object,index) AL_GET_JSON_INT(test,a,json_object,index,BY_ORDER)
   
-#define AL_GET_JSON_STRING(test,a,json_object,index,kind)			\
-  { struct json_object * local_json_ ##a = AL_GET_ ##kind(a, json_object,index); \
+#define AL_GET_JSON_STRING(test,a,json_obj,index,kind)			\
+  { struct json_object * local_json_ ##a = AL_GET_ ##kind(a, json_obj,index); \
     test->a = json_get_cstring(local_json_ ##a); }
 
-#define AL_GET_JSON_STRING_WITH_NAME(test,a,json_object) AL_GET_JSON_STRING(test,a,json_object,0,WITH_NAME)
+#define AL_GET_JSON_STRING_WITH_NAME(test,a,json_obj) AL_GET_JSON_STRING(test,a,json_obj,0,WITH_NAME)
 
-#define AL_GET_JSON_STRING_BY_ORDER(test,a,json_object,index)  AL_GET_JSON_STRING(test,a,json_object,index,BY_ORDER)
+#define AL_GET_JSON_STRING_BY_ORDER(test,a,json_obj,index)  AL_GET_JSON_STRING(test,a,json_obj,index,BY_ORDER)
 
-#define AL_GET_JSON_STRUCT_POINTER(struct_name, test,d,json_object,index, kind) \
-  struct json_object * local_json_ ##d = AL_GET_ ##kind(d,json_object,index);		\
+#define AL_GET_JSON_STRUCT_POINTER(struct_name, test,d,json_obj,index, kind) \
+  struct json_object * local_json_ ##d = AL_GET_ ##kind(d,json_obj,index);		\
   if ( local_json_ ##d != NULL ) \
     {\
       if ( AL_JSON_IS_NULL_CONST(local_json_ ##d) ) {  test->d = NULL;}	\
@@ -70,19 +70,19 @@ by order :
     if ( test->d != NULL ) { json_c_ ##struct_name ##_from_json_auto(test->d,local_json_ ##d);} \
   }
 
-#define AL_GET_JSON_STRUCT_POINTER_WITH_NAME(struct_name, test,d,json_object) \
-  struct json_object * local_json_ ##d = json_dict_get_value("&" #d, json_object); \
+#define AL_GET_JSON_STRUCT_POINTER_WITH_NAME(struct_name, test,d,json_obj) \
+  struct json_object * local_json_ ##d = json_dict_get_value("&" #d, json_obj); \
   if ( local_json_ ##d != NULL ) \
     {\
       if ( AL_JSON_IS_NULL_CONST(local_json_ ##d) ) {  test->d = NULL;}	\
       else { \
-	if ( AL_JSON_IS_REF(local_json_ ##d) ) {   local_json_ ##d = json_to_c_stub_get_ref(local_json_ ##d, json_object); } \
+	if ( AL_JSON_IS_REF(local_json_ ##d) ) {   local_json_ ##d = json_to_c_stub_get_ref(local_json_ ##d, json_obj); } \
           AL_GET_JSON_NEW_STRUCT(struct_name,test,d)		\
 	  }							\
    }
 
-#define AL_GET_JSON_STRUCT(struct_name, test,d,json_object,index, kind) \
-  struct json_object * local_json_ ##d = AL_GET_ ##kind(d,json_object,index); \
+#define AL_GET_JSON_STRUCT(struct_name, test,d,json_obj,index, kind) \
+  struct json_object * local_json_ ##d = AL_GET_ ##kind(d,json_obj,index); \
   if ( ! AL_JSON_IS_NULL_CONST(local_json_ ##d) )			\
       { \
 	json_c_ ##struct_name ##_from_json_auto(&test->d,local_json_ ##d); \
