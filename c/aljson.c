@@ -132,6 +132,10 @@ struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype,
 	{
 	  memcpy(&object->string.internal,data,sizeof(object->string.internal));
 	}
+      else
+	{
+	  aldebug_printf(NULL,"new json object with empty data %p\n",object);
+	}
     }
   return object;
 }
@@ -158,6 +162,7 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
   struct alhash_datablock  data;
   data.data.ptr = tb->buf;
   data.length = tb->bufpos;
+  data.type = ALTYPE_OPAQUE;
   object = aljson_new_json_string(ctx,objtype,&data);
 
   // buffer will be re-allocated -> where is it done ?
@@ -393,7 +398,8 @@ void * json_dict_hashadd_callback (struct json_object * key, struct json_object 
       value_datablock.type=ALTYPE_OPAQUE;
       value_datablock.data.ptr=value;
       value_datablock.length = sizeof(struct json_object);
-      alhash_put(dict, &key_datablock, &value_datablock);
+      struct alhash_entry * entry = alhash_put(dict, &key_datablock, &value_datablock);
+      alhash_dump_entry_as_string(entry);
       return NULL;
     }
   // something non NULL ...
@@ -454,7 +460,9 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
       if ( dict->localcontext.dict.context == NULL )
 	{
 	  // twice the space to limit collisions, should not overflow
+	  aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
 	  alparser_init(&dict->localcontext, 1, dict->nitems * 2);
+	  alparser_ctx_set_debug(&dict->localcontext,255);
 	  aljson_dict_foreach(object, json_dict_hashadd_callback,&dict->localcontext.dict );
 	}
     }

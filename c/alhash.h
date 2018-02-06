@@ -23,6 +23,13 @@ struct alhash_entry {
   struct alhash_entry * collision_ring; 
 };
 
+enum alhash_match_result {
+  ALH_MR_NOT_EQUAL=0, // it does not match ( or empty )
+  ALH_MR_EQUAL=1, // it matches ( or non empty )
+  ALH_MR_INVALID=2, // it does not match because one value is invalid ( internal error ).  
+};
+
+
 // at least ALHASH_BUCKET_SIZE , in fact it will dynamically allocated at table init and can contain really more entries.
 struct alhash_bucket {
   struct alhash_entry entries[ALHASH_BUCKET_SIZE];
@@ -100,5 +107,13 @@ int alhash_get_size(struct alhash_table * table);
 
 // return usage ( in 256th means 128 is half used 255 full)
 int alhash_get_usage(struct alhash_table * table);
+
+// dump & debug
+
+int alhash_walk_callback_collision(struct alhash_entry * entry, void * data, int index);
+
+void alhash_dump_entry_as_string(struct alhash_entry * entry);
+
+int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int index);
 
 #endif

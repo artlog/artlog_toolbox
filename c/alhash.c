@@ -12,12 +12,6 @@ implementation of a hashtable in a miserable way.
 #include <stdlib.h>
 #include <limits.h>
 
-enum alhash_match_result {
-  ALH_MR_NOT_EQUAL=0, // it does not match
-  ALH_MR_EQUAL=1, // it matches
-  ALH_MR_INVALID=2, // it does not match because one value is invalid ( internal error ).
-};
-
 struct alparser_ctx alparser_ctx_default = {
   .debug = 1,
 };
@@ -37,23 +31,24 @@ int aldatablock_embeded(struct alhash_datablock * key)
   return 0;
 }
 
-int aldatablock_valid(struct alhash_datablock * key)
+// return  ALH_MR_EQUAL if empty , ALH_MR_INVALID if invalid, ALH_MR_NOT_EQUAL
+enum alhash_match_result aldatablock_is_empty(struct alhash_datablock * key)
 {
   // valid if positive length  and ( either embeded value or ptr is non null )
   // this means that embeded 0 value is OK.
   if ( key->length  < 0 )
     {
       aldebug_printf(NULL,"[FATAL] key->length %i < 0\n",key->length);
-      exit(1);
+      return ALH_MR_INVALID;
     }
   // don't accept unknow types
   if ( key->type > ALTYPE_MAX )
     {
-      aldebug_printf(NULL,"[FATAL] key->type %i > ALTYPE_MAX(%i) \n", key->type, ALTYPE_MAX);
-      exit(1);
+      aldebug_printf(NULL,"[FATAL] key->type %i > ALTYPE_MAX(%i) in datablock %p length %i \n", key->type, ALTYPE_MAX, key, key->length);
+      return ALH_MR_INVALID;
     }
   // return (key->length >0) && ( aldatablock_embeded(key) || (key->data.ptr != NULL));
-  return (key->length >0) && (key->data.ptr != NULL);
+  return ((key->length >0) && (key->data.ptr != NULL)) ? ALH_MR_NOT_EQUAL : ALH_MR_EQUAL;
 }
 
 /**
@@ -63,7 +58,11 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 {
   if ( (key != NULL) && (entry != NULL) )
     {
-      if ( ! aldatablock_valid(key)  || ! aldatablock_valid( &entry->key ) )
+      if ( ! (
+	      ( aldatablock_is_empty(key) ==  ALH_MR_NOT_EQUAL)
+	      && ( aldatablock_is_empty( &entry->key ) == ALH_MR_NOT_EQUAL )
+	      )
+	)
 	{
 	  // NULL or EMTPY BLOCKS NOT VALID values are wrong.
 	  if ( alhash_debug ) {aldebug_printf(NULL,"[DEBUG] NULL values are wrong.\n");}
@@ -192,6 +191,8 @@ void alparser_ctx_alhash_init(struct alparser_ctx * ctx, struct alhash_table * t
 
 void alhash_release(struct alhash_table * table)
 {
+  {aldebug_printf(NULL,"[DEBUG] alhash release %p autogrow %i \n",table,table->autogrow );}
+
   if ( table->inner != NULL)
     {
       free(table->inner);
@@ -207,7 +208,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
-        ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {aldebug_printf(NULL,"[DEBUG] alhash put entry .\n");}
+      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {aldebug_printf(NULL,"[DEBUG] alhash put entry '%.*s'\n",key->length,(char *) key->data.ptr);}
 	
       // automatically grow table if over a % fill
       if ( table->autogrow > 0 )
@@ -278,7 +279,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 {
   if (( table != NULL ) && ( key != NULL ))
     {
-      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {aldebug_printf(NULL,"[DEBUG] alhash get entry .\n");}
+      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {aldebug_printf(NULL,"[DEBUG] alhash get entry '%.*s'\n",key->length,(char *) key->data.ptr);}
       // first should compute hash key
       if ( table->alhash_func != NULL )
 	{
@@ -290,7 +291,8 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 	      int guard = table->bucket_size;
 	      struct alhash_entry * initial_entry = &bucket->entries[index];
 	      struct alhash_entry * entry = initial_entry;
-	      if ( aldatablock_valid(&entry->key) )
+	      int valid = aldatablock_is_empty(&entry->key);
+	      if ( valid == ALH_MR_NOT_EQUAL )
 		{
 		  do {		
 		    if ( alhash_match(key, entry, hash, alparser_ctx_is_debug(table->context,1)) == ALH_MR_EQUAL )
@@ -308,6 +310,16 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 			 && ( entry != initial_entry) // loop containing initial entry : normal ring structure.
 			 && ( guard > 0) // if loop or other bad content
 			 );
+		}
+	      else
+		{
+		  // if empty valid = ALH_MR_NOT_EQUAL
+		  if ( valid == ALH_MR_INVALID )
+		    {		      
+		      aldebug_printf(NULL,"alhash_get entry '%.*s' failed bucket index %i\n", key->length,(char *) key->data.ptr, index);
+		      alhash_dump_entry_as_string(entry);
+		      abort();
+		    }
 		}
 	    }
 	}
@@ -333,7 +345,7 @@ int alhash_walk_collisions(struct alhash_entry * entry, alhash_callback callback
       struct alhash_entry * initial_entry = entry;
       do
 	{
-	  if ( aldatablock_valid(&entry->key) )
+	  if ( aldatablock_is_empty(&entry->key) == ALH_MR_NOT_EQUAL )
 	    {
 	      if ( callback(entry,data,step) != 0 ) 
 		{
@@ -363,7 +375,7 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 	  for (int index =0 ; index < table->bucket_size; index ++)
 	    {
 	      struct alhash_entry * entry = &bucket->entries[index];
-	      if ( aldatablock_valid(&entry->key) )
+	      if ( aldatablock_is_empty(&entry->key) ==  ALH_MR_NOT_EQUAL )
 		{
 		  if ( callback(entry,data,step) != 0 )
 		    {
@@ -380,7 +392,7 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
 {
   // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
-  // long (*alhash_func) (void * value, int length));
+  bzero(alparser,sizeof(*alparser));
   alparser_ctx_alhash_init(alparser, &alparser->dict, words, NULL);
   // autogrow
   alparser->dict.autogrow = 170;
@@ -493,4 +505,44 @@ int alhash_get_usage(struct alhash_table * table)
 	
     }
   return size;
+}
+
+
+int alhash_walk_callback_collision(struct alhash_entry * entry, void * data, int index)
+{
+  if ( entry != NULL )
+    {
+      if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
+	{
+	  aldebug_printf(NULL,"(%i)'%.*s',",entry->key.type, entry->key.length, (char *) entry->key.data.ptr);
+	}
+    }
+  return 0;
+}
+
+void alhash_dump_entry_as_string(struct alhash_entry * entry)
+{
+  if ( entry != NULL )
+    {
+      if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
+	{
+	  aldebug_printf(NULL,"dump entry\n");
+	  aldebug_printf(NULL,"%p (%i)'%.*s' = (%i)'%.*s' (hash=%lx) (collisions=", entry, entry->key.type, entry->key.length, (char *) entry->key.data.ptr,  entry->value.type, entry->value.length, (char *)  entry->value.data.ptr, entry->hash_key);
+	  int collisions = alhash_walk_collisions(entry, alhash_walk_callback_collision, NULL);
+	  aldebug_printf( NULL, "#%i)\n",collisions);
+	}
+      else
+	{
+	   printf( "%p NULL ", entry);
+	}
+    }
+
+}
+
+int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int index)
+{
+  printf("%i ) ",index);
+  alhash_dump_entry_as_string(entry);
+  printf("\n");
+  return 0;
 }
