@@ -1,10 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "allist.h"
+#include "dump.h"
 // direct acces to internal implementation
 #include "allist_internal.h"
-
+#include "alstrings.h"
 
 void * dump_element(struct allistof * list, struct allistelement * element, struct allistelement * next, int count, void * param)
 {
@@ -103,3 +103,4 @@ void dump_context( struct allistcontext * context)
     }
   printf("}\n");
 }
+

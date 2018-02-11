@@ -302,3 +302,95 @@ void alstrings_ringbuffer_release(alstrings_ringbuffer_pointer * ringbufferp)
 	}
     }
 }
+
+void aldatablock_bzero(struct alhash_datablock * data,int offset, int length)
+{
+  // todo check datablock type
+  if ( ( offset >=0 ) && ( data->length >= offset + length ) )
+  {
+    bzero(&data->data.charptr[offset],length);
+  }
+}
+
+// return new offset 
+int aldatablock_write_uint64be(struct alhash_datablock * data, int offset, unsigned long long value )
+{
+  // todo check datablock type
+  if ( data->length >= offset + 8 )
+    {
+      char * intern = &data->data.charptr[offset];
+      char * hack = (char *) &value;
+      // if LittleEndian ask gcc
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      intern[0]=hack[7];
+      intern[1]=hack[6];
+      intern[2]=hack[5];
+      intern[3]=hack[4];
+      intern[4]=hack[3];
+      intern[5]=hack[2];
+      intern[6]=hack[1];
+      intern[7]=hack[0];      
+#else
+      memcpy(intern,hack,8);
+#endif
+
+    }     
+	
+  return offset + 8;
+}
+
+int aldatablock_write_byte(struct alhash_datablock * data, int offset, unsigned char value)
+{
+  // todo check datablock type
+  if ( data->length > offset )
+    {
+      data->data.ucharptr[offset] = value;
+    }
+  return offset + 1;
+}
+
+// read an unsigned int that was stored in big endian at offset in datablock
+unsigned int aldatablock_get_uint32be(struct alhash_datablock * data, int offset)
+{
+  // todo check datablock type
+  unsigned int result = 0;
+  if ( data->length >= offset + 4)
+    {
+      unsigned char * intern = (unsigned char *) &result;
+      unsigned char * hack = &data->data.ucharptr[offset];
+  
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      intern[0]=hack[3];
+      intern[1]=hack[2];
+      intern[2]=hack[1];
+      intern[3]=hack[0];
+#else
+      memcpy(intern,hack,8);
+#endif
+    }
+  else
+    {
+      aldebug_printf(NULL,"get int out of bound %i/%i\n", offset,data->length);
+    }
+  return result;  
+}
+  
+
+void aldatablock_dump( struct alhash_datablock * block )
+{
+  if ( block != NULL )
+    {
+      if ( block->data.ptr != NULL )
+	{
+	  for (int i=0; i < block->length / sizeof(int); i ++)
+	    {
+	      aldebug_printf(NULL,"%08x ", block->data.uintptr[i]);
+	    }
+	  aldebug_printf(NULL,"\n");
+	}
+      else
+	{
+	  aldebug_printf(NULL,"NULL datablock ptr in %p\n", block);
+	}
+    }
+}

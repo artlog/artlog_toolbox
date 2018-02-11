@@ -21,7 +21,10 @@ struct alhash_datablock {
   int length; // > 0 , EMPTY BLOCK NOT VALID
   union {
     void * ptr; // NULL value NOT VALID.
-    long number;
+    unsigned char * ucharptr;
+    char * charptr;
+    unsigned int * uintptr;
+    long number; // quick hack to store values directly (see type ).
   } data;
 };
 
@@ -103,5 +106,17 @@ void alstrings_ringbuffer_init_autogrow(alstrings_ringbuffer_pointer * ringbuffe
 
 // release ringbuffer when sure we are not pointing to any of its data
 void alstrings_ringbuffer_release(alstrings_ringbuffer_pointer * ringbufferp);
+
+void aldatablock_bzero(struct alhash_datablock * data,int offset, int length);
+
+// return new offset 
+int aldatablock_write_uint64be(struct alhash_datablock * data, int offset, unsigned long long value );
+
+int aldatablock_write_byte(struct alhash_datablock * data, int offset, unsigned char value);
+
+// read an unsigned int that was stored in big endian at offset in datablock
+unsigned int aldatablock_get_uint32be(struct alhash_datablock * data, int offset);
+
+void aldatablock_dump( struct alhash_datablock * block );
 
 #endif

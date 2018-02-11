@@ -34,10 +34,15 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	}
     }
   // reverse big endian => little endian ( internal intel int )
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
   result[0]=v[3];
   result[1]=v[2];
   result[2]=v[1];
   result[3]=v[0];
+#else
+  memcpy(result,v,4);
+#endif
+  
   if ( stream->debug )
     {
       aldebug_printf(NULL,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
@@ -57,4 +62,35 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
     {
       return 0;
     }
+}
+
+int alinputstream_read_block(struct alinputstream * stream,
+			     struct alhash_datablock * block)
+{  
+  return read(stream->fd,block->data.charptr,block->length);
+}
+
+void alinputstream_foreach_block(
+				 struct alinputstream * stream,
+				 int blocksize,
+				 void (*callback) (struct alhash_datablock * block, void * data),
+				 void (*finalize) (struct alhash_datablock * block, void * data),
+				 void * data)
+{
+  struct alhash_datablock block;
+  char * datablock = (char *) malloc(blocksize);
+  block.length=blocksize;
+  
+  if ( datablock != NULL )
+    {
+      block.data.ptr=datablock;
+      int read = 0;
+      while ( ( read = alinputstream_read_block(stream, &block) ) == blocksize )
+	{
+	  (*callback) (&block,data);
+	}
+      block.length=read;
+      (*finalize) (&block,data);
+    }
+  
 }
