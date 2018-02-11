@@ -1,3 +1,6 @@
+#ifndef __ALLIST_H__
+#define __ALLIST_H__
+
 /**
   A multiple list of elements that could belong to multiple list.
   every element knows its membership.
@@ -163,3 +166,5 @@ void * allist_for_each(struct allistof * list,
 		       int step,
 		       int offset
 		       );
+
+#endif
