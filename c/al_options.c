@@ -32,13 +32,13 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
       if (entry == NULL)
 	{
 	  fprintf (stderr,
-		   "[FATAL] FAIL to insert '%s:%s' into options\n", key,value);
+		   "[FATAL] FAIL to insert '%s:%s' into options\n", key.data.charptr,value.data.charptr);
 	}
       else
 	{
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	      aldebug_printf(NULL,"[DEBUG] entry '%s'='%s'\n", entry->key.data, entry->value.data);
+	      aldebug_printf(NULL,"[DEBUG] entry '%s'='%s'\n", entry->key.data.charptr, entry->value.data.charptr);
 	    }
 	}
     }

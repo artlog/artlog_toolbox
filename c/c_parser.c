@@ -1810,7 +1810,7 @@ c_parse_enum_member (struct c_parser_ctx *parser,
     {
       if (index > 0)
 	{
-	  printf (",\n", index);
+	  printf ("%i,\n", index);
 	}
       c_print_json_token (parser, token);
       printf (" //=%i\n", index);
@@ -2679,7 +2679,7 @@ c_parse_case_statement (struct c_parser_ctx *parser, struct al_token *token,
 		    }
 		  else
 		    {
-		      printf ("wrong token for case %i\n", token - token);
+		      printf("wrong token for case %i\n", token->token);
 		    }
 		}
 	      parser->state = C_STATE_ERROR;
@@ -2708,7 +2708,7 @@ c_parse_case_statement (struct c_parser_ctx *parser, struct al_token *token,
 		    }
 		  else
 		    {
-		      printf ("wrong token for case %i\n", token - token);
+		      printf ("wrong token for case %i\n", token->token);
 		    }
 		}
 	      return token;
@@ -3052,7 +3052,7 @@ c_parse_statement (struct c_parser_ctx *parser, struct al_token *token,
 		    }
 		  else
 		    {
-		      printf ("wrong token for case %i\n", token - token);
+		      printf ("wrong token for case %i\n", token->token);
 		    }
 		}
 	      parser->state = C_STATE_ERROR;
@@ -3081,7 +3081,7 @@ c_parse_statement (struct c_parser_ctx *parser, struct al_token *token,
 		    }
 		  else
 		    {
-		      printf ("wrong token for case %i\n", token - token);
+		      printf ("wrong token for case %i\n", token->token);
 		    }
 		}
 	      return token;
@@ -3208,8 +3208,8 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 
       // generate read side : json_c_xxxx_from_json_auto
       
-      printf("int json_c_%.*s_from_json_auto(",datablock->length,datablock->data);
-      printf("struct %.*s * %s, ",datablock->length,datablock->data,varname);
+      printf("int json_c_%.*s_from_json_auto(",datablock->length,datablock->data.charptr);
+      printf("struct %.*s * %s, ",datablock->length,datablock->data.charptr,varname);
       printf("struct json_object * json_object)\n{\n");
       struct c_declaration_info_list * next = parser->structure_array[i].first;
       while ((next != NULL)&&(max>0))
@@ -3222,11 +3222,11 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 		{
 		case TOKEN_C_INT_ID:
 		case TOKEN_C_LONG_ID:
-		  printf("AL_GET_JSON_INT_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+		  printf("AL_GET_JSON_INT_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data.charptr);
 		  break;
 			      
 		case TOKEN_C_CHAR_ID:
-		  printf("AL_GET_JSON_STRING_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data);
+		  printf("AL_GET_JSON_STRING_WITH_NAME(%s,%.*s,json_object);\n",varname,datablock->length,datablock->data.charptr);
 		  break;
 
 		case TOKEN_C_STRUCT_ID:
@@ -3235,16 +3235,16 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 		    {
 		      if ( next->info.full_type.dereference == 0)
 			{				    
-			  printf("AL_GET_JSON_STRUCT(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data,varname,datablock->length,datablock->data);
+			  printf("AL_GET_JSON_STRUCT(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data.charptr,varname,datablock->length,datablock->data.charptr);
 			}
 		      else
 			{
-			  printf("AL_GET_JSON_STRUCT_POINTER(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data,varname,datablock->length,datablock->data);
+			  printf("AL_GET_JSON_STRUCT_POINTER(%.*s,%s,%.*s,json_object,1,WITH_NAME);\n",vartype->length,vartype->data.charptr,varname,datablock->length,datablock->data.charptr);
 			}
 		    }
 		  else
 		    {
-		      printf("// unknwon struct name for %.*s \n", datablock->length,datablock->data);
+		      printf("// unknwon struct name for %.*s \n", datablock->length,datablock->data.charptr);
 		    }
 		  break;
 		default:
@@ -3297,11 +3297,11 @@ main (int argc, char **argv)
   struct alhash_datablock * infiledata = al_option_get(options,"infile");
   if ( infiledata != NULL )
     {
-      printf("file to parse '%.*s'\n",infiledata->length,infiledata->data);
+      printf("file to parse '%.*s'\n",infiledata->length,infiledata->data.charptr);
       file = fopen((char *)infiledata->data.ptr, "r");
       if ( file == NULL )
 	{
-	  aldebug_printf(NULL,"[ERROR] fail to open '%s'\n",infiledata->data);
+	  aldebug_printf(NULL,"[ERROR] fail to open '%s'\n",infiledata->data.charptr);
 	}
       else
 	{
@@ -3317,7 +3317,7 @@ main (int argc, char **argv)
   struct alhash_datablock * outformdata = al_option_get(options,"outform");
   if (outformdata != NULL)
     {
-      printf("outform '%.*s'\n",outformdata->length,outformdata->data);
+      printf("outform '%.*s'\n",outformdata->length,outformdata->data.charptr);
       todo("support outform");
     }
 
@@ -3376,14 +3376,14 @@ main (int argc, char **argv)
 		  int max = 1000;
 		  struct alhash_datablock * datablock = (struct alhash_datablock *) parser.structure_array[i].dict_index ;
 		  // thanks to this format ... print non NULL terminated string
-		  printf("{\"%.*s\":{",datablock->length,datablock->data);
+		  printf("{\"%.*s\":{",datablock->length,datablock->data.charptr);
 		  struct c_declaration_info_list * next = parser.structure_array[i].first;
 		  while ((next != NULL)&&(max>0))
 		    {
 		      datablock = (struct alhash_datablock *) next->info.dict_index;
 		      if ( datablock != NULL )
 			{
-			  printf("\"%.*s\":0,\n",datablock->length,datablock->data);
+			  printf("\"%.*s\":0,\n",datablock->length,datablock->data.charptr);
 			}
 		      else
 			{
