@@ -16,7 +16,8 @@ tests: c_parser albase json_to_c_stub_sample cryptohash
 	./albase
 	./json_to_c_stub_sample
 	./c_parser infile=./input_for_c_parser.h outform=aljson_stub
-	./cryptohash
+	./cryptohash '' d
+	./cryptohash ./cryptohash
 
 
 clean:

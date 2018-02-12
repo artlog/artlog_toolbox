@@ -77,12 +77,11 @@ unsigned int K[] = {
    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-
+ALDEBUG_DEFINE_FUNCTIONS(struct alsha2_internal, alsha2x, debug);
 
 // shaxxx applied depends on result length.
 void alsha224_init(struct alsha2_internal * intern )
 {
-  todo("alsha2x_init");
   bzero(intern, sizeof(struct alsha2_internal));
   intern->cumulated_length = 0;
   memcpy(intern->H, sha224_H0, sizeof(intern->H));
@@ -95,7 +94,7 @@ void alsha224_init(struct alsha2_internal * intern )
   d.length = sizeof(intern->H);
   d.data.ptr = intern->H;
   d.type = ALTYPE_OPAQUE; 
-  aldatablock_dump(&d);
+  // aldatablock_dump(&d);
 }
 
 // shaxxx applied depends on result length.
@@ -108,7 +107,6 @@ void alsha2x_init(struct alsha2_internal * intern)
 // this can be done for last 512bits block but we have to record full message length.
 void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_datablock * last_block)
 {
-  todo("alsha2_pad_to_512bits");
   if ( intern == NULL )
     {
       aldebug_printf(NULL,"[ERROR] alsha2_pad_to_512bit NULL intern\n");
@@ -165,10 +163,11 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
 
     }
 
-  aldebug_printf(NULL,"last block padded state %i length %i\n", intern->state, intern->cumulated_length);
-  // if debug ...
-  aldatablock_dump(output);
-
+  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+    {
+      aldebug_printf(NULL,"last block padded state %i length %i\n", intern->state, intern->cumulated_length);
+      aldatablock_dump(output);
+    }
 
 }
 
@@ -181,9 +180,11 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alha
   unsigned int H[8];
   int t;
 
-  aldebug_printf(NULL,"alhash turn on state %i offset %i\n", shainternal->state, offset);
-  // if debug ...
-  aldatablock_dump(input);
+  ALDEBUG_IF_DEBUG(shainternal,alsha2x,debug)
+    {
+      aldebug_printf(NULL,"alhash turn on state %i offset %i\n", shainternal->state, offset);
+      aldatablock_dump(input);
+    }
 
   memcpy(H,shainternal->H, sizeof(H));
   
@@ -197,7 +198,10 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alha
   for ( t = 0; t<16; t++)
     {
       W[t]=aldatablock_get_uint32be(input, offset + (t*sizeof(int)));
-      aldebug_printf(NULL,"alhash W[%i]=%x\n", t, W[t]);  
+      ALDEBUG_IF_DEBUG(shainternal,alsha2x,debug)
+	{
+	  aldebug_printf(NULL,"alhash W[%i]=%x\n", t, W[t]);
+	}
     }
   for (t = 16; t < 64; t++)
     {
@@ -301,7 +305,10 @@ int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock 
       // input was not flushed, remains incomplete block to complete.
       if ( intern->input.length > 0 )
 	{
-	  aldebug_printf(NULL, "input was not flushed, remains incomplete block of length %i\n",  intern->input.length );
+	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+	    {
+	      aldebug_printf(NULL, "input was not flushed, remains incomplete block of length %i\n",  intern->input.length );
+	    }
 	  if ( intern->input.data.charptr == NULL )
 	    {
 	      aldebug_printf(NULL,"[FATAL] NULL intern buffer");
@@ -364,8 +371,6 @@ int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock 
 // shaxxx applied depends on result length.
 struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 {
-  todo("alsha2x_final");
-
   // 64 bytes ( 512 bits ).
   int blocksizebyte=64;
 
@@ -381,7 +386,10 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
       // remaining incomplete buffer at end.
       if ( (intern->input.length) &&( intern->input.length < blocksizebyte ))
 	{
-	  aldebug_printf(NULL,"[WARNING] non empty input buffer at final of length %i\n", intern->input.length);
+	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+	    {
+	      aldebug_printf(NULL,"[WARNING] non empty input buffer at final of length %i\n", intern->input.length);
+	    }
 	  if ( intern->input.data.ptr !=  intern->inputcopy )
 	    {
 	      aldebug_printf(NULL,"[FATAL] non empty input buffer at final of length %i  using an external data buffer\n", intern->input.length);

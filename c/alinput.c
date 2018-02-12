@@ -1,14 +1,16 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 #include "alinput.h"
 #include "aldebug.h"
 
+ALDEBUG_DEFINE_STRUCT_FUNCTIONS(alinputstream)
+
 void alinputstream_init(struct alinputstream * stream, int fd)
 {
+  bzero(stream, sizeof(*stream));
   stream->fd=fd;
-  stream->eof=0;
-  stream->debug=0;
 }
 
 unsigned int alinputstream_readuint32(struct alinputstream * stream)
@@ -43,7 +45,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
   memcpy(result,v,4);
 #endif
   
-  if ( stream->debug )
+  ALDEBUG_IF_DEBUG(stream,alinputstream,debug)
     {
       aldebug_printf(NULL,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
     }  

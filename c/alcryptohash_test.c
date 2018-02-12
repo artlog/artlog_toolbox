@@ -4,8 +4,16 @@
 #include "alinput.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
-void dump_result(  struct alhash_datablock * result)
+
+void usage()
+{
+  printf("program <name of file to hash> (<debug>)\n");
+  printf("if name is '' then display hash for empty value (value of size 0)\n");
+}
+
+void dump_result(struct alsha2_internal * shax, struct alhash_datablock * result)
 {
   if ( result == NULL)
     {
@@ -13,8 +21,11 @@ void dump_result(  struct alhash_datablock * result)
     }
   else
     {
-      aldebug_printf(NULL,"[INFO] SHAX result \n");
-      aldatablock_dump(result);
+      ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
+	{
+	  aldebug_printf(NULL,"[INFO] SHAX result \n");
+	  aldatablock_dump(result);
+	}
       unsigned int * h = result->data.uintptr;
       // sha224
       printf("%08x%08x%08x%08x%08x%08x%08x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6]);
@@ -26,9 +37,12 @@ void alshash_callback (struct alhash_datablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
-      aldebug_printf(NULL,"[INFO] ADD block size %i \n", block->length);
-      aldatablock_dump(block);      
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
+      ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
+	{
+	  aldebug_printf(NULL,"[INFO] ADD block size %i \n", block->length);
+	  aldatablock_dump(block);
+	}
       alsha2x_add_block(shax,block);
     }
 }
@@ -37,9 +51,12 @@ void alshash_finalize (struct alhash_datablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
-      aldebug_printf(NULL,"[INFO] FINAL block size %i \n", block->length);
-      aldatablock_dump(block);
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
+      ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
+	{
+	  aldebug_printf(NULL,"[INFO] FINAL block size %i \n", block->length);
+	  aldatablock_dump(block);
+	}
       if ( block->length > 0)
 	{
 	  alsha2x_add_block(shax,block);
@@ -47,11 +64,11 @@ void alshash_finalize (struct alhash_datablock * block, void * data)
       struct alhash_datablock * result;
       result = alsha2x_final(shax);
 
-      dump_result(result);
+      dump_result(shax,result);
     }
 }
 
-void test_empty_hash()
+void test_empty_hash(int argc, char ** argv)
 {
   struct alsha2_internal shax;
   struct alhash_datablock * result;
@@ -59,44 +76,59 @@ void test_empty_hash()
   // sha224 yet
   alsha2x_init(&shax);
 
+  if (argc > 2 )
+    {
+      ALDEBUG_SET_DEBUG(&shax,alsha2x,255);
+    }
+
   result = alsha2x_final(&shax);
 
-  dump_result(result);
+  dump_result(&shax,result);
 }
-		     
 
 int main(int argc, char ** argv)
 {
-  todo("call some crypto hash here ...");
-
   if ( argc > 1 )
     {
       char * filename = argv[1];
-      FILE * f = fopen(filename,"r");
-      if ( f != NULL )
+      if ( strlen(filename) > 0)
 	{
-	  struct alinputstream input;
-	  struct alsha2_internal sha2x ;
+	  FILE * f = fopen(filename,"r");
+	  if ( f != NULL )
+	    {
+	      struct alinputstream input;
+	      struct alsha2_internal sha2x ;
 
-	  alsha2x_init(&sha2x);
-	    
-	  aldebug_printf(NULL,"open file %s\n", filename );
-	  alinputstream_init(&input, fileno(f));
-	  alinputstream_foreach_block(&input,
-				      64,
-				      alshash_callback,
-				      alshash_finalize,
-				      &sha2x);
+	      alsha2x_init(&sha2x);
+	      if (argc > 2 )
+		{
+		  ALDEBUG_SET_DEBUG(&sha2x,alsha2x,255);
+		}
+	      ALDEBUG_IF_DEBUG(&sha2x,alsha2x,debug)
+		{
+		  aldebug_printf(NULL,"open file %s\n", filename );
+		}
+	      alinputstream_init(&input, fileno(f));
+	      alinputstream_foreach_block(&input,
+					  64,
+					  alshash_callback,
+					  alshash_finalize,
+					  &sha2x);
 	  
-	  fclose(f);
+	      fclose(f);
+	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[ERROR] failed to open file '%s'\n", filename );	  
+	    }
 	}
       else
 	{
-	  aldebug_printf(NULL,"[ERROR] failed to open file '%s'\n", filename );	  
+	  test_empty_hash(argc,argv);
 	}
     }
   else
     {
-      test_empty_hash();
+      usage();
     }
 }

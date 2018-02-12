@@ -2,13 +2,16 @@
 #define __ALINPUTSTREAM_HEADER__
 
 #include "alstrings.h"
+#include "aldebug.h"
 
 struct alinputstream {
+  ALDEBUG_DEFINE_FLAG(debug)
   int fd;
   int eof;
-  int debug;
 };
 
+ALDEBUG_DECLARE_FUNCTIONS(struct alinputstream,alinputstream)
+			 
 void alinputstream_init(struct alinputstream * stream, int fd);
 
 unsigned int alinputstream_readuint32(struct alinputstream * stream);

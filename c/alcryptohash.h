@@ -3,6 +3,7 @@
 
 #include "alinput.h"
 #include "alstrings.h"
+#include "aldebug.h"
 
 /*
 RFC 6234
@@ -22,6 +23,7 @@ enum alsha2_state {
 #define MAXBLOCSIZEBYTE 64
 
 struct alsha2_internal {
+  ALDEBUG_DEFINE_FLAG(debug)
   // the H !
   unsigned int H[8];
   enum alsha2_state state;
@@ -34,7 +36,7 @@ struct alsha2_internal {
   char extrapad[MAXBLOCSIZEBYTE];
 };
 
-
+ALDEBUG_DECLARE_FUNCTIONS(struct alsha2_internal, alsha2x);
 
 void alsha2x_init(struct alsha2_internal * intern);
 
