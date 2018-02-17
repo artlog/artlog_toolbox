@@ -12,6 +12,13 @@ json_to_c_stub_sample: json_to_c_stub.c json_to_c_stub_sample.c albase.c
 cryptohash: alcryptohash.c alcryptohash_test.c alstrings.c aldebug.c altodo.c alinput.c
 	gcc -g -O0 -o $@ $^
 
+
+bitfield: albitfield_test.c al_options.c
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
+
+alpadfile: alpadfile.c al_options.c
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
+
 tests: c_parser albase json_to_c_stub_sample cryptohash
 	./albase
 	./json_to_c_stub_sample

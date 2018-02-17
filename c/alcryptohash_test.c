@@ -28,7 +28,14 @@ void dump_result(struct alsha2_internal * shax, struct alhash_datablock * result
 	}
       unsigned int * h = result->data.uintptr;
       // sha224
-      printf("%08x%08x%08x%08x%08x%08x%08x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6]);
+      if ( shax->algorithm == AL_SHA224 )
+	{
+	  printf("%08x%08x%08x%08x%08x%08x%08x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6]);
+	}
+      else
+	{
+	  printf("%08x%08x%08x%08x%08x%08x%08x%08x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7]);
+	}
     }
 
 }
@@ -73,8 +80,8 @@ void test_empty_hash(int argc, char ** argv)
   struct alsha2_internal shax;
   struct alhash_datablock * result;
 
-  // sha224 yet
-  alsha2x_init(&shax);
+  // sha256 yet
+  alsha256_init(&shax);
 
   if (argc > 2 )
     {
@@ -99,7 +106,7 @@ int main(int argc, char ** argv)
 	      struct alinputstream input;
 	      struct alsha2_internal sha2x ;
 
-	      alsha2x_init(&sha2x);
+	      alsha2x_init(&sha2x, AL_SHA256);
 	      if (argc > 2 )
 		{
 		  ALDEBUG_SET_DEBUG(&sha2x,alsha2x,255);

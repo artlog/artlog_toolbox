@@ -80,27 +80,53 @@ unsigned int K[] = {
 ALDEBUG_DEFINE_FUNCTIONS(struct alsha2_internal, alsha2x, debug);
 
 // shaxxx applied depends on result length.
-void alsha224_init(struct alsha2_internal * intern )
+void alshax_internal_init(struct alsha2_internal * intern, unsigned int sha_H[8])
 {
   bzero(intern, sizeof(struct alsha2_internal));
   intern->cumulated_length = 0;
-  memcpy(intern->H, sha224_H0, sizeof(intern->H));
+  intern->missing_bits=0;
+  memcpy(intern->H, sha_H, sizeof(intern->H));
   intern->state = AL_SHA2_INIT;
 
   intern->input.data.ptr=NULL;
   intern->input.length=0;
-
+  intern->algorithm=AL_SHA2_UNKNOWN_ALGORITHM;
+    
   struct alhash_datablock d;
   d.length = sizeof(intern->H);
   d.data.ptr = intern->H;
   d.type = ALTYPE_OPAQUE; 
   // aldatablock_dump(&d);
+
 }
 
-// shaxxx applied depends on result length.
-void alsha2x_init(struct alsha2_internal * intern)
+void alsha224_init(struct alsha2_internal * intern )
 {
-  alsha224_init(intern);
+  alshax_internal_init(intern,sha224_H0);
+  intern->algorithm=AL_SHA224;
+}
+
+void alsha256_init(struct alsha2_internal * intern )
+{
+  alshax_internal_init(intern,sha256_H0);
+  intern->algorithm=AL_SHA256;
+}
+
+void alsha2x_init(struct alsha2_internal * intern, enum alsha2_algorithm algorithm)
+{
+  switch (algorithm)
+    {
+    case AL_SHA224:
+      alsha224_init(intern);
+      break;
+    case AL_SHA256:
+      alsha256_init(intern);
+      break;
+    default:      
+      aldebug_printf(NULL,"[FATAL] sha2 algorithm %i not supported", algorithm);
+      intern->algorithm=algorithm;
+      break;
+    }
 }
 
 // padding is done on end of message and with full length of message, assume smallest entity CHAR_BIT ( assumed 8 bits )
@@ -114,7 +140,8 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
     }
 
   // L in bits
-  long long L = ( intern->cumulated_length * CHAR_BIT ) % 512;
+  long long bitlength = ( (long long) intern->cumulated_length * CHAR_BIT ) - intern->missing_bits;
+  long long L = ( bitlength  ) % 512;
   struct alhash_datablock * output = last_block;
   
   // 0 <= L < 512 ; and L % 8 == 0 because usualy CHAR_BIT = 8 and we are playing with bytes.
@@ -131,7 +158,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
       aldatablock_write_byte(output, L / CHAR_BIT, 0x80);
 
       // L is stored in 64 bits big endian representation at end of 512 bits block  
-      aldatablock_write_uint64be(output, 448 / CHAR_BIT, ((long long ) intern->cumulated_length) * CHAR_BIT);
+      aldatablock_write_uint64be(output, 448 / CHAR_BIT, bitlength);
       
       intern->state = AL_SHA2_PADDED;
     }
@@ -152,8 +179,8 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
 	  // first padding ( see above ) was done, we are called again for last.
 	  // second step pad on second block
 	  aldatablock_bzero(output,0,64);
-	  // L is stored in 64 bits big endian representation at end of this second 512 bits block  
-	  aldatablock_write_uint64be(output, 448 / CHAR_BIT, intern->cumulated_length * CHAR_BIT);
+	  // length is stored in 64 bits big endian representation at end of this second 512 bits block  
+	  aldatablock_write_uint64be(output, 448 / CHAR_BIT, bitlength);
 
 	  intern->state = AL_SHA2_PADDED;
 	}
@@ -173,7 +200,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
 
 
 
-// sha224 on input starting at offset.
+// sha224 on input starting at offset ( same as sha256 )
 void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alhash_datablock * input)
 {
   unsigned int W[64];

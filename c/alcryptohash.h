@@ -20,14 +20,23 @@ enum alsha2_state {
   AL_SHA2_COMPLETE
 };
 
+enum alsha2_algorithm {
+  AL_SHA2_UNKNOWN_ALGORITHM,
+  AL_SHA224 = 224,
+  AL_SHA256 = 256,
+  // other not yet implemented
+};
+
 #define MAXBLOCSIZEBYTE 64
 
 struct alsha2_internal {
-  ALDEBUG_DEFINE_FLAG(debug)
+  ALDEBUG_DEFINE_FLAG(debug)  
   // the H !
   unsigned int H[8];
+  enum alsha2_algorithm algorithm;
   enum alsha2_state state;
-  int cumulated_length; // in byte ( bits / 8 ).  
+  int cumulated_length; // in byte ( bits / 8 ).
+  int missing_bits; // to support bits case ( to subtract to cmulted length )
   struct alhash_datablock input;
   struct alhash_datablock output;
   // when direct input can't be used as a 512bits block
@@ -38,7 +47,10 @@ struct alsha2_internal {
 
 ALDEBUG_DECLARE_FUNCTIONS(struct alsha2_internal, alsha2x);
 
-void alsha2x_init(struct alsha2_internal * intern);
+void alsha2x_init(struct alsha2_internal * intern, enum alsha2_algorithm algorithm);
+
+void alsha224_init(struct alsha2_internal * intern );
+void alsha256_init(struct alsha2_internal * intern );
 
 // shaxxx applied depends on result length.
 // return number of byte that are need to complete last uncompleted block. 0 if block was complete.
