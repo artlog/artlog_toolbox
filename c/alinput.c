@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include "alinput.h"
 #include "aldebug.h"
 
@@ -31,8 +32,9 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	}
       else
 	{
+	  stream->bits = total * CHAR_BIT;
 	  stream->eof=1;
-	  return 0;
+	  break;
 	}
     }
   // reverse big endian => little endian ( internal intel int )
@@ -95,4 +97,9 @@ void alinputstream_foreach_block(
       (*finalize) (&block,data);
     }
   
+}
+
+int alinputstream_get_readbits(struct alinputstream * stream)
+{
+  return stream->bits;
 }

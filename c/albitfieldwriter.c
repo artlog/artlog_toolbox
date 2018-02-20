@@ -43,7 +43,7 @@ void bitfieldwriter_init(struct bitfieldwriter * this)
 /** write at current offset
 assume never write more than needed bits to complete a word 
 assume meaningfull bits are aligned at right in least significant part */
-void bitfieldwriter_internal_write(struct bitfieldwriter * this, int field, int bits)
+void bitfieldwriter_internal_write(struct bitfieldwriter * this, unsigned int field, int bits)
 {
   if ( bits == this->dataSize )
     { 
@@ -53,7 +53,7 @@ void bitfieldwriter_internal_write(struct bitfieldwriter * this, int field, int 
     }
   else
     {
-      field = field & ( 0x7FFFFFFF >> ( this->dataSize - 1 - bits));
+      field = field & ( 0xFFFFFFFF >> ( this->dataSize - 1 - bits));
       this->nextWord = this->nextWord | ( field << ( this->dataSize - bits - this->bitOffset));
       this->bitOffset = (this-> bitOffset + bits ) % this->dataSize; 
     }       
@@ -103,6 +103,19 @@ void bitfieldwriter_padtoword(struct bitfieldwriter * this)
 {
   if ( this->bitOffset != 0) {
        bitfieldwriter_newword(this);
+  }
+}
+
+void bitfieldwriter_padtobyte(struct bitfieldwriter * this)
+{
+  if ( this->bitOffset != 0) {
+    if ( this->stream != NULL )
+      {
+	aloutputstream_flush(this->stream,this->nextWord,this->bitOffset);
+      }
+    // reset nextWord
+    this->bitOffset = 0;
+    this->nextWord = 0;
   }
 }
 

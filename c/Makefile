@@ -19,15 +19,15 @@ bitfield: albitfield_test.c al_options.c
 alpadfile: alpadfile.c al_options.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
-tests: c_parser albase json_to_c_stub_sample cryptohash
+tests: c_parser albase json_to_c_stub_sample cryptohash bitfield
 	./albase
 	./json_to_c_stub_sample
 	./c_parser infile=./input_for_c_parser.h outform=aljson_stub
 	./cryptohash '' d
 	./cryptohash ./cryptohash
-
+	./bitfield outfile=bitfieldcopy
 
 clean:
-	rm c_parser albase json_to_c_stub_sample cryptohash
+	rm c_parser albase json_to_c_stub_sample cryptohash bitfield
 
 .PHONY: clean tests

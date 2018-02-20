@@ -11,7 +11,7 @@ struct bitfieldwriter {
   int bitOffset;
   // buffered bits
   // assume dataSize < bits_per_int  then can be stored as int
-  int nextWord;  
+  unsigned int nextWord;  
 };
 
 // if dynamic allocation is needed.
@@ -34,5 +34,10 @@ void bitfieldwriter_write( struct bitfieldwriter * this, int value, int bitsize)
   to have a clean word ready.
 */
 void bitfieldwriter_padtoword( struct bitfieldwriter * this);
+
+/** special flush at end 
+write the minimal number of bytes given what remains in buffer 
+*/
+void bitfieldwriter_padtobyte( struct bitfieldwriter * this);
 
 #endif // #ifndef _ALBITFIELDWRITER_H_

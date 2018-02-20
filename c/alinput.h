@@ -8,13 +8,21 @@ struct alinputstream {
   ALDEBUG_DEFINE_FLAG(debug)
   int fd;
   int eof;
+  int bits; // last bits read during last operation ( with eof )
 };
 
 ALDEBUG_DECLARE_FUNCTIONS(struct alinputstream,alinputstream)
 			 
 void alinputstream_init(struct alinputstream * stream, int fd);
 
+/**
+if 4 bytes can't be read, result eof will be set
+and bits will be set to number of bits read ( a multiple of 8 obvioulsy )
+in which case returned value is relevant for highter most bits
+*/
 unsigned int alinputstream_readuint32(struct alinputstream * stream);
+
+int alinputstream_get_readbits(struct alinputstream * stream);
 
 unsigned char alinputstream_readuchar(struct alinputstream * stream);
 

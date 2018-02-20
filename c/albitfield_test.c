@@ -46,19 +46,31 @@ int main(int argc, char ** argv)
 	      fieldreader_init(&bfreader);
 	      fieldreader_setinput(&bfreader,&input);
 	      int field = 0, lastfield = 0;
-	      while ( input.eof == 0 )
+	      int total_bits = 0;
+	      while ( bitfieldreader_is_eof(&bfreader) == 0 )
 		{
 		  field = fieldreader_read(&bfreader,bits);
+		  aldebug_printf(NULL,"%i ", bits);
+		  if ( bitfieldreader_is_eof(&bfreader) == 1 )
+		    {
+		      // special case at end where input can be unaligned.
+		      bits = bitfieldreader_get_readbits(&bfreader);
+		      aldebug_printf(NULL,"last field %08x total bits %i, last bits %i\n", field, total_bits, bits);
+		      if ( bits == 0 )
+			{
+			  break;
+			}
+		    }		  
 		  bitfieldwriter_write(&writer,field,bits);
-		  printf("%i ", bits);
+		  total_bits+=bits;
 		  bits = ( lastfield & 0x1F ) + 1;
 		  lastfield = ( lastfield + 1 )  ^ field;
 		}
-	      // might not fit if 1,2 or 3 bytes, need a padtobytes
-	      bitfieldwriter_padtoword(&writer);
+	      bitfieldwriter_padtobyte(&writer);
+	      aldebug_printf(NULL,"total bits %i, bytes %i", total_bits, total_bits/8);
 	      fclose(file);
 	    }
-	  fclose(fout);
+	  aloutputstream_close(&output);
 	}
     } 
   al_options_release(options);

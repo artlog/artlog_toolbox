@@ -8,7 +8,10 @@ struct bitfieldreader {
   struct alinputstream *stream;
   int dataSize;
   int bitOffset;
-  int currentWord;
+  // stored as most significant bit first.
+  unsigned int currentWord;
+  int eof;
+  int readbits; // last number of bits during read at eof to read...
 };
 
 struct bitfieldreader * new_fieldreader();
@@ -19,5 +22,9 @@ void fieldreader_init(struct bitfieldreader * this);
 int fieldreader_read( struct bitfieldreader * this, int bits );
 
 void fieldreader_setinput( struct bitfieldreader * this, struct alinputstream * inputstream );
+
+int bitfieldreader_is_eof(struct bitfieldreader * this);
+
+int bitfieldreader_get_readbits(struct bitfieldreader * this);
 
 #endif // #ifndef __ALBITFIELDREADER_H__
