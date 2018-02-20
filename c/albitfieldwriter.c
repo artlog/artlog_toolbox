@@ -53,7 +53,7 @@ void bitfieldwriter_internal_write(struct bitfieldwriter * this, unsigned int fi
     }
   else
     {
-      field = field & ( 0xFFFFFFFF >> ( this->dataSize - 1 - bits));
+      field = field & ( 0xFFFFFFFF >> ( this->dataSize - bits));
       this->nextWord = this->nextWord | ( field << ( this->dataSize - bits - this->bitOffset));
       this->bitOffset = (this-> bitOffset + bits ) % this->dataSize; 
     }       

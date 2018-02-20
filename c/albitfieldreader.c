@@ -29,21 +29,26 @@ unsigned int fieldreader_nextword(struct bitfieldreader * this)
     {
       int bits = alinputstream_get_readbits(this->stream);
       if ( bits > 0 )
-	{
+	{	  
 	  // field is aligned most signifiant bits first
-	  // this->currentWord = field >> (this->dataSize-bits);
 	  this->currentWord = field;
+	  // skip missing bits ( align bitOffset with readbits )
+	  this->bitOffset = this->dataSize-bits;
 	  // reached eof while reading word, then not fully read word.
 	  this->readbits=bits;
 	  aldebug_printf(NULL,"EOF readbits %i\n",  this->readbits);
+	}
+      else
+	{
+	  this->currentWord = 0;
 	}
     }
   else
     {
       // read next word
       this->currentWord = field;
+      this->bitOffset = 0;
     }
-  this->bitOffset = 0;
   return field;
 }
 
@@ -148,7 +153,7 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
       int bitsize = this->dataSize - this->bitOffset;
       head = bitfieldreader_internal_read( this, bitsize);
 
-      if ( this->eof )
+      if ( ( this->eof ) || ( bits == bitsize ) )
 	{
 	  return head;
 	}
@@ -157,7 +162,8 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
       field = bitfieldreader_internal_read( this, bits - bitsize);
 
       if ( this->eof )
-	{	  
+	{
+	  this->readbits = bitsize;
 	  return head;
 	}      
 
