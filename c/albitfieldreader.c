@@ -36,7 +36,10 @@ unsigned int fieldreader_nextword(struct bitfieldreader * this)
 	  this->bitOffset = this->dataSize-bits;
 	  // reached eof while reading word, then not fully read word.
 	  this->readbits=bits;
-	  aldebug_printf(NULL,"EOF readbits %i\n",  this->readbits);
+	  if (0)
+	    {
+	      aldebug_printf(NULL,"EOF readbits %i\n",  this->readbits);
+	    }
 	}
       else
 	{
@@ -167,7 +170,10 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 	  return head;
 	}      
 
-      aldebug_printf(NULL,"head %08x tail %08x\n", head, field);
+      if (0)
+	{
+	  aldebug_printf(NULL,"head %08x tail %08x\n", head, field);
+	}
       // reconstruct all
       // more significant bits in first word, least in last
       field = field | ( head << (bits - bitsize));

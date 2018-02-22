@@ -12,46 +12,88 @@ void alinputstream_init(struct alinputstream * stream, int fd)
 {
   bzero(stream, sizeof(*stream));
   stream->fd=fd;
+  stream->input.data.ptr=NULL;  
+}
+
+void alinputstream_setdatablock(struct alinputstream * stream, struct alhash_datablock * block, int offset)
+{
+  memcpy(&stream->input, block, sizeof(stream->input));
+  stream->offset=offset;
 }
 
 unsigned int alinputstream_readuint32(struct alinputstream * stream)
 {
-  unsigned char v[4];
-  unsigned char result[4];
-  size_t total = 0;
-  size_t r = 0;
-
-  // handle case where 4 bytes are read in multiple chunks (often network issues)
-  while (total < 4)
-    {      
-      r = read(stream->fd, &v + total, 4 - total);
-      // 4 bytes ints
-      if ( r > 0 )
+  if ( stream->input.data.ptr != NULL )
+    {
+      unsigned int res = 0;
+      if (  stream->input.length >= stream->offset + 4 )
 	{
-	  total = total + r;
+	  res = aldatablock_get_uint32be(&stream->input, stream->offset);
+	  stream->offset += 4;
 	}
       else
 	{
-	  stream->bits = total * CHAR_BIT;
+	  int remain = stream->input.length - stream->offset;
+	  if ( remain > 0 )
+	    {
+
+	      int d =0;
+	      for (d=0; d<remain;d++)
+		{
+		  res = ( res * 256 ) + stream->input.data.ucharptr[d];
+		}
+	      /** align to msb ??
+	      for (d<4;d++)
+		{
+		  res *= 256;		  
+		}
+	      */
+	      stream->bits = remain * CHAR_BIT;
+	    }
 	  stream->eof=1;
-	  break;
 	}
+      
+      return res;
     }
-  // reverse big endian => little endian ( internal intel int )
+  else
+    {
+      unsigned char v[4];
+      unsigned char result[4];
+      size_t total = 0;
+      size_t r = 0;
+
+      // handle case where 4 bytes are read in multiple chunks (often network issues)
+      while (total < 4)
+	{
+	  r = read(stream->fd, &v + total, 4 - total);
+	  // 4 bytes ints
+	  if ( r > 0 )
+	    {
+	      total = total + r;
+	    }
+	  else
+	    {
+	      stream->bits = total * CHAR_BIT;
+	      stream->eof=1;
+	      break;
+	    }
+	}
+      // reverse big endian => little endian ( internal intel int )
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  result[0]=v[3];
-  result[1]=v[2];
-  result[2]=v[1];
-  result[3]=v[0];
+      result[0]=v[3];
+      result[1]=v[2];
+      result[2]=v[1];
+      result[3]=v[0];
 #else
-  memcpy(result,v,4);
+      memcpy(result,v,4);
 #endif
   
-  ALDEBUG_IF_DEBUG(stream,alinputstream,debug)
-    {
-      aldebug_printf(NULL,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
-    }  
-  return (*(unsigned int*) result);
+      ALDEBUG_IF_DEBUG(stream,alinputstream,debug)
+	{
+	  aldebug_printf(NULL,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
+	}  
+      return (*(unsigned int*) result);
+    }
 }
 
 // WARNING 0 char considered as EOF.

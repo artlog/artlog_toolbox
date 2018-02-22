@@ -2,6 +2,7 @@
 #include "altodo.h"
 #include "aldebug.h"
 #include "alinput.h"
+#include "albase64.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -93,6 +94,18 @@ void test_empty_hash(int argc, char ** argv)
   dump_result(&shax,result);
 }
 
+
+void test_base64(char * text)
+{
+  struct alhash_datablock block;
+
+  block.data.charptr=text;
+  block.length=strlen(text);
+  block.type=ALTYPE_STR0;
+
+  albase64(&block,NULL);
+}
+
 int main(int argc, char ** argv)
 {
   if ( argc > 1 )
@@ -123,15 +136,22 @@ int main(int argc, char ** argv)
 					  &sha2x);
 	  
 	      fclose(f);
+
+	      f = fopen(filename,"r");
+	      alinputstream_init(&input, fileno(f));
+	      albase64_frominput(&input,NULL);	      
+	      fclose(f);
+	      
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] failed to open file '%s'\n", filename );	  
+	      aldebug_printf(NULL,"[ERROR] failed to open file '%s'\n", filename );
+	      test_base64(filename);
 	    }
 	}
       else
 	{
-	  test_empty_hash(argc,argv);
+	  test_empty_hash(argc,argv);	  
 	}
     }
   else

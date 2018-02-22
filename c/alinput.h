@@ -9,6 +9,10 @@ struct alinputstream {
   int fd;
   int eof;
   int bits; // last bits read during last operation ( with eof )
+  // memory inputstream.
+  struct alhash_datablock input;
+  // offset within input
+  int offset;
 };
 
 ALDEBUG_DECLARE_FUNCTIONS(struct alinputstream,alinputstream)
@@ -32,5 +36,8 @@ void alinputstream_foreach_block(
 				 void (*callback) (struct alhash_datablock * block, void * data),
 				 void (*finalize) (struct alhash_datablock * block, void * data),
 				 void * data);
+
+/** will read in memory from datablock starting at offset byte */
+void alinputstream_setdatablock(struct alinputstream * stream, struct alhash_datablock * block, int offset);
 
 #endif

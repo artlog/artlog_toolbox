@@ -9,7 +9,7 @@ albase: albase.c albase_test.c  alstrings.c aldebug.c
 json_to_c_stub_sample: json_to_c_stub.c json_to_c_stub_sample.c albase.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
-cryptohash: alcryptohash.c alcryptohash_test.c alstrings.c aldebug.c altodo.c alinput.c
+cryptohash: alcryptohash.c alcryptohash_test.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alinput.c
 	gcc -g -O0 -o $@ $^
 
 
