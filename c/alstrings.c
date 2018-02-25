@@ -394,3 +394,10 @@ void aldatablock_dump( struct alhash_datablock * block )
 	}
     }
 }
+
+void aldatablock_setcstring(struct alhash_datablock * block,char * cstring)
+{
+  block->data.charptr = cstring;
+  block->length = strlen(cstring);
+  block->type = ALTYPE_STR0; 
+}

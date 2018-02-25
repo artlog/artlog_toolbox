@@ -119,4 +119,6 @@ unsigned int aldatablock_get_uint32be(struct alhash_datablock * data, int offset
 
 void aldatablock_dump( struct alhash_datablock * block );
 
+void aldatablock_setcstring(struct alhash_datablock * block,char * cstring);
+
 #endif

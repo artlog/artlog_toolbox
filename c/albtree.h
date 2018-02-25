@@ -10,10 +10,17 @@
 ...
 */
 
+typedef void * (*albtreeallocator) ();
+typedef void * (*albtrecleaner) (void * data);
+
 struct albtree {
   void * data;
   struct albtree * left;
-  struct albtree * right;  
+  struct albtree * right;
+  // used to allocate children
+  albtreeallocator allocate;
+  // used to free itself
+  albtrecleaner clean;
 };
 
 /** way to walk a btree uniformely */
@@ -30,7 +37,7 @@ enum albtreewalkprocess
   ALBTREE_WP_RLS, // right left self
 };
 
-/** allocate a binray tree */
+/** allocate a binary tree */
 struct albtree * albtree_allocate();
 
 int albtree_freeall(struct albtree * btree);
@@ -43,6 +50,12 @@ struct albtree * albtree_get_left(struct albtree * btree);
 
 /** get right binary tree */
 struct albtree * albtree_get_right(struct albtree * btree);
+
+/** set left binary tree */
+void albtree_set_left(struct albtree * btree,struct albtree * left);
+
+/** set right binary tree */
+void albtree_set_right(struct albtree * btree, struct albtree * right);
 
 struct albtreepath {
   // depth.

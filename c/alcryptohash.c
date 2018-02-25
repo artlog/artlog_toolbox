@@ -363,7 +363,7 @@ int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock 
 	      return missing;
 	    }
 	  // compute from internal reconstructed block
-	  alsha224_turn(intern, offset, &intern->input);
+	  alsha224_turn(intern, 0, &intern->input);
 	  intern->input.length = 0;
 	  intern->input.data.ptr = NULL;
 	}

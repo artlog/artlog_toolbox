@@ -52,7 +52,6 @@ void alsha2x_init(struct alsha2_internal * intern, enum alsha2_algorithm algorit
 void alsha224_init(struct alsha2_internal * intern );
 void alsha256_init(struct alsha2_internal * intern );
 
-// shaxxx applied depends on result length.
 // return number of byte that are need to complete last uncompleted block. 0 if block was complete.
 int alsha2x_add_block(struct alsha2_internal * intern, struct alhash_datablock * block); 
 

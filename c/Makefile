@@ -19,6 +19,9 @@ bitfield: albitfield_test.c al_options.c
 alpadfile: alpadfile.c al_options.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
+hashtree: alhashtree.c alhashtree_test.c alcryptohash.c
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -lalhash -Wl,-Bdynamic
+
 tests: c_parser albase json_to_c_stub_sample cryptohash bitfield
 	./albase
 	./json_to_c_stub_sample
@@ -26,6 +29,7 @@ tests: c_parser albase json_to_c_stub_sample cryptohash bitfield
 	./cryptohash '' d
 	./cryptohash ./cryptohash
 	./bitfield outfile=bitfieldcopy
+	./hashtree 'ceci est la premiere pharse' 'la seconde phrase' 'la troisieme phrase' '4' '5' '6'
 
 clean:
 	rm c_parser albase json_to_c_stub_sample cryptohash bitfield
