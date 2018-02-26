@@ -152,7 +152,11 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
       
       if ( K > 0 )
 	{
-	  aldatablock_bzero(output,L,(512 - L) / CHAR_BIT);
+	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+	    {
+	      aldebug_printf(NULL,"last block zeroed at %i length %i\n", L / CHAR_BIT , ((512 - L) / CHAR_BIT) );
+	    }
+	  aldatablock_bzero(output,L / CHAR_BIT, (512 - L) / CHAR_BIT);
 	}
       // 1 bit on an aligned byte.
       aldatablock_write_byte(output, L / CHAR_BIT, 0x80);
@@ -313,84 +317,89 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alha
 // shaxxx applied depends on result length.
 int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock * input)
 {
-  // offset within input
-  int offset = 0;
-  // 64 bytes ( 512 bits ).
-  int blocksizebyte=64;
-  // number of bytes to copy
-  int tocopy;
 
   // for all blocks of blocksizebyte
   if ( intern != NULL )
     {
-      int tocopy = 0;
-      // how many bytes do we need to fill a block
-      int missing = 0;
-
-      intern->cumulated_length += input->length;
-      
-      // input was not flushed, remains incomplete block to complete.
-      if ( intern->input.length > 0 )
+      if ( (input != NULL) && (input->length > 0 ) )
 	{
-	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+	  // offset within input
+	  int offset = 0;
+	  // 64 bytes ( 512 bits ).
+	  int blocksizebyte=64;
+	  // number of bytes to copy
+	  int tocopy = 0;	  
+	  // how many bytes do we need to fill a block
+	  int missing = 0;
+
+	  intern->cumulated_length += input->length;
+      
+	  // input was not flushed, remains incomplete block to complete.
+	  if ( intern->input.length > 0 )
 	    {
-	      aldebug_printf(NULL, "input was not flushed, remains incomplete block of length %i\n",  intern->input.length );
-	    }
-	  if ( intern->input.data.charptr == NULL )
-	    {
-	      aldebug_printf(NULL,"[FATAL] NULL intern buffer");
-	    }
+	      ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+		{
+		  aldebug_printf(NULL, "input was not flushed, remains incomplete block of length %i\n",  intern->input.length );
+		}
+	      if ( intern->input.data.charptr == NULL )
+		{
+		  aldebug_printf(NULL,"[FATAL] NULL intern buffer");
+		}
 	    
-	  missing = blocksizebyte - intern->input.length;
-	  if ( input->length > offset + missing )
+	      missing = blocksizebyte - intern->input.length;
+	      if ( input->length > offset + missing )
+		{
+		  tocopy=missing;
+		}
+	      else
+		{
+		  tocopy=input->length - offset;
+		}
+	      if ( tocopy > 0 )
+		{
+		  memcpy(&intern->input.data.charptr[intern->input.length], &(input->data.charptr[offset]), tocopy);
+		  offset+=tocopy;
+		  missing-=tocopy;
+		  intern->input.length += tocopy;
+		}
+	      // still after filling from input not enough data ... => need next.
+	      if ( missing > 0 )
+		{
+		  return missing;
+		}	  
+	      if ( intern->input.length != blocksizebyte )
+		{
+		  aldebug_printf(NULL,"[FATAL] reconstructed block of invalid size %i \n", intern->input.length);	      
+		}
+	      // compute from internal reconstructed block
+	      alsha224_turn(intern, 0, &intern->input);
+	      intern->input.length = 0;
+	      intern->input.data.ptr = NULL;
+	    }
+
+	  // compute directly on input with right aligned blocksize
+	  while ( input->length >= ( offset + blocksizebyte ) )
 	    {
-	      tocopy=missing;
+	      alsha224_turn(intern, offset, input);
+	      offset += blocksizebyte;
+	    }
+
+	  // should keep remaining until filled by another add or alsha2x_final
+	  int remaining = input->length - offset;
+	  if ( remaining > 0)
+	    {
+	      missing = blocksizebyte - remaining;
+	      intern->input.data.charptr=intern->inputcopy;
+	      memcpy(&intern->input.data.charptr[0], &(input->data.charptr[offset]), remaining);
+	      intern->input.length = remaining;
+	      return missing;
 	    }
 	  else
 	    {
-	      tocopy=input->length - offset;
+	      intern->input.data.ptr=NULL;
+	      intern->input.length = 0;
+	      return 0;
 	    }
-	  if ( tocopy > 0 )
-	    {
-	      memcpy(&intern->input.data.charptr[intern->input.length], &(input->data.charptr[offset]), tocopy);
-	      offset+=tocopy;
-	      missing-=tocopy;
-	      intern->input.length += tocopy;
-	    }
-	  // still after filling from input not enough data ... => need next.
-	  if ( missing > 0 )
-	    {
-	      return missing;
-	    }
-	  // compute from internal reconstructed block
-	  alsha224_turn(intern, 0, &intern->input);
-	  intern->input.length = 0;
-	  intern->input.data.ptr = NULL;
-	}
-
-      // compute directly on input with right aligned blocksize
-      while ( input->length >= ( offset + blocksizebyte ) )
-	{
-	  alsha224_turn(intern, offset, input);
-	  missing = 0;
-	  offset += blocksizebyte;
-	}
-
-      // should keep remaining until filled by another add or alsha2x_final
-      int remaining = input->length - offset;
-      if ( remaining > 0)
-	{
-	  missing = blocksizebyte - remaining;
-	  intern->input.data.charptr=intern->inputcopy;
-	  memcpy(&intern->input.data.charptr[0], &(input->data.charptr[offset]), remaining);
-	  intern->input.length = remaining;
-	  return missing;
-	}
-      else
-	{
-	  intern->input.data.charptr=NULL;
-	  intern->input.length = 0;
-	  return 0;
 	}
     }
 }
@@ -420,7 +429,7 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 	  if ( intern->input.data.ptr !=  intern->inputcopy )
 	    {
 	      aldebug_printf(NULL,"[FATAL] non empty input buffer at final of length %i  using an external data buffer\n", intern->input.length);
-	    }
+	    }	  
 	  // expand it to full block, will be padded.
 	  intern->input.length = blocksizebyte;	  
 	}

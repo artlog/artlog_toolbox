@@ -118,29 +118,39 @@ int main(int argc, char ** argv)
 	    {
 	      struct alinputstream input;
 	      struct alsha2_internal sha2x ;
+	      // shax broken when not using 64 bytes multiples
+	      int readblocksize = 32;
 
 	      alsha2x_init(&sha2x, AL_SHA256);
 	      if (argc > 2 )
 		{
 		  ALDEBUG_SET_DEBUG(&sha2x,alsha2x,255);
+		  readblocksize = atoi(argv[2]);
+		  if (readblocksize <= 0)
+		    {
+		      readblocksize = 64;
+		    }
 		}
+	      
 	      ALDEBUG_IF_DEBUG(&sha2x,alsha2x,debug)
 		{
 		  aldebug_printf(NULL,"open file %s\n", filename );
 		}
 	      alinputstream_init(&input, fileno(f));
 	      alinputstream_foreach_block(&input,
-					  64,
+					  readblocksize,
 					  alshash_callback,
 					  alshash_finalize,
 					  &sha2x);
 	  
 	      fclose(f);
 
+	      /*
 	      f = fopen(filename,"r");
 	      alinputstream_init(&input, fileno(f));
 	      albase64_frominput(&input,NULL);	      
 	      fclose(f);
+	      */
 	      
 	    }
 	  else
