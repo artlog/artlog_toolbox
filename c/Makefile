@@ -12,6 +12,8 @@ json_to_c_stub_sample: json_to_c_stub.c json_to_c_stub_sample.c albase.c
 cryptohash: alcryptohash.c alcryptohash_test.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alinput.c
 	gcc -g -O0 -o $@ $^
 
+salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c 
+	gcc -g -O0 -o $@ $^
 
 bitfield: albitfield_test.c al_options.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
@@ -30,6 +32,7 @@ tests: c_parser albase json_to_c_stub_sample cryptohash bitfield
 	./cryptohash ./cryptohash
 	./bitfield outfile=bitfieldcopy
 	./hashtree 'ceci est la premiere pharse' 'la seconde phrase' 'la troisieme phrase' '4' '5' '6'
+	./salsa20
 
 clean:
 	rm c_parser albase json_to_c_stub_sample cryptohash bitfield

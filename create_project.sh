@@ -124,20 +124,28 @@ function create_makefile_for()
     fi
 }
 
-THIS_TOOL=$0
-ARTLOG_TOOLBOX=$(dirname $(pwd)/$THIS_TOOL)
-
-source ./scripts/locate_artlog_toolbox.sh
-
-select_artlog_toolbox artlog_toolbox
-
-echo "Using ARTLOG_TOOLBOX=$ARTLOG_TOOLBOX"
-
 if [[ $# == 0 ]]
 then
     usage
     exit 1
 fi
+
+THIS_TOOL=$0
+ARTLOG_TOOLBOX=$(dirname $(pwd)/$THIS_TOOL)
+
+locatetoolbox=./scripts/locate_artlog_toolbox.sh
+if [[ -f $locatetoolbox ]]
+then
+    source $locatetoolbox
+else
+    echo "[EROOR] missing $locatetoolbox" >&2
+    usage
+    exit 1
+fi
+
+select_artlog_toolbox artlog_toolbox
+
+echo "Using ARTLOG_TOOLBOX=$ARTLOG_TOOLBOX"
 
 check_dependencies
 

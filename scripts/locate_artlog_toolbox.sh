@@ -8,9 +8,11 @@ select_artlog_toolbox()
     # default to this.
     ARTLOG_TOOLBOX=$(pwd)
 
-    if [[ -f ./toolbox.param ]]
+    toolboxparam=./toolbox.param
+    if [[ -f $toolboxparam ]]
     then
-	source toolbox.param
+	echo "source $toolboxparam"
+	source $toolboxparam
     fi
     echo "Current toolbox : $ARTLOG_TOOLBOX"
 
@@ -23,6 +25,10 @@ select_artlog_toolbox()
 	done
 	echo "which one would you like to use (select number 1 to $potential_number) all other for current ?"
 	read a
+	if [[ -z $a ]]
+	then
+	    a=0
+	fi
 	if (( $a > 0 ))
 	then
 	    ARTLOG_TOOLBOX=$(readlink -f ${potential_path[$(( a - 1))]})
