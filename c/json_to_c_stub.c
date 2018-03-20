@@ -17,7 +17,9 @@ struct json_object * json_c_add_json_object_member(char * name, struct json_obje
   data.length = strlen(data.data.ptr);
   data.data.ptr = al_copy_block(allocator, &data);
 
-  printf("key:" ALPASCALSTRFMT " %i\n",data.length,(char *) data.data.ptr,data.length);
+  printf("key:" ALPASCALSTRFMT " %i\n",
+	 ALPASCALSTRARGS(data.length,(char *) data.data.ptr),
+	 data.length);
   // create json pair with name of field
   struct json_object * key = aljson_new_json_object(ctx->tokenizer, '"',  allocator, &data);
   struct json_object * pair = aljson_new_pair_key(ctx, key);
@@ -58,7 +60,9 @@ struct json_object * json_c_add_string_member(char * name, char * value, struct 
     {
       data.length = 1;
     }
-  printf("string:" ALPASCALSTRFMT " %i\n",data.length,(char *) data.data.ptr,data.length);
+  printf("string:" ALPASCALSTRFMT " %i\n",
+	 ALPASCALSTRARGS(data.length,(char *) data.data.ptr),
+	 data.length);
   data.data.ptr = al_copy_block(allocator,&data);
   struct json_object * object = aljson_new_json_object(ctx->tokenizer, '"', allocator, &data);
 

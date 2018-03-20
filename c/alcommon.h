@@ -12,5 +12,6 @@ void memory_shortage(void * ctx);
 
 // thanks to this format ... print non NULL terminated string
 #define ALPASCALSTRFMT "%.*s"
+#define ALPASCALSTRARGS(length,strptr) length,strptr
 
 #endif

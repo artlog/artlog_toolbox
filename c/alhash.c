@@ -208,7 +208,12 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
-      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {aldebug_printf(NULL,"[DEBUG] alhash put entry '" ALPASCALSTRFMT "'\n",key->length,(char *) key->data.ptr);}
+      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+	{
+	  aldebug_printf(NULL,
+			 "[DEBUG] alhash put entry '" ALPASCALSTRFMT "'\n",
+			 ALPASCALSTRARGS(key->length,(char *) key->data.ptr));
+	}
 	
       // automatically grow table if over a % fill
       if ( table->autogrow > 0 )
@@ -216,7 +221,11 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 	  if ( alhash_get_usage(table) > table->autogrow  )
 	    {
 	      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
-		{aldebug_printf(NULL,"[DEBUG] alhash %p grow from %i to %i .\n", table, table->bucket_size, table->bucket_size * 2);}
+		{
+		  aldebug_printf(NULL,
+				 "[DEBUG] alhash %p grow from %i to %i .\n",
+				 table, table->bucket_size, table->bucket_size * 2);
+		}
 	      if ( alhash_reinit(table, table->bucket_size * 2 ) <= 0 )
 		{
 		  return NULL;
@@ -279,7 +288,11 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 {
   if (( table != NULL ) && ( key != NULL ))
     {
-      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {aldebug_printf(NULL,"[DEBUG] alhash get entry '" ALPASCALSTRFMT "'\n",key->length,(char *) key->data.ptr);}
+      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {
+	aldebug_printf(NULL,
+		       "[DEBUG] alhash get entry '" ALPASCALSTRFMT "'\n",
+		       ALPASCALSTRARGS(key->length,(char *) key->data.ptr));
+      }
       // first should compute hash key
       if ( table->alhash_func != NULL )
 	{
@@ -316,7 +329,10 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 		  // if empty valid = ALH_MR_NOT_EQUAL
 		  if ( valid == ALH_MR_INVALID )
 		    {		      
-		      aldebug_printf(NULL,"alhash_get entry '" ALPASCALSTRFMT "' failed bucket index %i\n", key->length,(char *) key->data.ptr, index);
+		      aldebug_printf(NULL,
+				     "alhash_get entry '" ALPASCALSTRFMT "' failed bucket index %i\n",
+				     ALPASCALSTRARGS(key->length,(char *) key->data.ptr),
+				     index);
 		      alhash_dump_entry_as_string(entry);
 		      abort();
 		    }
@@ -514,7 +530,10 @@ int alhash_walk_callback_collision(struct alhash_entry * entry, void * data, int
     {
       if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
 	{
-	  aldebug_printf(NULL,"(%i)'" ALPASCALSTRFMT "',",entry->key.type, entry->key.length, (char *) entry->key.data.ptr);
+	  aldebug_printf(NULL,
+			 "(%i)'" ALPASCALSTRFMT "',",
+			 entry->key.type,
+			 ALPASCALSTRARGS(entry->key.length, (char *) entry->key.data.ptr));
 	}
     }
   return 0;
@@ -527,7 +546,13 @@ void alhash_dump_entry_as_string(struct alhash_entry * entry)
       if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
 	{
 	  aldebug_printf(NULL,"dump entry\n");
-	  aldebug_printf(NULL,"%p (%i)'" ALPASCALSTRFMT "' = (%i)'" ALPASCALSTRFMT "' (hash=%lx) (collisions=", entry, entry->key.type, entry->key.length, (char *) entry->key.data.ptr,  entry->value.type, entry->value.length, (char *)  entry->value.data.ptr, entry->hash_key);
+	  aldebug_printf(NULL,
+			 "%p (%i)'" ALPASCALSTRFMT "' = (%i)'" ALPASCALSTRFMT "' (hash=%lx) (collisions=",
+			 entry, entry->key.type,
+			 ALPASCALSTRARGS(entry->key.length, (char *) entry->key.data.ptr),
+			 entry->value.type,
+			 ALPASCALSTRARGS(entry->value.length, (char *)  entry->value.data.ptr),
+			 entry->hash_key);
 	  int collisions = alhash_walk_collisions(entry, alhash_walk_callback_collision, NULL);
 	  aldebug_printf( NULL, "#%i)\n",collisions);
 	}
