@@ -19,7 +19,7 @@ libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
 all: libs tests libinclude
 
-libinclude: $(BUILD)/include/aljson.h $(BUILD)/include/aljson_errors.h $(BUILD)/include/aljson_import_internal.h $(BUILD)/include/aljson_parser.h $(BUILD)/include/alstrings.h $(BUILD)/include/json_to_c_stub.h $(BUILD)/include/albitfieldreader.h $(BUILD)/include/albitfieldwriter.h
+libinclude: $(BUILD)/include/aljson.h $(BUILD)/include/aljson_errors.h $(BUILD)/include/aljson_import_internal.h $(BUILD)/include/aljson_parser.h $(BUILD)/include/alstrings.h $(BUILD)/include/json_to_c_stub.h $(BUILD)/include/albitfieldreader.h $(BUILD)/include/albitfieldwriter.h $(BUILD)/include/albase.h
 
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
@@ -35,8 +35,8 @@ $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test
 $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/altodo.o $(BUILD)/include/altodo.h
 	ar rccs $@ $<
 
-$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/aldebug.o $(BUILD)/obj/albtree.o $(BUILD)/obj/albitfieldreader.o $(BUILD)/obj/albitfieldwriter.o  $(BUILD)/include/alinput.h $(BUILD)/include/aloutput.h $(BUILD)/include/alcommon.h $(BUILD)/include/aldebug.h 
-	ar rccs $@  $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o $(BUILD)/obj/aldebug.o  $(BUILD)/obj/albitfieldreader.o $(BUILD)/obj/albitfieldwriter.o 
+$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/aldebug.o $(BUILD)/obj/albtree.o $(BUILD)/obj/albitfieldreader.o $(BUILD)/obj/albitfieldwriter.o $(BUILD)/obj/albase.o $(BUILD)/include/alinput.h $(BUILD)/include/aloutput.h $(BUILD)/include/alcommon.h $(BUILD)/include/aldebug.h $(BUILD)/include/albase.h
+	ar rccs $@  $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o $(BUILD)/obj/aldebug.o  $(BUILD)/obj/albitfieldreader.o $(BUILD)/obj/albitfieldwriter.o  $(BUILD)/obj/albase.o
 
 $(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o $(BUILD)/include/alhash.h
 	ar rccs $@  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o
