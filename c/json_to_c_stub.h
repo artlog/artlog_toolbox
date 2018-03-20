@@ -88,6 +88,32 @@ by order :
 	json_c_ ##struct_name ##_from_json_auto(&test->d,local_json_ ##d); \
       }
 
+/* ===== WRITING JSON === */
+
+#define ALJSON_ADD_INT(ctx, allocator, struct_var, member_name, gwable)	\
+  { \
+     struct json_object * pair = json_c_add_int_member( #member_name , struct_var->member_name, ctx, allocator); \
+  aljson_add_to_growable(ctx,&gwable->growable,pair); \
+  }
+
+#define ALJSON_ADD_STRING(ctx, allocator, struct_var, member_name, gwable) \
+  { \
+     struct json_object * pair = json_c_add_string_member( #member_name , struct_var->member_name, ctx, allocator); \
+  aljson_add_to_growable(ctx,&gwable->growable,pair); \
+  }
+
+#define ALJSON_ADD_EXPLICT_TYPE(ctx, allocator, type_as_string, gwable) \
+  { \
+     struct json_object * pair = json_c_add_string_member( "<type>" , type_as_string, ctx, allocator); \
+  aljson_add_to_growable(ctx,&gwable->growable,pair); \
+  }
+
+#define ALJSON_ADD_JSON_OBJECT(ctx, allocator, member_name, jobjectptr, gwable) \
+  { \
+     struct json_object * pair = json_c_add_json_object_member( member_name , jobjectptr, ctx, allocator); \
+     aljson_add_to_growable(ctx,&gwable->growable,pair); \
+  }
+
 
 /* ========= WRITING JSON =========== */
 

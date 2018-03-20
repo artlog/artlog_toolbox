@@ -3194,6 +3194,8 @@ init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
   return 1;
 }
 
+// read json
+// json -> c 
 void generate_aljson_stub( struct c_parser_ctx * parser)
 {
   for (int i = 0; i< parser->used_structures; i++)
@@ -3275,6 +3277,103 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 	  --max;
 	}
       printf("return 1;}\n");
+    }
+
+}
+
+// write
+// c -> json
+void generate_alc2json_stub( struct c_parser_ctx * parser)
+{
+  for (int i = 0; i< parser->used_structures; i++)
+    {
+      int max = 1000;
+      char * varname="instructp";
+      // todo
+      struct alhash_datablock * vartype;
+      struct alhash_datablock * datablock = (struct alhash_datablock *) parser->structure_array[i].dict_index ;
+      vartype = NULL;
+
+      // generate write side : json_c_xxxx_to_json_auto
+      
+      printf("struct json_object * json_c_" ALPASCALSTRFMT "_to_json_auto(",
+	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+      printf("struct " ALPASCALSTRFMT " * %s, ",
+	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr)
+	     ,varname
+	     );
+      printf("struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)\n{\n");
+      printf("struct json_object * growable = aljson_new_growable(ctx,'{');\n");
+      printf("ALJSON_ADD_EXPLICT_TYPE(ctx, allocator,\"struct " ALPASCALSTRFMT "\",growable);\n",
+	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr)
+	     );
+      struct c_declaration_info_list * next = parser->structure_array[i].first;
+      while ((next != NULL)&&(max>0))
+	{
+	  datablock = (struct alhash_datablock *) next->info.dict_index;
+	  if ( datablock != NULL )
+	    {
+	      // better than nothing, still does not recognize arrays or pointers
+	      switch(next->info.full_type.word_type)
+		{
+		case TOKEN_C_INT_ID:
+		case TOKEN_C_LONG_ID:
+		  printf("ALJSON_ADD_INT(ctx,allocator,%s," ALPASCALSTRFMT ",growable);\n",
+			 varname,
+			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+		  break;
+			      
+		case TOKEN_C_CHAR_ID:
+		  printf("ALJSON_ADD_STRING(ctx,allocator,%s," ALPASCALSTRFMT ",growable);\n",
+			 varname,
+			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+		  break;
+
+		case TOKEN_C_STRUCT_ID:
+		  vartype = next->info.full_type.dict_index;
+		  if (vartype != NULL)
+		    {
+		      if ( next->info.full_type.dereference == 0)
+			{
+			  printf("struct json_object * jobj = json_c_" ALPASCALSTRFMT "_to_json_auto(&%s->" ALPASCALSTRFMT ", ctx,allocator);\n",
+				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
+				 varname,
+				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr)			 
+				 );
+				 
+			  printf("ALJSON_ADD_JSON_OBJECT(ctx,allocator," ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",jobj,growable);\n",
+				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
+				 varname,
+				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+			}
+		      else
+			{
+			  printf("// TODO ALJSON_ADD_JSON_OBJECT_POINTER(" ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",json_object,1,WITH_NAME);\n",
+				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
+				 varname,
+				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+			}
+		    }
+		  else
+		    {
+		      printf("// unknwon struct name for " ALPASCALSTRFMT " \n",
+			     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+		    }
+		  break;
+		default:
+		  printf("// unsupported type %i.\n", next->info.full_type.word_type);
+		  break;
+		}
+
+	    }
+	  else
+	    {
+	      printf("//.\n");
+	    }
+	  next = next->next;
+	  --max;
+	}
+      printf("return aljson_concrete(ctx,growable);\n}\n");
     }
 
 }
@@ -3412,12 +3511,14 @@ main (int argc, char **argv)
 		    }
 		  printf("}\n");
 		}
+
 	    }
 
 	  // outform=aljson_stub
 	  if ( parser.used_structures != 0 )
 	    {
 	      generate_aljson_stub(&parser);
+	      generate_alc2json_stub(&parser);
 	    }
 
 	}
