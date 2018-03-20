@@ -78,7 +78,7 @@ int aljson_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
       if (albase_debug != 0 )
 	{
 	  // double check with libc implementation
-	  aldebug_printf(NULL,"%i,%x=%s=%.*s\n",integer,integer,&s[p],length,(char *) out->data.ptr);
+	  aldebug_printf(NULL,"%i,%x=%s=" ALPASCALSTRFMT "\n",integer,integer,&s[p],length,(char *) out->data.ptr);
 	}
     }
   else

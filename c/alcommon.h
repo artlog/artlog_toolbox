@@ -10,4 +10,7 @@ void memory_shortage(void * ctx);
 
 #define ALC_SET_FLAG(x,flag) {x |= flag;}
 
+// thanks to this format ... print non NULL terminated string
+#define ALPASCALSTRFMT "%.*s"
+
 #endif

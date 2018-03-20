@@ -1214,13 +1214,13 @@ void dump_string(struct json_parser_ctx * ctx, struct json_object * object, stru
       struct json_string * string = &object->string;
       if ( ( object->type != '$' ) && ( object->type != '0') )
 	{
-	  printf("%c%.*s%c",object->type,string->internal.length,(char *) string->internal.data.ptr,object->type);
+	  printf("%c" ALPASCALSTRFMT "%c",object->type,string->internal.length,(char *) string->internal.data.ptr,object->type);
 	}
       else
 	{
 	  // NULL terminated string ?
 	  // todo("implement ALTYPE_STR0 for string->internal.type");
-	  printf("%.*s",string->internal.length,(char *) string->internal.data.ptr);
+	  printf(ALPASCALSTRFMT,string->internal.length,(char *) string->internal.data.ptr);
 	}      
     }
   else
@@ -1570,7 +1570,7 @@ void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object
 {
   if (( object != NULL) && (object->error.string.internal.data.ptr != NULL ))
     {
-      printf("syntax error %u (line:%i,column:%i)\n%.*s\n",
+      printf("syntax error %u (line:%i,column:%i)\n" ALPASCALSTRFMT "\n",
 	     object->error.erroridx,
 	     object->error.where.line,object->error.where.column,
 	     object->error.string.internal.length,(char *) object->error.string.internal.data.ptr
@@ -1654,7 +1654,7 @@ int json_unify_string(struct json_parser_ctx * ctx, struct json_object * object,
       struct json_string * string = &object->string;
       if ( strcmp(string->internal.data.ptr, other_object->string.internal.data.ptr) == 0 )
 	{
-	  printf("%c%.*s%c",object->type,string->internal.length,(char *)string->internal.data.ptr,object->type);
+	  printf("%c" ALPASCALSTRFMT "%c",object->type,string->internal.length,(char *)string->internal.data.ptr,object->type);
 	  return 1;
 	}
       else
@@ -1914,7 +1914,7 @@ void json_print_object_name(struct json_parser_ctx * ctx, struct json_object * o
 	      json_print_object_name(ctx,object->owner,print_ctx);
 	      if ( object->type == ':' )
 		{
-		  printf(".%.*s",object->pair.key->string.internal.length,(char *)object->pair.key->string.internal.data.ptr);
+		  printf("." ALPASCALSTRFMT,object->pair.key->string.internal.length,(char *)object->pair.key->string.internal.data.ptr);
 		}
 	      else if ( object->owner->type  == '[' )
 		{
@@ -1935,7 +1935,7 @@ void dump_json_path(struct json_path * json_path)
   while ( ( json_path != NULL ) && ( watchguard > 0 ) )    
     {
       ++ watchguard;
-      printf(".%.*s", json_path->string.internal.length, (char *) json_path->string.internal.data.ptr);
+      printf("." ALPASCALSTRFMT, json_path->string.internal.length, (char *) json_path->string.internal.data.ptr);
       json_path = json_path->child;
     }
 }
@@ -2063,7 +2063,7 @@ struct json_object * json_walk_path(char * json_path, struct json_parser_ctx * c
 		  struct json_object * value = json_dict_path_get_value(current_path, current_object);
 		  if ( value == NULL )
 		    {
-		      printf("[ERROR] path keyname %.*s not found\n", current_path->string.internal.length, (char *) current_path->string.internal.data.ptr);
+		      printf("[ERROR] path keyname " ALPASCALSTRFMT " not found\n", current_path->string.internal.length, (char *) current_path->string.internal.data.ptr);
 		      current_object = NULL;
 		    }
 		  else
