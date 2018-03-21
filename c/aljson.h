@@ -296,5 +296,8 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
 
 // goal separate tokenizer and parsing.
 typedef struct json_object* (*json_parse_func) (struct json_parser_ctx *ctx, void *data, struct json_object * parent);
-  
+
+// kindnyi for further use, specify type of data attach, allow to attach mulitple kind of data.
+// return 1 if attach worked.
+int aljson_attach_private_data(void * kindnyi, struct json_object * json, void * data);
 #endif

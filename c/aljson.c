@@ -2231,3 +2231,13 @@ char * json_get_cstring(struct json_object * object)
     }
   return cstring;
 }
+
+int aljson_attach_private_data(void * kindnyi, struct json_object * json, void * data)
+{
+  if ( json->private_data == NULL )
+    {
+      json->private_data = data;
+      return 1;
+    }
+  return 0;
+}
