@@ -2233,9 +2233,10 @@ float json_get_float(struct json_object * object )
 	{
 	  // expecting pos to point at first unrecognized char.
 	  char separator = number->internal.data.charptr[pos];
+	  int rpos = 0;
 	  if ( separator == '.' )
 	    {
-	      int rpos = json_get_int_internal(number, pos+1, &remainder);
+	      rpos = json_get_int_internal(number, pos+1, &remainder);
 	      pos += rpos + 1;
 	      float r = remainder;
 	      while ( rpos > 0 )
@@ -2244,44 +2245,52 @@ float json_get_float(struct json_object * object )
 		  rpos --;
 		}
 	      fresult += r;
-	      if ( pos < limit )
+	    }
+	  if ( pos < limit )
+	    {
+	      separator = number->internal.data.charptr[pos];
+	      if ( ( separator == 'E' ) || ( separator = 'e' ) )
 		{
-		  separator = number->internal.data.charptr[pos];
-		  if ( ( separator == 'E' ) || ( separator = 'e' ) )
+		  int negative = 0;
+		  if ( pos +1 < limit )
 		    {
-		      int negative = 0;
-		      if ( pos +1 < limit )
+		      char c = number->internal.data.charptr[pos+1];
+		      if ( c == '-' )
 			{
-			  char c = number->internal.data.charptr[pos+1];
-			  if ( c == '-' )
-			    {
-			      negative=1;
-			      ++pos;
-			    }
-			  else if ( c == '+' )
-			    {
-			      ++pos;
-			    }
-			  //else expects a number
+			  negative=1;
+			  ++pos;
 			}
-		      rpos = json_get_int_internal(number, pos+1, &exponent);
-		      if ( negative )
+		      else if ( c == '+' )
 			{
-			  while (exponent > 0 )
-			    {
-			      exponent --;
-			      fresult = fresult /10;
-			    }
+			  ++pos;
 			}
-		      else
+		      //else expects a number
+		    }
+		  rpos = json_get_int_internal(number, pos+1, &exponent);
+		  if ( negative )
+		    {
+		      while (exponent > 0 )
 			{
-			  while (exponent > 0 )
-			    {
-			      exponent --;
-			      fresult = fresult *10;
-			    }
+			  exponent --;
+			  fresult = fresult /10;
 			}
 		    }
+		  else
+		    {
+		      while (exponent > 0 )
+			{
+			  exponent --;
+			  fresult = fresult *10;
+			}
+		    }
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"[FATAL] unexpected '%c' in '" ALPASCALSTRFMT "' at %i length %i during float parsing\n",
+				 separator,
+				 ALPASCALSTRARGS(number->internal.length,
+						 (char *) number->internal.data.charptr),
+				 pos, number->internal.length);
 		}
 	    }
 	}
