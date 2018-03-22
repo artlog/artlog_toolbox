@@ -2252,10 +2252,19 @@ float json_get_float(struct json_object * object )
 		      int negative = 0;
 		      if ( pos +1 < limit )
 			{
-			  negative = number->internal.data.charptr[pos+1] == '-';
+			  char c = number->internal.data.charptr[pos+1];
+			  if ( c == '-' )
+			    {
+			      negative=1;
+			      ++pos;
+			    }
+			  else if ( c == '+' )
+			    {
+			      ++pos;
+			    }
+			  //else expects a number
 			}
-		      // +2 since '-' or '+' can occur after E|e
-		      rpos = json_get_int_internal(number, pos+2, &exponent);
+		      rpos = json_get_int_internal(number, pos+1, &exponent);
 		      if ( negative )
 			{
 			  while (exponent > 0 )
