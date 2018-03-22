@@ -1233,6 +1233,22 @@ void dump_string(struct json_parser_ctx * ctx, struct json_object * object, stru
     }
 }
 
+void dump_string_number(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+{
+  if ( object != NULL)
+    {
+      if ( object->type == '0' )
+	{
+	  float value = json_get_float(object);
+	  printf("%f",value);
+	}
+      else
+	{
+	  printf("#ERROR not a number");
+	}
+    }
+}
+
 void dump_pair(struct json_parser_ctx * ctx, struct json_pair * pair, struct print_ctx * print_ctx)
 {
   dump_object(ctx,pair->key, print_ctx);
@@ -1616,8 +1632,10 @@ void dump_object(struct json_parser_ctx * ctx, struct json_object * object, stru
 	case '"':
 	case '\'':
 	case '$':
-	case '0': // number is special string
 	  dump_string(ctx,object, print_ctx);
+	  break;
+	case '0':
+	  dump_string_number(ctx,object, print_ctx);
 	  break;
 	case ':':
 	  dump_pair_object(ctx,object, print_ctx);
@@ -2126,31 +2144,31 @@ void json_flatten(struct json_parser_ctx * ctx, struct json_object * object, str
   todo("json_flatten could be done with a special print_ctx and rely on dump");
 }
 
-// convert a string value into an int value...
-// here assume encoded as string
-int json_get_int(struct json_object * object )
+// return number of char read == relative position of first unrecognized char
+int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 {
   int cumul = 0;
   int result = 0;
   int negative = 0;
-  if ( ( object != NULL ) && ( object->type == '0' ) )
+  int i = 0;
+  int limit = number->internal.length - pos;
+  if ( limit > 0 )
     {
-      struct json_string * number = &object->string;
-      char * chars = (char *) number->internal.data.ptr;
+      char * chars = &number->internal.data.charptr[pos];
       if ( chars != NULL )
 	{
-	  int i =0;
-	  if (( number->internal.length > 0 ) && ( chars[0] == '-' ))
+
+	  if (( limit > 0 ) && ( chars[0] == '-' ))
 	    {
 	      negative=1;
 	      i=1;	      
 	    }
-	  for (; i < number->internal.length ; i++)
+	  for (; i < limit ; i++)
 	    {
 	      char c = chars[i];
 	      if ( c == '\0' )
 		{
-		  if ( i ==  number->internal.length - 1 )
+		  if ( i ==  limit - 1 )
 		    {
 		      // c string NULL terminated bypass
 		      continue;
@@ -2176,8 +2194,14 @@ int json_get_int(struct json_object * object )
 		}
 	      else
 		{
-		  todo("[ERROR] should handle non integer character for json_get_int(..)");
-		  aldebug_printf(NULL,"[FATAL] unexpected in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
+		  if ( ( c != '.' ) && ( c != 'e' ) && ( c != 'E') )
+		    {
+		      aldebug_printf(NULL,"[FATAL] unexpected '%c' in '" ALPASCALSTRFMT "' at %i length %i during number parsing\n",
+				     c,
+				     ALPASCALSTRARGS(number->internal.length,
+						     (char *) number->internal.data.charptr),
+				     i + pos, number->internal.length);
+		    }
 		  break;
 		}
 	    }
@@ -2185,6 +2209,96 @@ int json_get_int(struct json_object * object )
 	    {
 	      result=-result;
 	    }
+	}
+
+      *(resultp) = result;
+    }
+  return i;
+}
+
+// very naive implementation
+float json_get_float(struct json_object * object )
+{
+  float fresult = 0.0;
+  if ( ( object != NULL ) && ( object->type == '0' ) )
+    {
+      struct json_string * number = &object->string;
+      int integer = 0;
+      int remainder = 0;
+      int exponent = 0;
+      int limit = number->internal.length;
+      int pos = json_get_int_internal(number, 0, &integer);
+      fresult = (float) integer;
+      if (pos < limit)
+	{
+	  // expecting pos to point at first unrecognized char.
+	  char separator = number->internal.data.charptr[pos];
+	  if ( separator == '.' )
+	    {
+	      int rpos = json_get_int_internal(number, pos+1, &remainder);
+	      pos += rpos + 1;
+	      float r = remainder;
+	      while ( rpos > 0 )
+		{
+		  r = r / 10;
+		  rpos --;
+		}
+	      fresult += r;
+	      if ( pos < limit )
+		{
+		  separator = number->internal.data.charptr[pos];
+		  if ( ( separator == 'E' ) || ( separator = 'e' ) )
+		    {
+		      int negative = 0;
+		      if ( pos +1 < limit )
+			{
+			  negative = number->internal.data.charptr[pos+1] == '-';
+			}
+		      // +2 since '-' or '+' can occur after E|e
+		      rpos = json_get_int_internal(number, pos+2, &exponent);
+		      if ( negative )
+			{
+			  while (exponent > 0 )
+			    {
+			      exponent --;
+			      fresult = fresult /10;
+			    }
+			}
+		      else
+			{
+			  while (exponent > 0 )
+			    {
+			      exponent --;
+			      fresult = fresult *10;
+			    }
+			}
+		    }
+		}
+	    }
+	}
+    }
+  else
+    {
+      todo("[ERROR] should handle wrong object type or NULL for json_get_float(..)");
+    }
+  return fresult;
+
+}
+
+// convert a string value into an int value...
+// here assume encoded as string
+int json_get_int(struct json_object * object )
+{
+  int result = 0;
+  if ( ( object != NULL ) && ( object->type == '0' ) )
+    {
+      struct json_string * number = &object->string;
+      int limit = number->internal.length;
+      int pos = json_get_int_internal(number, 0, &result);
+      // expecting pos to point at end of string value
+      if (pos < limit )
+	{
+	  aldebug_printf(NULL,"[FATAL] unexpected in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, pos, number->internal.length);
 	}
     }
   else

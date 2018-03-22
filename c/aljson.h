@@ -255,6 +255,8 @@ struct json_walk_leaf_callbacks  {
 */
 int json_get_int(struct json_object * object );
 
+float json_get_float(struct json_object * object );
+
 char * json_get_string(struct json_object * object);
 
 /** make sure to get a c string, allocate it if needed ...*/
