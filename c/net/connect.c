@@ -13,18 +13,34 @@
 #include "loopbackserv.h"
 #include "al_http.h"
 
+#define STRINGIFY(x) #x
+#define STRINGIFYDEFINED(x)  STRINGIFY(x)
+
+#define LOOPBACKSERV_PORT 4096
+#define LOOPBACKCONNECTIONS 4
+
+void usage() {
+  printf("obviously this should explain here what this program will do\n");
+  printf("loopbackserv : accept " STRINGIFYDEFINED(LOOPBACKCONNECTIONS) " client connections on local system, on port " STRINGIFYDEFINED(LOOPBACKSERV_PORT) " using concurrent thread and reply back line that was sent with delay between bytes\n");
+}
+
 int main(int argc, char **argv)
 {
 
   struct connect_info connect_info;
   
+
+  
   if (argc < 2)
     {
-      printf("%s no hostname to resolve, launching server", argv[0]);
+      usage();
+      
+      printf("%s no hostname to resolve, launching server (loopbackserv)\n", argv[0]);
 
-      return loopbackserv(0,4096);
+      return loopbackserv(0,LOOPBACKSERV_PORT,LOOPBACKCONNECTIONS);
       return 1;
     }
+  
   char * host=argv[1];
 
   resolve_new(host,443,&connect_info);

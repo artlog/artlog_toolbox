@@ -73,9 +73,9 @@ void wait_all_thread_termination(int max)
     }
   
 }
-int loopbackserv(int address, int port)
+
+int loopbackserv(int address, int port, int max_connections)
 {
-  int max_connections = 4;
   int current_connections = 0;
   int sock_server=0;
   struct sockaddr_in serv_addr;
@@ -121,7 +121,7 @@ int loopbackserv(int address, int port)
 	      }
 	    else
 	      {
-		fprintf(stderr,"[ERROR] connection #%i handler thread failure\n");
+		fprintf(stderr,"[ERROR] connection #%i handler thread failure\n",current_connections);
 		free(incoming);
 	      }
 	    ++ current_connections;

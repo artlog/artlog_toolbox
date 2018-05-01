@@ -69,8 +69,9 @@ int multiple_connect(int number, struct connect_info * cto, int seconds)
 	      if (connection[j].revents | POLLIN )
 		{
 		  printf("<%i", connection[j].fd);
-		  read(connection[j].fd,buffer,sizeof(buffer));
-		  printf("/>\n", connection[j].fd);
+		  int r = read(connection[j].fd,buffer,sizeof(buffer));
+		  printf("\n%s\n",buffer);
+		  printf("/>\n");
 		}
 	    }
 	}

@@ -1,0 +1,6 @@
+project ongoing
+
+sudo apt install libssl-dev
+
+make clean
+make
