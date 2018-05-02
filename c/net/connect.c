@@ -43,12 +43,19 @@ int main(int argc, char **argv)
   
   char * host=argv[1];
 
-  resolve_new(host,443,&connect_info);
-  resolve_old(host,443,AF_INET6);
-  resolve_old(host,443,AF_INET);
+  resolve_new(host,LOOPBACKSERV_PORT,&connect_info);
+  resolve_old(host,LOOPBACKSERV_PORT,AF_INET6);
+  resolve_old(host,LOOPBACKSERV_PORT,AF_INET);
+  
+  struct alhttp_context httpcontext;
+  struct alurl toserver;
+  struct connect_info connection;
+  connection.addrinfo=NULL;  
+  al_http_get_resolved_address(host,LOOPBACKSERV_PORT,&connection);
 
   int s = 0;
-  al_http_client_transaction_with_server(NULL, NULL, s);
+  printf("al_http_client_transaction_with_server\n");
+  al_http_client_transaction_with_server(&httpcontext, &toserver, &connection);
 
 
 }

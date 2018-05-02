@@ -36,13 +36,8 @@ int al_http_client_create_socket_to_url(struct alhttp_context * context,struct a
   return 0;
 }
 
-void al_http_client_transaction_with_server(struct alhttp_context * context,struct alurl * toserver, int s)
+void al_http_client_transaction_with_server(struct alhttp_context * context,struct alurl * toserver, struct connect_info * connection )
 {
-  // should somehow be already connected through socket...
-  struct connect_info connection;
-  connection.addrinfo=NULL;
-  
-  al_http_get_resolved_address("www6.artisanlogiciel.net",443,&connection);
 
   /*
            struct addrinfo {
@@ -58,7 +53,7 @@ void al_http_client_transaction_with_server(struct alhttp_context * context,stru
   */
 
 
-  struct addrinfo * ainfo = connection.addrinfo;
+  struct addrinfo * ainfo = connection->addrinfo;
 
   while ( ainfo != NULL )
     {
@@ -72,18 +67,18 @@ void al_http_client_transaction_with_server(struct alhttp_context * context,stru
 	  exit(EXIT_FAILURE);
 	}
 
-      if ( connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen) >= 0)
+      if ( connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen) == 0)
 	{
 	  // play with socket...
-	  connection.addrselected = ainfo;
-	  connection.altls_ctx=NULL;
+	  connection->addrselected = ainfo;
+	  connection->altls_ctx=NULL;
 	  // connection->altls_ctx.tls_type=ALTLS_TYPE_CLEARTEST;
 
 	  close(sockfd);
 	  int number = 50;
 	  int seconds = 10;
 	  printf("connecting during %i seconds with %i connections\n",seconds, number);
-	  multiple_connect(number,&connection, seconds);
+	  multiple_connect(number,connection, seconds);
 
 	  printf("connection closed, terminate\n");
 	  break;

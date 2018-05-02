@@ -34,7 +34,9 @@ int resolve_new(char * host, int port, struct connect_info * conn)
       // works well with 'https' get 443
       // result_code = getaddrinfo(hostname,"https",&hints,&res);
       // works well with '443' too
-      result_code = getaddrinfo(hostname,"443",&hints,&res);
+      char portstr[10];
+      snprintf(portstr,sizeof(portstr),"%d",port);
+      result_code = getaddrinfo(hostname,portstr,&hints,&res);
       if (result_code != 0)
 	{
 	  fprintf(stderr,"getaddrinfo failed with %u code meaning %s", result_code, gai_strerror(result_code));
