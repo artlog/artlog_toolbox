@@ -4,9 +4,6 @@ DISTJAR=$(DISTPREFIX)-$(PROJECT_VERSION).jar
 JAVAC=javac
 JAR=jar
 
-RHINO_VER=1_7R5
-
-
 all: build.xml dist/lib/$(DISTJAR)
 
 getname:
@@ -54,8 +51,5 @@ deb:	debian debian/rules debian/control debian/compat debian/changelog deb/javad
 
 emacsdevenv:
 
-download/rhino$(RHINO_VER).zip:
-	mkdir -p download
-	cd download; wget https://github.com/mozilla/rhino/releases/download/Rhino$(RHINO_VER)_RELEASE/rhino$(RHINO_VER).zip
 
 .PHONY: clean all cleanall getname deb emacsdevenv work/%  interface/%
