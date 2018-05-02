@@ -15,7 +15,7 @@ and provide bash scripts for toy projects
 ______________
 
 
-make test
+make tests
 
 => json test , used for pretty printing json content.
 can compare two json files ( with limitations, and key order matter ).
