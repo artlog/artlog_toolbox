@@ -15,9 +15,14 @@ struct connect_info {
   struct altls_context * altls_ctx;
 };
 
+#define ALCONN_BUFSIZE 50
+// wait 1 second ( in ms ).
+#define ALCONN_TIMEOUT_1S_MS 1000
+
 /*
 read from /dev/urandom and write to initial socket connections
 mono thread write to randomly choosen connections among number ones openned 
+accuracy is +/- 1 second.
 */
 int multiple_connect(int number, struct connect_info * to, int seconds);
 

@@ -1,30 +1,46 @@
 #include "connections.h"
 
+// ugly
+#include "../alcommon.h"
+
 #include <poll.h>
 #include <stdio.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
 
-#define CONNBUFSIZE 50
-// wait 1 second ( in ms ).
-#define CONNTIMEOUT 1000
+#include <signal.h>
+#include <stdlib.h>
+
+void disable_sigpipe()
+{
+  struct sigaction sa;
+  sa.sa_handler = SIG_IGN;
+  sa.sa_flags = 0;
+  if (sigaction(SIGPIPE, &sa, 0) == -1) {
+    perror("sigaction");
+    exit(1);
+  }
+}
 
 int multiple_connect(int number, struct connect_info * cto, int seconds)
 {
   struct pollfd connection[number];
   int i = 0;
   FILE * ran  = fopen("/dev/urandom","r");
-  unsigned char buffer[CONNBUFSIZE];
+  unsigned char buffer[ALCONN_BUFSIZE];
   struct timeval today;
   time_t now = 0;
   time_t start;
   struct addrinfo * ainfo  = cto->addrselected;
 
+  // ugly but without it write on socket that is closed by remote will stop program with SIGPIPE signal.
+  disable_sigpipe();
+  
   gettimeofday(&today, NULL);
   start = today.tv_sec;
 
-  // first connect many time to same port
+  // first connect many time to same port and record new socket
   for (i=0; i < number; i ++)
     {
       int sockfd =  socket(ainfo->ai_family,
@@ -40,7 +56,7 @@ int multiple_connect(int number, struct connect_info * cto, int seconds)
 	  connection[i].revents=0;
 	  connection[i].fd =  sockfd;
 	  
-	  // write CONNBUFSIZE bytes from ran to socket;
+	  // write ALCONN_BUFSIZE bytes from ran to socket;
 	  fread(buffer,sizeof buffer,1,ran);
 	  write(sockfd,buffer, sizeof buffer);
 	}
@@ -55,38 +71,56 @@ int multiple_connect(int number, struct connect_info * cto, int seconds)
     }
 
   unsigned int random;
+  ssize_t wrote = 0L;
   
   // then randomly send 'packet' on those sockets
-  while (now < start + seconds)
+  while (now < ( start + seconds ) )
     {
       printf(".\n");
-      // write 10 byte from ran to random socket.
       fread(&random,sizeof random,1,ran);
       int selector = random % number;
       printf("selected %i\n", selector);
       printf("socket %i\n", connection[selector].fd);
-      write(connection[selector].fd, buffer, sizeof(buffer));
-      if ( poll(connection,number,CONNTIMEOUT) > 0 )
+      if ( connection[selector].fd > 1 )
 	{
-	  for (int j=0; j<number; j++)
+	  wrote = write(connection[selector].fd, buffer, sizeof(buffer));
+	  printf("wrote %li\n", wrote);
+	  if ( poll(connection,number,ALCONN_TIMEOUT_1S_MS) > 0 )
 	    {
-	      if (connection[j].revents & POLLIN )
+	      for (int j=0; j<number; j++)
 		{
-		  printf("<%i \n", connection[j].fd);
-		  int r = read(connection[j].fd,buffer,sizeof(buffer));
-		  printf("r=%i\n%s\n",r,buffer);
-		  printf("/>\n");
-		  connection[i].revents=0;
+		  if (connection[j].revents & POLLIN )
+		    {
+		      printf("<%i \n", connection[j].fd);
+		      int r = read(connection[j].fd,buffer,sizeof(buffer));
+		      if ( r > 0 )
+			{
+			  printf("r=%i\n" ALPASCALSTRFMT "\n",r,ALPASCALSTRARGS(r,buffer));
+			}
+		      if ( connection[j].revents & POLLHUP )
+			{
+			  printf("closed\n");
+			}
+		      printf("/>\n");
+		      connection[i].revents=0;
+		    }
 		}
 	    }
+	}
+      else
+	{
+	  printf("skip 0 fd\n");
 	}
       gettimeofday(&today, NULL);
       now = today.tv_sec;
     }
 
+  printf("terminated !\n");
+
     for (i=0; i < number; i ++)
       {
 	printf("closing    #%i/%i\n", i+1, number);
 	close(connection[i].fd);
+	connection[i].fd = 0;
       }
 }
