@@ -14,7 +14,7 @@
 		   
 int al_http_get_resolved_address(char * host, int port, struct connect_info * conn)
 {
-  resolve_new(host,port,conn);
+  connect_info_resolve(host,port,conn);
   return 0;
 }
 

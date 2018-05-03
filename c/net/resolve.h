@@ -10,7 +10,14 @@ output : will fill conn->addrinfo (  struct addrinfo * )
 
 this is currenlty a wrapper for getaddrinfo
 */
-int resolve_new(char * host, int port, struct connect_info * conn);
+int connect_info_resolve(char * host, int port, struct connect_info * conn);
+
+/* release conn information 
+ to release memory
+and
+ to be able to use it for another resolution
+ */
+void connect_info_release(struct connect_info * conn);
 
 /* somehow a wrapper over gethostbyname2_r */
 int resolve_old( char * host, int port, int inet_type);

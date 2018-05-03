@@ -15,6 +15,10 @@ struct connect_info {
   struct altls_context * altls_ctx;
 };
 
+/*
+read from /dev/urandom and write to initial socket connections
+mono thread write to randomly choosen connections among number ones openned 
+*/
 int multiple_connect(int number, struct connect_info * to, int seconds);
 
 #endif

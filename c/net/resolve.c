@@ -12,7 +12,7 @@
 #include "dumper.h"
 #include "resolve.h"
 
-int resolve_new(char * host, int port, struct connect_info * conn)
+int connect_info_resolve(char * host, int port, struct connect_info * conn)
 {
       const char * hostname = host;
       struct addrinfo hints;
@@ -55,6 +55,11 @@ int resolve_new(char * host, int port, struct connect_info * conn)
 
 }
 
+// deprected please use connect_info_resolve
+int resolve_new(char * host, int port, struct connect_info * conn)
+{
+  return connect_info_resolve(host,port,conn);
+}
 
 int resolve_old( char * host, int port, int inet_type)
 {
@@ -132,3 +137,12 @@ int resolve_old( char * host, int port, int inet_type)
 }
 
 
+void connect_info_release(struct connect_info * conn)
+{
+  if ( ( conn != NULL ) && ( conn->addrinfo != NULL ) )
+    {
+      // should release it.
+      freeaddrinfo( conn->addrinfo );
+      conn->addrinfo = NULL;
+    }
+}

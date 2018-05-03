@@ -27,10 +27,9 @@ void usage() {
 int main(int argc, char **argv)
 {
 
-  struct connect_info connect_info;
-  
-
-  
+  struct connect_info connection;
+  connection.addrinfo=NULL;
+ 
   if (argc < 2)
     {
       usage();
@@ -43,14 +42,19 @@ int main(int argc, char **argv)
   
   char * host=argv[1];
 
-  resolve_new(host,LOOPBACKSERV_PORT,&connect_info);
+  connect_info_resolve(host,LOOPBACKSERV_PORT,&connection);
   resolve_old(host,LOOPBACKSERV_PORT,AF_INET6);
   resolve_old(host,LOOPBACKSERV_PORT,AF_INET);
   
   struct alhttp_context httpcontext;
   struct alurl toserver;
-  struct connect_info connection;
-  connection.addrinfo=NULL;  
+
+  if ( connection.addrinfo != NULL )
+    {
+      connect_info_release(&connection);      
+    }
+
+
   al_http_get_resolved_address(host,LOOPBACKSERV_PORT,&connection);
 
   int s = 0;

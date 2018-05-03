@@ -6,12 +6,16 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#define CONNBUFSIZE 50
+// wait 1 second ( in ms ).
+#define CONNTIMEOUT 1000
+
 int multiple_connect(int number, struct connect_info * cto, int seconds)
 {
   struct pollfd connection[number];
   int i = 0;
   FILE * ran  = fopen("/dev/urandom","r");
-  unsigned char buffer[50];
+  unsigned char buffer[CONNBUFSIZE];
   struct timeval today;
   time_t now = 0;
   time_t start;
@@ -36,8 +40,8 @@ int multiple_connect(int number, struct connect_info * cto, int seconds)
 	  connection[i].revents=0;
 	  connection[i].fd =  sockfd;
 	  
-	  // write 10 bytes from ran to socket;
-	  fread(buffer,sizeof buffer,1,ran);	 	 
+	  // write CONNBUFSIZE bytes from ran to socket;
+	  fread(buffer,sizeof buffer,1,ran);
 	  write(sockfd,buffer, sizeof buffer);
 	}
       else
@@ -52,7 +56,7 @@ int multiple_connect(int number, struct connect_info * cto, int seconds)
 
   unsigned int random;
   
-  // then randomly send packet on those sockets
+  // then randomly send 'packet' on those sockets
   while (now < start + seconds)
     {
       printf(".\n");
@@ -62,16 +66,17 @@ int multiple_connect(int number, struct connect_info * cto, int seconds)
       printf("selected %i\n", selector);
       printf("socket %i\n", connection[selector].fd);
       write(connection[selector].fd, buffer, sizeof(buffer));
-      if ( poll(connection,number,1000) > 0 )
+      if ( poll(connection,number,CONNTIMEOUT) > 0 )
 	{
 	  for (int j=0; j<number; j++)
 	    {
-	      if (connection[j].revents | POLLIN )
+	      if (connection[j].revents & POLLIN )
 		{
-		  printf("<%i", connection[j].fd);
+		  printf("<%i \n", connection[j].fd);
 		  int r = read(connection[j].fd,buffer,sizeof(buffer));
-		  printf("\n%s\n",buffer);
+		  printf("r=%i\n%s\n",r,buffer);
 		  printf("/>\n");
+		  connection[i].revents=0;
 		}
 	    }
 	}
