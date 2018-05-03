@@ -57,7 +57,6 @@ int main(int argc, char **argv)
 
   al_http_get_resolved_address(host,LOOPBACKSERV_PORT,&connection);
 
-  int s = 0;
   printf("al_http_client_transaction_with_server\n");
   al_http_client_transaction_with_server(&httpcontext, &toserver, &connection);
 

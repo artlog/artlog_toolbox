@@ -53,6 +53,7 @@ int connect_info_resolve(char * host, int port, struct connect_info * conn)
 	  conn->addrinfo=res;
 	}
 
+      return 1;
 }
 
 // deprected please use connect_info_resolve

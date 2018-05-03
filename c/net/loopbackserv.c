@@ -104,7 +104,7 @@ int loopbackserv(int address, int port, int max_connections)
       {
 
 	struct sockaddr_in client_addr;
-	int client_addr_size=sizeof(client_addr);
+	socklen_t client_addr_size=sizeof(client_addr);
 	int socket_client;
 	socket_client = accept(sock_server,(struct sockaddr *) &client_addr, &client_addr_size);
 	if (socket_client >= 0)

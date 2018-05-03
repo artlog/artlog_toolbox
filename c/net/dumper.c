@@ -27,7 +27,7 @@ void print_addrinfo(FILE * fp, struct addrinfo * addrinfo)
 	{
 	  char address[128];
 	  const char * r= NULL;
-	  hexprint(fp, (unsigned char *) &((struct sockaddr_in *) ai_addr)->sin_addr, 4);
+	  hexprint(fp, (char *) &((struct sockaddr_in *) ai_addr)->sin_addr, 4);
 	  r=inet_ntop( AF_INET, (const void *) &((struct sockaddr_in *) ai_addr)->sin_addr, address, sizeof(address));
 	  if (r == NULL)
 	    {
@@ -42,7 +42,7 @@ void print_addrinfo(FILE * fp, struct addrinfo * addrinfo)
 	{
 	  char address[128];
 	  const char * r= NULL;
-	  hexprint(fp, (unsigned char *) &((struct sockaddr_in *) ai_addr)->sin_addr, 4);
+	  hexprint(fp, (char *) &((struct sockaddr_in *) ai_addr)->sin_addr, 4);
 	  r=inet_ntop( AF_INET6, (const void *) &((struct sockaddr_in *) ai_addr)->sin_addr, address, sizeof(address));
 	  if (r == NULL)
 	    {
@@ -55,7 +55,7 @@ void print_addrinfo(FILE * fp, struct addrinfo * addrinfo)
 	}
       else
 	{
-	  hexprint(fp, (unsigned char *) ai_addr, addrinfo->ai_addrlen);
+	  hexprint(fp, (char *) ai_addr, addrinfo->ai_addrlen);
 	}
       if (addrinfo->ai_socktype != 0 )
 	{
@@ -101,5 +101,7 @@ int display_hostent(struct hostent * hostent)
     {
       display_address(&(hostent->h_addr_list[aindex]), hostent);
     }
+
+  return 1;
   
 }

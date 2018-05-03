@@ -1,7 +1,7 @@
 #ifndef __ALRESOLVE_H__
 #define __ALRESOLVE_H__
 
-#include "connections.h"
+#include "alconn.h"
 
 /* Obtain address(es) matching host/port 
 

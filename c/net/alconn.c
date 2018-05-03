@@ -1,4 +1,4 @@
-#include "connections.h"
+#include "alconn.h"
 
 // ugly
 #include "../alcommon.h"
@@ -23,7 +23,7 @@ void disable_sigpipe()
   }
 }
 
-int multiple_connect(int number, struct connect_info * cto, int seconds)
+int alconn_multiple_connect(int number, struct connect_info * cto, int seconds)
 {
   struct pollfd connection[number];
   int i = 0;
@@ -123,4 +123,6 @@ int multiple_connect(int number, struct connect_info * cto, int seconds)
 	close(connection[i].fd);
 	connection[i].fd = 0;
       }
+
+    return 1;
 }

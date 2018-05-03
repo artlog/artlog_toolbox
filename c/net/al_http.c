@@ -78,7 +78,7 @@ void al_http_client_transaction_with_server(struct alhttp_context * context,stru
 	  int number = 50;
 	  int seconds = 10;
 	  printf("connecting during %i seconds with %i connections\n",seconds, number);
-	  multiple_connect(number,connection, seconds);
+	  alconn_multiple_connect(number,connection, seconds);
 
 	  printf("connection closed, terminate\n");
 	  break;
