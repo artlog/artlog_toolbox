@@ -1,15 +1,23 @@
 #!/bin/bash
+# open a emacs on a new text file to track daily activity
+
+usage()
+{
+    head -n 2
+}
 
 YEAR=$(date +"%Y")
 TODAYDIR=$(date +"%d%m")
+DAILYDIR=activity
 
-if [[ ! -d activity ]]
+if [[ ! -d ${DAILYDIR} ]]
 then
-    echo "[ERROR] Expect activity directory" >&2
+    echo "[ERROR] Expect ${DAILYDIR} directory" >&2
+    usage
     exit 1
 fi
 
-pushd activity >/dev/null
+pushd ${DAILYDIR} >/dev/null
 
 if [[ -d $YEAR ]]
 then
@@ -24,6 +32,7 @@ then
     popd
 else
     echo "[ERROR] Missing directory $YEAR in $(pwd)" >&2
+    usage
 fi
 
 popd >/dev/null

@@ -1,0 +1,23 @@
+
+= toolbox.param syntax =
+
+plhardy@plhardy-ThinkPad-T540p:~/artisanlogiciel/artlog/code/cube$ ./refresh_toolbox.sh
+ARTLOG_TOOLBOX=`pwd`/../artlog_toolbox
+[ERROR] `pwd`/../artlog_toolbox/deploy.sh not found/executable
+[HELP] Please check file toolbox.param ARTLOG_TOOLBOX= to point to artlog toolbox
+
+==> refresh_toolbox uses ARTLOG_TOOLBOX as a relative directory WITHOUT any bash command expansion.
+
+this `pwd` was added for another purpose, so should make clear what toolbox.param can contains.
+
+why other purpose need an absolute directory ?
+
+should not use 'source' should assume ARTLOG_TOOLBOX is relative if not starting with '/' and absolute else, and can't contain aliases or bash commands.
+
+
+autotools case
+
+abs_builddir = /home/plhardy/artisanlogiciel/artlog/code/cube
+abs_srcdir = /home/plhardy/artisanlogiciel/artlog/code/cube
+abs_top_builddir = /home/plhardy/artisanlogiciel/artlog/code/cube
+abs_top_srcdir = /home/plhardy/artisanlogiciel/artlog/code/cube

@@ -1,4 +1,10 @@
 #!/bin/bash
+# generate empty templates or add functions given a defined language
+
+usage()
+{
+    head -n 2
+}
 
 generate_java_class()
 {
@@ -199,4 +205,5 @@ then
     add_new_c_function
 else
     echo "[ERROR] language genlang=$genlang NOT supported" >&2
+    usage
 fi

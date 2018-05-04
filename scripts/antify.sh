@@ -1,8 +1,24 @@
 #!/bin/bash
+#
+# Generates to stdout an ant project build.xml content using some parameters from project_params
+# this is used by Makefile.4.java
 
-source ./project_params
+usage()
+{
+    head -n 4 $0 
+}
 
-# TODO reuse internal tsamp ${DSTAMP}
+PROJECT_PARAMS=./project_params
+if [[ -f $PROJECT_PARAMS ]]
+then
+    source $PROJECT_PARAMS
+else
+    echo "[ERROR] missing $PROJECT_PARAMS " >&2
+    usage
+    exit 1
+fi
+
+# TODO reuse internal tsamp ${DSTAMP} ( after review i do't recall what is wanted to do here )
 
 cat <<EOF
 <project name="$project_name" default="$project_default" basedir="$project_basedir">
@@ -28,7 +44,7 @@ EOF
 
 if [[ -z $java_target ]]
 then
-    echo "   <javac srcdir=\"\${src}\" destdir=\"\${build}\"/>"
+    echo '   <javac srcdir="${src}" destdir="${build}"/>'
 else
     echo "   <javac target=\"$java_target\" source=\"$java_target\" srcdir=\"\${src}\" destdir=\"\${build}\"><compilerarg value=\"-Xlint:-options\"/></javac>"
 fi

@@ -80,14 +80,14 @@ $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -lalcommon -Wl,-Bdynamic
 
 testjson:$(BUILD)/json
-	$^ test.json >test/parse1.json
-	$^ parse1.json >test/parse2.json
-	$^ refnawak.json >test/parse3.json
-	$^ test.json refnawak.json
-	$^ refnawak.json template.json -debug
+	$^ template/test.json >test/parse1.json
+	$^ template/parse1.json >test/parse2.json
+	$^ template/refnawak.json >test/parse3.json
+	$^ template/test.json template/refnawak.json
+	$^ template/refnawak.json template/template.json -debug
 	diff test/parse1.json test/parse2.json
 	diff test/parse1.json test/parse3.json
-	$^ test2.json
+	$^ template/test2.json
 
 $(BUILD)/json: $(objects)
 	@echo link json objects $(objects) and libjson

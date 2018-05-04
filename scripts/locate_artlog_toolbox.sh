@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# search ARTLOG_TOOLBOX= within $toolboxparam file, no bash expansion is done.
+extract_from_toolbox_param()
+{
+    local toolboxparam=$1
+    if [[ -f $toolboxparam ]]
+    then
+	echo "extract from $toolboxparam" >&2
+	while read LINE
+	do
+	    if [[ $LINE =~ ARTLOG_TOOLBOX=(.*) ]]
+	    then
+		ARTLOG_TOOLBOX=${BASH_REMATCH[1]}
+	    fi
+	done <$toolboxparam
+    fi
+}
+
 select_artlog_toolbox()
 {
     directory_name=${1:-artlog_toolbox}
@@ -9,11 +26,9 @@ select_artlog_toolbox()
     ARTLOG_TOOLBOX=$(pwd)
 
     toolboxparam=./toolbox.param
-    if [[ -f $toolboxparam ]]
-    then
-	echo "source $toolboxparam"
-	source $toolboxparam
-    fi
+
+    extract_from_toolbox_param "$toolboxparam"
+
     echo "Current toolbox : $ARTLOG_TOOLBOX"
 
     potential_number=${#potential_path[@]}
@@ -42,7 +57,19 @@ select_artlog_toolbox()
 
 if [[ $0 =~ locate_artlog_toolbox.sh ]]
 then
-    echo "[WARNING] function tool used as main" >&2
-    select_artlog_toolbox $1
+    echo "[WARNING] function tool $0 used as main" >&2
+    if [[ $#  > 0 ]]
+    then
+	echo "$0 called with with param $1" >&2
+	select_artlog_toolbox $1
+    else
+	extract_from_toolbox_param ./toolbox.param
+	if [[ -n $ARTLOG_TOOLBOX ]]
+	then
+	    echo "$ARTLOG_TOOLBOX"
+	else
+	    echo "no ARTLOG_TOOLBOX set" >&2
+	fi
+    fi
     exit 0
 fi
