@@ -1,16 +1,15 @@
 #!/bin/bash
 # Under LGPL License
 
-if [[ -f toolbox.param ]]
-then    
-    while read LINE
-    do
-	if [[ $LINE =~ ARTLOG_TOOLBOX=(.*) ]]
-	then
-	    ARTLOG_TOOLBOX=${BASH_REMATCH[1]}
-	fi
-    done <toolbox.param
+if [[ -f  ./locate_artlog_toolbox.sh ]]
+then
+    source ./locate_artlog_toolbox.sh
+else
+    echo "[ERROR] this script rely on ./locate_artlog_toolbox.sh, not found in $(pwd)" >&2
+    exit 1
 fi
+
+extract_from_toolbox_param toolbox.param
 
 if [[ -n $ARTLOG_TOOLBOX ]]
 then
