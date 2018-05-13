@@ -37,12 +37,32 @@ struct json_parser_ctx
   int max_depth; // protect stack calls.
 };
 
+struct print_ctx;
+struct json_object;
+
+typedef void (*aljson_print_callback)(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+
+typedef void (*aljson_print_printf_callback)(struct print_ctx * print_ctx, const char * format, ...);
+
 /* parameters for pretty printing */
 struct print_ctx
 {
   int indent;
   int do_indent; // 0 no indent, >= 1 number of space by indent.
   char * s_indent;
+
+  FILE * outfile;
+
+  aljson_print_callback growable_output;
+  aljson_print_callback dict_output;
+  aljson_print_callback list_output;
+  aljson_print_callback string_output;
+  aljson_print_callback number_output;
+  aljson_print_callback error_output;
+  aljson_print_callback pair_output;
+  aljson_print_callback constant_output;
+
+  aljson_print_printf_callback printf;
 };
 
 /** a simple linked list of json_object */
@@ -147,8 +167,13 @@ struct json_object {
 /** print context to stderr */
 void dump_ctx(struct json_parser_ctx * ctx);
 
-/** Where output is finaly done */
+/** Where output is finaly done 
+Deprecated or Internal use only : Please prefer aljson_output 
+*/
 void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+
+/** should be preferred to dump_object ( at least for aljson_ namespace usage ) */
+void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 struct json_path {
   char type; // '{' string is key of dict, '[' index is index of list , '*' automatic ( ie key or index is used depending on parsed structure )
