@@ -44,7 +44,10 @@ typedef void (*aljson_print_callback)(struct json_parser_ctx * ctx, struct json_
 
 typedef void (*aljson_print_printf_callback)(struct print_ctx * print_ctx, const char * format, ...);
 
-/* parameters for pretty printing */
+/* parameters for pretty printing 
+
+THIS is requried to call aljson_print_ctx_init(struct print_ctx * print_ctx) on it any use.
+*/
 struct print_ctx
 {
   int indent;
@@ -327,4 +330,8 @@ typedef struct json_object* (*json_parse_func) (struct json_parser_ctx *ctx, voi
 // kindnyi for further use, specify type of data attach, allow to attach mulitple kind of data.
 // return 1 if attach worked.
 int aljson_attach_private_data(void * kindnyi, struct json_object * json, void * data);
+
+// REQUIRED before any use of a print_ctx
+void aljson_print_ctx_init(struct print_ctx * print_ctx);
+
 #endif

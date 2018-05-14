@@ -26,10 +26,19 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
 
 int json_debug=0;
 
+struct print_ctx aljson_print_ctx_debug;
+
 int json_set_debug(int debug)
 {
   int previous=json_debug;
   json_debug = debug;
+
+  if ( debug != 0 )
+    {
+      // should setup aljson_print_ctx_debug.
+      aljson_print_ctx_init(&aljson_print_ctx_debug);
+      aljson_print_ctx_debug.outfile=stderr;
+    }
   return previous;
 }
 
@@ -114,11 +123,11 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   err_object->error.string.internal.length=buf_idx;  
   if ( ctx->debug_level > 0 )
     {
-      dump_object(parser,err_object,NULL);
+      dump_object(parser,err_object,&aljson_print_ctx_debug);
       printf("while parsing object :\n");
-      dump_object(parser,object,NULL);
+      dump_object(parser,object,&aljson_print_ctx_debug);
       printf("\n parent :\n");
-      dump_object(parser,parent,NULL);
+      dump_object(parser,parent,&aljson_print_ctx_debug);
     }
   return err_object;
 }
@@ -242,7 +251,7 @@ void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * 
       if (json_debug > 2)
 	{
 	  printf("before<");
-	  dump_growable(ctx, growable,NULL);
+	  dump_growable(ctx, growable,&aljson_print_ctx_debug);
 	}
     }
   if ( growable->tail == NULL)
@@ -269,7 +278,7 @@ void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * 
       printf("\nafter<");
       if ( json_debug > 0 )
 	{
-	  dump_growable(ctx, growable,NULL);
+	  dump_growable(ctx, growable,&aljson_print_ctx_debug);
 	  printf("\n>>");
 	}
     }
@@ -922,7 +931,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		    if ( json_debug > 0 )
 		      {
 			printf("LOOK HERE 0\n");
-			dump_object(ctx,object,NULL);
+			dump_object(ctx,object,&aljson_print_ctx_debug);
 		      }
 
 		    aljson_add_to_growable(ctx,&parent->growable,object);
@@ -948,13 +957,13 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	if ( json_debug > 0 )
 	  {
 	    // before concrete
-	    dump_object(ctx,parent,NULL);
+	    dump_object(ctx,parent,&aljson_print_ctx_debug);
 	  }
 	object = aljson_concrete(ctx,parent);
 	if ( json_debug > 0 )
 	  {
 	    // after concrete
-	    dump_object(ctx,object,NULL);
+	    dump_object(ctx,object,&aljson_print_ctx_debug);
 	  }
 	break;
       case JSON_TOKEN_OPEN_BRACKET_ID:
@@ -1011,7 +1020,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    aldebug_printf(NULL,"%s\n","WARNING non attached object before string");
 	    if ( json_debug > 0 )
 	      {
-		dump_object(ctx,object,NULL);
+		dump_object(ctx,object,&aljson_print_ctx_debug);
 	      }			    
 	  }
 	object=cut_string_object(ctx,'"');
@@ -1832,6 +1841,18 @@ void aljson_print_ctx_init(struct print_ctx * print_ctx)
   print_ctx->indent=0;
   print_ctx->do_indent=2; // 0 no indent, >= 1 number of space by indent.
   print_ctx->s_indent=" ";
+
+    /* tabs
+  print_ctx.do_indent = 1;
+  print_ctx.indent = 0;
+  print_ctx.s_indent = "\t";
+  */
+
+  /* flat canonical
+  print_ctx.do_indent = 0;
+  print_ctx.indent = 0;
+  print_ctx.s_indent = NULL;
+  */
 
   print_ctx->outfile=stdout;
   

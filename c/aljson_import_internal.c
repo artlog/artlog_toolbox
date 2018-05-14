@@ -100,21 +100,9 @@ void aljson_init(
   json_context->max_depth=10000;
   json_context->parsing_depth=json_context->max_depth - 4;
 
-  /* tabs
-  print_context.do_indent = 1;
-  print_context.indent = 0;
-  print_context.s_indent = "\t";
-  */
-
-  // two spaces
-  print_context->do_indent = 2;
-  print_context->indent = 0;
-  print_context->s_indent = " ";
-  
-  /* flat canonical
-  print_context.do_indent = 0;
-  print_context.indent = 0;
-  print_context.s_indent = NULL;
-  */
+  if ( print_context != NULL )
+    {
+      aljson_print_ctx_init(print_context);
+    }
 
 }
