@@ -1,6 +1,9 @@
 #ifndef __ALJSON_HEADER__
 #define __ALJSON_HEADER__
 
+// because FILE is needed
+#include <stdio.h>
+
 #include "aljson_parser.h"
 #include "aljson_errors.h"
 #include "alhash.h"
