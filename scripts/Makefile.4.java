@@ -19,10 +19,11 @@ build.xml:
 	./antify.sh >$@
 
 clean:
+	cd java; make clean
 	rm -f build.xml
 	rm -f dist/lib/$(DISTPREFIX)*.jar
 	rm -rf build
-	cd java; make clean
+
 
 cleanall:	clean
 	rm -rf debian
