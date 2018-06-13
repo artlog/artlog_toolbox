@@ -37,7 +37,7 @@ devenv_setup()
 	    if [[ -z $NOJAVA ]]
 	    then
 		PATH=$JDK_PATH/bin/:$JDK_PATH/jre/bin/:$ECLIPSE_PATH:$PATH
-		JAVA_MAKEFILE=Makefile.4.java
+		JAVA_MAKEFILE=4java.makefile
 		export PATH JDK_PATH ECLIPSE_PATH DEV_ENV JAVA_MAKEFILE
 	    else
 		export NOJAVA
@@ -405,7 +405,7 @@ do
 	then
 	    if [[ -n $newclass ]]
 	    then
-		MAIN_CLASS=Main PACKAGE=$(./debianize.sh getproject_mainpackage) make -f Makefile.4.create work/$newclass
+		MAIN_CLASS=Main PACKAGE=$(./debianize.sh getproject_mainpackage) make -f 4create.makefile work/$newclass
 	    fi
 	fi
     elif [[ $action == info ]]

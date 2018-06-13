@@ -20,7 +20,6 @@ build.xml:
 
 clean:
 	cd java; make clean
-	rm -f build.xml
 	rm -f dist/lib/$(DISTPREFIX)*.jar
 	rm -rf build
 
