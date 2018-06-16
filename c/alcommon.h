@@ -14,4 +14,15 @@ void memory_shortage(void * ctx);
 #define ALPASCALSTRFMT "%.*s"
 #define ALPASCALSTRARGS(length,strptr) length,strptr
 
+enum al_global_error_code {
+  AL_EC_NYI=-1,
+  //! error comes form some input ( might derive from structure hierarch or links ).
+  AL_EC_INVALID_INPUT=-2,
+  //! more precise than invalid input, error is in one parameter
+  AL_EC_INVALID_PARAMETER=-3,
+  AL_EC_FILE_ERROR=-4,
+  AL_EC_OK=1,
+  AL_EC_FALSE=0
+};
+
 #endif

@@ -134,8 +134,7 @@ int main(int argc, char ** argv)
 	  fclose(data_file);
 	  if ( checkonly == 0 )
 	    {
-	      //dump_ctx(&json_context);
-	      dump_object(&json_context,root,&print_context);
+	      aljson_output(&json_context,root,&print_context);
 	      printf("\n");
 	    }
 	  else
@@ -149,7 +148,7 @@ int main(int argc, char ** argv)
 	      if ( found != NULL )
 		{
 		  printf("=");
-		  dump_object(&json_context,found,&print_context);
+		  aljson_output(&json_context,found,&print_context);
 		}
 	      else
 		{
@@ -172,7 +171,7 @@ int main(int argc, char ** argv)
 		  template_data.inputstream=&inputstream;
 		  template_root=parse_level(&json_template_context,&template_data,template_root);
 		  fclose(template_file);
-		  dump_object(&json_template_context,template_root,&print_template_context);
+		  aljson_output(&json_template_context,template_root,&print_template_context);
 		  printf("\n");
 		  if ( json_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
 		    {

@@ -16,6 +16,8 @@ enum als_flag {
   ALSFLAG_PUSHBACK = 1
 };
 
+/** WELL ... really extensive documentation here 
+ **/
 void aljson_init(
 	       struct json_parser_ctx * json_context,
 	       struct json_ctx * json_tokenizer,

@@ -1621,15 +1621,16 @@ void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object
     }
 }
 
-// limited to ctx->max_depth since relying on code stack call.
+// limited to print_ctx->max_depth since relying on code stack call.
 void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   static int depth = 0;
 
-  ++depth; 
-  if ( depth > ctx->max_depth )
+  ++depth;
+
+  if ( depth > print_ctx->max_depth )
     {
-      printf("... depth > %i ...\n", ctx->max_depth);
+      printf("... depth > %i ...\n", print_ctx->max_depth);
       --depth;
       return;
     }
@@ -1771,15 +1772,17 @@ void aljson_constant_output(struct json_parser_ctx * ctx, struct json_object * o
   dump_constant_object(ctx,object, print_ctx);
 }
 
-// limited to ctx->max_depth since relying on code stack call.
+// limited to print_ctx->max_depth since relying on code stack call.
 void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
+  // FIXME to move within print_ctx.
   static int depth = 0;
 
-  ++depth; 
-  if ( depth > ctx->max_depth )
+  ++depth;
+
+  if (  depth > print_ctx->max_depth )
     {
-      printf("... depth > %i ...\n", ctx->max_depth);
+      printf("... depth > %i ...\n", print_ctx->max_depth);
       --depth;
       return;
     }
@@ -1838,6 +1841,8 @@ void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, st
 
 void aljson_print_ctx_init(struct print_ctx * print_ctx)
 {
+  // 1024 levels of json MAX
+  print_ctx->max_depth=1024;
   print_ctx->indent=0;
   print_ctx->do_indent=2; // 0 no indent, >= 1 number of space by indent.
   print_ctx->s_indent=" ";
