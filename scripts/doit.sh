@@ -321,9 +321,9 @@ do
     if [[ -z $NOJAVA ]]
     then
 	# should be cleaned up from specific laby project targets.
-	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  ${specific_menus[@]} test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" info "Info" quit "Quit" 3>&1 1>&2 2>&3)	
+	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" ant "Ant build" run "Run it"  ${specific_menus[@]} test "Test it" code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" create "Create a new class" info "Info" logs "Logs" quit "Quit" 3>&1 1>&2 2>&3)	
     else
-	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" run "Run it"  test "Test it" ${specific_menus[@]} code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" info "Info" quit "Quit" 3>&1 1>&2 2>&3)
+	action=$($DIALOG --menu "Ultra Light IDE" 20 80 12 readme "Read me" clean "Clean All" run "Run it"  test "Test it" ${specific_menus[@]} code "Code" codebg "Code in background" deb "Debian package" properties "Edit Properties" info "Info" logs "Logs" quit "Quit" 3>&1 1>&2 2>&3)
     fi    
 
     rc=$?
@@ -346,8 +346,8 @@ do
 	then
 	    echo "run it"
 	    {
-		source ./project_params	    
-		java -jar $(make -f ${JAVA_MAKEFILE} getname) "$default_args"
+		source ./project_params
+		java -cp $(make -f ${JAVA_MAKEFILE} getname):$(make -f ${JAVA_MAKEFILE} getjavalibs) $project_mainclass
 	    }
 	else
 	    make
@@ -412,8 +412,14 @@ do
     then
 	infos=$(mktemp)
 	info >$infos
-	$DIALOG --textbox $infos 40 80 scrolltext
+	$DIALOG --textbox $infos 40 80 --scrolltext
 	rm $infos
+    elif [[ $action == logs ]]
+    then
+	if [[ -f .log ]]
+	then
+	    $DIALOG --textbox .log 40 80 --scrolltext
+	fi
     elif [[ $action == quit ]]
     then
 	echo "[INFO] quit requested"

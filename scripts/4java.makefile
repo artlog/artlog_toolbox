@@ -9,6 +9,9 @@ all: build.xml dist/lib/$(DISTJAR)
 getname:
 	@echo dist/lib/$(DISTJAR)
 
+getjavalibs:
+	@if [ -d libs ] ; then find libs/ -type f -o -type l -name "*.jar"; fi
+
 dist:
 	mkdir -p dist
 
