@@ -206,8 +206,6 @@ struct json_object * aljson_new_growable(struct json_parser_ctx * ctx, char fina
 #define JSON_DEFINE_NEW(__member__,__char__) struct json_object * aljson_new_ ## __member__(struct json_parser_ctx * ctx) { return aljson_new_growable(ctx,__char__);};
 
   
-void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
 void dump_ctx(struct json_parser_ctx * ctx);
 
 /**

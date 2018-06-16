@@ -22,6 +22,10 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
     {.value=JSON_CONSTANT_NULL},    
   };
 
+
+// forward definition used only localy
+void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+  
 // TODO follow specs from  http://json.org/ http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
 
 int json_debug=0;
