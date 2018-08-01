@@ -1461,7 +1461,7 @@ void * aljson_dict_match_value_callback(struct json_object * key, struct json_ob
 }
 
 // search in hashtable if created, fallback to list walk
-struct json_object * json_dict_get_value(char * keyname, struct json_object * object)
+struct json_object * json_dict_get_value(const char * keyname, struct json_object * object)
 {
   if ( keyname == NULL )
     {
@@ -1474,7 +1474,7 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
   struct alhash_datablock searchkey;
   searchkey.length = strlen(keyname);
   searchkey.type = ALTYPE_OPAQUE;
-  searchkey.data.ptr = keyname;  
+  searchkey.data.constcharptr = keyname;  
   
   // htable search
   if ( object->type == '{' )

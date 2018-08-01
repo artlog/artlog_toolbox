@@ -211,7 +211,7 @@ void dump_ctx(struct json_parser_ctx * ctx);
 /**
   return value with key keyname in object
 **/
-struct json_object * json_dict_get_value(char * keyname, struct json_object * object);
+struct json_object * json_dict_get_value(const char * keyname, struct json_object * object);
 
 /**
  for each element of json_dict in definition order

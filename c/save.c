@@ -65,7 +65,7 @@ int save_init_context(struct savecontext * context, char * dir, char* prefix, ch
  */
 int save_shift_file_name(struct savecontext * savecontext)
 {
-  char fullpath[4096];
+  char fullpath[5000];
   DIR *currentdir;
   struct dirent *fileentry;
   // biggest index acceptable.

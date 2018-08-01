@@ -23,6 +23,7 @@ struct alhash_datablock {
     void * ptr; // NULL value NOT VALID.
     unsigned char * ucharptr;
     char * charptr;
+    const char * constcharptr;
     unsigned int * uintptr;
     long number; // quick hack to store values directly (see type ).
   } data;

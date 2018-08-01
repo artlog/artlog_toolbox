@@ -21,10 +21,10 @@ ALDEBUG_DECLARE_FUNCTIONS(struct al_options, al_options);
 struct al_options * al_options_create(int argc, char ** argv);
 
 // get one named option by key
-struct alhash_datablock * al_option_get(struct al_options * options, char * key);
+struct alhash_datablock * al_option_get(struct al_options * options,const char * key);
 
 // add one option
-void al_option_add(struct al_options * options, char * key, char * value);
+void al_option_add(struct al_options * options,const char * key,const char * value);
 
 // free options created with al_create_options.
 void al_options_release(struct al_options * options);

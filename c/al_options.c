@@ -7,13 +7,13 @@
 
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 
-void al_option_add(struct al_options * options, char * ikey, char * ivalue)
+void al_option_add(struct al_options * options,const char * ikey,const char * ivalue)
 {
   struct alhash_datablock key;
   int withnullbyte=1; // include null byte '\0'
   key.type = ALTYPE_STR0;
   key.length = strlen(ikey) + withnullbyte; 
-  key.data.ptr = ikey;
+  key.data.constcharptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry(&options->context.dict, &key);
   if (entry == NULL)
     {
@@ -24,7 +24,7 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
       key.data.ptr=al_copy_block(&options->context.allocator.ringbuffer, &key);
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
-      value.data.ptr=ivalue;
+      value.data.constcharptr=ivalue;
       // using al_copy_block allows to have data block autogrowth.
       value.data.ptr=al_copy_block(&options->context.allocator.ringbuffer,&value);
 
@@ -92,13 +92,13 @@ struct al_options * al_options_create(int argc, char ** argv)
   return options;
 }
 
-struct alhash_datablock * al_option_get(struct al_options * options, char * ikey)
+struct alhash_datablock * al_option_get(struct al_options * options,const char * ikey)
 {
   struct alhash_datablock key;
   // not true, since strlen does not include '\0'
   key.type = ALTYPE_STR0;
   key.length = strlen(ikey);
-  key.data.ptr = ikey;
+  key.data.constcharptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry (&options->context.dict, &key);
   if (entry == NULL)
     {
