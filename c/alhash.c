@@ -13,7 +13,7 @@ implementation of a hashtable in a miserable way.
 #include <limits.h>
 
 struct alparser_ctx alparser_ctx_default = {
-  .debug = 1,
+  .debug = 0,
 };
 
 ALDEBUG_DEFINE_FUNCTIONS(struct alparser_ctx, alparser_ctx, debug);

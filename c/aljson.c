@@ -476,7 +476,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 	  // twice the space to limit collisions, should not overflow
 	  aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
 	  alparser_init(&dict->localcontext, 1, dict->nitems * 2);
-	  alparser_ctx_set_debug(&dict->localcontext,255);
+	  alparser_ctx_set_debug(&dict->localcontext,0);
 	  aljson_dict_foreach(object, json_dict_hashadd_callback,&dict->localcontext.dict );
 	}
     }
@@ -1488,18 +1488,24 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
 	      if (alhash_entry->value.length == sizeof(struct json_object))
 		{
 		  // WE DID IT !
-		  aldebug_printf(NULL, "json_value for dict key '%s' FOUND  \n", keyname);
+		  if ( FLAG_IS_SET(json_debug,1)  )
+		    {
+		      aldebug_printf(NULL, "[DEBUG] json_value for dict key '%s' FOUND  \n", keyname);
+		    }
 		  value = (struct json_object *) alhash_entry->value.data.ptr;
+		  // HARDCODED
 		  foundstatus = 255;
 		}
 	      else
 		{
-		  aldebug_printf(NULL,"value in dict is not a json_object length %i pointer %p\n", alhash_entry->value.length, alhash_entry->value.data.ptr);
+		  aldebug_printf(NULL,"[ERROR] value in dict is not a json_object length %i pointer %p\n", alhash_entry->value.length, alhash_entry->value.data.ptr);
+		  // HARDCODED
 		  foundstatus = 1;
 		}
 	    }
 	  else
 	    {
+	      // HARDCODED
 	      foundstatus = 2;
 	    }
 	}
@@ -1519,7 +1525,7 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
   if ( ( foundstatus != 0 ) && ( value != NULL ) )
     {
       // this indicates an internal coding error or a memory corruption.
-      aldebug_printf(NULL,"[FATAL] key '%s' value is in json_dict items but not backed in hastable %p\n", keyname, object);
+      aldebug_printf(NULL,"[FATAL] key '%s' value is in json_dict items but not backed in hastable %p foundstatus=%i\n", keyname, object, foundstatus);
     }
   return value;
 }
