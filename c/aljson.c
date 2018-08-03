@@ -413,7 +413,10 @@ void * json_dict_hashadd_callback (struct json_object * key, struct json_object 
       value_datablock.data.ptr=value;
       value_datablock.length = sizeof(struct json_object);
       struct alhash_entry * entry = alhash_put(dict, &key_datablock, &value_datablock);
-      alhash_dump_entry_as_string(entry);
+      if ( json_debug > 0 )
+	{
+	  alhash_dump_entry_as_string(entry);
+	}      
       return NULL;
     }
   // something non NULL ...
@@ -474,7 +477,10 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
       if ( dict->localcontext.dict.context == NULL )
 	{
 	  // twice the space to limit collisions, should not overflow
-	  aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
+	  if ( json_debug )
+	    {
+	      aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
+	    }
 	  alparser_init(&dict->localcontext, 1, dict->nitems * 2);
 	  alparser_ctx_set_debug(&dict->localcontext,0);
 	  aljson_dict_foreach(object, json_dict_hashadd_callback,&dict->localcontext.dict );
