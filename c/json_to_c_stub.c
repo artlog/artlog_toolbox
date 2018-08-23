@@ -8,11 +8,11 @@
 // part of generic tools.
 
 // return json_object pair type.
-struct json_object * json_c_add_json_object_member(char * name, struct json_object * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
+struct json_object * json_c_add_json_object_member(const char * name, struct json_object * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
   struct alhash_datablock data;
   
-  data.data.ptr = name;
+  data.data.constcharptr = name;
   data.type=ALTYPE_OPAQUE;
   data.length = strlen(data.data.ptr);
   data.data.ptr = al_copy_block(allocator, &data);
@@ -32,7 +32,7 @@ struct json_object * json_c_add_json_object_member(char * name, struct json_obje
 }
 
 // json_object pair type.
-struct json_object * json_c_add_int_member(char * name, int value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
+struct json_object * json_c_add_int_member(const char * name, int value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
   struct alhash_datablock data;
 
@@ -46,7 +46,7 @@ struct json_object * json_c_add_int_member(char * name, int value, struct json_p
 
 // json_object pair type.
 // capture char value content.
-struct json_object * json_c_add_string_member(char * name, char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
+struct json_object * json_c_add_string_member(const char * name, char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
   struct alhash_datablock data;
   

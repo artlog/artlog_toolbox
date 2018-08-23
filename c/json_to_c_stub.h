@@ -122,7 +122,7 @@ by order :
  return a json pair type 
 */
 struct json_object * json_c_add_json_object_member
-       ( char * name,
+       ( const char * name,
 	 struct json_object * value,
 	 struct json_parser_ctx * ctx,
 	 alstrings_ringbuffer_pointer * allocator );
@@ -130,7 +130,7 @@ struct json_object * json_c_add_json_object_member
 
 // json_object pair type.
 struct json_object * json_c_add_int_member
-       ( char * name,
+       ( const char * name,
 	 int value,
 	 struct json_parser_ctx * ctx,
 	 alstrings_ringbuffer_pointer * allocator );
@@ -139,7 +139,7 @@ struct json_object * json_c_add_int_member
 // json_object pair type.
 // capture char value content.
 struct json_object * json_c_add_string_member
-       ( char * name,
+       ( const char * name,
 	 char * value,
 	 struct json_parser_ctx * ctx,
 	 alstrings_ringbuffer_pointer * allocator );
