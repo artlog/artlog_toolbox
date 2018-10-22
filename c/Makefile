@@ -1,6 +1,6 @@
 BUILD=../build
 
-c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c
+c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c aljson.c alstack.c
 	gcc -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -lalhash -Wl,-Bdynamic
 
 albase: albase.c albase_test.c  alstrings.c aldebug.c

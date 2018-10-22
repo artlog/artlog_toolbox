@@ -234,7 +234,7 @@ int main(int argc, char ** argv)
       print_context.indent = 0;
       print_context.s_indent = " ";
 
-      print_context->max_depth=4;
+      print_context.max_depth=4;
       aljson_output(ctx,json_object,&print_context);
 
       {

@@ -1407,7 +1407,13 @@ struct json_object * json_list_get( struct json_object * object, int index)
 void dump_dict_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i;
+
   FILE * outfile=print_ctx->outfile;
+  if ( outfile == NULL )
+    {
+      return;
+    }
+  
   fprintf(outfile,"%c",object->type);
   enter_indent(print_ctx);
   if (object->dict.nitems > 0)
