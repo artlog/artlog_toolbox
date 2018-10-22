@@ -29,7 +29,7 @@ struct alhashtreefunc {
 };
 
 struct alhashtreenode {
-  // HACK btree should be frist element since used for allocation/clean of alhashtreenode.
+  // HACK btree should be first element since used for allocation/clean of alhashtreenode.
   // for which data can be used at will to attach from api user.
   // left point on a alhashtreenode
   // right point on a alhashtreenode

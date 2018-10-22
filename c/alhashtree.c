@@ -2,8 +2,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-// well need to fix .h name ...
-#include "alhastree.h"
+#include "alhashtree.h"
 #include "altodo.h"
 #include "alcryptohash.h"
 
