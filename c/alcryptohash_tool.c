@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 
-void alcryptohash_tool_dump_result(struct alsha2_internal * shax, struct alhash_datablock * result)
+void alcryptohash_tool_dump_result(struct alsha2_internal * shax, aldatablock * result)
 {
   if ( result == NULL)
     {
@@ -33,7 +33,7 @@ void alcryptohash_tool_dump_result(struct alsha2_internal * shax, struct alhash_
 
 }
 
-void alcryptohash_tool_callback(struct alhash_datablock * block, void * data)
+void alcryptohash_tool_callback(aldatablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
@@ -46,7 +46,7 @@ void alcryptohash_tool_callback(struct alhash_datablock * block, void * data)
     }
 }
 
-void alcryptohash_tool_finalize (struct alhash_datablock * block, void * data)
+void alcryptohash_tool_finalize (aldatablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
@@ -66,7 +66,7 @@ void alcryptohash_tool_finalize (struct alhash_datablock * block, void * data)
     }
 }
 
-struct alhash_datablock * alcryptohash_tool_from_input(  struct alsha2_internal *sha2x, struct alinputstream * input, int readblocksize)
+aldatablock * alcryptohash_tool_from_input(  struct alsha2_internal *sha2x, struct alinputstream * input, int readblocksize)
 {
 
   alinputstream_foreach_block(input,

@@ -92,7 +92,7 @@ void alshax_internal_init(struct alsha2_internal * intern, unsigned int sha_H[8]
   intern->input.length=0;
   intern->algorithm=AL_SHA2_UNKNOWN_ALGORITHM;
     
-  struct alhash_datablock d;
+  aldatablock d;
   d.length = sizeof(intern->H);
   d.data.ptr = intern->H;
   d.type = ALTYPE_OPAQUE; 
@@ -135,7 +135,7 @@ void alsha2x_init(struct alsha2_internal * intern, enum alsha2_algorithm algorit
 /**
 last_block is output
 **/
-void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_datablock * last_block)
+void alsha2_pad_to_512bits(struct alsha2_internal * intern, aldatablock * last_block)
 {
   if ( intern == NULL )
     {
@@ -146,7 +146,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
   // L in bits
   long long bitlength = ( (long long) intern->cumulated_length * CHAR_BIT ) - intern->missing_bits;
   long long L = ( bitlength  ) % 512;
-  struct alhash_datablock * output = last_block;
+  aldatablock * output = last_block;
 
   ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
     {
@@ -215,7 +215,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
 
 
 // sha224 on input starting at offset ( same as sha256 )
-void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alhash_datablock * input)
+void alsha224_turn(struct alsha2_internal * shainternal, int offset, aldatablock * input)
 {
   unsigned int W[64];
   unsigned int H[8];
@@ -325,7 +325,7 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alha
 }
  
 // shaxxx applied depends on result length.
-int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock * input)
+int alsha2x_add_block( struct alsha2_internal * intern, aldatablock * input)
 {
 
   // for all blocks of blocksizebyte
@@ -415,7 +415,7 @@ int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock 
 }
 
 // shaxxx applied depends on result length.
-struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
+aldatablock * alsha2x_final(struct alsha2_internal * intern)
 {
   // 64 bytes ( 512 bits ).
   int blocksizebyte=64;

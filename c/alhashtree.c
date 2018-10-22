@@ -6,7 +6,7 @@
 #include "altodo.h"
 #include "alcryptohash.h"
 
-struct alhash_datablock emptyhash;
+aldatablock emptyhash;
 
 // compute empty hash.
 void alhashtree_global_init_sha256(struct alallocation_ctx * context)
@@ -16,7 +16,7 @@ void alhashtree_global_init_sha256(struct alallocation_ctx * context)
   struct alsha2_internal intern;
   alsha256_init(&intern);
   alsha2x_add_block(&intern,&emptyhash);
-  struct alhash_datablock * result=alsha2x_final(&intern);
+  aldatablock * result=alsha2x_final(&intern);
   memcpy(&emptyhash,result,sizeof(emptyhash));
   // data pointer is in alsha2_internal intern on stack, use this of context.
   emptyhash.data.charptr=al_copy_block(&context->ringbuffer,result);
@@ -34,8 +34,8 @@ void alhashtree_clean(struct alhashtreenode * treenode)
 
 void alsha256hashfunc(
 		      struct alhashtreenode * treenode,
-		      struct alhash_datablock * blockA ,
-		      struct alhash_datablock * blockB)
+		      aldatablock * blockA ,
+		      aldatablock * blockB)
 {
   if ( treenode != NULL )
     {
@@ -55,7 +55,7 @@ void alsha256hashfunc(
 	    }
 	  alsha2x_add_block(&intern,blockB);
 	}
-      struct alhash_datablock * result=alsha2x_final(&intern);
+      aldatablock * result=alsha2x_final(&intern);
       memcpy(&treenode->hash,result,sizeof(treenode->hash));
       // data pointer is in alsha2_internal intern on stack, use this of context.
       treenode->hash.data.charptr=al_copy_block(&treenode->context->ringbuffer,result);
@@ -149,8 +149,8 @@ void alhashtree_recompute_direct_children(struct alhashtreenode *intree)
   left=(struct alhashtreenode *) albtree_get_left(&intree->btree);
   right=(struct alhashtreenode *) albtree_get_right(&intree->btree);
   
-  struct alhash_datablock * blockA = NULL;
-  struct alhash_datablock * blockB = NULL;
+  aldatablock * blockA = NULL;
+  aldatablock * blockB = NULL;
   if ( left == NULL )
     {
       blockA = &intree->func.emptyhash;
@@ -256,7 +256,7 @@ struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree,
 }
 
 // assuming intree is already rightmost deeper leaf.
-struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, struct alhash_datablock * block)
+struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, aldatablock * block)
 {
   struct alhashtreenode * added = NULL;
   struct alhashtreenode * search = NULL;
@@ -292,7 +292,7 @@ struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, stru
 }
 
 // store hash in hashout
-void alhashtree_get_hash(struct alhashtreenode * treenode, struct alhash_datablock * hashout)
+void alhashtree_get_hash(struct alhashtreenode * treenode, aldatablock * hashout)
 {
   memcpy(hashout, &treenode->hash, sizeof(*hashout));
 }

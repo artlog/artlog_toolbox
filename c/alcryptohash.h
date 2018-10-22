@@ -37,8 +37,8 @@ struct alsha2_internal {
   enum alsha2_state state;
   int cumulated_length; // in byte ( bits / 8 ).
   int missing_bits; // to support bits case ( to subtract to cmulted length )
-  struct alhash_datablock input;
-  struct alhash_datablock output;
+  aldatablock input;
+  aldatablock output;
   // when direct input can't be used as a 512bits block
   char inputcopy[MAXBLOCSIZEBYTE];
   char pad[MAXBLOCSIZEBYTE];
@@ -54,11 +54,11 @@ void alsha224_init(struct alsha2_internal * intern );
 void alsha256_init(struct alsha2_internal * intern );
 
 // return number of byte that are need to complete last uncompleted block. 0 if block was complete.
-int alsha2x_add_block(struct alsha2_internal * intern, struct alhash_datablock * block); 
+int alsha2x_add_block(struct alsha2_internal * intern, aldatablock * block); 
 
 // return a pointer over a buffer containing hash.
-struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern);
+aldatablock * alsha2x_final(struct alsha2_internal * intern);
 
-void alsha2x_from_stream(struct alhash_datablock * result,struct alinputstream * input);
+void alsha2x_from_stream(aldatablock * result,struct alinputstream * input);
 
 #endif // #ifndef __AL_CRYPTOHASH_H__

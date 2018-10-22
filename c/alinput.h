@@ -10,7 +10,7 @@ struct alinputstream {
   int eof;
   int bits; // last bits read during last operation ( with eof )
   // memory inputstream.
-  struct alhash_datablock input;
+  aldatablock input;
   // offset within input
   int offset;
 };
@@ -33,11 +33,11 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream);
 void alinputstream_foreach_block(
 				 struct alinputstream * stream,
 				 int blocksize,
-				 void (*callback) (struct alhash_datablock * block, void * data),
-				 void (*finalize) (struct alhash_datablock * block, void * data),
+				 void (*callback) (aldatablock * block, void * data),
+				 void (*finalize) (aldatablock * block, void * data),
 				 void * data);
 
 /** will read in memory from datablock starting at offset byte */
-void alinputstream_setdatablock(struct alinputstream * stream, struct alhash_datablock * block, int offset);
+void alinputstream_setdatablock(struct alinputstream * stream, aldatablock * block, int offset);
 
 #endif

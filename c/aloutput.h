@@ -11,10 +11,17 @@ typedef void (*aloutput_callback_flush) (struct aloutputstream * stream, int wor
 
 typedef void (*aloutput_callback_close) (struct aloutputstream * stream);
 
+enum aloutput_target {
+  ALOUTPUT_TARGET_FILE = 1,
+  ALOUTPUT_TARGET_FD = 2,
+  ALOUTPUT_TARGET_BUFFER = 3
+};
+
 struct aloutputstream {
   FILE * file;
   int fd;
   int debug;
+  enum aloutput_target target;
   // callback case
   aloutput_callback_writeint32 callback_writeint32;
   aloutput_callback_flush callback_flush;
@@ -24,6 +31,8 @@ struct aloutputstream {
 };
 
 void aloutputstream_init(struct aloutputstream * stream, FILE * file);
+
+void aloutputstream_init_shared_buffer(struct aloutputstream * stream, char * buffer);
 
 void aloutputstream_set_callback(
 				 struct aloutputstream * stream,
@@ -40,6 +49,7 @@ bit are set in least significant bits of words.
 */
 void aloutputstream_flush(struct aloutputstream * stream, int word, int bits);
 
+/** in buffer target it is possible to obtain a pointer over a contigous buffer */
 void * aloutputstream_get_data(struct aloutputstream * stream);
 
 int aloutputstream_getfd(struct aloutputstream * stream);

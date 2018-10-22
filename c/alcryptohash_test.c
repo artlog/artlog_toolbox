@@ -14,12 +14,12 @@ void usage()
   printf("if name is '' then display hash for empty value (value of size 0)\n");
 }
 
-void dump_result(struct alsha2_internal * shax, struct alhash_datablock * result)
+void dump_result(struct alsha2_internal * shax, aldatablock * result)
 {
   alcryptohash_tool_dump_result(shax, result);
 }
 
-void alshash_callback (struct alhash_datablock * block, void * data)
+void alshash_callback (aldatablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
@@ -32,7 +32,7 @@ void alshash_callback (struct alhash_datablock * block, void * data)
     }
 }
 
-void alshash_finalize (struct alhash_datablock * block, void * data)
+void alshash_finalize (aldatablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
@@ -49,7 +49,7 @@ void alshash_finalize (struct alhash_datablock * block, void * data)
 void test_empty_hash(int argc, char ** argv)
 {
   struct alsha2_internal shax;
-  struct alhash_datablock * result;
+  aldatablock * result;
 
   // sha256 yet
   alsha256_init(&shax);
@@ -67,13 +67,15 @@ void test_empty_hash(int argc, char ** argv)
 
 void test_base64(char * text)
 {
-  struct alhash_datablock block;
+  char * result = NULL;
 
-  block.data.charptr=text;
-  block.length=strlen(text);
-  block.type=ALTYPE_STR0;
+  result = aleasybase64(text,strlen(text));
 
-  albase64(&block,NULL);
+  if ( result != NULL )
+    {
+      printf("%s",result);
+      free(result);
+    }
 }
 
 int main(int argc, char ** argv)
@@ -109,7 +111,7 @@ int main(int argc, char ** argv)
 		  aldebug_printf(NULL,"open file %s\n", filename );
 		}
 
-	      struct alhash_datablock * result = alcryptohash_tool_from_input(&sha2x, &input, readblocksize);
+	      aldatablock * result = alcryptohash_tool_from_input(&sha2x, &input, readblocksize);
 	      dump_result(&sha2x,result);
 				      
 	      fclose(f);

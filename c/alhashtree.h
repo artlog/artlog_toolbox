@@ -19,13 +19,13 @@ enum alhashnodetype {
 struct alhashtreenode;
 
 // blockA for intial leaf computation then blockA is left and blockB is right
-typedef void (*alhashtreehashfunc) (struct alhashtreenode * treenode, struct alhash_datablock * blockA, struct alhash_datablock * blockB);
+typedef void (*alhashtreehashfunc) (struct alhashtreenode * treenode, aldatablock * blockA, aldatablock * blockB);
 
 struct alhashtreefunc {
   //
   alhashtreehashfunc hashmethod;
   // value for hashing NULL. used when right child is not yet known.
-  struct alhash_datablock emptyhash; 
+  aldatablock emptyhash; 
 };
 
 struct alhashtreenode {
@@ -37,7 +37,7 @@ struct alhashtreenode {
   // add parent to be able to walf from a child.
   struct alhashtreenode * parent;
   enum alhashnodetype nodetype;
-  struct alhash_datablock  hash;
+  aldatablock  hash;
   struct alhashtreefunc func;
   // allocation context
   struct alallocation_ctx * context;
@@ -55,10 +55,10 @@ void alhashtree_clean(struct alhashtreenode * treenode);
 // at input to walk tree to find a free place in binary tree for insert
 // at output return newly added rightmost leaf.
 // trigger a recomputation of hash
-struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, struct alhash_datablock * block);
+struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, aldatablock * block);
 
 // store hash in hashout
-void alhashtree_get_hash(struct alhashtreenode * treenode, struct alhash_datablock * hashout);
+void alhashtree_get_hash(struct alhashtreenode * treenode, aldatablock * hashout);
 
 void alhashtree_set_data(struct alhashtreenode * treenode, void * data);
 

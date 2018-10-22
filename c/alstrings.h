@@ -16,7 +16,7 @@ enum altype {
 /** data pointing on a contiguous block of length bytes */
 // legacy name since borrowed from hash -> to rename everywhere ?
 /* can be direct number data copy for integers */
-struct alhash_datablock {
+typedef struct alhash_datablock {
   enum altype type;
   int length; // > 0 , EMPTY BLOCK NOT VALID
   union {
@@ -27,7 +27,7 @@ struct alhash_datablock {
     unsigned int * uintptr;
     long number; // quick hack to store values directly (see type ).
   } data;
-};
+} aldatablock;
 
 /** char buffer RING ( circular list allocated by al_token_char_buffer_alloc(int times); )
  can be filled ONLY ( no removal ).

@@ -16,7 +16,20 @@ char albase64_6bitstochar(unsigned int inbits)
 
 char * aleasybase64(char * input, int length)
 {
-  return NULL;
+  aldatablock block;
+
+  block.data.charptr=input;
+  block.length=length;
+  block.type=ALTYPE_STR0;
+
+  // TODO create a growable output buffer
+  // by setting it to NULL this is dumped to stdout
+  alstrings_ringbuffer_pointer * output = NULL;
+  albase64(&block,output);
+
+  // TODO detach output buffer to keep only malloc'ed buffer.
+  char * buffer = NULL;
+  return buffer;
 }
 
 int aloutputwritechar(alstrings_ringbuffer_pointer * output, char c)
@@ -72,7 +85,7 @@ int albase64_frominput(  struct alinputstream * inputstream, alstrings_ringbuffe
   return 0;
 }
 
-int albase64(struct alhash_datablock * input, alstrings_ringbuffer_pointer * output)
+int albase64(aldatablock * input, alstrings_ringbuffer_pointer * output)
 {
 
   struct alinputstream inputstream;

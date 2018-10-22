@@ -12,6 +12,6 @@ char * aleasybase64(char * input, int length);
 int albase64_frominput(  struct alinputstream * inputstream, alstrings_ringbuffer_pointer * output);
 
 /** from full input datablock create a base64 result allocated within output */
-int albase64(struct alhash_datablock * input, alstrings_ringbuffer_pointer * output);
+int albase64(aldatablock * input, alstrings_ringbuffer_pointer * output);
 
 #endif // #ifndef __ALBASE64_H__
