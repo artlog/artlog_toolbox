@@ -147,6 +147,12 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
   long long bitlength = ( (long long) intern->cumulated_length * CHAR_BIT ) - intern->missing_bits;
   long long L = ( bitlength  ) % 512;
   struct alhash_datablock * output = last_block;
+
+  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+    {
+      aldebug_printf(NULL,"padding cumulated length %lu\n", intern->cumulated_length );
+    }
+
   
   // 0 <= L < 512 ; and L % 8 == 0 because usualy CHAR_BIT = 8 and we are playing with bytes.
   if ( L < 448 )
@@ -172,17 +178,15 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
     }
   else
     {
-      // FIXME
       if ( intern->state == AL_SHA2_DATA )
 	{
 	  // should be padded on two blocks, first step is to pad on first block.
-	  aldatablock_bzero(output,L/CHAR_BIT,64);
+	  int offset = L/CHAR_BIT;
+	  aldatablock_bzero(output,offset,64-offset);
 	  // 1 bit on an aligned byte.
 	  aldatablock_write_byte(output, L / CHAR_BIT, 0x80);
 
 	  intern->state = AL_SHA2_PAD;
-
-// what bout length ? non zero creates a problem...
 	}
       else if ( intern->state == AL_SHA2_PAD )
 	{
@@ -458,15 +462,15 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 
   if ( intern->state ==  AL_SHA2_PAD )
     {
-      if ( intern->input.length == 0 )
+      if ( intern->input.length != blocksizebyte )
 	{
-	  // use pad
-	  intern->input.data.charptr=intern->pad;
-	  intern->input.length = blocksizebyte;
+	  aldebug_printf(NULL,"[ERROR] unexpected non empty input buffer of length %i at second padding final block\n", intern->input.length);
 	}
       else
 	{
-	  aldebug_printf(NULL,"[ERROR] unexpected non empty input buffer of length %i at final\n", intern->input.length);
+	  // use extra pad
+	  intern->input.data.charptr=intern->extrapad;
+	  intern->input.length = blocksizebyte;
 	}
       alsha2_pad_to_512bits(intern, &intern->input);
       alsha224_turn(intern, 0, &intern->input);
