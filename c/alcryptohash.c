@@ -130,7 +130,11 @@ void alsha2x_init(struct alsha2_internal * intern, enum alsha2_algorithm algorit
 }
 
 // padding is done on end of message and with full length of message, assume smallest entity CHAR_BIT ( assumed 8 bits )
+// full message lenght is stored into intern->cumulated_length
 // this can be done for last 512bits block but we have to record full message length.
+/**
+last_block is output
+**/
 void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_datablock * last_block)
 {
   if ( intern == NULL )
@@ -177,6 +181,8 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
 	  aldatablock_write_byte(output, L / CHAR_BIT, 0x80);
 
 	  intern->state = AL_SHA2_PAD;
+
+// what bout length ? non zero creates a problem...
 	}
       else if ( intern->state == AL_SHA2_PAD )
 	{
@@ -419,8 +425,14 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 
   if ( intern->state ==  AL_SHA2_DATA )
     {
+      if ( intern->input.length >=  blocksizebyte )
+	{
+	  // internal input length should be < blocksizebyte due to add block behavior.
+	  aldebug_printf(NULL,"[FATAL] input buffer at final of length %i >= blocksize %i\n", intern->input.length, blocksizebyte);
+	}
+      
       // remaining incomplete buffer at end.
-      if ( (intern->input.length) &&( intern->input.length < blocksizebyte ))
+      if ( (intern->input.length != 0 ) && ( intern->input.length < blocksizebyte ))
 	{
 	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
 	    {
@@ -431,7 +443,7 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 	      aldebug_printf(NULL,"[FATAL] non empty input buffer at final of length %i  using an external data buffer\n", intern->input.length);
 	    }	  
 	  // expand it to full block, will be padded.
-	  intern->input.length = blocksizebyte;	  
+	  intern->input.length = blocksizebyte;
 	}
       
       if ( intern->input.length == 0 )
@@ -454,7 +466,7 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 	}
       else
 	{
-	  aldebug_printf(NULL,"[NULL] unexpected non empty input buffer at final\n");
+	  aldebug_printf(NULL,"[ERROR] unexpected non empty input buffer of length %i at final\n", intern->input.length);
 	}
       alsha2_pad_to_512bits(intern, &intern->input);
       alsha224_turn(intern, 0, &intern->input);

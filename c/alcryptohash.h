@@ -42,6 +42,7 @@ struct alsha2_internal {
   // when direct input can't be used as a 512bits block
   char inputcopy[MAXBLOCSIZEBYTE];
   char pad[MAXBLOCSIZEBYTE];
+  // what it is used for ?
   char extrapad[MAXBLOCSIZEBYTE];
 };
 
