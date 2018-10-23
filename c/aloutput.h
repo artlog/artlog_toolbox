@@ -1,9 +1,13 @@
 #ifndef __ALOUTPUTSTREAM_H__
 #define __ALOUTPUTSTREAM_H__
 
+#include "alstrings.h"
+
 #include <stdio.h>
 
 struct aloutputstream;
+
+typedef void (*aloutput_callback_write_byte) (struct aloutputstream * stream, unsigned char byte);
 
 typedef void (*aloutput_callback_writeint32) (struct aloutputstream * stream, int word);
 
@@ -22,7 +26,11 @@ struct aloutputstream {
   int fd;
   int debug;
   enum aloutput_target target;
+  aldatablock buffer;
+  // offset within buffer
+  unsigned int offset;
   // callback case
+  aloutput_callback_write_byte callback_write_byte;
   aloutput_callback_writeint32 callback_writeint32;
   aloutput_callback_flush callback_flush;
   aloutput_callback_close callback_close;
@@ -32,13 +40,18 @@ struct aloutputstream {
 
 void aloutputstream_init(struct aloutputstream * stream, FILE * file);
 
-void aloutputstream_init_shared_buffer(struct aloutputstream * stream, char * buffer);
+/** create an outputstream over a contiguous prereserved buffer */
+void aloutputstream_init_shared_buffer(struct aloutputstream * stream, aldatablock * buffer, int offset);
 
 void aloutputstream_set_callback(
 				 struct aloutputstream * stream,
+				 aloutput_callback_write_byte callback_write_byte,
 				 aloutput_callback_writeint32 callback_writeint32,
 				 aloutput_callback_flush callback_flush,
 				 aloutput_callback_close callback_close);
+
+
+void aloutputstream_write_byte(struct aloutputstream * stream, unsigned char byte);
 
 void aloutputstream_writeint32(struct aloutputstream * stream, int word);
 

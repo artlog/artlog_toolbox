@@ -13,9 +13,11 @@ enum altype {
   ALTYPE_MAX=128,
 };
 
-/** data pointing on a contiguous block of length bytes */
-// legacy name since borrowed from hash -> to rename everywhere ?
-/* can be direct number data copy for integers */
+/** data pointing on a contiguous block of length bytes
+ legacy name since borrowed from hash
+   -> don't use this struct name, prefer aldatablock
+  can be direct number data copy for integers 
+**/
 typedef struct alhash_datablock {
   enum altype type;
   int length; // > 0 , EMPTY BLOCK NOT VALID
@@ -38,10 +40,10 @@ token_char_buffer circular linked list is built at first time
 BUT buf and its size is allocated on request only.
 */
 // to rename since borrowed from json_parser project
-struct token_char_buffer {
-  // internal buffer to collect data
+typedef struct token_char_buffer {
+  // internal buffer to collect data of allocated capacity bufsize.
   char * buf;
-  // position of token buffer where to add data
+  // position of token buffer where to add data within buf
   int bufpos;
   // buffer size to be grown if needed ( see al_token_char_buffer_grow )
   int bufsize;
@@ -52,10 +54,10 @@ struct token_char_buffer {
   struct token_char_buffer * next;
   // next potentialy free and can be replaced by a next after if next is detected full.
   struct token_char_buffer * next_free;  
-};
+} alstrings_out;
 
 // introduced alstrings_ringbuffer_pointer , that point to right token_char_buffer within ring.
-typedef struct token_char_buffer * alstrings_ringbuffer_pointer;
+typedef alstrings_out * alstrings_ringbuffer_pointer;
 
 // allocation context ( it can only grow or be fully released )
 struct alallocation_ctx {
@@ -66,7 +68,7 @@ struct alallocation_ctx {
 #define ALALLOC(ctx, length) al_alloc_block(&ctx.ringbuffer, length)
 
 // just does nothing on ctx... only ALFREECTX can be used, but it releases ALL.
-// created to track possible repalcement with malloc/free
+// created to track possible replacement with malloc/free
 #define ALRELEASE(ctx, object)
 		  
 #define ALFREECTX(ctx) alstrings_ringbuffer_release(&ctx->ringbuffer)
@@ -76,7 +78,7 @@ usualy double of size
 search within list of possible buffers
 it should not change existing allocation ( that are pointed to )
  */
-struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * buffer, int length);
+alstrings_ringbuffer_pointer al_token_char_buffer_grow(alstrings_ringbuffer_pointer buffer, int length);
 
 // allocate length byte within buffer, does not zero them ( keep content ).
 // return pointer on first char in buffer
@@ -84,21 +86,17 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbuffer, int length);
   
 // copy data content into token_char_buffer, return pointer on first char within buffer ( to update within data.ptr )
 // WARNING this can actualy change ringbufferp content.
-char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp,  struct alhash_datablock * data);
+char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp,  aldatablock * data);
 
 /* create a circular list of struct token_char_buffer of size times.
 useful for autogrowth */
-struct token_char_buffer * al_token_char_buffer_alloc(int times);
+alstrings_ringbuffer_pointer al_token_char_buffer_alloc(int times);
 
 /* init char buffer to a length of chars
 to use internally after al_token_char_buffer_alloc since it can't grow.
  */
 // INTERNAL ONLY ( to remove from api ) use alstrings_ringbuffer_init_autogrow instead
-void al_token_char_buffer_init(struct token_char_buffer * buffer, int chars);
-
-/* insert head to a circular buffer */
-// DEPRECATED AVOID
-void al_token_char_buffer_rehead(struct token_char_buffer * newhead, struct token_char_buffer * circular);
+void al_token_char_buffer_init(alstrings_ringbuffer_pointer buffer, int chars);
 
 /* allocate a circular buffer of buckets with initial bucket char length 
 will setup ringbuffer
@@ -108,18 +106,32 @@ void alstrings_ringbuffer_init_autogrow(alstrings_ringbuffer_pointer * ringbuffe
 // release ringbuffer when sure we are not pointing to any of its data
 void alstrings_ringbuffer_release(alstrings_ringbuffer_pointer * ringbufferp);
 
-void aldatablock_bzero(struct alhash_datablock * data,int offset, int length);
+// read an unsigned int that was stored in big endian at offset in datablock
+unsigned int aldatablock_get_uint32be(aldatablock * data, int offset);
+
+// =====  use a datablock as output ========
+
+void aldatablock_bzero(aldatablock * data,int offset, int length);
 
 // return new offset 
-int aldatablock_write_uint64be(struct alhash_datablock * data, int offset, unsigned long long value );
+int aldatablock_write_uint64be(aldatablock * data, int offset, unsigned long long value );
 
-int aldatablock_write_byte(struct alhash_datablock * data, int offset, unsigned char value);
+// return new offset 
+int aldatablock_write_int32be(aldatablock * data, int offset, int word);
 
-// read an unsigned int that was stored in big endian at offset in datablock
-unsigned int aldatablock_get_uint32be(struct alhash_datablock * data, int offset);
+int aldatablock_write_byte(aldatablock * data, int offset, unsigned char value);
 
-void aldatablock_dump( struct alhash_datablock * block );
+void aldatablock_dump(aldatablock * block );
 
-void aldatablock_setcstring(struct alhash_datablock * block,char * cstring);
+void aldatablock_setcstring(aldatablock * block,char * cstring);
+
+/**
+ allocate needed continguous buffer of bytelength from alstrings_ringbuffer_pointer
+ and fill data with that reference return a datablock that starts at offset 0.
+ negative means reservation did not complete.
+ **/
+int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * data, int bytelength);
+
+
 
 #endif

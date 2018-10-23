@@ -73,7 +73,7 @@ void test_base64(char * text)
 
   if ( result != NULL )
     {
-      printf("%s",result);
+      printf("base64('%s')='%s'\n",text,result);
       free(result);
     }
 }

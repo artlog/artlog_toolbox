@@ -38,13 +38,20 @@ struct token_char_buffer * al_token_char_buffer_alloc(int times)
   return buffers;
 }
   
-void al_token_char_buffer_init(struct token_char_buffer * buffer, int chars)
+void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer buffer, int chars)
 {
+
   buffer->bufsize = chars;
   buffer->bufpos = 0;
   buffer->buf = malloc (buffer->bufsize);
   // can be freed with int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * data)
   // don't set first or next  
+}
+
+void al_token_char_buffer_init(alstrings_ringbuffer_pointer buffer, int chars)
+{
+  aldebug_printf(NULL,"[WARNING] use alstrings_ringbuffer_init_autogrow instead of deprecated  al_token_char_buffer_init\n");  
+  al_token_char_buffer_init_internal(buffer,chars);
 }
 
 // get last pointing on circular.
@@ -71,6 +78,8 @@ struct token_char_buffer *  al_token_char_buffer_get_previous(struct token_char_
   return previous;  
 }
 
+/* insert head to a circular buffer */
+// DEPRECATED removed from api
 void al_token_char_buffer_rehead(struct token_char_buffer * newhead, struct token_char_buffer * circular)
 {
   if ( ( newhead != NULL ) && ( circular != NULL ) && (newhead->next == NULL) )
@@ -90,7 +99,7 @@ void al_token_char_buffer_rehead(struct token_char_buffer * newhead, struct toke
     }
 }
 
-// pick from buffer one that can provide length , if not engough palce create a new one.
+// pick from buffer one that can provide length , if not enough place create a new one.
 struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * buffer, int length)
 {
   struct token_char_buffer * next  = buffer->next;
@@ -139,6 +148,14 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
       next = next->next;
     }
 
+  // what to conclude here if next == buffer ?
+  // ==> that it was not possible to allocate a buffer
+  if (  next == buffer )
+    {
+      aldebug_printf(NULL,"[WARNING] not possible to allocate a buffer. allocate buffer (%p) next (%p) \n", buffer, next);
+      // shouldn't we return NULL ?
+    }
+  
   if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
     {
       aldebug_printf(NULL,"allocate buffer (%p) next (%p) !\n", buffer, next);
@@ -202,7 +219,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
   return NULL;
 }
 
-char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp, struct alhash_datablock * data)
+char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * data)
 {
   if ( ringbufferp != NULL )
     {
@@ -242,7 +259,7 @@ void alstrings_ringbuffer_init_autogrow(alstrings_ringbuffer_pointer * ringbuffe
   if ( ringbufferp != NULL )    
     {
       struct token_char_buffer * allocated = al_token_char_buffer_alloc(buckets);
-      al_token_char_buffer_init(allocated,firstbucketlength);
+      al_token_char_buffer_init_internal(allocated,firstbucketlength);
       *ringbufferp = allocated;
      }
 }
@@ -251,7 +268,7 @@ int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * 
 {
   if ( bucket != NULL )
     {
-      // see what is done in void al_token_char_buffer_init(struct token_char_buffer * buffer, int chars)
+      // see what is done in void al_token_char_buffer_init_internal(struct token_char_buffer * buffer, int chars)
       if (bucket->buf != NULL )
 	{
 	  free( bucket->buf);
@@ -303,7 +320,7 @@ void alstrings_ringbuffer_release(alstrings_ringbuffer_pointer * ringbufferp)
     }
 }
 
-void aldatablock_bzero(struct alhash_datablock * data,int offset, int length)
+void aldatablock_bzero(aldatablock * data,int offset, int length)
 {
   // todo check datablock type
   if ( ( offset >=0 ) && ( data->length >= offset + length ) )
@@ -313,7 +330,7 @@ void aldatablock_bzero(struct alhash_datablock * data,int offset, int length)
 }
 
 // return new offset 
-int aldatablock_write_uint64be(struct alhash_datablock * data, int offset, unsigned long long value )
+int aldatablock_write_uint64be(aldatablock * data, int offset, unsigned long long value )
 {
   // todo check datablock type
   if ( data->length >= offset + 8 )
@@ -339,7 +356,7 @@ int aldatablock_write_uint64be(struct alhash_datablock * data, int offset, unsig
   return offset + 8;
 }
 
-int aldatablock_write_byte(struct alhash_datablock * data, int offset, unsigned char value)
+int aldatablock_write_byte(aldatablock * data, int offset, unsigned char value)
 {
   // todo check datablock type
   if ( data->length > offset )
@@ -350,7 +367,7 @@ int aldatablock_write_byte(struct alhash_datablock * data, int offset, unsigned 
 }
 
 // read an unsigned int that was stored in big endian at offset in datablock
-unsigned int aldatablock_get_uint32be(struct alhash_datablock * data, int offset)
+unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
 {
   // todo check datablock type
   unsigned int result = 0;
@@ -376,7 +393,7 @@ unsigned int aldatablock_get_uint32be(struct alhash_datablock * data, int offset
 }
   
 
-void aldatablock_dump( struct alhash_datablock * block )
+void aldatablock_dump( aldatablock * block )
 {
   if ( block != NULL )
     {
@@ -395,9 +412,83 @@ void aldatablock_dump( struct alhash_datablock * block )
     }
 }
 
-void aldatablock_setcstring(struct alhash_datablock * block,char * cstring)
+void aldatablock_setcstring(aldatablock * block,char * cstring)
 {
   block->data.charptr = cstring;
   block->length = strlen(cstring);
   block->type = ALTYPE_STR0; 
+}
+
+static int alstrings_ringbuffer_get_datablock_internal(alstrings_ringbuffer_pointer ringbuffer, aldatablock * data, int offset)
+{
+  if ( offset < ringbuffer->bufsize )
+    {
+      data->type=ALTYPE_OPAQUE;
+      data->data.charptr=&ringbuffer->buf[offset];
+      data->length=ringbuffer->bufsize-offset;
+
+      return offset;
+    }
+  return -1;
+}
+
+int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * data, int bytelength)
+{
+  // negative offset means reservation did not complete.
+  int offset = -1;
+  
+  if ( ringbufferp != NULL )
+    {
+      alstrings_ringbuffer_pointer ringbuffer=*ringbufferp;
+
+      if ( ringbuffer != NULL )
+	{
+	  offset = ringbuffer->bufpos;
+	  if ( ringbuffer->bufsize + offset >= bytelength )
+	    {
+	      alstrings_ringbuffer_get_datablock_internal(ringbuffer, data, offset);
+	    }
+	  else
+	    {
+	      ringbuffer = al_token_char_buffer_grow(ringbuffer, bytelength);
+	      if ( ringbuffer != NULL )
+		{
+		  offset = ringbuffer->bufpos;
+		  offset = alstrings_ringbuffer_get_datablock_internal(ringbuffer, data,offset);
+		  if ( offset >= 0 )
+		    {
+		      *ringbufferp=ringbuffer;
+		    }
+		}
+	      else
+		{
+		  offset = -1;
+		}
+	    }
+	}
+    }
+
+  return offset;
+}
+
+int aldatablock_write_int32be(aldatablock * data, int offset, int word)
+{
+    // todo check datablock type
+  if ( data->length >= offset + 4 )
+    {
+      char * intern = &data->data.charptr[offset];
+      char * hack = (char *) &word;
+      // if LittleEndian ask gcc
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      intern[0]=hack[4];
+      intern[1]=hack[3];
+      intern[2]=hack[2];
+      intern[3]=hack[1];
+#else
+      memcpy(intern,hack,4);
+#endif
+
+    }     
+	
+  return offset + 4;
 }
