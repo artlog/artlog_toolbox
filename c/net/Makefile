@@ -1,8 +1,9 @@
 CC=gcc
 LDLIBS= -lssl -lcrypto -lpthread
 CFLAGS = -std=gnu99 -Wall -Werror -g3
+export CPATH := .:..
 
-connect:	resolve.o connect.o loopbackserv.o alurl.o al_http.o alconn.o altls_openssl_wrapper.o dumper.o
+connect: resolve.o connect.o loopbackserv.o alurl.o al_http.o alconn.o altls_openssl_wrapper.o dumper.o ../aldebug.o
 
 .PHONY:	clean test
 
