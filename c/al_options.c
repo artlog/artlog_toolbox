@@ -7,24 +7,35 @@
 
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 
-void al_option_add(struct al_options * options, char * ikey, char * ivalue)
+int al_options_get_duplicates(struct al_options * options,const char * ikey)
+{
+  // NYI
+  return -1;
+}
+
+void al_option_add_duplicate(struct al_options * options,const char * ikey,int current_index,const char * ivalue)
+{
+  // NYI
+}
+
+void al_option_add(struct al_options * options,const char * ikey,const char * ivalue)
 {
   struct alhash_datablock key;
   int withnullbyte=1; // include null byte '\0'
   key.type = ALTYPE_STR0;
   key.length = strlen(ikey) + withnullbyte; 
-  key.data.ptr = ikey;
+  key.data.constcharptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry(&options->context.dict, &key);
   if (entry == NULL)
     {
       struct alhash_datablock value;
-      printf("add '%s'='%s' in options\n",ikey,ivalue);
+
       // not true given length provided but type should the same
       key.type = ALTYPE_STR0;
       key.data.ptr=al_copy_block(&options->context.allocator.ringbuffer, &key);
       key.length -= withnullbyte; // don't keep null byte for hash...
       value.length=strlen(ivalue) + withnullbyte;
-      value.data.ptr=ivalue;
+      value.data.constcharptr=ivalue;
       // using al_copy_block allows to have data block autogrowth.
       value.data.ptr=al_copy_block(&options->context.allocator.ringbuffer,&value);
 
@@ -44,9 +55,19 @@ void al_option_add(struct al_options * options, char * ikey, char * ivalue)
     }
   else
     {
-      ALDEBUG_IF_DEBUG(options, al_options, debug)
+      // could try to create "key[]"=["value1","value2",...] or ... "key[1]"="value1" "#key" = 2...
+      int duplicates = al_options_get_duplicates(options,ikey);
+      if ( duplicates >= 0 )
 	{
-	  aldebug_printf(NULL,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",ikey,ivalue);
+	  // means support duplicates NYI
+	  al_option_add_duplicate(options,ikey,duplicates,ivalue);
+	}
+      else
+	{	
+	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	    {
+	      aldebug_printf(NULL,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",ikey,ivalue);
+	    }
 	}
     }
 }
@@ -77,28 +98,48 @@ struct al_options * al_options_create(int argc, char ** argv)
       // parse x=y
       char * key = NULL;
       char * value = NULL;
-      sscanf(argv[i],"%m[^=]=%m[^=]",&key,&value);      
+      // key=value
+      sscanf(argv[i],"%m[^=]=%m[^=]",&key,&value);
       if ( ( key != NULL )  && (value != NULL))
 	{
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	  aldebug_printf(NULL,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
-	}
+	      aldebug_printf(NULL,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
+	    }
 	  al_option_add(options,key,value);
-	  free(key);
-	  free(value);
 	}
+      else
+	{
+	  // key only
+	  sscanf(argv[i],"%m[^=]",&key);
+	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	    {
+	      aldebug_printf(NULL,"[DEBUG] option recognized : '--%s' ( as %s=true) \n",key,key);
+	    }
+	  al_option_add(options,key,"true");	  
+	}
+	if (key != NULL )
+	  {
+	  free(key);
+	  key=NULL;
+	}
+	if (value != NULL)
+	  {
+	  free(value);
+	  value=NULL;
+	}
+	
     }
   return options;
 }
 
-struct alhash_datablock * al_option_get(struct al_options * options, char * ikey)
+struct alhash_datablock * al_option_get(struct al_options * options,const char * ikey)
 {
   struct alhash_datablock key;
   // not true, since strlen does not include '\0'
   key.type = ALTYPE_STR0;
   key.length = strlen(ikey);
-  key.data.ptr = ikey;
+  key.data.constcharptr = ikey;
   struct alhash_entry *entry =  alhash_get_entry (&options->context.dict, &key);
   if (entry == NULL)
     {

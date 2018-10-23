@@ -49,10 +49,11 @@ typedef void (*aljson_print_printf_callback)(struct print_ctx * print_ctx, const
 
 /* parameters for pretty printing 
 
-THIS is requried to call aljson_print_ctx_init(struct print_ctx * print_ctx) on it any use.
+THIS is required to call aljson_print_ctx_init(struct print_ctx * print_ctx) on it any use.
 */
 struct print_ctx
 {
+  int max_depth;
   int indent;
   int do_indent; // 0 no indent, >= 1 number of space by indent.
   char * s_indent;
@@ -173,12 +174,12 @@ struct json_object {
 /** print context to stderr */
 void dump_ctx(struct json_parser_ctx * ctx);
 
-/** Where output is finaly done 
-Deprecated or Internal use only : Please prefer aljson_output 
-*/
-void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+/** Where output is finaly done  **/
 
-/** should be preferred to dump_object ( at least for aljson_ namespace usage ) */
+/** dump object == aljson_output
+struct json_parser_ctx * ctx can be NULL ( and in fact we should rely only on print_ctx)
+TOOD FIX it to not use struct json_parser_ctx at ALL
+*/
 void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 struct json_path {
@@ -205,14 +206,12 @@ struct json_object * aljson_new_growable(struct json_parser_ctx * ctx, char fina
 #define JSON_DEFINE_NEW(__member__,__char__) struct json_object * aljson_new_ ## __member__(struct json_parser_ctx * ctx) { return aljson_new_growable(ctx,__char__);};
 
   
-void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
 void dump_ctx(struct json_parser_ctx * ctx);
 
 /**
   return value with key keyname in object
 **/
-struct json_object * json_dict_get_value(char * keyname, struct json_object * object);
+struct json_object * json_dict_get_value(const char * keyname, struct json_object * object);
 
 /**
  for each element of json_dict in definition order

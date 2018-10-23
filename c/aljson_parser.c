@@ -351,7 +351,8 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	    /*
 	    if (parent != NULL)
 	      {
-		dump_object(ctx,parent,NULL);
+                FIXME need a print ctx else will crash
+		aljson_output(ctx,parent,NULL);
 	      }
 	    */
 	    puts("\n-------");

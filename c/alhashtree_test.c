@@ -1,6 +1,16 @@
-#include "alhastree.h"
+#include "alhashtree.h"
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+
+void usage()
+{
+  printf("Don't use, even at your own risks\n");
+  printf("");
+  printf("add each argument at new rightmost element of btree with hash256 value then dump it.\n");
+    
+}
 
 void alhashtree_data_process(void * data, void * contextdata, struct albtree * btree)
 {
@@ -26,7 +36,13 @@ int main(int argc, char ** argv)
   struct alhashtreenode * rightmost;
   struct alhashtreenode * root;
   struct alhash_datablock block;
-  
+
+  if ( argc == 1 )
+    {
+      usage();
+      exit(0);
+    }
+
   alstrings_ringbuffer_init_autogrow(&context.ringbuffer,10,256);
 				     
   alhashtree_global_init_sha256(&context);

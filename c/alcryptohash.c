@@ -92,7 +92,7 @@ void alshax_internal_init(struct alsha2_internal * intern, unsigned int sha_H[8]
   intern->input.length=0;
   intern->algorithm=AL_SHA2_UNKNOWN_ALGORITHM;
     
-  struct alhash_datablock d;
+  aldatablock d;
   d.length = sizeof(intern->H);
   d.data.ptr = intern->H;
   d.type = ALTYPE_OPAQUE; 
@@ -130,8 +130,12 @@ void alsha2x_init(struct alsha2_internal * intern, enum alsha2_algorithm algorit
 }
 
 // padding is done on end of message and with full length of message, assume smallest entity CHAR_BIT ( assumed 8 bits )
+// full message lenght is stored into intern->cumulated_length
 // this can be done for last 512bits block but we have to record full message length.
-void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_datablock * last_block)
+/**
+last_block is output
+**/
+void alsha2_pad_to_512bits(struct alsha2_internal * intern, aldatablock * last_block)
 {
   if ( intern == NULL )
     {
@@ -142,7 +146,13 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
   // L in bits
   long long bitlength = ( (long long) intern->cumulated_length * CHAR_BIT ) - intern->missing_bits;
   long long L = ( bitlength  ) % 512;
-  struct alhash_datablock * output = last_block;
+  aldatablock * output = last_block;
+
+  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
+    {
+      aldebug_printf(NULL,"padding cumulated length %lu\n", intern->cumulated_length );
+    }
+
   
   // 0 <= L < 512 ; and L % 8 == 0 because usualy CHAR_BIT = 8 and we are playing with bytes.
   if ( L < 448 )
@@ -168,11 +178,11 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
     }
   else
     {
-      // FIXME
       if ( intern->state == AL_SHA2_DATA )
 	{
 	  // should be padded on two blocks, first step is to pad on first block.
-	  aldatablock_bzero(output,L/CHAR_BIT,64);
+	  int offset = L/CHAR_BIT;
+	  aldatablock_bzero(output,offset,64-offset);
 	  // 1 bit on an aligned byte.
 	  aldatablock_write_byte(output, L / CHAR_BIT, 0x80);
 
@@ -205,7 +215,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, struct alhash_databl
 
 
 // sha224 on input starting at offset ( same as sha256 )
-void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alhash_datablock * input)
+void alsha224_turn(struct alsha2_internal * shainternal, int offset, aldatablock * input)
 {
   unsigned int W[64];
   unsigned int H[8];
@@ -315,7 +325,7 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, struct alha
 }
  
 // shaxxx applied depends on result length.
-int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock * input)
+int alsha2x_add_block( struct alsha2_internal * intern, aldatablock * input)
 {
 
   // for all blocks of blocksizebyte
@@ -405,7 +415,7 @@ int alsha2x_add_block( struct alsha2_internal * intern, struct alhash_datablock 
 }
 
 // shaxxx applied depends on result length.
-struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
+aldatablock * alsha2x_final(struct alsha2_internal * intern)
 {
   // 64 bytes ( 512 bits ).
   int blocksizebyte=64;
@@ -419,8 +429,14 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 
   if ( intern->state ==  AL_SHA2_DATA )
     {
+      if ( intern->input.length >=  blocksizebyte )
+	{
+	  // internal input length should be < blocksizebyte due to add block behavior.
+	  aldebug_printf(NULL,"[FATAL] input buffer at final of length %i >= blocksize %i\n", intern->input.length, blocksizebyte);
+	}
+      
       // remaining incomplete buffer at end.
-      if ( (intern->input.length) &&( intern->input.length < blocksizebyte ))
+      if ( (intern->input.length != 0 ) && ( intern->input.length < blocksizebyte ))
 	{
 	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
 	    {
@@ -431,7 +447,7 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 	      aldebug_printf(NULL,"[FATAL] non empty input buffer at final of length %i  using an external data buffer\n", intern->input.length);
 	    }	  
 	  // expand it to full block, will be padded.
-	  intern->input.length = blocksizebyte;	  
+	  intern->input.length = blocksizebyte;
 	}
       
       if ( intern->input.length == 0 )
@@ -446,15 +462,15 @@ struct alhash_datablock * alsha2x_final(struct alsha2_internal * intern)
 
   if ( intern->state ==  AL_SHA2_PAD )
     {
-      if ( intern->input.length == 0 )
+      if ( intern->input.length != blocksizebyte )
 	{
-	  // use pad
-	  intern->input.data.charptr=intern->pad;
-	  intern->input.length = blocksizebyte;
+	  aldebug_printf(NULL,"[ERROR] unexpected non empty input buffer of length %i at second padding final block\n", intern->input.length);
 	}
       else
 	{
-	  aldebug_printf(NULL,"[NULL] unexpected non empty input buffer at final\n");
+	  // use extra pad
+	  intern->input.data.charptr=intern->extrapad;
+	  intern->input.length = blocksizebyte;
 	}
       alsha2_pad_to_512bits(intern, &intern->input);
       alsha224_turn(intern, 0, &intern->input);

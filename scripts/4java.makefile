@@ -9,6 +9,9 @@ all: build.xml dist/lib/$(DISTJAR)
 getname:
 	@echo dist/lib/$(DISTJAR)
 
+getjavalibs:
+	@if [ -d libs ] ; then find libs/ -type f -o -type l -name "*.jar"; fi
+
 dist:
 	mkdir -p dist
 
@@ -19,10 +22,10 @@ build.xml:
 	./antify.sh >$@
 
 clean:
-	rm -f build.xml
+	cd java; make clean
 	rm -f dist/lib/$(DISTPREFIX)*.jar
 	rm -rf build
-	cd java; make clean
+
 
 cleanall:	clean
 	rm -rf debian

@@ -1,6 +1,6 @@
 BUILD=../build
 
-c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c
+c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c aljson.c alstack.c
 	gcc -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -lalhash -Wl,-Bdynamic
 
 albase: albase.c albase_test.c  alstrings.c aldebug.c
@@ -9,7 +9,7 @@ albase: albase.c albase_test.c  alstrings.c aldebug.c
 json_to_c_stub_sample: json_to_c_stub.c json_to_c_stub_sample.c albase.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
-cryptohash: alcryptohash.c alcryptohash_test.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alinput.c
+cryptohash: alcryptohash_test.c alcryptohash.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alcryptohash_tool.c aloutput.c
 	gcc -g -O0 -o $@ $^
 
 salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c 

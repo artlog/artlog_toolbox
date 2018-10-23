@@ -22,6 +22,10 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
     {.value=JSON_CONSTANT_NULL},    
   };
 
+
+// forward definition used only localy
+void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+  
 // TODO follow specs from  http://json.org/ http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
 
 int json_debug=0;
@@ -409,7 +413,10 @@ void * json_dict_hashadd_callback (struct json_object * key, struct json_object 
       value_datablock.data.ptr=value;
       value_datablock.length = sizeof(struct json_object);
       struct alhash_entry * entry = alhash_put(dict, &key_datablock, &value_datablock);
-      alhash_dump_entry_as_string(entry);
+      if ( json_debug > 0 )
+	{
+	  alhash_dump_entry_as_string(entry);
+	}      
       return NULL;
     }
   // something non NULL ...
@@ -470,9 +477,12 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
       if ( dict->localcontext.dict.context == NULL )
 	{
 	  // twice the space to limit collisions, should not overflow
-	  aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
+	  if ( json_debug )
+	    {
+	      aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
+	    }
 	  alparser_init(&dict->localcontext, 1, dict->nitems * 2);
-	  alparser_ctx_set_debug(&dict->localcontext,255);
+	  alparser_ctx_set_debug(&dict->localcontext,0);
 	  aljson_dict_foreach(object, json_dict_hashadd_callback,&dict->localcontext.dict );
 	}
     }
@@ -1397,7 +1407,13 @@ struct json_object * json_list_get( struct json_object * object, int index)
 void dump_dict_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i;
+
   FILE * outfile=print_ctx->outfile;
+  if ( outfile == NULL )
+    {
+      return;
+    }
+  
   fprintf(outfile,"%c",object->type);
   enter_indent(print_ctx);
   if (object->dict.nitems > 0)
@@ -1457,7 +1473,7 @@ void * aljson_dict_match_value_callback(struct json_object * key, struct json_ob
 }
 
 // search in hashtable if created, fallback to list walk
-struct json_object * json_dict_get_value(char * keyname, struct json_object * object)
+struct json_object * json_dict_get_value(const char * keyname, struct json_object * object)
 {
   if ( keyname == NULL )
     {
@@ -1470,7 +1486,7 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
   struct alhash_datablock searchkey;
   searchkey.length = strlen(keyname);
   searchkey.type = ALTYPE_OPAQUE;
-  searchkey.data.ptr = keyname;  
+  searchkey.data.constcharptr = keyname;  
   
   // htable search
   if ( object->type == '{' )
@@ -1484,18 +1500,24 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
 	      if (alhash_entry->value.length == sizeof(struct json_object))
 		{
 		  // WE DID IT !
-		  aldebug_printf(NULL, "json_value for dict key '%s' FOUND  \n", keyname);
+		  if ( FLAG_IS_SET(json_debug,1)  )
+		    {
+		      aldebug_printf(NULL, "[DEBUG] json_value for dict key '%s' FOUND  \n", keyname);
+		    }
 		  value = (struct json_object *) alhash_entry->value.data.ptr;
+		  // HARDCODED
 		  foundstatus = 255;
 		}
 	      else
 		{
-		  aldebug_printf(NULL,"value in dict is not a json_object length %i pointer %p\n", alhash_entry->value.length, alhash_entry->value.data.ptr);
+		  aldebug_printf(NULL,"[ERROR] value in dict is not a json_object length %i pointer %p\n", alhash_entry->value.length, alhash_entry->value.data.ptr);
+		  // HARDCODED
 		  foundstatus = 1;
 		}
 	    }
 	  else
 	    {
+	      // HARDCODED
 	      foundstatus = 2;
 	    }
 	}
@@ -1515,7 +1537,7 @@ struct json_object * json_dict_get_value(char * keyname, struct json_object * ob
   if ( ( foundstatus != 0 ) && ( value != NULL ) )
     {
       // this indicates an internal coding error or a memory corruption.
-      aldebug_printf(NULL,"[FATAL] key '%s' value is in json_dict items but not backed in hastable %p\n", keyname, object);
+      aldebug_printf(NULL,"[FATAL] key '%s' value is in json_dict items but not backed in hastable %p foundstatus=%i\n", keyname, object, foundstatus);
     }
   return value;
 }
@@ -1621,15 +1643,16 @@ void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object
     }
 }
 
-// limited to ctx->max_depth since relying on code stack call.
+// limited to print_ctx->max_depth since relying on code stack call.
 void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   static int depth = 0;
 
-  ++depth; 
-  if ( depth > ctx->max_depth )
+  ++depth;
+
+  if ( depth > print_ctx->max_depth )
     {
-      printf("... depth > %i ...\n", ctx->max_depth);
+      printf("... depth > %i ...\n", print_ctx->max_depth);
       --depth;
       return;
     }
@@ -1771,15 +1794,17 @@ void aljson_constant_output(struct json_parser_ctx * ctx, struct json_object * o
   dump_constant_object(ctx,object, print_ctx);
 }
 
-// limited to ctx->max_depth since relying on code stack call.
+// limited to print_ctx->max_depth since relying on code stack call.
 void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
+  // FIXME to move within print_ctx.
   static int depth = 0;
 
-  ++depth; 
-  if ( depth > ctx->max_depth )
+  ++depth;
+
+  if (  depth > print_ctx->max_depth )
     {
-      printf("... depth > %i ...\n", ctx->max_depth);
+      printf("... depth > %i ...\n", print_ctx->max_depth);
       --depth;
       return;
     }
@@ -1838,6 +1863,8 @@ void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, st
 
 void aljson_print_ctx_init(struct print_ctx * print_ctx)
 {
+  // 1024 levels of json MAX
+  print_ctx->max_depth=1024;
   print_ctx->indent=0;
   print_ctx->do_indent=2; // 0 no indent, >= 1 number of space by indent.
   print_ctx->s_indent=" ";

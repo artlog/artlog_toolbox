@@ -15,7 +15,7 @@ void alinputstream_init(struct alinputstream * stream, int fd)
   stream->input.data.ptr=NULL;  
 }
 
-void alinputstream_setdatablock(struct alinputstream * stream, struct alhash_datablock * block, int offset)
+void alinputstream_setdatablock(struct alinputstream * stream, aldatablock * block, int offset)
 {
   memcpy(&stream->input, block, sizeof(stream->input));
   stream->offset=offset;
@@ -111,7 +111,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
 }
 
 int alinputstream_read_block(struct alinputstream * stream,
-			     struct alhash_datablock * block)
+			     aldatablock * block)
 {  
   return read(stream->fd,block->data.charptr,block->length);
 }
@@ -119,11 +119,11 @@ int alinputstream_read_block(struct alinputstream * stream,
 void alinputstream_foreach_block(
 				 struct alinputstream * stream,
 				 int blocksize,
-				 void (*callback) (struct alhash_datablock * block, void * data),
-				 void (*finalize) (struct alhash_datablock * block, void * data),
+				 void (*callback) (aldatablock * block, void * data),
+				 void (*finalize) (aldatablock * block, void * data),
 				 void * data)
 {
-  struct alhash_datablock block;
+  aldatablock block;
   char * datablock = (char *) malloc(blocksize);
   block.length=blocksize;
   

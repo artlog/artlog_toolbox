@@ -6,6 +6,8 @@
 #include "alcommon.h"
 #include "aldebug.h"
 
+int alstack_debug_flag = 0;
+
 /*
 setup a alstack, content of alstack is considered irrelevant (ie can be zeroed)
 init_flags defines wether this is a static or dynamic stack ( initial flags)
@@ -100,7 +102,10 @@ struct alstackelement * alstack_push_ref(struct alstack * stack, void * referenc
 
 void alstack_debug(char * text)
 {
-  aldebug_printf(NULL,"[DEBUG] %s\n",text);
+  if ( alstack_debug_flag > 0 )
+    {
+      aldebug_printf(NULL,"[DEBUG] %s\n",text);
+    }
 }
 
 void alstack_error(char * text)

@@ -1,7 +1,7 @@
-#include "alcryptohash.h"
+#include "alcryptohash_tool.h"
+
 #include "altodo.h"
 #include "aldebug.h"
-#include "alinput.h"
 #include "albase64.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,72 +14,42 @@ void usage()
   printf("if name is '' then display hash for empty value (value of size 0)\n");
 }
 
-void dump_result(struct alsha2_internal * shax, struct alhash_datablock * result)
+void dump_result(struct alsha2_internal * shax, aldatablock * result)
 {
-  if ( result == NULL)
-    {
-      aldebug_printf(NULL,"[FATAL] NULL shax \n");
-    }
-  else
-    {
-      ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
-	{
-	  aldebug_printf(NULL,"[INFO] SHAX result \n");
-	  aldatablock_dump(result);
-	}
-      unsigned int * h = result->data.uintptr;
-      // sha224
-      if ( shax->algorithm == AL_SHA224 )
-	{
-	  printf("%08x%08x%08x%08x%08x%08x%08x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6]);
-	}
-      else
-	{
-	  printf("%08x%08x%08x%08x%08x%08x%08x%08x\n",h[0],h[1],h[2],h[3],h[4],h[5],h[6],h[7]);
-	}
-    }
-
+  alcryptohash_tool_dump_result(shax, result);
 }
 
-void alshash_callback (struct alhash_datablock * block, void * data)
+void alshash_callback (aldatablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
 	{
-	  aldebug_printf(NULL,"[INFO] ADD block size %i \n", block->length);
 	  aldatablock_dump(block);
 	}
-      alsha2x_add_block(shax,block);
+      alcryptohash_tool_callback(block, data);
     }
 }
 
-void alshash_finalize (struct alhash_datablock * block, void * data)
+void alshash_finalize (aldatablock * block, void * data)
 {
   if (( block != NULL )&&(data != NULL))
     {
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
 	{
-	  aldebug_printf(NULL,"[INFO] FINAL block size %i \n", block->length);
 	  aldatablock_dump(block);
 	}
-      if ( block->length > 0)
-	{
-	  alsha2x_add_block(shax,block);
-	}
-      struct alhash_datablock * result;
-      result = alsha2x_final(shax);
-
-      dump_result(shax,result);
+      ;
+      alcryptohash_tool_finalize(block,data);
     }
 }
 
 void test_empty_hash(int argc, char ** argv)
 {
   struct alsha2_internal shax;
-  struct alhash_datablock * result;
+  aldatablock * result;
 
   // sha256 yet
   alsha256_init(&shax);
@@ -97,13 +67,15 @@ void test_empty_hash(int argc, char ** argv)
 
 void test_base64(char * text)
 {
-  struct alhash_datablock block;
+  char * result = NULL;
 
-  block.data.charptr=text;
-  block.length=strlen(text);
-  block.type=ALTYPE_STR0;
+  result = aleasybase64(text,strlen(text));
 
-  albase64(&block,NULL);
+  if ( result != NULL )
+    {
+      printf("base64('%s')='%s'\n",text,result);
+      free(result);
+    }
 }
 
 int main(int argc, char ** argv)
@@ -117,11 +89,13 @@ int main(int argc, char ** argv)
 	  if ( f != NULL )
 	    {
 	      struct alinputstream input;
-	      struct alsha2_internal sha2x ;
+	      struct alsha2_internal sha2x;
+	      
+	      alinputstream_init(&input, fileno(f));
+	      alsha2x_init(&sha2x, AL_SHA256);
+	      
 	      // shax broken when not using 64 bytes multiples
 	      int readblocksize = 32;
-
-	      alsha2x_init(&sha2x, AL_SHA256);
 	      if (argc > 2 )
 		{
 		  ALDEBUG_SET_DEBUG(&sha2x,alsha2x,255);
@@ -131,18 +105,15 @@ int main(int argc, char ** argv)
 		      readblocksize = 64;
 		    }
 		}
-	      
+    
 	      ALDEBUG_IF_DEBUG(&sha2x,alsha2x,debug)
 		{
 		  aldebug_printf(NULL,"open file %s\n", filename );
 		}
-	      alinputstream_init(&input, fileno(f));
-	      alinputstream_foreach_block(&input,
-					  readblocksize,
-					  alshash_callback,
-					  alshash_finalize,
-					  &sha2x);
-	  
+
+	      aldatablock * result = alcryptohash_tool_from_input(&sha2x, &input, readblocksize);
+	      dump_result(&sha2x,result);
+				      
 	      fclose(f);
 
 	      /*
