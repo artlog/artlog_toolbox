@@ -37,38 +37,8 @@ struct json_parser_ctx
   int max_depth; // protect stack calls.
 };
 
-struct print_ctx;
 struct json_object;
 
-typedef void (*aljson_print_callback)(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
-typedef void (*aljson_print_printf_callback)(struct print_ctx * print_ctx, const char * format, ...);
-
-/* parameters for pretty printing 
-
-THIS is required to call aljson_print_ctx_init(struct print_ctx * print_ctx) on it any use.
-*/
-struct print_ctx
-{
-  int max_depth;
-  int indent;
-  int do_indent; // 0 no indent, >= 1 number of space by indent.
-  char * s_indent;
-
-  // todo use outputstream, currently void * will be a FILE *
-  void * outfile;
-
-  aljson_print_callback growable_output;
-  aljson_print_callback dict_output;
-  aljson_print_callback list_output;
-  aljson_print_callback string_output;
-  aljson_print_callback number_output;
-  aljson_print_callback error_output;
-  aljson_print_callback pair_output;
-  aljson_print_callback constant_output;
-
-  aljson_print_printf_callback printf;
-};
 
 /** a simple linked list of json_object */
 struct json_link
@@ -174,19 +144,6 @@ void dump_ctx(struct json_parser_ctx * ctx);
 
 /** Where output is finaly done  **/
 
-/** dump object == aljson_output
-struct json_parser_ctx * ctx can be NULL ( and in fact we should rely only on print_ctx)
-TOOD FIX it to not use struct json_parser_ctx at ALL
-*/
-void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
-struct json_path {
-  char type; // '{' string is key of dict, '[' index is index of list , '*' automatic ( ie key or index is used depending on parsed structure )
-  struct json_path * child;
-  struct json_string string;
-  int index;
-};
-
 struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
 // create a json object allocated from allocator
@@ -230,51 +187,6 @@ return previous debug flags
 */
 int json_set_debug(int debug);
 
-/**
-first lazzy implementation : compare them
-
-return 1 if equals, 0 if different.
-*/
-int json_unify_object(
-	       struct json_parser_ctx * ctx, struct json_object * object,
-	       struct json_parser_ctx * other_ctx, struct json_object * other_object,
-	       struct print_ctx * print_ctx);
-
-
-void json_print_object_name(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
-/**
-given a json_path ex : menu.popup.menuitem.1 find the json object.
-*/
-struct json_object * json_walk_path(char * json_path, struct json_parser_ctx * ctx, struct json_object * object);
-
-/**
-dump object in a flat view, ie using object name=value notation for every value.
- */
-void json_flatten(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
-enum json_walk_action {
-  JSON_WALK_CONTINUE, // normal action, continue
-  JSON_WALK_STOP, // stop at this step and return without error
-  JSON_WALK_SKIP, // skip next
-  JSON_WALK_NEXT_PARENT, // search within current parent list of dict is over, move to next
-  JSON_WALK_FATAL_ERROR // internal problem : stop and return with error, avoid using any memory context, can be corrupted.
-};
-  
-struct json_walk_leaf_callbacks  {
-  /** specific data */
-  void * data;
-  struct json_parser_ctx * ctx;
-  struct print_ctx * print_ctx;
-  /** notify a leaf ( ie a bare value, not a list or a dict ) */
-  enum json_walk_action (*json_advertise_leaf) ( struct json_walk_leaf_callbacks * this, struct json_path * json_path, struct json_object * json_object);
-  /** notify a variable ( part of template ) */
-  enum json_walk_action (*json_advertise_set_variable) ( struct json_walk_leaf_callbacks * this, struct json_path * json_path, struct json_variable * json_variable);
-  /** json path where to start search */
-  struct json_path * root;
-  /** json template for variables */
-  struct json_object * template;
-};
 
 /**
   convert a json_object into an int if json object is already recognized as a number
@@ -331,7 +243,5 @@ typedef struct json_object* (*json_parse_func) (struct json_parser_ctx *ctx, voi
 // return 1 if attach worked.
 int aljson_attach_private_data(void * kindnyi, struct json_object * json, void * data);
 
-// REQUIRED before any use of a print_ctx
-void aljson_print_ctx_init(struct print_ctx * print_ctx);
 
 #endif

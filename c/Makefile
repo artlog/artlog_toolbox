@@ -34,6 +34,9 @@ tests: c_parser albase json_to_c_stub_sample cryptohash bitfield
 	./hashtree 'ceci est la premiere pharse' 'la seconde phrase' 'la troisieme phrase' '4' '5' '6'
 	./salsa20
 
+aljson_ld: aljson_ld.c aljson_ld_test.c
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
+
 clean:
 	rm c_parser albase json_to_c_stub_sample cryptohash bitfield
 

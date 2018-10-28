@@ -6,6 +6,8 @@
 
 #include "alcommon.h"
 #include "aljson.h"
+#include "aljson_walk.h"
+#include "aljson_unify.h"
 #include "alstack.h"
 
 #ifdef JSON_TODO

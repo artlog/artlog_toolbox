@@ -3,6 +3,7 @@
 
 #include "alinput.h"
 #include "aljson.h"
+#include "aljson_print.h"
 
 /** fully rely on stream buffering */
 struct json_import_context_data {
