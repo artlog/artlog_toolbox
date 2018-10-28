@@ -6,7 +6,7 @@ CPPFLAGS=-g
 
 BUILD=build
 
-libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c
+libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c c/aljson_dump.c
 src=c/aljson_main.c
 libraries=aljson alsave altest allist aldev alhash alcommon alstack
 
@@ -24,7 +24,7 @@ libinclude: $(BUILD)/include/aljson.h $(BUILD)/include/aljson_errors.h $(BUILD)/
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
-$(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o $(BUILD)/obj/alstrings.o $(BUILD)/obj/json_to_c_stub.o $(BUILD)/obj/al_options.o
+$(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o $(BUILD)/obj/alstrings.o $(BUILD)/obj/json_to_c_stub.o $(BUILD)/obj/al_options.o $(BUILD)/obj/aljson_dump.o
 	ar rccs $@ $^
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h

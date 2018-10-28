@@ -6,6 +6,8 @@
 #include "alinput.h"
 #include "aljson_import_internal.h"
 #include "aldebug.h"
+#include "aljson_unify.h"
+#include "aljson_walk.h"
 
 const char * aljson_main_version="0.1";
 

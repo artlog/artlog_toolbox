@@ -138,10 +138,6 @@ struct json_object {
   }; 
 };
 
-
-/** print context to stderr */
-void dump_ctx(struct json_parser_ctx * ctx);
-
 /** Where output is finaly done  **/
 
 struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
