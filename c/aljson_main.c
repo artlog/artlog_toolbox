@@ -1,32 +1,35 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <strings.h>
+#include <stdio.h>
 
 #include "alinput.h"
 #include "aljson_import_internal.h"
+#include "aldebug.h"
+
+const char * aljson_main_version="0.1";
 
 /**
 a complicated json stream ( one char ahead ) parser 
+
+see usage()
 **/
 
 static int main_debug=0;
 
 void usage()
 {
-  printf("First argument : filename to open in read only mode to parse in json.\n");
-  printf("Second argument : filename to open in read only mode to parse in json for template.\n");
-  printf("Output : dump parsed json to standard output.\n");
-  printf("-d debug, -m non recursive, -p path, -c check only (no print)");
+  aldebug_printf(NULL,"First argument : filename to open in read only mode to parse in json.\n");
+  aldebug_printf(NULL,"Second argument : filename to open in read only mode to parse in json for template.\n");
+  aldebug_printf(NULL,"                  template is used for json unification ie extratcing fields from a template pattern\n");
+  aldebug_printf(NULL,"Output : dump parsed json to standard output.\n");
+  aldebug_printf(NULL,"-d debug\n");
+  aldebug_printf(NULL,"-m non recursive\n");
+  aldebug_printf(NULL,"-p path\n");
+  aldebug_printf(NULL,"-c check only (no print)\n");
+  aldebug_printf(NULL,"\naljson_main version %s\n",aljson_main_version);
 }
 
-/**
-main
-First argument : filename to open in read only mode to parse in json.
-Second argument : filename to open in read only mode to parse in json for template
-
-Output : dump parsed json to standard output
- **/
 int main(int argc, char ** argv)
 {
   char * json_filename = NULL;
@@ -39,12 +42,15 @@ int main(int argc, char ** argv)
   FILE * data_file;
   FILE * template_file;
 
+  // intialisation of json content parser
+  
   struct json_parser_ctx json_context;
   struct json_ctx json_tokenizer;
   struct print_ctx print_context;
 
   aljson_init(&json_context,&json_tokenizer,&print_context);
 
+  // initialisation of json template parser
   struct json_parser_ctx json_template_context;
   struct json_ctx json_template_tokenizer;
   struct print_ctx print_template_context;
@@ -56,6 +62,8 @@ int main(int argc, char ** argv)
   print_template_context.indent = 0;
   print_template_context.s_indent = "";
 
+
+  // arguments options , TODO use aloptions
   
   if ( argc > 1 )
     {
@@ -100,6 +108,8 @@ int main(int argc, char ** argv)
 		  // force non recursive.
 		  json_context.parsing_depth=json_context.max_depth;
 		  break;
+		default:
+		  aldebug_printf("[ERROR] unrecognized %s name option\n", &argv[i][1]);
 		}		  
 	    }
 	}
@@ -110,17 +120,17 @@ int main(int argc, char ** argv)
   json_ctx_set_debug(&json_template_tokenizer,debug);
   main_debug=debug;
 
-  struct json_import_context_data data;
-  struct json_import_context_data template_data;
-
-  struct alinputstream inputstream;
-  struct alinputstream template_inputstream;
-
   if (json_filename != NULL)
     {
+      struct json_import_context_data data;
+      struct json_import_context_data template_data;
+      
+      struct alinputstream inputstream;
+      struct alinputstream template_inputstream;
+
       if ( debug > 0)
 	{
-	  printf("parsing json filename : %s\n", json_filename);
+	  aldebug_printf(NULL,"parsing json filename : %s\n", json_filename);
 	}
       data.last=0;
       data.flags=0;
@@ -130,16 +140,17 @@ int main(int argc, char ** argv)
 	  struct json_object * root=NULL;
 	  alinputstream_init(&inputstream,fileno(data_file));
 	  data.inputstream=&inputstream;
+	  // where the parsing actualy take place
 	  root=parse_level(&json_context,&data,root);
 	  fclose(data_file);
 	  if ( checkonly == 0 )
 	    {
 	      aljson_output(&json_context,root,&print_context);
-	      printf("\n");
+	      aldebug_printf(NULL,"\n");
 	    }
 	  else
 	    {
-	      printf("parsing complete\n");
+	      aldebug_printf(NULL,"parsing complete\n");
 	    }
 	    
 	  if ( json_path != NULL )
@@ -147,19 +158,19 @@ int main(int argc, char ** argv)
 	      struct json_object * found = json_walk_path(json_path, &json_context,root);
 	      if ( found != NULL )
 		{
-		  printf("=");
+		  aldebug_printf(NULL,"=");
 		  aljson_output(&json_context,found,&print_context);
 		}
 	      else
 		{
-		  printf(" NOT FOUND.");
+		  aldebug_printf(NULL," NOT FOUND.");
 		}
 	    }
 	  if ( json_template != NULL )
 	    {
 	      if ( debug > 0 )
 		{
-		  printf("parsing json template : %s\n", json_template);
+		  aldebug_printf(NULL,"parsing json template : %s\n", json_template);
 		}
 	      template_data.last=0;
 	      template_data.flags=0;
@@ -172,15 +183,15 @@ int main(int argc, char ** argv)
 		  template_root=parse_level(&json_template_context,&template_data,template_root);
 		  fclose(template_file);
 		  aljson_output(&json_template_context,template_root,&print_template_context);
-		  printf("\n");
+		  aldebug_printf(NULL,"\n");
 		  if ( json_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
 		    {
-		      printf("\n%s and %s json match\n", argv[1], argv[2]);
+		      aldebug_printf(NULL,"\n%s and %s json match\n", argv[1], argv[2]);
 		      exit(0);
 		    }
 		  else
 		    {
-		      printf("\n%s and %s json DOES NOT match\n", argv[1], argv[2]);
+		      aldebug_printf(NULL,"\n%s and %s json DOES NOT match\n", argv[1], argv[2]);
 		      exit(1);
 		    }
 		}

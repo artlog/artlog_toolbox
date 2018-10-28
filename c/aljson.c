@@ -23,6 +23,11 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
   };
 
 
+FILE * aljson_getoutfile(struct print_ctx * print_ctx)
+{
+  return (FILE *) print_ctx->outfile;
+}
+
 // forward definition used only localy
 void dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
   
@@ -1229,7 +1234,7 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
 
 void dump_string(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
-  FILE * outfile=print_ctx->outfile;
+  FILE * outfile=aljson_getoutfile(print_ctx);
   if ( object != NULL)
     {
       struct json_string * string = &object->string;
@@ -1258,7 +1263,7 @@ void dump_string_number(struct json_parser_ctx * ctx, struct json_object * objec
 {
   if ( object != NULL)
     {
-      FILE * outfile=print_ctx->outfile;
+      FILE * outfile=aljson_getoutfile(print_ctx);
       if ( object->type == '0' )
 	{
 	  float value = json_get_float(object);
@@ -1282,7 +1287,7 @@ void dump_variable(struct json_parser_ctx * ctx, struct json_variable * variable
 {
   if ( variable != NULL )
     {
-      FILE * outfile=print_ctx->outfile;
+      FILE * outfile=aljson_getoutfile(print_ctx);
       fprintf(outfile,"?");
       if ( variable->key != NULL )
 	{
@@ -1309,7 +1314,7 @@ void dump_indent(struct print_ctx * print_ctx)
 {
   if ( print_ctx && print_ctx->do_indent )
     {
-      FILE * outfile=print_ctx->outfile;
+      FILE * outfile=aljson_getoutfile(print_ctx);
       fprintf(outfile,"\n");
       if ( print_ctx->indent > 0 )
 	{
@@ -1349,13 +1354,15 @@ void dump_pair_object(struct json_parser_ctx * ctx, struct json_object * object,
     }
   else
     {
-      fprintf(print_ctx->outfile,":0");
+      FILE * outfile=aljson_getoutfile(print_ctx);
+      fprintf(outfile,":0");
     }
 }
 
 void dump_variable_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
-  FILE * outfile=print_ctx->outfile;
+
+  FILE * outfile=aljson_getoutfile(print_ctx);     
   if ( object != NULL)
     {
       assert(object->type == '?');
@@ -1374,7 +1381,7 @@ void dump_variable_object(struct json_parser_ctx * ctx, struct json_object * obj
 void dump_list_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i=0;
-  FILE * outfile=print_ctx->outfile;
+  FILE * outfile=aljson_getoutfile(print_ctx);
   fprintf(outfile,"%c",object->type);
   enter_indent( print_ctx);
   if (object->list.nitems > 0)
@@ -1407,8 +1414,7 @@ struct json_object * json_list_get( struct json_object * object, int index)
 void dump_dict_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i;
-
-  FILE * outfile=print_ctx->outfile;
+  FILE * outfile=aljson_getoutfile(print_ctx);
   if ( outfile == NULL )
     {
       return;
@@ -1568,7 +1574,7 @@ struct json_object * json_dict_path_get_value(struct json_path * path, struct js
 
 void dump_growable(struct json_parser_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx)
 {
-  FILE * outfile = print_ctx->outfile;
+  FILE * outfile=aljson_getoutfile(print_ctx);
   struct json_link * link=NULL;
   link=growable->tail;
   fprintf(outfile,"|%c",growable->final_type);
@@ -1628,7 +1634,7 @@ void dump_constant_object(struct json_parser_ctx * ctx, struct json_object * obj
 
 void dump_error_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
-  FILE * outfile = print_ctx->outfile;
+  FILE * outfile=aljson_getoutfile(print_ctx);
   if (( object != NULL) && (object->error.string.internal.data.ptr != NULL ))
     {
       fprintf(outfile,"syntax error %u (line:%i,column:%i)\n" ALPASCALSTRFMT "\n",

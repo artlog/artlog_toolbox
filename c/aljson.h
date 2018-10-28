@@ -1,9 +1,6 @@
 #ifndef __ALJSON_HEADER__
 #define __ALJSON_HEADER__
 
-// because FILE is needed
-#include <stdio.h>
-
 #include "aljson_parser.h"
 #include "aljson_errors.h"
 #include "alhash.h"
@@ -58,7 +55,8 @@ struct print_ctx
   int do_indent; // 0 no indent, >= 1 number of space by indent.
   char * s_indent;
 
-  FILE * outfile;
+  // todo use outputstream, currently void * will be a FILE *
+  void * outfile;
 
   aljson_print_callback growable_output;
   aljson_print_callback dict_output;
