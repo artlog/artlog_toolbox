@@ -2,7 +2,6 @@
 #define ALJSON_DUMP_HEADER__
 
 #include "aljson.h"
-#include "aljson_walk.h"
 #include "aljson_print.h"
 
 
@@ -25,8 +24,6 @@ void aljson_dump_pair_object(struct json_parser_ctx * ctx, struct json_object * 
 void aljson_dump_string_number(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
 void aljson_dump_variable_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
-
-void aljson_dump_json_path(struct json_path * json_path);
 
 void aljson_dump_indent(struct print_ctx * print_ctx);
 

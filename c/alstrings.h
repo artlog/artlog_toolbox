@@ -65,13 +65,13 @@ struct alallocation_ctx {
   alstrings_ringbuffer_pointer ringbuffer;
 };
 
-#define ALALLOC(ctx, length) al_alloc_block(&ctx.ringbuffer, length)
+#define ALALLOC(alloc_ctx, length) al_alloc_block(&alloc_ctx.ringbuffer, length)
 
 // just does nothing on ctx... only ALFREECTX can be used, but it releases ALL.
 // created to track possible replacement with malloc/free
-#define ALRELEASE(ctx, object)
+#define ALRELEASE(alloc_ctx, object)
 		  
-#define ALFREECTX(ctx) alstrings_ringbuffer_release(&ctx->ringbuffer)
+#define ALFREECTX(alloc_ctx) alstrings_ringbuffer_release(&alloc_ctx->ringbuffer)
 
 /* non NULL if grown, else miss
 usualy double of size

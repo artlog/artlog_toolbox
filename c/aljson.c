@@ -6,8 +6,6 @@
 
 #include "alcommon.h"
 #include "aljson.h"
-#include "aljson_walk.h"
-#include "aljson_unify.h"
 #include "alstack.h"
 #include "aljson_dump.h"
 
@@ -72,9 +70,13 @@ JSON_DEFINE_NEW(parenthesis,'{')
 JSON_DEFINE_NEW(braket,'[')
 JSON_DEFINE_TOGGLE(variable,'?')
 
-struct json_object * aljson_new_json_string(struct json_parser_ctx * ctx, char objtype, struct alhash_datablock * data)
-{  
-  struct json_object * object=(struct json_object *) ALALLOC(ctx->alparser.allocator,sizeof(struct json_object));
+
+#define ALJSON_PARSER_CTX_DECL_ALLOC(json_parser_ctx, altype, object) struct altype * object=(struct altype *) ALALLOC(json_parser_ctx->alparser.allocator,sizeof(struct altype));
+
+struct json_object * aljson_new_json_string(struct json_parser_ctx * parser, char objtype, struct alhash_datablock * data)
+{
+
+  ALJSON_PARSER_CTX_DECL_ALLOC(parser,json_object,object)
 
   if (object != NULL)
     {
@@ -89,9 +91,10 @@ struct json_object * aljson_new_json_string(struct json_parser_ctx * ctx, char o
 }
 
 struct json_object * aljson_new_json_error(struct json_parser_ctx * parser, enum json_syntax_error erroridx)
-{
+{ 
+  ALJSON_PARSER_CTX_DECL_ALLOC(parser,json_object,object)
   struct json_ctx * ctx = parser->tokenizer;
-  struct json_object * object = (struct json_object *) ALALLOC(parser->alparser.allocator,sizeof(struct json_object));
+
   if (object != NULL)
     {
       object->type='E';
@@ -150,7 +153,8 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   return err_object;
 }
 
-struct json_object * aljson_new_json_object(struct json_ctx * ctx, char objtype, alstrings_ringbuffer_pointer * allocator, struct alhash_datablock * data)
+// allocator should be an allocator context : struct alallocation_ctx ?
+struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_pointer * allocator, struct alhash_datablock * data)
 {
   struct json_object * object=(struct json_object *) al_alloc_block(allocator,sizeof(struct json_object));
   if (object != NULL)
@@ -351,7 +355,7 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
   struct json_link * link=NULL;
   int size=growable->size;
   int i=0;  
-  struct json_object * object= (struct json_object *) ALALLOC(parser->alparser.allocator,sizeof(struct json_object) + size*sizeof(struct json_object *)); // a little bigger than needed
+  struct json_object * object= (struct json_object *) ALALLOC(parser->alparser.allocator, sizeof(struct json_object) + size*sizeof(struct json_object *)); // a little bigger than needed
   if (object != NULL)
     {
       struct json_list * list=&object->list;
@@ -385,7 +389,7 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
   return object;
 }
 
-// fixeme, currently focus on string since used only for dict key (which is json_string )
+// FIXME currently focus on string since used only for dict key (which is json_string )
 void aljson_fill_datablock(struct json_object * object, struct alhash_datablock * datablock)
 {
   // todo depending on type
@@ -537,8 +541,10 @@ struct json_object * aljson_concrete(struct json_parser_ctx * parser, struct jso
 
 struct json_object * new_json_constant_object(struct json_parser_ctx * parser, char t, enum json_internal_constant constant)
 {
+  ALJSON_PARSER_CTX_DECL_ALLOC(parser,json_object,object)
+
   struct json_ctx * ctx = parser->tokenizer;
-  struct json_object * object= (struct json_object *) ALALLOC(parser->alparser.allocator,sizeof(struct json_object));
+
   debug_tag(ctx,t);
   if (object != NULL)
     {
@@ -559,7 +565,7 @@ struct json_object * new_json_constant_object(struct json_parser_ctx * parser, c
   return object;  
 }
 
-// forward defintion to fallback if depth is too big.
+// forward definition to fallback if depth is too big.
 struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, void * data, struct json_object * parent);
 
 // rely on tokenizer.

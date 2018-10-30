@@ -129,15 +129,31 @@ struct json_path * create_json_path(int maxlength, char * json_path, struct json
     }
 }
 
+// dump path .root.child.child 
+static void aljson_walk_dump_json_path(struct json_path * json_path)
+{
+  FILE * outfile= stdout; // aljson_getoutfile(print_ctx);
+  int watchguard = JSON_PATH_DEPTH ;
+  while ( ( json_path != NULL ) && ( watchguard > 0 ) )    
+    {
+      ++ watchguard;
+      fprintf(outfile,"." ALPASCALSTRFMT "\n",
+	     ALPASCALSTRARGS(json_path->string.internal.length, (char *) json_path->string.internal.data.ptr));
+      json_path = json_path->child;
+    }
+}
+
 struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx * ctx, struct json_object * object)
 {
   struct json_path * json_path_object = create_json_path(JSON_PATH_MAX_CHARS,json_path,ctx,JSON_PATH_DEPTH,NULL);
   struct json_object * current_object = object;
-  
+
+  // only for debugging ... TODO
+  // aljson_walk_dump_json_path(json_path_object);
+
   if ( json_path_object != NULL )
     {
       struct json_path * current_path = json_path_object;
-      aljson_dump_json_path(json_path_object);
 
       int watchguard = JSON_PATH_DEPTH ;
       while ( ( current_path != NULL ) && ( watchguard > 0 ) && (current_object != NULL ) )
@@ -151,7 +167,7 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		  struct json_object * value = json_dict_path_get_value(current_path, current_object);
 		  if ( value == NULL )
 		    {
-		      printf("[ERROR] path keyname " ALPASCALSTRFMT " not found\n",
+		      aldebug_printf(NULL,"[ERROR] path keyname " ALPASCALSTRFMT " not found\n",
 			     ALPASCALSTRARGS(current_path->string.internal.length, (char *) current_path->string.internal.data.ptr));
 		      current_object = NULL;
 		    }
@@ -164,7 +180,7 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		{
 		  if ( current_path->index < 0 )
 		    {
-		      printf("[ERROR] path type index %i invalid\n", current_path->index);
+		      aldebug_printf(NULL,"[ERROR] path type index %i invalid\n", current_path->index);
 		      current_object = NULL;
 		    }
 		  else
@@ -173,7 +189,7 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		      struct json_object * value = json_list_get(current_object,current_path->index);
 		      if ( value == NULL )
 			{
-			  printf("[ERROR] path index %i not found.\n", current_path->index);
+			  aldebug_printf(NULL,"[ERROR] path index %i not found.\n", current_path->index);
 			  current_object = NULL;
 			}
 		      else
@@ -184,13 +200,13 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		}
 	      else
 		{
-		  printf("[FATAL] json object type not supported for path search %c", current_object->type);
+		  aldebug_printf(NULL,"[FATAL] json object type not supported for path search %c", current_object->type);
 		  current_object = NULL;
 		}
 	    }
 	  else
 	    {
-	      printf("[ERROR] path type non matching object %c != %c\n",  current_object->type, current_path->type);
+	      aldebug_printf(NULL,"[ERROR] path type non matching object %c != %c\n",  current_object->type, current_path->type);
 	      current_object = NULL;
 	    }
 	  current_path = current_path->child;

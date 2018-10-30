@@ -4,6 +4,9 @@
 #include "aljson.h"
 #include "aljson_print.h"
 
+// maximum depth of a path in terms ( ex .root.child.child is 3 terms )
+#define JSON_PATH_DEPTH 1024
+
 struct json_path {
   char type; // '{' string is key of dict, '[' index is index of list , '*' automatic ( ie key or index is used depending on parsed structure )
   struct json_path * child;

@@ -71,8 +71,9 @@ void aljson_dump_string_number(struct json_parser_ctx * ctx, struct json_object 
 
 void aljson_dump_pair(struct json_parser_ctx * ctx, struct json_pair * pair, struct print_ctx * print_ctx)
 {
+  FILE * outfile=aljson_getoutfile(print_ctx);
   aljson_dump_object(ctx,pair->key, print_ctx);
-  printf(":");
+  fprintf(outfile,":");
   aljson_dump_object(ctx,pair->value, print_ctx);
 }
 
@@ -204,18 +205,6 @@ void aljson_dump_dict_object(struct json_parser_ctx * ctx, struct json_object * 
   fprintf(outfile,"}");
 }
 
-void aljson_dump_json_path(struct json_path * json_path)
-{
-  int watchguard = JSON_PATH_DEPTH ;
-  while ( ( json_path != NULL ) && ( watchguard > 0 ) )    
-    {
-      ++ watchguard;
-      printf("." ALPASCALSTRFMT,
-	     ALPASCALSTRARGS(json_path->string.internal.length, (char *) json_path->string.internal.data.ptr));
-      json_path = json_path->child;
-    }
-}
-
 void aljson_dump_growable(struct json_parser_ctx * ctx, struct json_growable *growable, struct print_ctx * print_ctx)
 {
   FILE * outfile=aljson_getoutfile(print_ctx);
@@ -238,7 +227,7 @@ void aljson_dump_growable(struct json_parser_ctx * ctx, struct json_growable *gr
     }
   else
     {
-      if (growable->size != 0) printf("#");	
+      if (growable->size != 0) fprintf(outfile,"#");	
     }
   fprintf(outfile,"%c|",growable->final_type);
 }
@@ -252,26 +241,27 @@ void aljson_dump_growable_object(struct json_parser_ctx * ctx, struct json_objec
 
 void aljson_dump_constant_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
+  FILE * outfile=aljson_getoutfile(print_ctx);
   if ( object->constant != NULL )
     {
       switch(object->constant->value)
 	{
 	case JSON_CONSTANT_TRUE:
-	  printf("true");
+	  fprintf(outfile,"true");
 	  break;
 	case JSON_CONSTANT_FALSE:
-	  printf("false");
+	  fprintf(outfile,"false");
 	  break;
 	case JSON_CONSTANT_NULL:
-	  printf("null");
+	  fprintf(outfile,"null");
 	  break;
 	default:
-	  printf("ERROR constant type %c %p",object->type, print_ctx);
+	  aldebug_printf(NULL,"ERROR constant type %c %p",object->type, print_ctx);
 	}
     }
   else
     {
-      printf("ERROR constant type %c %p NULL",object->type, print_ctx);
+      aldebug_printf(NULL,"ERROR constant type %c %p NULL",object->type, print_ctx);
     }
     
 }
@@ -297,12 +287,13 @@ void aljson_dump_error_object(struct json_parser_ctx * ctx, struct json_object* 
 void aljson_dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   static int depth = 0;
-
+  FILE * outfile=aljson_getoutfile(print_ctx);
+  
   ++depth;
 
   if ( depth > print_ctx->max_depth )
     {
-      printf("... depth > %i ...\n", print_ctx->max_depth);
+      aldebug_printf(NULL,"... depth > %i ...\n", print_ctx->max_depth);
       --depth;
       return;
     }
@@ -333,7 +324,7 @@ void aljson_dump_object(struct json_parser_ctx * ctx, struct json_object * objec
 	  aljson_dump_pair_object(ctx,object, print_ctx);
 	  break;
 	case ',':
-	  printf("#");
+	  fprintf(outfile,"#");
 	  break;
 	case '?':
 	  aljson_dump_variable_object(ctx,object, print_ctx);
@@ -347,12 +338,12 @@ void aljson_dump_object(struct json_parser_ctx * ctx, struct json_object * objec
 	  aljson_dump_error_object(ctx,object, print_ctx);
 	  break;
         default:
-	  printf("ERROR type %c %p",object->type, print_ctx);
+	  aldebug_printf(NULL,"ERROR type %c %p",object->type, print_ctx);
 	}
     }
   else
     {
-      printf(" NULL ");
+      aldebug_printf(NULL," NULL ");
     }
 
   --depth;

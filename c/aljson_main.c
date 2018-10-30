@@ -160,7 +160,6 @@ int main(int argc, char ** argv)
 	      struct json_object * found = aljson_walk_path(json_path, &json_context,root);
 	      if ( found != NULL )
 		{
-		  aldebug_printf(NULL,"=");
 		  aljson_output(&json_context,found,&print_context);
 		}
 	      else
