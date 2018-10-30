@@ -14,7 +14,7 @@ struct json_path {
 /**
 given a json_path ex : menu.popup.menuitem.1 find the json object.
 */
-struct json_object * json_walk_path(char * json_path, struct json_parser_ctx * ctx, struct json_object * object);
+struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx * ctx, struct json_object * object);
 
 
 enum json_walk_action {

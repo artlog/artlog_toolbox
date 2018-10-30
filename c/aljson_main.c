@@ -157,7 +157,7 @@ int main(int argc, char ** argv)
 	    
 	  if ( json_path != NULL )
 	    {
-	      struct json_object * found = json_walk_path(json_path, &json_context,root);
+	      struct json_object * found = aljson_walk_path(json_path, &json_context,root);
 	      if ( found != NULL )
 		{
 		  aldebug_printf(NULL,"=");
@@ -186,7 +186,7 @@ int main(int argc, char ** argv)
 		  fclose(template_file);
 		  aljson_output(&json_template_context,template_root,&print_template_context);
 		  aldebug_printf(NULL,"\n");
-		  if ( json_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
+		  if ( aljson_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
 		    {
 		      aldebug_printf(NULL,"\n%s and %s json match\n", argv[1], argv[2]);
 		      exit(0);
