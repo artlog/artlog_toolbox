@@ -78,7 +78,7 @@ struct json_path * create_json_path(int maxlength, char * json_path, struct json
 		  ++ json_path_index;
 		  next_path = 0;
 		}
-	      ALDEBUG_IF_DEBUG(&ctx->alparser,alparser_ctx,1)
+	      ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
 		{
 		  printf("json_path_index:%i pos:%i %s\n", json_path_index, pos, current);
 		}
@@ -148,8 +148,10 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
   struct json_path * json_path_object = create_json_path(JSON_PATH_MAX_CHARS,json_path,ctx,JSON_PATH_DEPTH,NULL);
   struct json_object * current_object = object;
 
-  // only for debugging ... TODO
-  // aljson_walk_dump_json_path(json_path_object);
+  ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
+    {
+      aljson_walk_dump_json_path(json_path_object);
+    }
 
   if ( json_path_object != NULL )
     {

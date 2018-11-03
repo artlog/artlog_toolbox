@@ -16,7 +16,7 @@ alhash_context alhash_context_default = {
   .debug = 0,
 };
 
-ALDEBUG_DEFINE_FUNCTIONS(alhash_context, alparser_ctx, debug);
+ALDEBUG_DEFINE_FUNCTIONS(alhash_context, alhash_context, debug);
 
 // make sure index is within bucket size
 static unsigned int al_get_index(long hash, int length)
@@ -184,7 +184,7 @@ void alhash_context_internal_init(alhash_context * ctx, struct alhash_table * ta
       table->context = ctx;
     }
   
-  ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
     {aldebug_printf(NULL,"[DEBUG] alhash init %p autogrow %i \n",table,table->autogrow );}
 
 }
@@ -208,7 +208,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
-      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	{
 	  aldebug_printf(NULL,
 			 "[DEBUG] alhash put entry '" ALPASCALSTRFMT "'\n",
@@ -220,7 +220,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 	{
 	  if ( alhash_get_usage(table) > table->autogrow  )
 	    {
-	      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+	      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 		{
 		  aldebug_printf(NULL,
 				 "[DEBUG] alhash %p grow from %i to %i .\n",
@@ -288,7 +288,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 {
   if (( table != NULL ) && ( key != NULL ))
     {
-      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug) {
+      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug) {
 	aldebug_printf(NULL,
 		       "[DEBUG] alhash get entry '" ALPASCALSTRFMT "'\n",
 		       ALPASCALSTRARGS(key->length,(char *) key->data.ptr));
@@ -308,7 +308,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 	      if ( valid == ALH_MR_NOT_EQUAL )
 		{
 		  do {		
-		    if ( alhash_match(key, entry, hash, alparser_ctx_is_debug(table->context,1)) == ALH_MR_EQUAL )
+		    if ( alhash_match(key, entry, hash, alhash_context_is_debug(table->context,1)) == ALH_MR_EQUAL )
 		      {
 			return entry;
 		      }
@@ -441,7 +441,7 @@ int alhash_reinit(struct alhash_table * table, int length)
   // new table should have enough place
   if (table != NULL)
     {
-      ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	{
 	  aldebug_printf(NULL,"[DEBUG] REINIT length of hash table to %i current usage %i used %i\n", length, alhash_get_usage(table), alhash_get_used(table));
 	}
@@ -464,14 +464,14 @@ int alhash_reinit(struct alhash_table * table, int length)
 	  temporary.autogrow=table->autogrow;
 	  memcpy(table,&temporary,sizeof(*table));
 	  size =  alhash_get_size(table);
-	  ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+	  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	    {
 	      aldebug_printf(NULL,"[DEBUG] REINITIALIZED length of hash table to %i new usage %i used %i \n", length, alhash_get_usage(table), alhash_get_used(table));
 	    }	  
       }
       else
 	{
-	  ALDEBUG_IF_DEBUG(table->context,alparser_ctx,debug)
+	  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	    {
 	    aldebug_printf(NULL,"[DEBUG] alhash length %i requested for reinit too small < used %i \n",length, table->used);
 	  }

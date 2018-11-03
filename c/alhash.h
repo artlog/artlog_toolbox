@@ -31,7 +31,6 @@ enum alhash_match_result {
   ALH_MR_INVALID=2, // it does not match because one value is invalid ( internal error ).  
 };
 
-
 // at least ALHASH_BUCKET_SIZE , in fact it will dynamically allocated at table init and can contain really more entries.
 struct alhash_bucket {
   struct alhash_entry entries[ALHASH_BUCKET_SIZE];
@@ -57,7 +56,7 @@ typedef struct alparser_ctx {
   int words;
 } alhash_context;
 
-ALDEBUG_DECLARE_FUNCTIONS(alhash_context, alparser_ctx);
+ALDEBUG_DECLARE_FUNCTIONS(alhash_context, alhash_context);
 
 long alhash_hash_string(void * string, int length);
 

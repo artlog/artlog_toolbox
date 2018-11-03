@@ -28,13 +28,13 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
 // TODO follow specs from  http://json.org/ http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
 
 /**
-TODO unify debug to use ALDEBUG_IF_DEBUG(&ctx->alparser,alparser_ctx,1)
+TODO unify debug to use ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
 struct json_parser_ctx
 {
-  struct alparser_ctx alparser;
+  struct alhash_context alparser;
 
  in alhash.h
- struct alparser_ctx {
+ struct alhash_context {
   ALDEBUG_DEFINE_FLAG(debug)
 
  **/
@@ -183,7 +183,7 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
   if ( (tb->bufpos + 1) > tb->bufsize )
     {
       // realloc for one character ... too bad.
-      ALDEBUG_IF_DEBUG(&ctx->alparser,alparser_ctx,1)
+      ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
 	{
 	  printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,tb->buf,tb->bufsize,tb->bufpos+1);
 	}
@@ -501,7 +501,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 	    }
 	  // HARDCODED 1 word init 78% autogrow.
 	  alhash_context_init(&dict->localcontext, 1, dict->nitems * 2,200);
-	  alparser_ctx_set_debug(&dict->localcontext,0);
+	  alhash_context_set_debug(&dict->localcontext,0);
 	  aljson_dict_foreach(object, json_dict_hashadd_callback,&dict->localcontext.dict );
 	}
     }
