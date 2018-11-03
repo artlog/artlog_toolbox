@@ -35,7 +35,10 @@ tests: c_parser albase json_to_c_stub_sample cryptohash bitfield
 	./salsa20
 
 aljson_ld: aljson_ld.c aljson_ld_test.c
-	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -laldev -lalhash  -lalstack -lalcommon -Wl,-Bdynamic
+
+alabnf: alabnf_test.c 
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -laljson -lalhash  -lalstack -lalcommon  -Wl,-Bdynamic
 
 clean:
 	rm c_parser albase json_to_c_stub_sample cryptohash bitfield

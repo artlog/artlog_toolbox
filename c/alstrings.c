@@ -10,7 +10,7 @@ enum alstrings_debug_flags {
   ALSTRINGS_DEBUG_FLAG = 1,
 };
 
-static int alstrings_debug_flags = 1;
+static int alstrings_debug_flags = 0;
 
 int alstrings_set_debug(int flags)
 {
@@ -50,7 +50,7 @@ void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer buffer, int
 }
 
 void al_token_char_buffer_init(alstrings_ringbuffer_pointer buffer, int chars)
-{
+{  
   aldebug_printf(NULL,"[WARNING] use alstrings_ringbuffer_init_autogrow instead of deprecated  al_token_char_buffer_init\n");  
   al_token_char_buffer_init_internal(buffer,chars);
 }

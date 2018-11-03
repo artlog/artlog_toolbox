@@ -1,6 +1,8 @@
 #ifndef ALJSON_LD_HEADER_
 #define ALJSON_LD_HEADER_
 
+#include "alhash.h"
+
 extern char * aljson_ld_keywords[];
 
 //  Every node is an IRI, a blank node, a JSON-LD value, or a list.  
@@ -28,15 +30,10 @@ enum aljson_ld_keyword_index {
   ALJSONLD_KEYWORD_COMA_IDX
 };
 
-
-struct aljson_ld_iri {
-  void * todo;
-};
-
 struct aljson_ld_node {
   enum aljson_ld_node_type type;
   union {
-    struct aljson_ld_iri iri;
+    struct aliri iri;
     void * blank;
     void * value;
     void * list;
@@ -67,14 +64,20 @@ struct aljson_ld_typed_value {
 };
 
 struct aljson_ld_context {
+  alhash_context hash_context;
+  // expect a pointer on hash_context.dict
+  struct alhash_table * keyword_table;
   void * todo;
 };
 
+extern struct aljson_ld_context aljson_ld_global_context;
 
-// json_ld
+// json_ld global initialization
 void aljson_ld();
 
 // return an index in keyword table, if not a keyword return -1
-int aljson_ld_is_keyword(char * string);
+enum aljson_ld_keyword_index aljson_ld_is_keyword(char * string);
+
+const char * aljson_ld_c_keyword(int index);
 
 #endif // ALJSON_LD_HEADER_

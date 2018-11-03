@@ -27,7 +27,7 @@ typedef struct alhash_datablock {
     char * charptr;
     const char * constcharptr;
     unsigned int * uintptr;
-    long number; // quick hack to store values directly (see type ).
+    long number; // quick hack to store values directly (see type ) ALTYPE_FLAG_EMBED
   } data;
 } aldatablock;
 
