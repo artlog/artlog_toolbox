@@ -499,7 +499,8 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 	    {
 	      aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
 	    }
-	  alparser_init(&dict->localcontext, 1, dict->nitems * 2);
+	  // HARDCODED 1 word init 78% autogrow.
+	  alhash_context_init(&dict->localcontext, 1, dict->nitems * 2,200);
 	  alparser_ctx_set_debug(&dict->localcontext,0);
 	  aljson_dict_foreach(object, json_dict_hashadd_callback,&dict->localcontext.dict );
 	}

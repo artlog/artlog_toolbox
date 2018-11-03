@@ -24,7 +24,7 @@ int alstrings_debug_flag_is_set(int flag)
   return  ALC_FLAG_IS_SET(alstrings_debug_flags,flag);
 }
 
-// construct linked list at once within an array
+// construct circular linked list at once within an array of size times.
 // return first
 struct token_char_buffer * al_token_char_buffer_alloc(int times)
 {
@@ -37,7 +37,8 @@ struct token_char_buffer * al_token_char_buffer_alloc(int times)
     }
   return buffers;
 }
-  
+
+// allocate buffer of chars bytes.
 void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer buffer, int chars)
 {
 
@@ -60,6 +61,7 @@ struct token_char_buffer *  al_token_char_buffer_get_previous(struct token_char_
   struct token_char_buffer * buffer = circular;
   struct token_char_buffer * previous = circular;
   struct token_char_buffer * next = buffer->next;
+  // HARDCODED max buckets 1000
   int max = 1000;
   while ( ( next != NULL ) && ( next != buffer ) && ( max > 0) )
     {      
@@ -73,6 +75,7 @@ struct token_char_buffer *  al_token_char_buffer_get_previous(struct token_char_
 	{
 	  aldebug_printf(NULL,"[FATAL] long loop (infinite ? ) on  al_token_char_buffer_get_previous\n");
 	}
+      // HARD EXIT
       exit(1);
     }
   return previous;  

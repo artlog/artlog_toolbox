@@ -12,11 +12,11 @@ implementation of a hashtable in a miserable way.
 #include <stdlib.h>
 #include <limits.h>
 
-struct alparser_ctx alparser_ctx_default = {
+alhash_context alhash_context_default = {
   .debug = 0,
 };
 
-ALDEBUG_DEFINE_FUNCTIONS(struct alparser_ctx, alparser_ctx, debug);
+ALDEBUG_DEFINE_FUNCTIONS(alhash_context, alparser_ctx, debug);
 
 // make sure index is within bucket size
 static unsigned int al_get_index(long hash, int length)
@@ -165,17 +165,17 @@ void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (v
   table->used = 0;
   if ( length == 0 )
     {
-      // 78 % fill
+      // 78 % fill ( as 200/256th ).
       table->autogrow = 200;
     }
   else
     {
       table->autogrow = 0;
     }
-  table->context = &alparser_ctx_default;
+  table->context = &alhash_context_default;
 }
 
-void alparser_ctx_alhash_init(struct alparser_ctx * ctx, struct alhash_table * table, int length, long (*alhash_func) (void * value, int length))
+void alhash_context_internal_init(alhash_context * ctx, struct alhash_table * table, int length, long (*alhash_func) (void * value, int length))
 {
   alhash_init(table,length,alhash_func);
   // if set override current else use this of init (expecting default)
@@ -405,17 +405,21 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
   return step;
 }
 
-int alparser_init(  struct alparser_ctx * alparser, int words, int chars)
+
+// init word buffer
+// number of words is used for length of alhash_init, so can be 0 then automatic.
+int alhash_context_init(alhash_context * hash_context, int words, int chars, int autogrow)
 {
-  // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
-  bzero(alparser,sizeof(*alparser));
-  alparser_ctx_alhash_init(alparser, &alparser->dict, words, NULL);
+    // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
+  bzero(hash_context,sizeof(*hash_context));
+  alhash_context_internal_init(hash_context, &hash_context->dict, words, NULL);
   // autogrow
-  alparser->dict.autogrow = 170;
-  // WARNING will set alparser->ringbuffer content
-  alstrings_ringbuffer_init_autogrow(&alparser->allocator.ringbuffer, 15, chars);
+  hash_context->dict.autogrow = autogrow;
+  // WARNING will set hash_context->allocator.ringbuffer content
+  alstrings_ringbuffer_init_autogrow(&hash_context->allocator.ringbuffer, words == 0 ? ALHASH_BUCKET_SIZE : words, chars);
 
   return 1;
+
 }
 
 int alhash_copyentry(struct alhash_entry * entry, void * data, int index)
@@ -447,7 +451,7 @@ int alhash_reinit(struct alhash_table * table, int length)
           struct alhash_table temporary;
 	  bzero(&temporary, sizeof(temporary));
 	  // autogrow is NOT set ( else would be recursive )
-	  alparser_ctx_alhash_init(table->context,&temporary,length,table->alhash_func);
+	  alhash_context_internal_init(table->context,&temporary,length,table->alhash_func);
 	  alhash_walk_table(table,alhash_copyentry,&temporary);
 	  // drink this soup
 	  if ( table->inner != NULL)
@@ -571,3 +575,5 @@ int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int ind
   printf("\n");
   return 0;
 }
+
+

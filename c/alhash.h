@@ -7,6 +7,8 @@
 /**
 a fixed hash table
 you can add and retrieve keyed values in it ( but not removal ).
+
+for usage samples see alhash_test.c
 **/
 
 // minimal/default bucket_size
@@ -47,14 +49,15 @@ struct alhash_table {
 };
 
 // allocation of words, dict
-struct alparser_ctx {
+// prefer alhash_context from confusing struct alparser_ctx.
+typedef struct alparser_ctx {
   ALDEBUG_DEFINE_FLAG(debug)
   struct alallocation_ctx allocator;
   struct alhash_table dict;
   int words;
-};
+} alhash_context;
 
-ALDEBUG_DECLARE_FUNCTIONS(struct alparser_ctx, alparser_ctx);
+ALDEBUG_DECLARE_FUNCTIONS(alhash_context, alparser_ctx);
 
 long alhash_hash_string(void * string, int length);
 
@@ -75,7 +78,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
 // if length is 0 : AUTO : autogrowth is set and length = ALHASH_BUCKET_SIZE)
 // if alhash_func is set to NULL then default string hash is used (alhash_hash_string)
-// DON'T use externally, use alparser_init ( that comes with a dedicated context ) and use alparser_ctx->dict as hashtable.
+// DON'T use externally, use alhash_context_init ( that comes with a dedicated context ) and use alparser_ctx->dict as hashtable.
 void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length));
 
 // walk entry and all collisions.
@@ -91,9 +94,13 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 // release whole table glue ( ie does not free data content )
 void alhash_release(struct alhash_table * table);
 
-// init word buffer todo rename it.
+/* int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
+FULLY DEPRECATED use alhash_context_init(alparser,words,autogrowth) instead
+ex alhash_context_init(alparser,words,200)
+*/
+// init word buffer
 // number of words is used for length of alhash_init, so can be 0 then automatic.
-int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
+int alhash_context_init(alhash_context * hash_context, int words, int chars, int autogrow);
 
 // allows to grow ( or shrink ) a table
 // return number of used element in new table, -1 means error

@@ -29,7 +29,6 @@ void al_option_add(struct al_options * options,const char * ikey,const char * iv
   if (entry == NULL)
     {
       struct alhash_datablock value;
-
       // not true given length provided but type should the same
       key.type = ALTYPE_STR0;
       key.data.ptr=al_copy_block(&options->context.allocator.ringbuffer, &key);
@@ -75,7 +74,8 @@ void al_option_add(struct al_options * options,const char * ikey,const char * iv
 void al_options_init(struct al_options * options)
 {
   bzero(options,sizeof(*options));
-  alparser_init(&options->context,15,1024);
+  // HARDCODED 15 words, 1024 bytes initial buffer and 78% (200/256th)
+  alhash_context_init(&options->context,15,1024,200);
 }
 
 void al_options_release(struct al_options * options)

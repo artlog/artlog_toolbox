@@ -92,11 +92,13 @@ void aljson_init(
   bzero(json_tokenizer, sizeof(*json_tokenizer));
 
   // allocator intialization
-  alparser_init(&json_context->alparser,10,1024);
+  // HARDCODED 10 words, 1024 initial buffer and 78% autogrow ( 200/256th )
+  alhash_context_init(&json_context->alparser,10,1024,200);
     
   json_import_context_initialize(json_tokenizer);
   
   json_context->tokenizer=json_tokenizer;
+  // HARDCODED max_depth 10000
   json_context->max_depth=10000;
   json_context->parsing_depth=json_context->max_depth - 4;
 

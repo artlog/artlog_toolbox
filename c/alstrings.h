@@ -38,6 +38,7 @@ typedef struct alhash_datablock {
 
 token_char_buffer circular linked list is built at first time
 BUT buf and its size is allocated on request only.
+= so initial *times* buckets drives limit =
 */
 // to rename since borrowed from json_parser project
 typedef struct token_char_buffer {
