@@ -95,7 +95,7 @@ void alhash_release(struct alhash_table * table);
 
 /* int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
 FULLY DEPRECATED use alhash_context_init(alparser,words,autogrowth) instead
-ex alhash_context_init(alparser,words,200)
+ex alhash_context_init(alparser,words,chars,200)
 */
 // init word buffer
 // number of words is used for length of alhash_init, so can be 0 then automatic.

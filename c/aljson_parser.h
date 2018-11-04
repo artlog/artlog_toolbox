@@ -3,6 +3,9 @@
 
 #include "alstrings.h"
 #include "aldebug.h"
+#include "altoken.h"
+
+// TODO factorize using altokenizer
 
 // everything for tokenizing.
 // todo rename me as json_tokenizer.h
@@ -11,12 +14,10 @@
 #define JSON_PATH_MAX_CHARS 4096
 
 // forward definitions
+// todo should be aljson_ctx
 struct json_ctx;
 
-struct al_token {
-  int token;
-};
-
+// todo should be aljson_ctx
 enum json_token_id {
   JSON_TOKEN_EOF_ID,
   JSON_TOKEN_OPEN_PARENTHESIS_ID,
@@ -90,10 +91,10 @@ enum aljson_number_parser_state {
 };
 
 // invalid typedef char (*)(struct json_ctx *ctx, void *data) get_next_char;
-typedef char (*get_next_char)(struct json_ctx *ctx, void *data);
-typedef void (*set_pushback_char)(struct json_ctx *ctx, void *data, char pushback);
+typedef char (*json_ctx_get_next_char)(struct json_ctx *ctx, void *data);
+typedef void (*json_ctx_set_pushback_char)(struct json_ctx *ctx, void *data, char pushback);
 typedef struct al_token* (*al_tokenizer_func) (struct json_ctx *ctx, void *data);
-typedef int (*add_token_char)(struct json_ctx *ctx, char token, char c);
+typedef int (*json_ctx_add_token_char)(struct json_ctx *ctx, char token, char c);
 
 
 /** keep position of line and column for a stream during a json parsing */
@@ -105,12 +106,12 @@ struct json_pos_info
   
 struct json_ctx
 {
-  get_next_char next_char;
-  set_pushback_char pushback_char;
+  json_ctx_get_next_char next_char;
+  json_ctx_set_pushback_char pushback_char;
   al_tokenizer_func tokenizer;
   ALDEBUG_DEFINE_FLAG(debug_level)
   // add a char to currently parsed token.
-  add_token_char add_char;
+  json_ctx_add_token_char add_char;
   // for add_char usage
   struct token_char_buffer token_buf;
   // byte position within 'possible' input stream
@@ -125,11 +126,11 @@ struct json_ctx
   { ctx->last_token.token=JSON_TOKEN_ ##token_name ##_ID;\
     return &ctx->last_token; }
 
-#define TOKEN_DECLARE_TOKENIZER(__token__,__char__) \
+#define JSON_TOKEN_DECLARE_TOKENIZER(__token__,__char__) \
   struct al_token * tokenizer_ ## __token__ (struct json_ctx * ctx, void * data)
 
-#define TOKEN_DEFINE_TOKENIZER(__token__,__char__) \
-  TOKEN_DECLARE_TOKENIZER(__token__,__char__) \
+#define JSON_TOKEN_DEFINE_TOKENIZER(__token__,__char__) \
+  JSON_TOKEN_DECLARE_TOKENIZER(__token__,__char__) \
 {\
   int result = parse_until_escaped_level(ctx,data,__char__,'\\');\
   if ( result ) { \
@@ -139,7 +140,7 @@ struct json_ctx
 }\
 
 /** Initialize json_context **/
-void json_context_initialize(struct json_ctx *json_context, get_next_char next_char);
+void json_context_initialize(struct json_ctx *json_context, json_ctx_get_next_char next_char);
 
 ALDEBUG_DECLARE_FUNCTIONS(struct json_ctx, json_ctx);
 

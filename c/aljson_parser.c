@@ -5,13 +5,11 @@
 #include <assert.h>
 #include "aljson_parser.h"
 
-#define TOKEN_BUFSIZE_MIN 256
-#define TOKEN_BUFSIZE_WARNING 8192
-#define TOKEN_BUFSIZE_MAX 128000
+// TODO factorize using altokenizer
 
-TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
-TOKEN_DEFINE_TOKENIZER(SQUOTE,'\'')
-TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
+JSON_TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
+JSON_TOKEN_DEFINE_TOKENIZER(SQUOTE,'\'')
+JSON_TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
 
 ALDEBUG_DEFINE_FUNCTIONS(struct json_ctx, json_ctx,debug_level)
 
@@ -65,7 +63,7 @@ struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * d
 }
 
 /** Initialize json_context **/
-void json_context_initialize(struct json_ctx *json_context, get_next_char next_char)
+void json_context_initialize(struct json_ctx *json_context, json_ctx_get_next_char next_char)
 {
   bzero(json_context,sizeof(*json_context));
   json_context->next_char=next_char;
@@ -87,48 +85,6 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
     }
 }
 
-// add a char within token char buffer that will be flush at cut_string_object or flush_cahr_buffer
-int token_char_buffer_add_char(struct token_char_buffer * ctx, char token, char c)
-{
-  int bufsize=TOKEN_BUFSIZE_MIN;
-   if (ctx->buf == NULL)
-    {
-      ctx->buf=calloc(1,bufsize);
-      //ctx->buf[bufsize-1]=0;
-      ctx->bufpos=0;
-      ctx->bufsize=bufsize;
-    }
-  if (ctx->bufpos+1>=ctx->bufsize)
-    {
-      bufsize=ctx->bufsize + ctx->bufsize / 2;
-      if ( bufsize > TOKEN_BUFSIZE_MAX )
-	{
-	  aldebug_printf(NULL,"[FATAL] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_MAX);
-	  exit(0);
-	}
-      if ( bufsize > TOKEN_BUFSIZE_WARNING )
-	{
-	  aldebug_printf(NULL,"[WARNING] huge memory consumption for a token %i > %i", bufsize, TOKEN_BUFSIZE_WARNING);
-	}
-      char * newbuf=realloc(ctx->buf,bufsize);
-      if (newbuf != NULL)
-	{
-	  //done by realloc
-	  //memcpy(newbuf,ctx->buf,ctx->bufsize);
-	  //free(ctx->buf);
-	  ctx->buf[bufsize-1]=0;
-	  ctx->bufsize=bufsize; 
-	  ctx->buf=newbuf;
-	}
-      else
-	{
-	  memory_shortage(ctx);
-	}
-    }
-  ctx->buf[ctx->bufpos++]=c;
-  return 0;
-}
-
 // keep a growable buffer in ctx, grow it as needed
 int add_char(struct json_ctx * ctx, char token, char c)
 {
@@ -136,7 +92,8 @@ int add_char(struct json_ctx * ctx, char token, char c)
     {
       printf("%c", c);
     }
-  return token_char_buffer_add_char(&ctx->token_buf,token,c);
+  // DISREGARD token
+  return altoken_char_buffer_add_char(&ctx->token_buf,c);
 }
 
 void debug_tag(struct json_ctx *ctx,char c)
@@ -149,15 +106,10 @@ void debug_tag(struct json_ctx *ctx,char c)
 
 void flush_char_buffer(struct token_char_buffer * ctx)
 {
-  if (ctx->buf != NULL )
-    {
-      free(ctx->buf);
-      ctx->buf=NULL;
-      ctx->bufpos=0;
-      ctx->bufsize=0;
-    }
+  altoken_flush_char_buffer(ctx);
 }
 
+// TODO convert to altokenizer_consume
 int json_ctx_consume(struct json_ctx * ctx, void * data, char * str)
 {
   int index = 0;

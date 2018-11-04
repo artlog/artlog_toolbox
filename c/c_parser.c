@@ -3187,7 +3187,8 @@ init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
   struct alparser_ctx * alparser = &parser->alparser;
   // hashtable bucket will autogrow due to length 0
   // word buffer will autogrow due to al_copy_block usage
-  alparser_init(alparser,0,1024);
+  // HARDCODED 1024 and 200/256 autogrow
+  alhash_context_init(alparser,0,1024,200);
   
   // no debugging by default
   parser->flags = 0;

@@ -29,13 +29,18 @@ enum alabnf_parser_action {
 };
 
 struct alabnf_sm {
-  void * todo;
+  struct altokenizer tokenizer;
   alabnf_one_char_method one_char_method;
   alabnf_close_method close_method;
   enum alabnf_parser_action next_action;
   struct alinputstream * inputstream;
   char rematch;
 };
+
+void alabnf_sm_init(struct alabnf_sm * state_machine)
+{
+  altokenizer_init(&state_matchine->tokenizer);
+}
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
   
