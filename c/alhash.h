@@ -94,12 +94,17 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 void alhash_release(struct alhash_table * table);
 
 /* int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
-FULLY DEPRECATED use alhash_context_init(alparser,words,autogrowth) instead
+alparser_init is FULLY DEPRECATED
+use alhash_context_init(alparser,words,autogrowth) instead
 ex alhash_context_init(alparser,words,chars,200)
 */
+
 // init word buffer
 // number of words is used for length of alhash_init, so can be 0 then automatic.
 int alhash_context_init(alhash_context * hash_context, int words, int chars, int autogrow);
+
+/** fully release all allocation done with alhash */
+void alhash_context_release(alhash_context * hash_context);
 
 // allows to grow ( or shrink ) a table
 // return number of used element in new table, -1 means error

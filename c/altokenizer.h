@@ -3,6 +3,7 @@
 
 #include "altoken.h"
 #include "alstrings.h"
+#include "alhash.h"
 
 struct altokenizer;
 
@@ -21,13 +22,31 @@ struct altokenizer
   altokenizer_add_token_char add_char;
   // for add_char usage, created and grown by add_char
   struct token_char_buffer token_buf;
+  struct al_token last_token;
+  alhash_context context;
+  int words;
 };
+
+
+#define ALTOKENIZER_TOKEN(token_name) \
+  { ctx->last_token.token=ALTOKENIZER_TOKEN_ ##token_name ##_ID;\
+    return &ctx->last_token; }
+
+#define ALTOKENIZER_DECLARE_TOKENIZER(__token__)		\
+  struct al_token * altokenizer_ ## __token__ (struct altokenizer * ctx, void * data)
 
 // intiialization will fully reset tokenizer content
 void altokenizer_init(struct altokenizer * tokenizer);
 
 // consume str and check all consumed chars string equals str content
-void altokenizer_consume(struct altokenizer * tokenizer, void * data, char * str);
+int altokenizer_consume(struct altokenizer * tokenizer, void * data, char * str);
+
+// add char for a token todo remove useless parameter token
+void altokenizer_add_char(struct altokenizer *tokenizer, char token, char c);
+
+// return a new token content
+// key is word value is token ( todo currently value is key too ).
+struct alhash_entry * altokenizer_make_token(struct altokenizer *tokenizer, struct al_token * token, char c);
 
 // mainly free allocated buffer for token buf, should not be shared.
 void altokenizer_release(struct altokenizer * tokenizer);

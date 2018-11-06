@@ -577,3 +577,8 @@ int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int ind
 }
 
 
+void alhash_context_release(alhash_context * hash_context)
+{
+  alstrings_ringbuffer_release(&hash_context->allocator.ringbuffer);
+  alhash_release(&hash_context->dict);
+}

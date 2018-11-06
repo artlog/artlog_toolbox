@@ -30,6 +30,7 @@ struct alstack {
 /*
 setup a alstack, content of alstack is considered irrelevant (ie can be zeroed)
 init_flags defines wether this is a static or dynamic stack ( initial flags)
+to create a malloced dynamic stack use directly alstack_allocate()
 */
 struct alstack * alstack_init(struct alstack * stack, int init_flags);
 
