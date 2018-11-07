@@ -4,16 +4,92 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* code created by a human brain */
+
 /*
       NOTE:     ABNF strings are case-insensitive and
                   the character set for these strings is us-ascii.
 */
 
 
-void alabnf_sm_init(struct alabnf_sm * state_machine)
+struct alabnf_node * alabnf_create_node(struct alabnf * alabnf, enum alabnf_node_type type)
 {
-  bzero(state_machine,sizeof(*state_machine));
-  altokenizer_init(&state_machine->tokenizer);
+  // use alabnf->context allocator.
+  struct alabnf_node * node = (struct alabnf_node *) ALALLOC(alabnf->context.allocator, sizeof(struct alabnf_node));
+  node->type = type;
+  /*
+  switch(type)
+    {
+    case ALABNF_NT_ITERATOR:
+      break;
+    case ALABNF_NT_SEQUENCE:
+      break;
+    case ALABNF_NT_STRING:
+      break;
+    case ALABNF_NT_ALT:
+      break;
+    case ALABNF_NT_RANGE:
+      break;
+    }
+  */
+  return node;
+}
+
+void alabnf_print_token(struct alhash_entry * mytoken)
+{
+    if ( mytoken != NULL )
+    {
+      if ( mytoken->key.data.ptr != NULL )
+	{
+	  struct alhash_datablock * datablock = &mytoken->key;
+	  printf(ALPASCALSTRFMT" ",
+		 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+	}
+    }
+
+}
+
+// close rule consume full stack expecting last element to be rule name.
+void alabnf_close_rule(struct alabnf_sm * state_machine)
+{
+  // TODO collect rule...
+  struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
+  
+  struct alabnf_node * node =  alabnf_create_node(alabnf, ALABNF_NT_STRING);
+
+  struct alstack * stack = state_machine->stack;
+  int entries = alstack_used(stack);
+
+  // should create rule = nodes from stacked tokens ...
+  struct alstackelement * element=NULL;
+  for (int i=1; i<entries; i++)
+    {
+      element=alstack_pop(stack);
+    }
+  if ( alstack_used(stack) == 1 )
+    {
+      struct alstackelement * rule=alstack_pop(stack);
+      if ( rule != NULL )
+	{
+	  struct alhash_entry * mytoken = (struct alhash_entry *)  rule->reference;
+	  if ( mytoken != NULL )
+	    {
+	      // FIXME TOY CODE
+	      printf("\n");
+	      alabnf_print_token(mytoken);
+	      if ( element != NULL )
+		{
+		  printf("= ");
+		  mytoken = (struct alhash_entry *)  element->reference;
+		  if ( mytoken != NULL )
+		    {
+		      alabnf_print_token(mytoken);
+		    }		  
+		}
+	      printf("\n");
+	    }
+	}
+    }  
 }
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
@@ -26,13 +102,14 @@ void alabnf_start_ruleline(struct alabnf_sm * state_machine, char c)
 
 void alabnf_state_machine_init(struct alabnf_sm *state_machine,   struct alinputstream * inputstream)
 {
-  alabnf_sm_init(state_machine);
+  bzero(state_machine,sizeof(*state_machine));
   state_machine->one_char_method = alabnf_start_ruleline;
   state_machine->next_action = ALABNF_PA_CONTINUE;
   state_machine->inputstream = inputstream;
   state_machine->rematch=0;
   state_machine->state=ALABNF_STATE_RULENAME;
   state_machine->stack=alstack_allocate();
+  altokenizer_init(&state_machine->tokenizer);
 }
 
 void alabnf_state_machine_release(struct alabnf_sm * state_machine)
@@ -490,6 +567,7 @@ void alabnf_optional(struct alabnf_sm * state_machine, char c)
 
 void alabnf_new_rule(struct alabnf_sm * state_machine)
 {
+  alabnf_close_rule(state_machine);
   state_machine->rule_number++;
   aldebug_printf(NULL,"rule # %i, indent %i/%i", state_machine->rule_number,
 	 state_machine->current_indent,
@@ -676,7 +754,6 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
 
 }
 
-
 void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 {
   if ( state_machine->state == ALABNF_STATE_RULENAME )
@@ -689,7 +766,9 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
     }
   struct al_token token;
   token.token=ALABNF_NT_STRING;
-  void * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);  
+  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
+  alabnf_print_token(mytoken);
+  alstack_push_ref(state_machine->stack,mytoken);
   aldebug_printf(NULL,"close string token %p\n",mytoken);
 }
 
@@ -707,7 +786,9 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
     }
   struct al_token token;
   token.token=ALABNF_NT_STRING;
-  void * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
+  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
+  alabnf_print_token(mytoken);
+  alstack_push_ref(state_machine->stack,mytoken);
   aldebug_printf(NULL,"close name string %p\n",mytoken);
 }
 
@@ -832,3 +913,16 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 
 }
 
+struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine)
+{
+  struct alabnf * alabnf = state_machine->generated;
+  if ( alabnf == NULL )
+    {
+      // FIXME malloc at least should be freed
+      alabnf=malloc(sizeof(*alabnf));
+      alhash_context_init(&alabnf->context,64,1024,200);
+      state_machine->generated=alabnf;
+    }
+
+  return alabnf;
+}

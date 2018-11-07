@@ -40,7 +40,7 @@ will call init on alstack
 */
 struct alstack * alstack_allocate();
 
-/* push a pointer to an element on the stack */
+/* push on the stack a pointer to an element  */
 struct alstackelement * alstack_push_ref(struct alstack * stack, void * reference );
 
 /* pop an element from the stack */

@@ -58,8 +58,8 @@ struct alabnf_rule {
 };
 
 struct alabnf {
-  void * todo;
-  struct alhash_table rulelist;
+  // does contain a hash_table dict which is rulelist
+  alhash_context context;
 };
 
 // parser state machine to read abnf syntax
@@ -102,6 +102,7 @@ struct alabnf_sm {
   int lf_line;
   int linebreak;
   struct alstack * stack;
+  struct alabnf * generated;
 };
 
 // setup and allocate , to dispose use alabnf_state_machine_release
@@ -110,5 +111,7 @@ void alabnf_state_machine_init(struct alabnf_sm *state_machine,   struct alinput
 void alabnf_state_machine_run(struct alabnf_sm * state_machine);
 
 void alabnf_state_machine_release(struct alabnf_sm * state_machine);
+
+struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine);
 
 #endif
