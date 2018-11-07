@@ -49,6 +49,91 @@ void alabnf_print_token(struct alhash_entry * mytoken)
 
 }
 
+void alabnf_dump_sequence(struct alabnf_sequence * start_sequence);
+
+void alabnf_dump_iterator(struct alabnf_iterator * iterator);
+
+void alabnf_dump_alternative(struct alabnf_alternative * alternative);
+
+void alabnf_dump_range(struct alabnf_range * range);
+
+void alabnf_dump_node(struct alabnf_node * node )
+{
+  if ( node != NULL )
+    {
+      enum alabnf_node_type type = node->type;
+      switch(type)
+	{
+	case ALABNF_NT_ITERATOR:
+	  break;
+	case ALABNF_NT_SEQUENCE:
+	  alabnf_dump_sequence(&node->content.sequence);
+	  break;
+	case ALABNF_NT_STRING:
+	  {
+	    struct alhash_datablock * datablock = &node->content.string.strbloc;
+	    if ( node->content.string.type == ALABNF_ST_RULENAME )
+	      {		
+		printf(ALPASCALSTRFMT,
+		       ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+	      }
+	    else
+	      {
+		// need a better printf to support non printable strings as hex,int, quoted ...
+		printf("\""ALPASCALSTRFMT"\"",
+		       ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+
+	      }
+
+	  }
+	  break;
+	case ALABNF_NT_ALT:
+	  break;
+	case ALABNF_NT_RANGE:
+	  break;
+	}
+    }
+}
+
+void alabnf_dump_iterator(struct alabnf_iterator * iterator)
+{
+  // TODO
+  printf("TODO alabnf_dump_iterator");
+}
+
+void alabnf_dump_alternative(struct alabnf_alternative * alternative)
+{
+  // TODO
+  printf("TODO alabnf_dump_alternative");
+}
+
+void alabnf_dump_range(struct alabnf_range * range)
+{
+  // TODO
+  printf("TODO alabnf_dump_range");
+}
+
+void alabnf_dump_sequence(struct alabnf_sequence * start_sequence)
+{
+  struct alabnf_sequence * sequence=start_sequence;
+  struct alabnf_sequence * next_sequence=NULL;
+  while (sequence != NULL)
+    {
+      next_sequence = sequence->next;
+      alabnf_dump_node(sequence->node);
+      if (next_sequence != NULL)
+	{
+	  printf(" ");
+	}
+      sequence=next_sequence;
+    }
+}
+
+void alabnf_dump_rule(struct alabnf_rule * rule)
+{
+  // TODO
+}
+
 // close rule consume full stack expecting last element to be rule name.
 void alabnf_close_rule(struct alabnf_sm * state_machine)
 {
@@ -60,11 +145,33 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
   struct alstack * stack = state_machine->stack;
   int entries = alstack_used(stack);
 
-  // should create rule = nodes from stacked tokens ...
+  // should create rule = sequence of nodes
   struct alstackelement * element=NULL;
+  struct alabnf_sequence * sequence=NULL;
+  struct alabnf_sequence * next_sequence=NULL;
+  // we are unstaking so popping next before previous.
   for (int i=1; i<entries; i++)
     {
+      struct alabnf_node * node_sequence;
       element=alstack_pop(stack);
+      node =  alabnf_create_node(alabnf, ALABNF_NT_STRING);
+      struct alhash_entry * entry = (struct alhash_entry *) element->reference;
+
+      // we copy value to node->string by allocating/copying it on new context.
+      {
+	struct alabnf_string * node_string = &node->content.string;
+	// FIXME should detect correct type ( hex,dec,bin .. ) RULENAME reference.
+	node_string->type=ALABNF_ST_RULENAME;
+	node_string->strbloc.data.charptr=al_copy_block(&alabnf->context.allocator.ringbuffer,&entry->value);
+	node_string->strbloc.length=entry->value.length;
+	node_string->strbloc.type=ALTYPE_OPAQUE;	
+      }
+     
+      node_sequence =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
+      sequence = &node_sequence->content.sequence;
+      sequence->node = node;
+      sequence->next = next_sequence;
+      next_sequence=sequence;
     }
   if ( alstack_used(stack) == 1 )
     {
@@ -77,19 +184,19 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 	      // FIXME TOY CODE
 	      printf("\n");
 	      alabnf_print_token(mytoken);
-	      if ( element != NULL )
+	      if ( sequence != NULL )
 		{
 		  printf("= ");
-		  mytoken = (struct alhash_entry *)  element->reference;
-		  if ( mytoken != NULL )
-		    {
-		      alabnf_print_token(mytoken);
-		    }		  
+		  alabnf_dump_sequence(sequence);
 		}
 	      printf("\n");
 	    }
 	}
-    }  
+    }
+  else
+    {
+      aldebug_printf(NULL,"[FATAL] parsing a rule without a rule in stack of tokens.\n");
+    }
 }
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);

@@ -11,7 +11,15 @@ enum alabnf_node_type {
   ALABNF_NT_SEQUENCE,
   ALABNF_NT_STRING,
   ALABNF_NT_ALT,
-  ALABNF_NT_RANGE
+  ALABNF_NT_RANGE,
+};
+
+enum alabnf_string_type {  
+  ALABNF_ST_RULENAME,
+  ALABNF_ST_QUOTED,
+  ALABNF_ST_HEX,
+  ALABNF_ST_DEC,
+  ALABNF_ST_BIN
 };
 
 struct alabnf_node;
@@ -23,6 +31,7 @@ struct alabnf_iterator {
 };
 
 struct alabnf_string {
+  enum alabnf_string_type type;
   aldatablock strbloc;
 };
 
