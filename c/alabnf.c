@@ -57,6 +57,16 @@ void alabnf_dump_alternative(struct alabnf_alternative * alternative);
 
 void alabnf_dump_range(struct alabnf_range * range);
 
+void alabnf_dump_hex_string(aldatablock * string )
+{
+  printf("%%x");
+  for (int i=0; i< string->length-1; i++)
+    {
+      printf("%x.",string->data.charptr[i]);
+    }
+  printf("%x",string->data.charptr[string->length-1]);
+}
+
 void alabnf_dump_node(struct alabnf_node * node )
 {
   if ( node != NULL )
@@ -72,17 +82,27 @@ void alabnf_dump_node(struct alabnf_node * node )
 	case ALABNF_NT_STRING:
 	  {
 	    struct alhash_datablock * datablock = &node->content.string.strbloc;
-	    if ( node->content.string.type == ALABNF_ST_RULENAME )
+	    enum alabnf_string_type string_type = node->content.string.type;
+	    if ( string_type == ALABNF_ST_RULENAME )
 	      {		
 		printf(ALPASCALSTRFMT,
 		       ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 	      }
-	    else
-	      {
-		// need a better printf to support non printable strings as hex,int, quoted ...
+	    else if ( string_type == ALABNF_ST_QUOTED )
+	      {			
 		printf("\""ALPASCALSTRFMT"\"",
 		       ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 
+	      }
+	    else if ( string_type == ALABNF_ST_UNDEFINED )
+	      {
+		printf("ERROR_UNDEF_");
+		alabnf_dump_hex_string(datablock);
+	      }
+	    else
+	      {
+		// need a better printf to support non printable strings as hex,int, quoted ...
+		alabnf_dump_hex_string(datablock);
 	      }
 
 	  }
@@ -134,6 +154,27 @@ void alabnf_dump_rule(struct alabnf_rule * rule)
   // TODO
 }
 
+struct alabnf_node * alabnf_create_node_string(struct alabnf * alabnf, aldatablock * block, enum alabnf_string_type type)
+{
+    struct alabnf_node * node =  alabnf_create_node(alabnf, ALABNF_NT_STRING);
+    struct alabnf_string * node_string = &node->content.string;
+    node_string->type=type;
+    node_string->strbloc.data.charptr=al_copy_block(&alabnf->context.allocator.ringbuffer,block);
+    node_string->strbloc.length=block->length;
+    node_string->strbloc.type=block->type;
+    return node;
+}
+
+struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
+{
+  if ( entry->key.data.ptr == entry->value.data.ptr )
+    {
+      // Not yet abnfized
+      return NULL;
+    }
+  return (struct alabnf_node *) entry->value.data.ptr;
+}
+
 // close rule consume full stack expecting last element to be rule name.
 void alabnf_close_rule(struct alabnf_sm * state_machine)
 {
@@ -154,18 +195,19 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
     {
       struct alabnf_node * node_sequence;
       element=alstack_pop(stack);
-      node =  alabnf_create_node(alabnf, ALABNF_NT_STRING);
       struct alhash_entry * entry = (struct alhash_entry *) element->reference;
 
-      // we copy value to node->string by allocating/copying it on new context.
-      {
-	struct alabnf_string * node_string = &node->content.string;
-	// FIXME should detect correct type ( hex,dec,bin .. ) RULENAME reference.
-	node_string->type=ALABNF_ST_RULENAME;
-	node_string->strbloc.data.charptr=al_copy_block(&alabnf->context.allocator.ringbuffer,&entry->value);
-	node_string->strbloc.length=entry->value.length;
-	node_string->strbloc.type=ALTYPE_OPAQUE;	
-      }
+      node = alabnf_get_abnf_token(entry);
+      if ( node == NULL  )
+	{
+	  // we copy value to node->string by allocating/copying it on new context.
+	  // FIXME should detect correct type ( hex,dec,bin .. ) RULENAME reference.
+	  node =  alabnf_create_node_string(alabnf,&entry->value, ALABNF_ST_RULENAME);
+	  entry->value.data.ptr=node;
+	  entry->value.length=sizeof(*node);
+	  // FIXME internal block type to OPAQUE
+	  // entry->value.type=
+	}
      
       node_sequence =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
       sequence = &node_sequence->content.sequence;
@@ -240,7 +282,7 @@ int alabnf_flush_number(struct alabnf_number_sm * state_machine)
 
 void alabnf_add_char(struct alabnf_sm * state_machine, char token, char c)
 {
-  aldebug_printf(NULL,"%c",c);
+  aldebug_printf(NULL,"%c%c",token,c);
   altokenizer_add_char(&state_machine->tokenizer,token,c);
 }
 
@@ -284,18 +326,17 @@ void alabnf_chevron(struct alabnf_sm * state_machine, char c)
 
 void alabnf_binary_string(struct alabnf_sm * state_machine, char c)
 {
-  enum alabnf_parser_action next_action;
   if ( ( c >= '0' ) && ( c <= '1' ) )
     {
-      //
-      next_action = ALABNF_PA_CONTINUE;
+      state_machine->string_type=ALABNF_ST_HEX;
+      state_machine->next_action = ALABNF_PA_CONTINUE;
     }
   else
     {
       if ( c == '.' )
 	{
 	  // concatenation
-	  next_action = ALABNF_PA_CONTINUE;
+	  state_machine->next_action = ALABNF_PA_CONTINUE;
 	}
       else if ( c == '-' )
 	{
@@ -306,19 +347,17 @@ void alabnf_binary_string(struct alabnf_sm * state_machine, char c)
       else
 	{
 	  state_machine->close_method = alabnf_close_string_rematch;
-	  next_action = ALABNF_PA_CLOSE;
+	  state_machine->next_action = ALABNF_PA_CLOSE;
 	}
     }
-  state_machine->next_action = next_action;
 }
 
 void alabnf_decimal_string(struct alabnf_sm * state_machine, char c)
 {
-  enum alabnf_parser_action next_action;
   struct alabnf_number_sm * number_sm = &state_machine->number_sm;
   if ( ( c >= '0' ) && ( c <= '9' ) )
     {
-      //
+      state_machine->string_type=ALABNF_ST_DEC;
       int result = number_sm->cumulated*10 + (c-'0');
       if ( result < 256 )
 	{
@@ -357,7 +396,7 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
       (( c >= '0' ) && ( c <= '9' ))
       )
     {
-      // number_sm->cumulated |= (c-'0') << (4-number_sm->seen *4);
+      state_machine->string_type=ALABNF_ST_HEX;
       number_sm->cumulated = number_sm->cumulated << 4 | (c-'0');
       number_sm->seen++;
       state_machine->next_action = ALABNF_PA_CONTINUE;
@@ -555,19 +594,41 @@ void alabnf_string(struct alabnf_sm * state_machine, char c)
 
 }
 
+void albnf_stack_sequence(struct alabnf_sm * state_machine)
+{
+  // TODO
+}
+
+void alabnf_close_group(struct alabnf_sm * state_machine, char c)
+{
+  // TODO unstack until sequence is found
+  alabnf_close_string_continue(state_machine,c);
+}
+
 void alabnf_group(struct alabnf_sm * state_machine, char c)
 {
-  // TODO should we stack a state machine ?
   switch(c)
     {
     case ')':
-      state_machine->close_method = alabnf_close_string_continue;
+      state_machine->close_method = alabnf_close_group;
       state_machine->next_action = ALABNF_PA_CLOSE;
       break;      
     default:
       alabnf_add_char(state_machine,'"',c);
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
+}
+
+void alabnf_group_start(struct alabnf_sm * state_machine, char c)
+{
+  albnf_stack_sequence(state_machine);
+  state_machine->one_char_method=alabnf_group;
+  alabnf_group(state_machine,c);
+}
+
+void albnf_stack_iterator(struct alabnf_sm * state_machine,int min, int max)
+{
+  // TODO
 }
 
 void alabnf_iterator_string(struct alabnf_sm * state_machine, char c)
@@ -584,6 +645,7 @@ void alabnf_iterator_string(struct alabnf_sm * state_machine, char c)
     }
   else
     {
+      // TODO should push iterator token on stack
       if ( c == '(' )
 	{
 	  state_machine->one_char_method=alabnf_group;
@@ -594,9 +656,12 @@ void alabnf_iterator_string(struct alabnf_sm * state_machine, char c)
 	  state_machine->one_char_method=alabnf_chevron;
 	  state_machine->next_action = ALABNF_PA_CONTINUE;
 	}
+      // TODO FIXME can be typed string
       else
 	{
 	  state_machine->one_char_method = alabnf_string;
+	  state_machine->string_type=ALABNF_ST_RULENAME;
+	  // next_action not set by xxx_intern
 	  alabnf_name_string_intern(state_machine, c);
 	  if ( state_machine->next_action == ALABNF_PA_CLOSE )
 	    {
@@ -645,21 +710,29 @@ void alabnf_start_typed_string(struct alabnf_sm * state_machine, char c)
 
 void alabnf_quoted_string(struct alabnf_sm * state_machine, char c)
 {
+  state_machine->string_type=ALABNF_ST_QUOTED;
   switch(c)
     {
     case '"':
       state_machine->close_method = alabnf_close_string_continue;
       state_machine->next_action = ALABNF_PA_CLOSE;
-      break;      
+      break;
     default:
       alabnf_add_char(state_machine,'"',c);
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
 }
 
+void alabnf_close_optional(struct alabnf_sm * state_machine, char c)
+{
+  // TODO unstack until st_quoted start ?
+  alabnf_close_string_continue(state_machine,c);
+}
+
 void alabnf_optional(struct alabnf_sm * state_machine, char c)
 {
-  // TODO should we stack a state machine ?
+  // FIXME currently for debugging
+  state_machine->string_type=ALABNF_ST_QUOTED;
   switch(c)
     {
     case ']':
@@ -667,9 +740,17 @@ void alabnf_optional(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_CLOSE;
       break;      
     default:
-      alabnf_add_char(state_machine,'"',c);
+      alabnf_add_char(state_machine,'[',c);
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
+}
+
+void alabnf_optional_start(struct alabnf_sm * state_machine, char c)
+{
+  // TODO should stack iterator 0,1 start
+  albnf_stack_iterator(state_machine,0,1);
+  state_machine->one_char_method=alabnf_optional;
+  alabnf_optional(state_machine,c);
 }
 
 void alabnf_new_rule(struct alabnf_sm * state_machine)
@@ -695,6 +776,7 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
     case ' ':
       //if ( state_machine->linebreak != 0 )
 	{
+	  aldebug_printf(NULL,"*");
 	  state_machine->current_indent++;
 	}
       state_machine->next_action = ALABNF_PA_CONTINUE;
@@ -704,7 +786,6 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case '"':
-      // TODO
       state_machine->one_char_method=alabnf_quoted_string;
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
@@ -717,7 +798,7 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case '[':
-      state_machine->one_char_method=alabnf_optional;
+      state_machine->one_char_method=alabnf_optional_start;
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case '(':
@@ -766,7 +847,6 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c)
 {
-
   switch(c)
     {
     case ' ':      
@@ -863,6 +943,40 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
 
 void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 {
+  struct al_token token;
+  token.token=ALABNF_NT_STRING;
+  // FIXME non-terminals are colliding with terminals
+  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
+  alabnf_print_token(mytoken);
+  alstack_push_ref(state_machine->stack,mytoken);
+  aldebug_printf(NULL,"close string token %p\n",mytoken);
+
+  // this is here that mytoken->value can be set to something
+  // struct alabnf_string would be a good idea
+  // WARNING allocation should be on generated part...
+  {
+    // FIXME create a function to share that code
+    struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
+    if ( alabnf_get_abnf_token(mytoken) == NULL )
+      {
+	// should alter value to point on alabnf_string
+	// we copy value to node->string by allocating/copying it on new context.
+	struct alabnf_node * node =  alabnf_create_node_string(alabnf,&mytoken->value, state_machine->string_type);
+	mytoken->value.data.ptr=node;
+	mytoken->value.length=sizeof(*node);
+	// FIXME internal block type to OPAQUE
+	// entry->value.type=	
+      }
+    else
+      {
+	// was already decorated...
+      }
+  }
+
+  // string was closed, need to start a new one to know its type.
+  state_machine->string_type=ALABNF_ST_UNDEFINED;
+
+  // next state
   if ( state_machine->state == ALABNF_STATE_RULENAME )
     {
       state_machine->one_char_method=alabnf_start_string;
@@ -871,12 +985,7 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
     {
       state_machine->one_char_method=alabnf_start_string_ruledef;
     }
-  struct al_token token;
-  token.token=ALABNF_NT_STRING;
-  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
-  alabnf_print_token(mytoken);
-  alstack_push_ref(state_machine->stack,mytoken);
-  aldebug_printf(NULL,"close string token %p\n",mytoken);
+
 }
 
 void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
@@ -893,10 +1002,15 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
     }
   struct al_token token;
   token.token=ALABNF_NT_STRING;
+  // FIXME non-terminals are colliding with terminals
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
   alabnf_print_token(mytoken);
   alstack_push_ref(state_machine->stack,mytoken);
   aldebug_printf(NULL,"close name string %p\n",mytoken);
+
+  // string was closed, need to start a new one to know its type.
+  state_machine->string_type=ALABNF_ST_UNDEFINED;
+
 }
 
 void alabnf_close_string_rematch(struct alabnf_sm * state_machine, char c)
@@ -915,16 +1029,6 @@ void alabnf_close_string_continue(struct alabnf_sm * state_machine, char c)
 {
   alabnf_close_string(state_machine, c);
   state_machine->next_action = ALABNF_PA_CONTINUE;
-  // HACK care about end of line
-  if (( c== 10 ) || (c==13))
-    {
-      aldebug_printf(NULL, "YARGL\n");
-      state_machine->next_action = ALABNF_PA_REMATCH;  
-    }
-  else
-    {
-      state_machine->next_action = ALABNF_PA_CONTINUE;
-    }
 }
 
 // closes a rulename

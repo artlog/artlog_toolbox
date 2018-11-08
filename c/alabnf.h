@@ -14,7 +14,8 @@ enum alabnf_node_type {
   ALABNF_NT_RANGE,
 };
 
-enum alabnf_string_type {  
+enum alabnf_string_type {
+  ALABNF_ST_UNDEFINED,
   ALABNF_ST_RULENAME,
   ALABNF_ST_QUOTED,
   ALABNF_ST_HEX,
@@ -110,6 +111,7 @@ struct alabnf_sm {
   int rule_number;
   int lf_line;
   int linebreak;
+  enum alabnf_string_type string_type;
   struct alstack * stack;
   struct alabnf * generated;
 };
