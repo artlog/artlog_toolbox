@@ -7,6 +7,7 @@
 #include "alstack.h"
 
 enum alabnf_node_type {
+  ALABNF_NT_INVALID,
   ALABNF_NT_ITERATOR,
   ALABNF_NT_SEQUENCE,
   ALABNF_NT_STRING,
@@ -111,6 +112,8 @@ struct alabnf_sm {
   int rule_number;
   int lf_line;
   int linebreak;
+  // used to construct an unique id for an iterator entry
+  int iterator_index;
   enum alabnf_string_type string_type;
   struct alstack * stack;
   struct alabnf * generated;

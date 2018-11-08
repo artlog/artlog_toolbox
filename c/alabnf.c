@@ -16,6 +16,7 @@ struct alabnf_node * alabnf_create_node(struct alabnf * alabnf, enum alabnf_node
 {
   // use alabnf->context allocator.
   struct alabnf_node * node = (struct alabnf_node *) ALALLOC(alabnf->context.allocator, sizeof(struct alabnf_node));
+  bzero(node,sizeof(*node));
   node->type = type;
   /*
   switch(type)
@@ -35,6 +36,23 @@ struct alabnf_node * alabnf_create_node(struct alabnf * alabnf, enum alabnf_node
   return node;
 }
 
+struct alabnf_node * alabnf_create_iterator_node(struct alabnf * alabnf, int min,int max,struct alabnf_node * node)
+{
+  struct alabnf_node * iterator_node=alabnf_create_node(alabnf,ALABNF_NT_ITERATOR);
+  if ( iterator_node != NULL )
+    {
+      struct alabnf_iterator * iterator = &iterator_node->content.iterator;
+      iterator->min=min;
+      iterator->max=max;
+      iterator->node=node;
+      return node;
+    }
+  else
+    {
+      aldebug_printf(NULL,"[FATAL] allocation of iterator failed\n");
+    }
+  return NULL;
+}
 void alabnf_print_token(struct alhash_entry * mytoken)
 {
     if ( mytoken != NULL )
@@ -49,9 +67,18 @@ void alabnf_print_token(struct alhash_entry * mytoken)
 
 }
 
+void alabnf_dump_node(struct alabnf_node * node );
+
 void alabnf_dump_sequence(struct alabnf_sequence * start_sequence);
 
-void alabnf_dump_iterator(struct alabnf_iterator * iterator);
+void alabnf_dump_iterator(struct alabnf_iterator * iterator)
+{
+  if ( iterator != NULL )
+    {
+      printf("%i %i",iterator->min,iterator->max);
+      alabnf_dump_node(iterator->node);
+    }
+}
 
 void alabnf_dump_alternative(struct alabnf_alternative * alternative);
 
@@ -71,10 +98,17 @@ void alabnf_dump_node(struct alabnf_node * node )
 {
   if ( node != NULL )
     {
+      if ( (unsigned long) node <  64L )
+	{
+	  // corrupted pointer (often address within a NULL struct )
+	  aldebug_printf(NULL,"[FATAL] node pointer %p invalid in %s",node, __FILE__);
+	  //return;
+	}
       enum alabnf_node_type type = node->type;
       switch(type)
 	{
 	case ALABNF_NT_ITERATOR:
+	  alabnf_dump_iterator(&node->content.iterator);
 	  break;
 	case ALABNF_NT_SEQUENCE:
 	  alabnf_dump_sequence(&node->content.sequence);
@@ -108,17 +142,15 @@ void alabnf_dump_node(struct alabnf_node * node )
 	  }
 	  break;
 	case ALABNF_NT_ALT:
+	  alabnf_dump_alternative(&node->content.alt);
 	  break;
 	case ALABNF_NT_RANGE:
+	  alabnf_dump_range(&node->content.range);
 	  break;
+	default:
+	  printf("unrecognized abnf type %i\n",type);
 	}
     }
-}
-
-void alabnf_dump_iterator(struct alabnf_iterator * iterator)
-{
-  // TODO
-  printf("TODO alabnf_dump_iterator");
 }
 
 void alabnf_dump_alternative(struct alabnf_alternative * alternative)
@@ -140,6 +172,7 @@ void alabnf_dump_sequence(struct alabnf_sequence * start_sequence)
   while (sequence != NULL)
     {
       next_sequence = sequence->next;
+      aldebug_printf(NULL,"\nnext %p node %p\n", next_sequence, sequence->node);
       alabnf_dump_node(sequence->node);
       if (next_sequence != NULL)
 	{
@@ -162,6 +195,13 @@ struct alabnf_node * alabnf_create_node_string(struct alabnf * alabnf, aldatablo
     node_string->strbloc.data.charptr=al_copy_block(&alabnf->context.allocator.ringbuffer,block);
     node_string->strbloc.length=block->length;
     node_string->strbloc.type=block->type;
+
+    if ( (unsigned long) node < 64L )
+    {
+      aldebug_printf(NULL,"[FATAL] invalid pointer node %p %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
+      node = NULL;
+    }
+
     return node;
 }
 
@@ -172,7 +212,44 @@ struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
       // Not yet abnfized
       return NULL;
     }
-  return (struct alabnf_node *) entry->value.data.ptr;
+  struct alabnf_node * node = (struct alabnf_node *) entry->value.data.ptr;
+
+  if ( (unsigned long) node < 64L )
+    {
+      aldebug_printf(NULL,"[FATAL] invalid pointer node %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
+      node = NULL;
+    }
+
+  if ( (node == NULL) || ( node->type == ALABNF_NT_INVALID ))
+    {
+      // ooops
+      aldebug_printf(NULL,"[FATAL] invalid node %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
+    }
+  return node;
+}
+
+// can alter both state_machine and mytoken value
+struct alabnf_node * alabnf_build_abnf_node(struct alabnf_sm * state_machine, struct alhash_entry * mytoken)
+{
+  struct alabnf_node * node = alabnf_get_abnf_token(mytoken);
+  if ( node == NULL )
+    {
+    struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
+    // should alter value to point on alabnf_string
+    // we copy value to node->string by allocating/copying it on new context.
+    node = alabnf_create_node_string(alabnf,&mytoken->value, state_machine->string_type);    
+    if ((node == NULL) || ( node->type == ALABNF_NT_INVALID ))
+    {
+      // ooops
+      aldebug_printf(NULL,"[FATAL] invalid node %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
+    }
+
+    // IS it REALLY changing content of hash table ? YES
+    mytoken->value.data.ptr=node;
+    mytoken->value.length=sizeof(*node);
+    mytoken->value.type=ALTYPE_OPAQUE;
+    }
+  return node;
 }
 
 // close rule consume full stack expecting last element to be rule name.
@@ -195,25 +272,30 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
     {
       struct alabnf_node * node_sequence;
       element=alstack_pop(stack);
-      struct alhash_entry * entry = (struct alhash_entry *) element->reference;
-
-      node = alabnf_get_abnf_token(entry);
-      if ( node == NULL  )
+      if ( element != NULL )
 	{
-	  // we copy value to node->string by allocating/copying it on new context.
-	  // FIXME should detect correct type ( hex,dec,bin .. ) RULENAME reference.
-	  node =  alabnf_create_node_string(alabnf,&entry->value, ALABNF_ST_RULENAME);
-	  entry->value.data.ptr=node;
-	  entry->value.length=sizeof(*node);
-	  // FIXME internal block type to OPAQUE
-	  // entry->value.type=
+	  struct alhash_entry * entry = (struct alhash_entry *) element->reference;
+
+	  // FIXME uses state_machine->string_type which is not sync at this stage.
+	  node =  alabnf_build_abnf_node(state_machine,entry);
+
+	  // TODO use 
+	  // node_sequence = alabnf_collect_node_sequence(struct alabnf_node * collector, struct alabnf_node * new_node)
+	  {
+	    node_sequence =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
+	    if (node_sequence != NULL)
+	      {
+		sequence = &node_sequence->content.sequence;
+		sequence->node = node;
+		sequence->next = next_sequence;
+		next_sequence=sequence;
+	      }
+	    else
+	      {
+		aldebug_printf(NULL,"[FATAL] null node sequence in %s",__FILE__);
+	      }
+	  }
 	}
-     
-      node_sequence =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
-      sequence = &node_sequence->content.sequence;
-      sequence->node = node;
-      sequence->next = next_sequence;
-      next_sequence=sequence;
     }
   if ( alstack_used(stack) == 1 )
     {
@@ -628,7 +710,26 @@ void alabnf_group_start(struct alabnf_sm * state_machine, char c)
 
 void albnf_stack_iterator(struct alabnf_sm * state_machine,int min, int max)
 {
-  // TODO
+  struct alstack * stack = state_machine->stack;
+  struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
+  // NONONO should push an entry !
+  // alstack_push_ref(stack,iterator);
+  struct al_token token;
+  token.token=ALABNF_NT_ITERATOR;
+  // FIXME non-terminals are colliding with terminals
+  // BROKEN need a way to create a new token
+  //HACK to overcome  altokenizer_dict_add_string: Assertion `length!=0' failed
+  alabnf_add_char(state_machine,'^',(char) state_machine->iterator_index);  
+  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,'^');
+  alstack_push_ref(stack,mytoken);
+
+  struct alabnf_node * iterator_node = alabnf_create_iterator_node(alabnf,min,max,NULL);
+  // IS it REALLY changing content of hash table ? YES
+  mytoken->value.data.ptr=iterator_node;
+  mytoken->value.length=sizeof(*iterator_node);
+  mytoken->value.type=ALTYPE_OPAQUE;  
+  
+  state_machine->iterator_index ++;
 }
 
 void alabnf_iterator_string(struct alabnf_sm * state_machine, char c)
@@ -723,10 +824,133 @@ void alabnf_quoted_string(struct alabnf_sm * state_machine, char c)
     }
 }
 
+// return a node that is a sequence if collector is non null
+struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct alabnf_node * collector, struct alabnf_node * new_node)
+{  
+  struct alabnf_sequence * sequence=NULL;
+  struct alabnf_sequence * next_sequence=NULL;
+  struct alabnf_node * node=NULL;
+
+  if ( collector != NULL )
+    {
+      if ( collector->type == ALABNF_NT_SEQUENCE )
+	{
+	  next_sequence = &collector->content.sequence;
+	}
+      else
+	{
+	  next_sequence = NULL;
+	}
+      node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
+      if ( node != NULL )
+	{
+	  sequence = &node->content.sequence;
+	  sequence->node = new_node;
+	  sequence->next = next_sequence;
+	  next_sequence=sequence;
+	}
+      else
+	{
+	  aldebug_printf(NULL,"[FATAL] null node in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	}
+    }
+  else
+    {
+      if ( new_node != NULL )
+	{	  
+	  if ( new_node->type !=  ALABNF_NT_SEQUENCE )
+	    {
+	      if ( new_node->type == ALABNF_NT_INVALID )
+		{
+		  aldebug_printf(NULL,"[FATAL] invalid new node %p in %s %s %i\n",new_node,__FILE__,__func__,__LINE__);
+		}
+	      node=new_node;
+	    }
+	  else
+	    {
+	      // don't append to child sequence
+	      node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
+	      if ( node != NULL )
+		{
+		  sequence = &node->content.sequence;
+		  sequence->node = new_node;
+		  sequence->next = NULL;
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"[FATAL] null allocated node in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+		}
+	    }
+	}	
+    }
+
+  return node;
+}
+
+// unstack until incomplete iterator found.
+// stack full iterator with content as sequence
+void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
+{
+  struct alabnf * alabnf   = alabnf_state_machine_generated(state_machine);
+  struct alstack * stack = state_machine->stack;
+  
+  struct alstackelement * element=NULL;
+  struct alabnf_node * collected_node = NULL;
+
+  element=alstack_pop(stack);
+  if (element != NULL )
+    {
+      struct alhash_entry * entry = (struct alhash_entry *) element->reference;
+  
+      while ( entry != NULL )
+	{
+	  // FIXME uses state_machine->string_type which is not sync at this stage.
+	  struct alabnf_node * node = alabnf_build_abnf_node(state_machine,entry);
+	  if ( (node != NULL ) && (node->type == ALABNF_NT_ITERATOR ) )
+	    {
+	      struct alabnf_iterator * iterator = &node->content.iterator;
+	      if ( iterator->node == NULL )
+		{
+		  // iterator start found, can create iterator object and return
+		  iterator->node = collected_node;
+		  // should push an entry : this one has iterator as value.
+		  alstack_push_ref(stack,entry);
+
+		  // WELL... DONE not well done.
+		  break;
+		}
+	      // else there is another iterator already resolved within this sequence
+	      else
+		{
+		  collected_node = alabnf_collect_node_sequence(alabnf, collected_node, node);
+		}
+	    }
+	  else
+	    {	      
+	      collected_node = alabnf_collect_node_sequence(alabnf, collected_node, node);
+	    }
+
+	  if ( collected_node == NULL )
+	    {
+	      aldebug_printf(NULL,"[FATAL] null collected_node\n");
+	    }
+
+	  element=alstack_pop(stack);
+	  if ( element != NULL )
+	    {
+	      entry = (struct alhash_entry *) element->reference;
+	    }
+	  else
+	    {
+	      entry = NULL;
+	    }
+	}
+    }
+}
+
 void alabnf_close_optional(struct alabnf_sm * state_machine, char c)
 {
-  // TODO unstack until st_quoted start ?
-  alabnf_close_string_continue(state_machine,c);
+  alabnf_close_iterator(state_machine,c);
 }
 
 void alabnf_optional(struct alabnf_sm * state_machine, char c)
@@ -747,7 +971,7 @@ void alabnf_optional(struct alabnf_sm * state_machine, char c)
 
 void alabnf_optional_start(struct alabnf_sm * state_machine, char c)
 {
-  // TODO should stack iterator 0,1 start
+  // stack iterator 0,1 start
   albnf_stack_iterator(state_machine,0,1);
   state_machine->one_char_method=alabnf_optional;
   alabnf_optional(state_machine,c);
@@ -828,14 +1052,13 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       break;      
     default:
       state_machine->next_action = ALABNF_PA_REMATCH;
-      // TODO restart to a new rule
       if ( state_machine->current_indent <= state_machine->initial_indent )
 	{
 	  alabnf_new_rule(state_machine);	  
 	}
       else
 	{
-	  aldebug_printf(NULL,"CONTINUE rule # %i, indent %i/%i", state_machine->rule_number,
+	  aldebug_printf(NULL,"CONTINUE rule # %i, indent %i/%i\n", state_machine->rule_number,
 			 state_machine->current_indent,
 			 state_machine->initial_indent);
 	  state_machine->one_char_method=alabnf_iterator_string;
@@ -941,6 +1164,7 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
 
 }
 
+
 void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 {
   struct al_token token;
@@ -954,24 +1178,14 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
   // this is here that mytoken->value can be set to something
   // struct alabnf_string would be a good idea
   // WARNING allocation should be on generated part...
-  {
-    // FIXME create a function to share that code
-    struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
-    if ( alabnf_get_abnf_token(mytoken) == NULL )
-      {
-	// should alter value to point on alabnf_string
-	// we copy value to node->string by allocating/copying it on new context.
-	struct alabnf_node * node =  alabnf_create_node_string(alabnf,&mytoken->value, state_machine->string_type);
-	mytoken->value.data.ptr=node;
-	mytoken->value.length=sizeof(*node);
-	// FIXME internal block type to OPAQUE
-	// entry->value.type=	
-      }
-    else
-      {
-	// was already decorated...
-      }
-  }
+  struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
+
+  if ( (unsigned long) node < 64L )
+    {
+      aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
+      exit(1);
+    }
+     
 
   // string was closed, need to start a new one to know its type.
   state_machine->string_type=ALABNF_ST_UNDEFINED;
@@ -1036,16 +1250,6 @@ void alabnf_close_name_string_continue(struct alabnf_sm * state_machine, char c)
 {
   alabnf_close_name_string(state_machine, c);
   state_machine->next_action = ALABNF_PA_CONTINUE;
-  // HACK care about end of line
-  if (( c== 10 ) || (c==13))
-    {
-      aldebug_printf(NULL,"YARGL\n");
-      state_machine->next_action = ALABNF_PA_REMATCH;  
-    }
-  else
-    {
-      state_machine->next_action = ALABNF_PA_CONTINUE;
-    }
 }
 
 char alabnf_eat_char(struct alabnf_sm * state_machine)
@@ -1130,7 +1334,7 @@ struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine)
   if ( alabnf == NULL )
     {
       // FIXME malloc at least should be freed
-      alabnf=malloc(sizeof(*alabnf));
+      alabnf=calloc(1,sizeof(*alabnf));
       alhash_context_init(&alabnf->context,64,1024,200);
       state_machine->generated=alabnf;
     }
