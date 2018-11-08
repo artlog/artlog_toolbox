@@ -265,3 +265,29 @@ int alstack_destroy(struct alstack * stack, int (*unlink_element)(struct alstack
 {
   return  alstack_popall(stack, unlink_element);
 }
+
+
+struct alstackelement * alstack_fetch(struct alstack * stack)
+{
+  stack = alstack_find_last(stack);
+
+  while( stack != NULL )
+    {
+      if ( stack->index > 0 )
+	{
+	  int index = stack->index -1 ;
+	  return &stack->element[index];
+	}
+      else if (FLAG_IS_SET(stack->flags,ALSTACK_PREVIOUS_FLAG ))
+	{
+	  stack = stack->previous;
+	}
+      else
+	{
+	  stack = NULL;
+	}
+    }
+  alstack_debug("no previous stack");
+  return NULL;
+
+}

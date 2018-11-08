@@ -115,6 +115,9 @@ struct alabnf_sm {
   // used to construct an unique id for an iterator entry
   int iterator_index;
   enum alabnf_string_type string_type;
+  // use with great care
+  // content (key,value) is a reference in altokenizer dict
+  // value is updated to be a alabnf_node
   struct alstack * stack;
   struct alabnf * generated;
 };

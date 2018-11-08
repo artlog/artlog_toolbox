@@ -51,4 +51,7 @@ struct alhash_entry * altokenizer_make_token(struct altokenizer *tokenizer, stru
 // mainly free allocated buffer for token buf, should not be shared.
 void altokenizer_release(struct altokenizer * tokenizer);
 
+// number of characters pending to be cut
+int altokenizer_get_pending_chars(struct altokenizer * tokenizer);
+
 #endif // ALTOKENIZER_HEADER__

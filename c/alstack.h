@@ -46,6 +46,9 @@ struct alstackelement * alstack_push_ref(struct alstack * stack, void * referenc
 /* pop an element from the stack */
 struct alstackelement * alstack_pop(struct alstack * stack);
 
+/* fetch an element from the stack : like a pop but don't actualy remove it from stack */
+struct alstackelement * alstack_fetch(struct alstack * stack);
+
 /* pop all elements and call a function on them 
 return number of elements poped
 */
