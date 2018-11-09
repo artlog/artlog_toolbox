@@ -25,6 +25,8 @@ void alabnf_close_name_string_rematch(struct alabnf_sm * state_machine, char c);
 void alabnf_close_string_rematch(struct alabnf_sm * state_machine, char c);
 void alabnf_close_string_continue(struct alabnf_sm * state_machine, char c);
 
+struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct alabnf_node * collector, struct alabnf_node * new_node);
+  
 struct alabnf_node * alabnf_create_node(struct alabnf * alabnf, enum alabnf_node_type type)
 {
   // use alabnf->context allocator.
@@ -190,22 +192,24 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
 {
   struct alabnf_alternative * alternative=start_alternative;
   struct alabnf_alternative * next_alternative=NULL;
+  // DEBUG only, to remove
+  printf("{");
+
   while (alternative != NULL)
     {
       next_alternative = alternative->alt;
-      aldebug_printf(NULL,"\nnext %p node %p\n", next_alternative, alternative->node);
+      aldebug_printf(NULL,"\nalt %p node %p\n", next_alternative, alternative->node);
+      // DEBUG only, to remove
       alabnf_dump_node(alternative->node);
       if (next_alternative != NULL)
 	{
 	  printf("/");
 	}
-      else
-	{
-	  // DEBUG only to remove
-	  printf("|");
-	}
       alternative=next_alternative;
     }
+  // DEBUG only, to remove
+  printf("}");
+
 
 }
 
@@ -219,19 +223,19 @@ void alabnf_dump_sequence(struct alabnf_sequence * start_sequence)
 {
   struct alabnf_sequence * sequence=start_sequence;
   struct alabnf_sequence * next_sequence=NULL;
+  printf("(");
   while (sequence != NULL)
     {
       next_sequence = sequence->next;
       aldebug_printf(NULL,"\nnext %p node %p\n", next_sequence, sequence->node);
-      printf("(");
       alabnf_dump_node(sequence->node);
       if (next_sequence != NULL)
 	{
 	  printf(" ");
 	}
-      printf(")");
       sequence=next_sequence;
     }
+  printf(")");
 }
 
 void alabnf_dump_rule(struct alabnf_rule * rule)
@@ -753,7 +757,7 @@ void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
 	  // IS it REALLY changing content of hash table ? YES
 	  mytoken->value.data.ptr=iterator_node;
 	  mytoken->value.length=sizeof(*iterator_node);
-	  mytoken->value.type=ALTYPE_OPAQUE;  
+	  mytoken->value.type=ALTYPE_OPAQUE;
   
 	  state_machine->iterator_index ++;
 	}
@@ -852,6 +856,47 @@ void alabnf_quoted_string(struct alabnf_sm * state_machine, char c)
     }
 }
 
+// where alternative are glued
+struct alabnf_node * alabnf_merge_alt_with_head(  struct alabnf * alabnf, struct alabnf_node * head_node, struct alabnf_node * node)
+{
+  if ( head_node != NULL )
+    {
+      aldebug_printf(NULL,"[INFO] head node found %p type %i\n", head_node, head_node->type);
+      /*
+      printf("\n %s %s %i\n",__FILE__,__func__,__LINE__);
+      alabnf_dump_node(head_node);
+      printf("\n");
+      alabnf_dump_node(node);
+      */
+      if ( head_node->type == ALABNF_NT_ALT )
+	{
+
+	  struct alabnf_alternative * alternative = &head_node->content.alt;
+	  if ( alternative->alt == NULL )
+	    {
+	      // an empty slot : merge entry here
+	      struct alabnf_node * merge_entry = alabnf_create_alternative_node(alabnf,node,NULL);
+	      alternative->alt=&merge_entry->content.alt;
+	      aldebug_printf(NULL,"[INFO] MERGE ALTERNATIVES %p %p\n", alternative, alternative->alt);
+	      /*
+	      printf("\n");
+	      alabnf_dump_node(head_node);
+	      */
+	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[INFO] SKIP ALTERNATIVES %p %p\n", alternative, alternative->alt);
+	      head_node = NULL;
+	    }
+	}
+      else
+	{
+	  head_node = NULL;
+	}
+    }
+  return head_node;
+}
+
 // return a node that is a sequence if collector is non null
 struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct alabnf_node * collector, struct alabnf_node * new_node)
 {  
@@ -859,6 +904,8 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
   struct alabnf_sequence * next_sequence=NULL;
   struct alabnf_node * node=NULL;
 
+  aldebug_printf(NULL,"in %s %s %i\n",__FILE__,__func__,__LINE__);
+  
   if ( collector != NULL )
     {
       if ( collector->type == ALABNF_NT_SEQUENCE )
@@ -867,7 +914,30 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	}
       else
 	{
+	  // collector was a simple token and new_new is a token too.
 	  next_sequence = NULL;
+
+	  if ( new_node->type ==  ALABNF_NT_ALT )
+	    {
+	      struct alabnf_node * head_node = alabnf_merge_alt_with_head(alabnf, new_node, collector);
+	      if ( head_node != NULL )
+		{
+		  node = head_node;
+		  return node;
+		}
+	    }
+
+	  node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
+	  if ( node != NULL )
+	    {
+	      next_sequence = &node->content.sequence;
+	      next_sequence->node = collector;
+	      next_sequence->next = NULL;
+	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[FATAL] null allocated node in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	    }
 	}
       node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
       if ( node != NULL )
@@ -888,6 +958,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	{	  
 	  if ( new_node->type !=  ALABNF_NT_SEQUENCE )
 	    {
+	      aldebug_printf(NULL,"new node type %i in %s %s %i\n",new_node->type,__FILE__,__func__,__LINE__);
 	      if ( new_node->type == ALABNF_NT_INVALID )
 		{
 		  aldebug_printf(NULL,"[FATAL] invalid new node %p in %s %s %i\n",new_node,__FILE__,__func__,__LINE__);
@@ -896,7 +967,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	    }
 	  else
 	    {
-	      // don't append to child sequence
+	      aldebug_printf(NULL,"don't append to child sequence in %s %s %i\n",__FILE__,__func__,__LINE__);
 	      node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
 	      if ( node != NULL )
 		{
@@ -915,6 +986,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
   return node;
 }
 
+
 struct alabnf_node * alabnf_fetch_head_node(struct alstack * stack)
 {
   struct alabnf_node * node = NULL;
@@ -931,6 +1003,7 @@ struct alabnf_node * alabnf_fetch_head_node(struct alstack * stack)
   return node;
 }
 
+// where alternative are glued
 // assuming node is entry value.
 void alabnf_merge_with_head(  struct alabnf * alabnf, struct alstack * stack, struct alhash_entry * entry, struct alabnf_node * node)
 {
@@ -938,25 +1011,7 @@ void alabnf_merge_with_head(  struct alabnf * alabnf, struct alstack * stack, st
   struct alabnf_node * head_node = alabnf_fetch_head_node(stack);
   if ( head_node != NULL )
     {
-      aldebug_printf(NULL,"[INFO] head node found %p type %i\n", head_node, head_node->type);
-      if ( head_node->type == ALABNF_NT_ALT )
-	{
-
-	  struct alabnf_alternative * alternative = &head_node->content.alt;
-	  if ( alternative->alt == NULL )
-	    {
-	      // an empty slot : merge entry here
-	      struct alabnf_node * merge_entry = alabnf_create_alternative_node(alabnf,node,NULL);
-	      alternative->alt=&merge_entry->content.alt;
-	      aldebug_printf(NULL,"[INFO] MERGE ALTERNATIVES %p %p\n", alternative, alternative->alt);
-	      exit(1);
-	    }
-	  else
-	    {
-	      aldebug_printf(NULL,"[INFO] SKIP ALTERNATIVES %p %p\n", alternative, alternative->alt);
-	      head_node = NULL;
-	    }
-	}
+      head_node = alabnf_merge_alt_with_head(alabnf,head_node,node);
     }
   // if entry was not merged with head node
   if ( head_node == NULL )
@@ -991,6 +1046,7 @@ void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
 		{
 		  // iterator start found, can create iterator object and return
 		  iterator->node = collected_node;
+
 		  // should push an entry : this one has iterator as value.
 		  alabnf_merge_with_head(alabnf,stack,entry,node);
 		  
@@ -1133,12 +1189,13 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 
   // should create rule = sequence of nodes
   struct alstackelement * element=NULL;
-  struct alabnf_sequence * sequence=NULL;
-  struct alabnf_sequence * next_sequence=NULL;
+  struct alabnf_node * collector = NULL;
+  
+  aldebug_printf(NULL,"[INFO] parsing a rule in stack of %i tokens .\n",  entries );
+  
   // we are unstacking so popping next before previous.
   for (int i=1; i<entries; i++)
     {
-      struct alabnf_node * node_sequence;
       element=alstack_pop(stack);
       if ( element != NULL )
 	{
@@ -1153,22 +1210,9 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 	  {
 	      node =  alabnf_build_abnf_node(state_machine,entry);
 
-	      // TODO use 
-	      // node_sequence = alabnf_collect_node_sequence(struct alabnf_node * collector, struct alabnf_node * new_node)
-	      {
-		node_sequence =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
-		if (node_sequence != NULL)
-		  {
-		    sequence = &node_sequence->content.sequence;
-		    sequence->node = node;
-		    sequence->next = next_sequence;
-		    next_sequence=sequence;
-		  }
-		else
-		  {
-		    aldebug_printf(NULL,"[FATAL] null node sequence in %s",__FILE__);
-		  }
-	      }
+	      aldebug_printf(NULL,"add node type %i in rule sequence\n", node->type);
+
+	      collector = alabnf_collect_node_sequence(alabnf,collector,node);
 	  }
 	}
     }
@@ -1177,19 +1221,24 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
       struct alstackelement * rule=alstack_pop(stack);
       if ( rule != NULL )
 	{
+	  aldebug_printf(NULL,"[INFO] in %s %s %i\n", __FILE__, __func__,__LINE__ );
 	  struct alhash_entry * mytoken = (struct alhash_entry *)  rule->reference;
 	  if ( mytoken != NULL )
 	    {
 	      // FIXME TOY CODE
 	      printf("\n");
 	      alabnf_print_token(mytoken);
-	      if ( sequence != NULL )
+	      if ( collector != NULL )
 		{
 		  printf("= ");
-		  alabnf_dump_sequence(sequence);
+		  alabnf_dump_node(collector);
 		}
 	      printf("\n");
 	    }
+	}
+      else
+	{
+	  aldebug_printf(NULL,"[FATAL] parsing a NULL rule token in stack of tokens %i .\n",  alstack_used(stack) );
 	}
     }
   else
