@@ -12,6 +12,7 @@
 */
 
 const int ALBNF_MAX_CHARS=100;
+const int ALABNF_INFINITE_ITERATION=-1;
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
 void alabnf_dump_node(struct alabnf_node * node );
@@ -113,7 +114,21 @@ void alabnf_dump_iterator(struct alabnf_iterator * iterator)
 	}
       else
 	{
-	  printf("%i %i",iterator->min,iterator->max);
+	  if ( iterator->max == ALABNF_INFINITE_ITERATION )
+	    {
+	      if ( iterator->min != 0 )
+		{
+		  printf("%i*",iterator->min);
+		}
+	      else
+		{
+		  printf("*");
+		}
+	    }
+	  else
+	    {
+	      printf("%i*%i",iterator->min,iterator->max);
+	    }
 	  alabnf_dump_node(iterator->node);
 	}
     }
@@ -154,6 +169,7 @@ void alabnf_dump_node(struct alabnf_node * node )
 	    enum alabnf_string_type string_type = node->content.string.type;
 	    if ( string_type == ALABNF_ST_RULENAME )
 	      {		
+		// for debug : printf("'"ALPASCALSTRFMT"'",
 		printf(ALPASCALSTRFMT,
 		       ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 	      }
@@ -186,15 +202,19 @@ void alabnf_dump_node(struct alabnf_node * node )
 	  printf("unrecognized abnf type %i\n",type);
 	}
     }
+  else
+    {
+      // NULL
+      aldebug_printf(NULL,"[ERROR] node pointer NULL in %s %s %i", __FILE__, __func__,__LINE__);
+      printf("¤");
+    }
 }
 
 void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
 {
   struct alabnf_alternative * alternative=start_alternative;
   struct alabnf_alternative * next_alternative=NULL;
-  // DEBUG only, to remove
-  printf("{");
-
+  // debug printf("{");
   while (alternative != NULL)
     {
       next_alternative = alternative->alt;
@@ -207,8 +227,7 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
 	}
       alternative=next_alternative;
     }
-  // DEBUG only, to remove
-  printf("}");
+  // debug printf("}");
 
 
 }
@@ -228,7 +247,9 @@ void alabnf_dump_sequence(struct alabnf_sequence * start_sequence)
     {
       next_sequence = sequence->next;
       aldebug_printf(NULL,"\nnext %p node %p\n", next_sequence, sequence->node);
+      // debug printf("§");
       alabnf_dump_node(sequence->node);
+      // debug printf("$");
       if (next_sequence != NULL)
 	{
 	  printf(" ");
@@ -703,6 +724,10 @@ void alabnf_group_start(struct alabnf_sm * state_machine, char c)
 
 void alabnf_stack_iterator(struct alabnf_sm * state_machine,int min, int max)
 {
+  if ( ( min == 1 ) && ( max == 1 ))
+    {
+      aldebug_printf(NULL,"[WARNING] useless iterator min == max == 1 in %s %s %i",__FILE__,__func__,__LINE__);
+    }
   struct alstack * stack = state_machine->stack;
   struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
   // NONONO should push an entry !
@@ -764,55 +789,133 @@ void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
     }
 }
 
-void alabnf_iterator_string(struct alabnf_sm * state_machine, char c)
+// <a>*<b>element
+void alabnf_element_start(struct alabnf_sm * state_machine, char c)
+{
+  if ( c == '(' )
+    {
+      alabnf_group_start(state_machine,c);
+      state_machine->next_action = ALABNF_PA_CONTINUE;
+    }
+  else if ( c == '<' )
+    {
+      state_machine->one_char_method=alabnf_chevron;
+      state_machine->next_action = ALABNF_PA_CONTINUE;
+    }
+  // TODO FIXME can be typed string
+  else
+    {
+      state_machine->one_char_method = alabnf_string;
+      state_machine->string_type=ALABNF_ST_RULENAME;
+      // next_action not set by xxx_intern
+      alabnf_name_string_intern(state_machine, c);
+      if ( state_machine->next_action == ALABNF_PA_CLOSE )
+	{
+	  if ( c == ' ' )
+	    {
+	      state_machine->close_method = alabnf_close_string_continue;
+	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c,__FILE__,__func__,__LINE__);
+	      state_machine->close_method = alabnf_close_string_rematch;
+	    }
+	}
+    }
+}
+
+/* start of ITERATOR PARSING */
+
+// <b>element
+void alabnf_iterator_max(struct alabnf_sm * state_machine, char c)
 {
   if (
       (( c >= '0' ) && ( c <= '9' ))
-      ||
-      ( c == '*')
       )
     {
-      // TODO iterator
-      aldebug_printf(NULL,"ITERATOR %i\n",c);
+      if ( state_machine->it_state != ALABNF_ISM_MAX_START )
+	{
+	  state_machine->it_state = ALABNF_ISM_MAX_START;
+	  state_machine->it_max=(c-'0');
+	}
+      else
+	{
+	  state_machine->it_max=state_machine->it_max*10+(c-'0');
+	}
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
   else
     {
-      // TODO should push iterator token on stack
-      if ( c == '(' )
+      alabnf_stack_iterator(state_machine,state_machine->it_min,state_machine->it_max);
+      alabnf_element_start(state_machine,c);
+    }
+}
+
+// a+*<b>element
+void alabnf_iterator_min(struct alabnf_sm * state_machine, char c)
+{
+  if (
+      (( c >= '0' ) && ( c <= '9' ))
+      )
+    {
+      state_machine->it_state = ALABNF_ISM_MIN_START;
+      state_machine->it_min=state_machine->it_min*10+(c-'0');
+    }
+  else if ( c == '*')
+    {
+      if ( state_machine->it_state !=  ALABNF_ISM_MIN_START )
 	{
-	  alabnf_group_start(state_machine,c);
-	  state_machine->next_action = ALABNF_PA_CONTINUE;
+	  state_machine->it_min=0;
 	}
-      else if ( c == '<' )
-	{
-	  state_machine->one_char_method=alabnf_chevron;
-	  state_machine->next_action = ALABNF_PA_CONTINUE;
-	}
-      // TODO FIXME can be typed string
-      else
-	{
-	  state_machine->one_char_method = alabnf_string;
-	  state_machine->string_type=ALABNF_ST_RULENAME;
-	  // next_action not set by xxx_intern
-	  alabnf_name_string_intern(state_machine, c);
-	  if ( state_machine->next_action == ALABNF_PA_CLOSE )
-	    {
-	      if ( c == ' ' )
-		{
-		  state_machine->close_method = alabnf_close_string_continue;
-		}
-	      else
-		{
-		  aldebug_printf(NULL,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c,__FILE__,__func__,__LINE__);
-		  state_machine->close_method = alabnf_close_string_rematch;
-		}
-	    }
-	}
+      state_machine->it_max=ALABNF_INFINITE_ITERATION;
+      state_machine->it_state = ALABNF_ISM_MIN_SET;
+      state_machine->one_char_method=alabnf_iterator_max;
+      state_machine->next_action = ALABNF_PA_CONTINUE;
+    }
+  else
+    {
+      alabnf_stack_iterator(state_machine,state_machine->it_min,state_machine->it_max);
+      alabnf_element_start(state_machine,c);
     }
 
 }
 
+// <a>*<b>element
+void alabnf_iterator_string_start(struct alabnf_sm * state_machine, char c)
+{
+  state_machine->it_state = ALABNF_ISM_START;
+  state_machine->it_min=0;
+  state_machine->it_max=0;
+  if (
+      (( c >= '0' ) && ( c <= '9' ))
+      )
+    {
+      state_machine->it_state = ALABNF_ISM_MIN_START;
+      state_machine->it_min=c-'0';
+      state_machine->one_char_method=alabnf_iterator_min;
+      state_machine->next_action = ALABNF_PA_CONTINUE;
+    }
+  else if ( c == '*')
+    {
+      state_machine->it_state = ALABNF_ISM_MIN_SET;
+      state_machine->it_min=0;
+      state_machine->it_max=ALABNF_INFINITE_ITERATION;
+      state_machine->one_char_method=alabnf_iterator_max;
+      state_machine->next_action = ALABNF_PA_CONTINUE;
+    }
+  else
+    {
+
+      state_machine->it_min=1;
+      state_machine->it_max=1;
+      // no iterator
+      // alabnf_stack_iterator(state_machine,state_machine->it_min,state_machine->it_max);
+      alabnf_element_start(state_machine,c);
+    }
+
+}
+
+/* end of ITERATOR PARSING */
 
 void alabnf_start_typed_string(struct alabnf_sm * state_machine, char c)
 {
@@ -857,6 +960,7 @@ void alabnf_quoted_string(struct alabnf_sm * state_machine, char c)
 }
 
 // where alternative are glued
+// TODO iterator HERE too ? ( check callers ).
 struct alabnf_node * alabnf_merge_alt_with_head(  struct alabnf * alabnf, struct alabnf_node * head_node, struct alabnf_node * node)
 {
   if ( head_node != NULL )
@@ -888,6 +992,11 @@ struct alabnf_node * alabnf_merge_alt_with_head(  struct alabnf * alabnf, struct
 	      aldebug_printf(NULL,"[INFO] SKIP ALTERNATIVES %p %p\n", alternative, alternative->alt);
 	      head_node = NULL;
 	    }
+	}
+      else if ( head_node->type == ALABNF_NT_ITERATOR )
+	{
+	  // TODO iterator HEHRE ???
+	  head_node = NULL;
 	}
       else
 	{
@@ -1331,7 +1440,7 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
 	  aldebug_printf(NULL,"CONTINUE rule # %i, indent %i/%i\n", state_machine->rule_number,
 			 state_machine->current_indent,
 			 state_machine->initial_indent);
-	  state_machine->one_char_method=alabnf_iterator_string;
+	  state_machine->one_char_method=alabnf_iterator_string_start;
 	}
 
     }

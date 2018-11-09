@@ -98,6 +98,15 @@ enum alabnf_sm_state {
   ALABNF_STATE_RULEDEF // right side of =
 };
 
+enum alabnf_iterator_sm_state {
+  ALABNF_ISM_START,
+  ALABNF_ISM_MIN_START,
+  ALABNF_ISM_MIN_SET,
+  ALABNF_ISM_MAX_START
+};
+
+extern const int ALABNF_INFINITE_ITERATION;
+  
 struct alabnf_sm {
   struct altokenizer tokenizer;
   alabnf_one_char_method one_char_method;
@@ -120,6 +129,9 @@ struct alabnf_sm {
   // value is updated to be a alabnf_node
   struct alstack * stack;
   struct alabnf * generated;
+  enum alabnf_iterator_sm_state it_state;
+  int it_min;
+  int it_max;
 };
 
 // setup and allocate , to dispose use alabnf_state_machine_release
