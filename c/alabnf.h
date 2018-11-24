@@ -26,33 +26,41 @@ enum alabnf_string_type {
 
 struct alabnf_node;
 
+// <min>*<max><alabnf_node>
+// alabnf_node_type ALABNF_NT_ITERATOR
 struct alabnf_iterator {
   int min;
   int max;
   struct alabnf_node * node;
 };
 
+// alabnf_node_type ALABNF_NT_STRING
 struct alabnf_string {
   enum alabnf_string_type type;
   aldatablock strbloc;
 };
 
+// ( <node> <next> )
+// alabnf_node_type ALABNF_NT_SEQUENCE
 struct alabnf_sequence {
   struct alabnf_node * node; // not a list somehow like lisp car
   struct alabnf_sequence * next; // somehow like lisp cdr
 };
 
+// <node>/<alt>
 struct alabnf_alternative {
   struct alabnf_node * node; // not a list somehow like lisp car
   struct alabnf_alternative * alt; // somehow like lisp cdr
 };
 
+// alabnf_node_type ALABNF_NT_RANGE
 struct alabnf_range {
   int start;
   int end;
 };
 
 struct alabnf_node {
+  // type for content, to select within union.
   enum alabnf_node_type type;
   union {
     struct alabnf_iterator iterator;

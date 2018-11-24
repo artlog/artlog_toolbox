@@ -448,7 +448,7 @@ void alabnf_chevron_start(struct alabnf_sm * state_machine, char c)
     }
 }
 
-static int alabnf_is_closing_word(c)
+static int alabnf_is_closing_word(char c)
 {
   return (( c == ' ') || ( c== '>' ));
 }
@@ -785,7 +785,6 @@ void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
   struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
 
   struct alstackelement * element=NULL;
-  struct alabnf_node * collected_node = NULL;
 
   if ( alstack_used(stack) < 2 )
     {

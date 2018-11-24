@@ -106,6 +106,8 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
     }
   else
     {
+      // FIXME UGLY
+      // TODO set eof
       return 0;
     }
 }

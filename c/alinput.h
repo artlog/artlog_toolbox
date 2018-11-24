@@ -28,6 +28,8 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream);
 
 int alinputstream_get_readbits(struct alinputstream * stream);
 
+// WARNING 0 char considered as EOF.
+// FIXME UGLY
 unsigned char alinputstream_readuchar(struct alinputstream * stream);
 
 void alinputstream_foreach_block(
