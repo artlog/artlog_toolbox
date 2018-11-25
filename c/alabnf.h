@@ -80,7 +80,7 @@ struct alabnf {
   // does contain a hash_table dict which is rulelist.
   // impl info : done through altokenizer that share this context very BUGGY.
   alhash_context context;
-  struct alabnf_rule * root_rule;
+  struct alabnf_rule root_rule;
 };
 
 // parser state machine to read abnf syntax

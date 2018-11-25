@@ -17,7 +17,7 @@ void alabnf_match_init(struct alabnf_matcher * matcher,
       struct alabnf_matcher_state * state = matcher->current_state;
       // should setup root state
       {
-	state->current_rule = alabnf->root_rule;
+	state->current_rule = &alabnf->root_rule;
 	if ( state->current_rule != NULL )
 	  {
 	    state->current_node = state->current_rule->value;

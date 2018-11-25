@@ -1325,7 +1325,6 @@ void alabnf_optional_start(struct alabnf_sm * state_machine, char c)
 // close rule consume full stack expecting last element to be rule name.
 void alabnf_close_rule(struct alabnf_sm * state_machine)
 {
-  // TODO collect rule...
   struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
   
   struct alabnf_node * node =  alabnf_create_node(alabnf, ALABNF_NT_STRING);
@@ -1374,9 +1373,20 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 		{
 		  printf("= ");
 		  alabnf_dump_node(collector);
+
+		  // TODO collect other than initial rule ...
+		  if ( alabnf->root_rule.value == NULL )
+		    {
+		      // FIXME dangerous no check of types
+		      memcpy(&alabnf->root_rule.rule_name,&node->content.string,sizeof(node->content.string));
+		      alabnf->root_rule.value = collector;
+		    }
+
 		}
 	      printf("\n");
 	    }
+
+
 	}
       else
 	{
@@ -1387,6 +1397,7 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
     {
       aldebug_printf(NULL,"[FATAL] parsing a rule without a rule in stack of tokens %i . %s %s %i\n",  alstack_used(stack), __FILE__,__func__,__LINE__ );
     }
+
 }
 
 void alabnf_new_rule(struct alabnf_sm * state_machine)
@@ -1771,7 +1782,7 @@ struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine)
       alabnf=calloc(1,sizeof(*alabnf));
       alhash_context_init(&alabnf->context,64,1024,200);
       state_machine->generated=alabnf;
-      alabnf->root_rule=NULL;
+      alabnf->root_rule.value=NULL;
     }
 
   return alabnf;
