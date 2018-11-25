@@ -27,7 +27,7 @@ int main(int argc, char ** argv)
 	}
       else
 	{
-	  alabnf_util_parse_abnf_file(file, NULL);
+	  alabnf_util_parse_abnf_file(file);
 	}
     }
   else

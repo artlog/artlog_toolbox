@@ -37,21 +37,6 @@ struct alabnf_node * alabnf_create_node(struct alabnf * alabnf, enum alabnf_node
   struct alabnf_node * node = (struct alabnf_node *) ALALLOC(alabnf->context.allocator, sizeof(struct alabnf_node));
   bzero(node,sizeof(*node));
   node->type = type;
-  /*
-  switch(type)
-    {
-    case ALABNF_NT_ITERATOR:
-      break;
-    case ALABNF_NT_SEQUENCE:
-      break;
-    case ALABNF_NT_STRING:
-      break;
-    case ALABNF_NT_ALT:
-      break;
-    case ALABNF_NT_RANGE:
-      break;
-    }
-  */
   return node;
 }
 
@@ -201,7 +186,7 @@ void alabnf_dump_node(struct alabnf_node * node )
 	      }
 	    else if ( string_type == ALABNF_ST_UNDEFINED )
 	      {
-		printf("ERROR_UNDEF_");
+		printf("ALABNF_ST_UNDEFINED_");
 		alabnf_dump_hex_string(datablock);
 	      }
 	    else
@@ -320,9 +305,13 @@ struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
 {
   if ( entry->key.data.ptr == entry->value.data.ptr )
     {
-      // Not yet abnfized
+      // Not yet abnfized, in fact should always be the case
       return NULL;
     }
+
+  // WHY ?
+  aldebug_printf(NULL,"[FATAL] invalid token entry %p %s:%s:%i\n",entry, __FILE__,__func__,__LINE__);
+  // was implemented this way but altering tokenizer token and mixing terminals with non terminal is a bad idea
   struct alabnf_node * node = (struct alabnf_node *) entry->value.data.ptr;
 
   if ( (unsigned long) node < 64L )
@@ -339,7 +328,7 @@ struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
   return node;
 }
 
-// can alter both state_machine and mytoken value
+// can alter state_machine
 struct alabnf_node * alabnf_build_abnf_node(struct alabnf_sm * state_machine, struct alhash_entry * mytoken)
 {
   struct alabnf_node * node = alabnf_get_abnf_token(mytoken);
@@ -355,10 +344,6 @@ struct alabnf_node * alabnf_build_abnf_node(struct alabnf_sm * state_machine, st
       aldebug_printf(NULL,"[FATAL] invalid node %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
     }
 
-    // IS it REALLY changing content of hash table ? YES
-    mytoken->value.data.ptr=node;
-    mytoken->value.length=sizeof(*node);
-    mytoken->value.type=ALTYPE_OPAQUE;
     }
   return node;
 }
@@ -378,6 +363,7 @@ void alabnf_state_machine_init(struct alabnf_sm *state_machine,   struct alinput
   state_machine->inputstream = inputstream;
   state_machine->rematch=0;
   state_machine->state=ALABNF_STATE_RULENAME;
+  state_machine->string_type=ALABNF_ST_RULENAME;
   state_machine->stack=alstack_allocate();
   altokenizer_init(&state_machine->tokenizer);
 }
@@ -726,20 +712,14 @@ void albnf_stack_sequence(struct alabnf_sm * state_machine)
 
   struct al_token token;
   token.token=ALABNF_NT_SEQUENCE;
-  // FIXME non-terminals are colliding with terminals
-  // BROKEN need a way to create a new token
+
   // HACK to overcome  altokenizer_dict_add_string: Assertion `length!=0' failed
   // HACK REUSE iterator value
   alabnf_add_char(state_machine,'^',(char) state_machine->iterator_index);  
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,'(');
-  alstack_push_ref(stack,mytoken);
 
   struct alabnf_node * sequence_node = alabnf_create_sequence_node(alabnf, NULL,NULL);
-  
-  // IS it REALLY changing content of hash table ? YES
-  mytoken->value.data.ptr=sequence_node;
-  mytoken->value.length=sizeof(*sequence_node);
-  mytoken->value.type=ALTYPE_OPAQUE;  
+  alstack_push_ref(stack,sequence_node);
   
   state_machine->iterator_index ++;
 
@@ -758,23 +738,17 @@ void alabnf_stack_iterator(struct alabnf_sm * state_machine,int min, int max)
     }
   struct alstack * stack = state_machine->stack;
   struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
-  // NONONO should push an entry !
-  // alstack_push_ref(stack,iterator);
+
   struct al_token token;
   token.token=ALABNF_NT_ITERATOR;
-  // FIXME non-terminals are colliding with terminals
-  // BROKEN need a way to create a new token
+  
   //HACK to overcome  altokenizer_dict_add_string: Assertion `length!=0' failed
   alabnf_add_char(state_machine,'^',(char) state_machine->iterator_index);  
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,'^');
-  alstack_push_ref(stack,mytoken);
 
   struct alabnf_node * iterator_node = alabnf_create_iterator_node(alabnf,min,max,NULL);
-  // IS it REALLY changing content of hash table ? YES
-  mytoken->value.data.ptr=iterator_node;
-  mytoken->value.length=sizeof(*iterator_node);
-  mytoken->value.type=ALTYPE_OPAQUE;  
-  
+  alstack_push_ref(stack,iterator_node);
+ 
   state_machine->iterator_index ++;
 }
 
@@ -795,28 +769,20 @@ void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
   element=alstack_pop(stack);
   if ( element != NULL )
     {
-      struct alhash_entry * entry = (struct alhash_entry *) element->reference;
+      struct alabnf_node * node = (struct alabnf_node *) element->reference;
   
-      if ( entry != NULL )
+      if ( node != NULL )
 	{
-	  // FIXME uses state_machine->string_type which is not sync at this stage.
-	  struct alabnf_node * node = alabnf_build_abnf_node(state_machine,entry);
-
 	  struct al_token token;
 	  token.token=ALABNF_NT_ALT;
-	  // FIXME non-terminals are colliding with terminals
-	  // BROKEN need a way to create a new token
+
 	  //HACK to overcome  altokenizer_dict_add_string: Assertion `length!=0' failed
 	  alabnf_add_char(state_machine,'/',(char) state_machine->iterator_index);  
 	  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,'/');
-	  alstack_push_ref(stack,mytoken);
 
 	  struct alabnf_node * iterator_node = alabnf_create_alternative_node(alabnf,node,NULL);
-	  // IS it REALLY changing content of hash table ? YES
-	  mytoken->value.data.ptr=iterator_node;
-	  mytoken->value.length=sizeof(*iterator_node);
-	  mytoken->value.type=ALTYPE_OPAQUE;
-  
+	  alstack_push_ref(stack,iterator_node);
+
 	  state_machine->iterator_index ++;
 	}
     }
@@ -1146,18 +1112,13 @@ struct alabnf_node * alabnf_fetch_head_node(struct alstack * stack)
   element=alstack_fetch(stack);
   if (element != NULL )
     {
-      struct alhash_entry * entry = (struct alhash_entry *) element->reference;
-      if ( entry != NULL )
-	{
-	  node = alabnf_get_abnf_token(entry);
-	}
+      node = (struct alabnf_node *) element->reference;
     }
   return node;
 }
 
 // where alternative are glued
-// assuming node is entry value.
-void alabnf_merge_with_head(  struct alabnf * alabnf, struct alstack * stack, struct alhash_entry * entry, struct alabnf_node * node)
+void alabnf_merge_with_head(  struct alabnf * alabnf, struct alstack * stack, struct alabnf_node * node)
 {
   // TODO check iteratorS and alternativeS
   struct alabnf_node * head_node = alabnf_fetch_head_node(stack);
@@ -1168,7 +1129,7 @@ void alabnf_merge_with_head(  struct alabnf * alabnf, struct alstack * stack, st
   // if entry was not merged with head node
   if ( head_node == NULL )
     {
-      alstack_push_ref(stack,entry);
+      alstack_push_ref(stack,node);
     }
 }
 
@@ -1176,7 +1137,7 @@ void alabnf_merge_with_head(  struct alabnf * alabnf, struct alstack * stack, st
 // stack full iterator with content as sequence
 void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
 {
-  struct alabnf * alabnf   = alabnf_state_machine_generated(state_machine);
+  struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
   struct alstack * stack = state_machine->stack;
   
   struct alstackelement * element=NULL;
@@ -1191,12 +1152,13 @@ void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
   element=alstack_pop(stack);
   if (element != NULL )
     {
-      struct alhash_entry * entry = (struct alhash_entry *) element->reference;
+      struct alabnf_node * node = (struct alabnf_node *) element->reference;
   
-      while ( entry != NULL )
+      while ( node != NULL )
 	{
+	  // TOCHECK since rework
 	  // FIXME uses state_machine->string_type which is not sync at this stage.
-	  struct alabnf_node * node = alabnf_build_abnf_node(state_machine,entry);
+	  // struct alabnf_node * node = alabnf_build_abnf_node(state_machine,entry);
 	  if ( (node != NULL ) && (node->type == ALABNF_NT_ITERATOR ) )
 	    {
 	      struct alabnf_iterator * iterator = &node->content.iterator;
@@ -1206,7 +1168,7 @@ void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
 		  iterator->node = collected_node;
 
 		  // should push an entry : this one has iterator as value.
-		  alabnf_merge_with_head(alabnf,stack,entry,node);
+		  alabnf_merge_with_head(alabnf,stack,node);
 		  
 		  // WELL... DONE not well done.
 		  break;
@@ -1232,17 +1194,17 @@ void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
 	      element=alstack_pop(stack);
 	      if ( element != NULL )
 		{
-		  entry = (struct alhash_entry *) element->reference;
+		  node = (struct alabnf_node *) element->reference;
 		}
 	      else
 		{
-		  entry = NULL;
+		  node = NULL;
 		}
 	    }
 	  else
 	    {
 	      aldebug_printf(NULL,"[ERROR] closing an iterator with a stack containing only rulename %s %s %i\n",__FILE__,__func__,__LINE__);
-	      entry = NULL;
+	      node = NULL;
 	    }
 	      
 	}
@@ -1268,12 +1230,13 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
   element=alstack_pop(stack);
   if (element != NULL )
     {
-      struct alhash_entry * entry = (struct alhash_entry *) element->reference;
-  
-      while ( entry != NULL )
+      struct alabnf_node * node = (struct alabnf_node *) element->reference;
+      
+      while ( node != NULL )
 	{
+	  // TOCHECK since rework
 	  // FIXME uses state_machine->string_type which is not sync at this stage.
-	  struct alabnf_node * node = alabnf_build_abnf_node(state_machine,entry);
+	  // struct alabnf_node * node = alabnf_build_abnf_node(state_machine,entry);
 	  if ( (node != NULL ) && (node->type == ALABNF_NT_SEQUENCE ) )
 	    {
 	      struct alabnf_sequence * sequence = &node->content.sequence;
@@ -1282,7 +1245,7 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 		  // iterator start found, can create iterator object and return
 		  sequence->node = collected_node;
 		  // should push an entry : this one has sequence as value.
-		  alabnf_merge_with_head(alabnf,stack,entry,node);
+		  alabnf_merge_with_head(alabnf,stack,node);
 		  // WELL... DONE not well done.
 		  break;
 		}
@@ -1307,11 +1270,11 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 	      element=alstack_pop(stack);
 	      if ( element != NULL )
 		{
-		  entry = (struct alhash_entry *) element->reference;
+		  node = (struct alabnf_node *) element->reference;
 		}
 	      else
 		{
-		  entry = NULL;
+		  node = NULL;
 		}
 	    }
 	  else
@@ -1319,7 +1282,7 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 	      aldebug_printf(NULL,"[ERROR] closing a sequence with a stack containing only rulename %s %s %i\n",__FILE__,__func__,__LINE__);
 	      // HACK FIXME
 	      // alstack_push_ref(stack,node);
-	      entry = NULL;
+	      node = NULL;
 	    }
 	}
     }
@@ -1382,21 +1345,16 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
       element=alstack_pop(stack);
       if ( element != NULL )
 	{
-	  struct alhash_entry * entry = (struct alhash_entry *) element->reference;
-
-	  // FIXME uses state_machine->string_type which is not sync at this stage.
-	  node = alabnf_get_abnf_token(entry);
+	  node = (struct alabnf_node *) element->reference;
 	  if ( node == NULL )
 	    {
-	      aldebug_printf(NULL,"[WARNING] all nodes were not resolved for token %p",entry);
+	      aldebug_printf(NULL,"[WARNING] NULL node in %s:%s:%i\n",__FILE__,__func__,__LINE__);
 	    }
-	  {
-	      node =  alabnf_build_abnf_node(state_machine,entry);
-
+	  else
+	    {
 	      aldebug_printf(NULL,"add node type %i in rule sequence\n", node->type);
-
 	      collector = alabnf_collect_node_sequence(alabnf,collector,node);
-	  }
+	    }
 	}
     }
   if ( alstack_used(stack) == 1 )
@@ -1404,13 +1362,14 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
       struct alstackelement * rule=alstack_pop(stack);
       if ( rule != NULL )
 	{
-	  aldebug_printf(NULL,"[INFO] in %s %s %i\n", __FILE__, __func__,__LINE__ );
-	  struct alhash_entry * mytoken = (struct alhash_entry *)  rule->reference;
-	  if ( mytoken != NULL )
+	  aldebug_printf(NULL,"[INFO] in %s:%s:%i\n", __FILE__, __func__,__LINE__ );
+	  struct alabnf_node * node = (struct alabnf_node *)  rule->reference;
+	  if ( node != NULL )
 	    {
 	      // FIXME TOY CODE
 	      printf("\n");
-	      alabnf_print_token(mytoken);
+	      // alabnf_print_token(mytoken);
+	      alabnf_dump_node(node);
 	      if ( collector != NULL )
 		{
 		  printf("= ");
@@ -1439,6 +1398,7 @@ void alabnf_new_rule(struct alabnf_sm * state_machine)
 	 state_machine->initial_indent);
   state_machine->one_char_method=alabnf_name_string;
   state_machine->state = ALABNF_STATE_RULENAME;
+  state_machine->string_type=ALABNF_ST_RULENAME;
 }
 
 void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
@@ -1628,17 +1588,16 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 	  aldebug_printf(NULL,"[FATAL] too big token pending_chars %i > %i in %s %s %i\n",pending_chars,ALABNF_MAX_CHARS,__FILE__,__func__,__LINE__);
 	  exit(1);
 	}
+      
       struct al_token token;
       token.token=ALABNF_NT_STRING;
-      // FIXME non-terminals are colliding with terminals
+
       struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
       // alabnf_print_token(mytoken);
-      alstack_push_ref(state_machine->stack,mytoken);
+      
       aldebug_printf(NULL,"close string token %p in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
 
-      // this is here that mytoken->value can be set to something
-      // struct alabnf_string would be a good idea
-      // WARNING allocation should be on generated part...
+      // WARNING allocation done on generated part...
       struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
 
       if ( (unsigned long) node < 64L )
@@ -1646,6 +1605,7 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 	  aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
 	  exit(1);
 	}
+      alstack_push_ref(state_machine->stack,node);
     }     
 
   // string was closed, need to start a new one to know its type.
@@ -1677,12 +1637,22 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
     }
   struct al_token token;
   token.token=ALABNF_NT_STRING;
-  // FIXME non-terminals are colliding with terminals
+
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
-  // alabnf_print_token(mytoken);
-  alstack_push_ref(state_machine->stack,mytoken);
+
   aldebug_printf(NULL,"close name string %p\n",mytoken);
 
+  struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
+
+  if ( (unsigned long) node < 64L )
+    {
+      aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
+      // FIXME HARD EXIT
+      exit(1);
+    }
+  
+  alstack_push_ref(state_machine->stack,node);
+  
   // string was closed, need to start a new one to know its type.
   state_machine->string_type=ALABNF_ST_UNDEFINED;
 
@@ -1801,6 +1771,7 @@ struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine)
       alabnf=calloc(1,sizeof(*alabnf));
       alhash_context_init(&alabnf->context,64,1024,200);
       state_machine->generated=alabnf;
+      alabnf->root_rule=NULL;
     }
 
   return alabnf;

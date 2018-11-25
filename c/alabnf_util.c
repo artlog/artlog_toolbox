@@ -1,7 +1,6 @@
 #include "alabnf_util.h"
 
-// TODO construct a alabnf ...
-struct alabnf * alabnf_util_parse_abnf_file(FILE * file, struct alabnf * alabnf)
+struct alabnf * alabnf_util_parse_abnf_file(FILE * file)
 {
   struct alabnf_sm   state_machine;
   struct alinputstream main_inputstream;
@@ -14,6 +13,5 @@ struct alabnf * alabnf_util_parse_abnf_file(FILE * file, struct alabnf * alabnf)
   alabnf_state_machine_run(&state_machine);
   alabnf_state_machine_release(&state_machine);
 
-  // TODO should use alabnf
-  return alabnf;
+  return alabnf_state_machine_generated(&state_machine);
 }

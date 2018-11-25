@@ -1,5 +1,6 @@
 #include "alabnf_matcher.h"
 #include <stdio.h>
+#include <strings.h>
 
 void alabnf_match_init(struct alabnf_matcher * matcher,
 		       struct alabnf * alabnf,
@@ -7,9 +8,24 @@ void alabnf_match_init(struct alabnf_matcher * matcher,
 {
   if ( matcher != NULL )
     {
+      // make sure it is clean.
+      bzero(matcher,sizeof(*matcher));
       matcher->abnf_syntax = alabnf;
       matcher->input=input;
       matcher->current_state = &matcher->root_state;
+
+      struct alabnf_matcher_state * state = matcher->current_state;
+      // should setup root state
+      {
+	state->current_rule = alabnf->root_rule;
+	if ( state->current_rule != NULL )
+	  {
+	    state->current_node = state->current_rule->value;
+	  }
+	state->datablock_index=0;
+	state->parent = NULL;
+      }
+      
     }
 }
 
@@ -65,6 +81,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 
       if (current_node == NULL )
 	{
+	  aldebug_printf(NULL,"[WARNING] no current_node in %s %s %i\n",__FILE__,__func__,__LINE__);
 	  return ALABNF_MATCH_NONE;
 	}
 
@@ -74,6 +91,14 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	    {
 	      return abnf_match_datablock_character(matcher, &current_node->content.string.strbloc,next_char);
 	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[WARNING] current_node string type is not a quoted string but %i in %s %s %i\n",current_node->content.string.type,__FILE__,__func__,__LINE__);
+	    }
+	}
+      else
+	{
+	  aldebug_printf(NULL,"[WARNING] current_node type is not a string but %i in %s %s %i\n",current_node->type,__FILE__,__func__,__LINE__);
 	}
     }
   return ALABNF_MATCH_NONE;
@@ -83,7 +108,7 @@ void alabnf_match(struct alabnf_matcher * matcher)
 {
   alabnf_character * next_char = NULL;
   do {
-    next_char = alabnf_matcher_get_next_char(matcher);
+    next_char = alabnf_matcher_get_next_char(matcher);    
     if ( alabnf_match_character(matcher,next_char) != ALABNF_MATCH_CONTINUE )
       {
 	break;

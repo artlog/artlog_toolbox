@@ -16,7 +16,7 @@ enum alabnf_node_type {
 };
 
 enum alabnf_string_type {
-  ALABNF_ST_UNDEFINED,
+  ALABNF_ST_UNDEFINED=1,
   ALABNF_ST_RULENAME,
   ALABNF_ST_QUOTED,
   ALABNF_ST_HEX,
@@ -77,8 +77,10 @@ struct alabnf_rule {
 };
 
 struct alabnf {
-  // does contain a hash_table dict which is rulelist
+  // does contain a hash_table dict which is rulelist.
+  // impl info : done through altokenizer that share this context very BUGGY.
   alhash_context context;
+  struct alabnf_rule * root_rule;
 };
 
 // parser state machine to read abnf syntax
@@ -133,8 +135,7 @@ struct alabnf_sm {
   int iterator_index;
   enum alabnf_string_type string_type;
   // use with great care
-  // content (key,value) is a reference in altokenizer dict
-  // value is updated to be a alabnf_node
+  // content is an alabnf_node
   struct alstack * stack;
   struct alabnf * generated;
   enum alabnf_iterator_sm_state it_state;
