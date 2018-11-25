@@ -87,14 +87,50 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 
       if (current_node->type == ALABNF_NT_STRING)
 	{
-	  if (current_node->content.string.type == ALABNF_ST_QUOTED)
+	  enum alabnf_string_type string_type = current_node->content.string.type;
+	  if (
+	      ( string_type == ALABNF_ST_QUOTED)
+	      || ( string_type == ALABNF_ST_HEX)
+	      || ( string_type == ALABNF_ST_DEC)
+	      || ( string_type == ALABNF_ST_BIN) )
 	    {
 	      return abnf_match_datablock_character(matcher, &current_node->content.string.strbloc,next_char);
 	    }
+	  else if ( string_type ==  ALABNF_ST_RULENAME )	    
+	    {
+	      aldebug_printf(NULL,"[WARNING] current_node string type is a rule reference in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+
+	      // TODO should match rule ...
+	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[WARNING] current_node string type is not a quoted string but %i in %s %s %i\n",current_node->content.string.type,__FILE__,__func__,__LINE__);
+	      // ALABNF_ST_UNDEFINED 
+	      aldebug_printf(NULL,"[WARNING] current_node string type is not a quoted string but %i in %s:%s:%i\n",current_node->content.string.type,__FILE__,__func__,__LINE__);
 	    }
+	}
+      else if (current_node->type == ALABNF_NT_SEQUENCE)
+	{
+	  struct alabnf_sequence * sequence = &current_node->content.sequence;
+	  struct alabnf_node * node = sequence->node;
+	  if ( node != NULL )
+	    {
+	      // KLUDGE TOY
+	      // stacking ... TODO
+	      state->current_node = node;
+	      return alabnf_match_character(matcher,next_char);
+	    }	  
+	}
+      else if (current_node->type == ALABNF_NT_RULE_REF)
+	{
+	  struct alabnf_rule_ref * rule_ref = &current_node->content.rule_ref;
+	  struct alabnf_node * node = rule_ref->resolved;
+	  if ( node != NULL )
+	    {
+	      // KLUDGE TOY
+	      // stacking ... TODO
+	      state->current_node = node;
+	      return alabnf_match_character(matcher,next_char);
+	    }	  
 	}
       else
 	{

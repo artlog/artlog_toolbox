@@ -7,12 +7,13 @@
 #include "alstack.h"
 
 enum alabnf_node_type {
-  ALABNF_NT_INVALID,
+  ALABNF_NT_INVALID=1,
   ALABNF_NT_ITERATOR,
   ALABNF_NT_SEQUENCE,
   ALABNF_NT_STRING,
   ALABNF_NT_ALT,
   ALABNF_NT_RANGE,
+  ALABNF_NT_RULE_REF,
 };
 
 enum alabnf_string_type {
@@ -48,6 +49,7 @@ struct alabnf_sequence {
 };
 
 // <node>/<alt>
+// alabnf_node_type ALABNF_NT_ALT
 struct alabnf_alternative {
   struct alabnf_node * node; // not a list somehow like lisp car
   struct alabnf_alternative * alt; // somehow like lisp cdr
@@ -59,6 +61,12 @@ struct alabnf_range {
   int end;
 };
 
+// alabnf_node_type ALABNF_NT_RULE_REF
+struct alabnf_rule_ref {
+  aldatablock keyblock;
+  struct alabnf_node * resolved;
+};
+
 struct alabnf_node {
   // type for content, to select within union.
   enum alabnf_node_type type;
@@ -68,6 +76,7 @@ struct alabnf_node {
     struct alabnf_string string;
     struct alabnf_alternative alt;
     struct alabnf_range range;
+    struct alabnf_rule_ref rule_ref;
   } content;
 };
 
@@ -76,9 +85,10 @@ struct alabnf_rule {
   struct alabnf_node * value;
 };
 
+
 struct alabnf {
-  // does contain a hash_table dict which is rulelist.
-  // impl info : done through altokenizer that share this context very BUGGY.
+  // does contain a hash_table dict which is used for rule_def resolution
+  // impl info : done through altokenizer that share this context, quite dangerous
   alhash_context context;
   struct alabnf_rule root_rule;
 };

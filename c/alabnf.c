@@ -149,6 +149,21 @@ void alabnf_dump_hex_string(aldatablock * string )
   printf("%x",string->data.charptr[string->length-1]);
 }
 
+void alabnf_dump_rule_ref(struct alabnf_rule_ref * rule_ref)
+{
+  struct alhash_datablock * datablock = &rule_ref->keyblock;
+  if ( datablock->data.ptr != NULL )
+    {
+      printf(ALPASCALSTRFMT,
+	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+    }
+  else
+    {
+      printf("unamed_rule_ref%p",rule_ref);
+    }
+
+}
+
 void alabnf_dump_node(struct alabnf_node * node )
 {
   if ( node != NULL )
@@ -202,6 +217,9 @@ void alabnf_dump_node(struct alabnf_node * node )
 	  break;
 	case ALABNF_NT_RANGE:
 	  alabnf_dump_range(&node->content.range);
+	  break;
+	case ALABNF_NT_RULE_REF:
+	  alabnf_dump_rule_ref(&node->content.rule_ref);
 	  break;
 	default:
 	  printf("unrecognized abnf type %i\n",type);
@@ -328,7 +346,9 @@ struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
   return node;
 }
 
-// can alter state_machine
+/* can alter state_machine
+   can create a node string  if state_machine->string_type
+*/
 struct alabnf_node * alabnf_build_abnf_node(struct alabnf_sm * state_machine, struct alhash_entry * mytoken)
 {
   struct alabnf_node * node = alabnf_get_abnf_token(mytoken);
@@ -337,7 +357,7 @@ struct alabnf_node * alabnf_build_abnf_node(struct alabnf_sm * state_machine, st
     struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
     // should alter value to point on alabnf_string
     // we copy value to node->string by allocating/copying it on new context.
-    node = alabnf_create_node_string(alabnf,&mytoken->value, state_machine->string_type);    
+    node = alabnf_create_node_string(alabnf,&mytoken->value, state_machine->string_type);
     if ((node == NULL) || ( node->type == ALABNF_NT_INVALID ))
     {
       // ooops
@@ -1365,6 +1385,24 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 	  struct alabnf_node * node = (struct alabnf_node *)  rule->reference;
 	  if ( node != NULL )
 	    {
+	      if (node->type == ALABNF_NT_RULE_REF )
+		{
+		  struct alabnf_rule_ref * rule_ref = &node->content.rule_ref;
+		  if ( rule_ref->resolved != NULL )
+		    {
+		      aldebug_printf(NULL,"[ERROR] redefinition of rule rule_ref in %s:%s:%i\n", __FILE__, __func__,__LINE__ );
+		      // could create automagically an alternative... ALABNF_NT_ALT with rule_ref->resolved and collector
+		    }
+		  else
+		    {
+		      rule_ref->resolved=collector;
+		    }
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"[ERROR] rule definition should be a rule_ref in %s:%s:%i\n", __FILE__, __func__,__LINE__ );		  
+		}
+
 	      // FIXME TOY CODE
 	      printf("\n");
 	      // alabnf_print_token(mytoken);
@@ -1588,6 +1626,58 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
 
 }
 
+void alabnf_stack_rule_ref(struct alabnf_sm * state_machine, struct alhash_entry * mytoken)
+{
+  struct alabnf_node * node = alabnf_get_abnf_token(mytoken);
+  
+  struct alabnf_rule_ref * rule_ref = NULL;
+  if ( node == NULL )
+    {
+      struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
+
+      node = alabnf_create_node(alabnf,ALABNF_NT_RULE_REF);
+      if ((node == NULL) || ( node->type != ALABNF_NT_RULE_REF ))
+	{
+	  // ooops
+	  aldebug_printf(NULL,"[FATAL] invalid node %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
+	}
+      else	
+	{
+	  rule_ref = &node->content.rule_ref;
+	  memcpy(&rule_ref->keyblock,&mytoken->key,sizeof(rule_ref->keyblock));
+	  // IS it REALLY changing content of hash table ? YES
+	  mytoken->value.data.ptr=node;
+	  mytoken->value.length=sizeof(*node);
+	  mytoken->value.type=ALTYPE_OPAQUE;
+	}      
+    }
+  else
+    {
+      // poor lazzy protection
+      if ( (unsigned long) node < 64L )
+	{
+	  aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
+	  // FIXME HARD EXIT
+	  exit(1);
+	}
+
+      // should be a rule ref
+      if ( node->type == ALABNF_NT_RULE_REF )
+	{
+	  rule_ref = &node->content.rule_ref;
+	  if ( rule_ref->resolved == NULL )
+	    {
+	      // well.. unresolved...
+	    }
+	}
+      else
+	{
+	  aldebug_printf(NULL,"[FATAL] expecting a rule ref got %i in %s:%s:%i\n",node->type,__FILE__,__func__,__LINE__);
+	}
+    }
+  
+  alstack_push_ref(state_machine->stack,node);
+}
 
 void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 {
@@ -1604,19 +1694,30 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
       token.token=ALABNF_NT_STRING;
 
       struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
-      // alabnf_print_token(mytoken);
       
-      aldebug_printf(NULL,"close string token %p in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
 
-      // WARNING allocation done on generated part...
-      struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
 
-      if ( (unsigned long) node < 64L )
+      if ( state_machine->string_type == ALABNF_ST_RULENAME )
 	{
-	  aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
-	  exit(1);
+	  aldebug_printf(NULL,"[DEBUG] close string token %p for rule_ref in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
+	  
+	  // Exception rulename will create a rule_ref entry.
+	  alabnf_stack_rule_ref(state_machine, mytoken);
 	}
-      alstack_push_ref(state_machine->stack,node);
+      else
+	{
+	  aldebug_printf(NULL,"[DEBUG] close string token %p in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
+	  
+	  // WARNING allocation done on generated part...
+	  struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
+
+	  if ( (unsigned long) node < 64L )
+	    {
+	      aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
+	      exit(1);
+	    }
+	  alstack_push_ref(state_machine->stack,node);
+	}
     }     
 
   // string was closed, need to start a new one to know its type.
@@ -1625,6 +1726,7 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
   // next state
   if ( state_machine->state == ALABNF_STATE_RULENAME )
     {
+      // HOW can it be ???
       state_machine->one_char_method=alabnf_start_string;
     }
   else
@@ -1633,6 +1735,7 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
     }
 
 }
+
 
 void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
 {
@@ -1650,19 +1753,9 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
   token.token=ALABNF_NT_STRING;
 
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
-
   aldebug_printf(NULL,"close name string %p\n",mytoken);
 
-  struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
-
-  if ( (unsigned long) node < 64L )
-    {
-      aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
-      // FIXME HARD EXIT
-      exit(1);
-    }
-  
-  alstack_push_ref(state_machine->stack,node);
+  alabnf_stack_rule_ref(state_machine, mytoken);
   
   // string was closed, need to start a new one to know its type.
   state_machine->string_type=ALABNF_ST_UNDEFINED;
