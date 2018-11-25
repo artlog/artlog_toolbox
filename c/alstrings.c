@@ -24,8 +24,10 @@ int alstrings_debug_flag_is_set(int flag)
   return  ALC_FLAG_IS_SET(alstrings_debug_flags,flag);
 }
 
-// construct circular linked list at once within an array of size times.
-// return first
+/* construct circular linked list at once within an array of size times.
+   allocated on heap and zeroed
+   return first
+*/
 struct token_char_buffer * al_token_char_buffer_alloc(int times)
 {
   struct token_char_buffer * buffers = calloc(times, sizeof(struct token_char_buffer));
@@ -38,13 +40,14 @@ struct token_char_buffer * al_token_char_buffer_alloc(int times)
   return buffers;
 }
 
-// allocate buffer of chars bytes.
+// allocate buffer of chars bytes on heap not zeroed.
 void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer buffer, int chars)
 {
 
   buffer->bufsize = chars;
   buffer->bufpos = 0;
-  buffer->buf = malloc (buffer->bufsize);
+  // allocated on heap, NOT zeroed.
+  buffer->buf = malloc(buffer->bufsize);
   // can be freed with int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * data)
   // don't set first or next  
 }
@@ -102,7 +105,9 @@ void al_token_char_buffer_rehead(struct token_char_buffer * newhead, struct toke
     }
 }
 
-// pick from buffer one that can provide length , if not enough place create a new one.
+/* pick from buffer one that can provide length
+   if not enough place create a new one on heap filled with zeros
+*/
 struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * buffer, int length)
 {
   struct token_char_buffer * next  = buffer->next;
@@ -125,6 +130,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	    }
 	  next->bufpos=0;
 	  next->bufsize = bufsize;
+	  // created on heap
 	  next->buf = calloc(1,bufsize);
 	  if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	    {
@@ -166,6 +172,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
   return next;
 }
 
+// newly allocated (on heap) block is filled with zeros
 char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 {
   if ( ringbufferp != NULL )
