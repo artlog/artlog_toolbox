@@ -258,7 +258,7 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
 void alabnf_dump_range(struct alabnf_range * range)
 {
   // TODO
-  printf("TODO alabnf_dump_range");
+  printf("%%x%x-%x",range->start,range->end);
 }
 
 void alabnf_dump_sequence(struct alabnf_sequence * start_sequence)
@@ -323,12 +323,12 @@ struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
 {
   if ( entry->key.data.ptr == entry->value.data.ptr )
     {
-      // Not yet abnfized, in fact should always be the case
+      // Not yet abnfized, in fact should always be the case for terminals ( ie not rule refs ).
       return NULL;
     }
 
-  // WHY ?
-  aldebug_printf(NULL,"[FATAL] invalid token entry %p %s:%s:%i\n",entry, __FILE__,__func__,__LINE__);
+  // can happen with rule_ref name.
+  aldebug_printf(NULL,"[DEBUG] existing token entry %p %s:%s:%i\n",entry, __FILE__,__func__,__LINE__);
   // was implemented this way but altering tokenizer token and mixing terminals with non terminal is a bad idea
   struct alabnf_node * node = (struct alabnf_node *) entry->value.data.ptr;
 
@@ -346,24 +346,19 @@ struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
   return node;
 }
 
-/* can alter state_machine
-   can create a node string  if state_machine->string_type
+/* 
+create a node string of type state_machine->string_type
 */
 struct alabnf_node * alabnf_build_abnf_node(struct alabnf_sm * state_machine, struct alhash_entry * mytoken)
 {
-  struct alabnf_node * node = alabnf_get_abnf_token(mytoken);
-  if ( node == NULL )
-    {
-    struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
-    // should alter value to point on alabnf_string
-    // we copy value to node->string by allocating/copying it on new context.
-    node = alabnf_create_node_string(alabnf,&mytoken->value, state_machine->string_type);
-    if ((node == NULL) || ( node->type == ALABNF_NT_INVALID ))
+  struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
+  // should alter value to point on alabnf_string
+  // we copy key to node->string by allocating/copying it on new context.
+  struct alabnf_node * node = alabnf_create_node_string(alabnf,&mytoken->key, state_machine->string_type);
+  if ((node == NULL) || ( node->type == ALABNF_NT_INVALID ))
     {
       // ooops
       aldebug_printf(NULL,"[FATAL] invalid node %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
-    }
-
     }
   return node;
 }
@@ -420,9 +415,18 @@ void alabnf_add_char(struct alabnf_sm * state_machine, char token, char c)
 // cumulated number is converted to char and reset.
 void alabnf_flush_number_to_char(struct alabnf_sm * state_machine)
 {
-  int value = alabnf_flush_number(&state_machine->number_sm);  
+  int value = alabnf_flush_number(&state_machine->number_sm);
 
-  alabnf_add_char(state_machine,'?',(char) value);
+  // if needed for range.
+  if ( state_machine->number_sm.state == ALABNF_NSM_MAX_SET )
+    {
+      state_machine->number_sm.max=value;
+    }
+  else
+    {
+      state_machine->number_sm.min=value;
+      alabnf_add_char(state_machine,'?',(char) value);
+    }
 }
 
 void alabnf_comment(struct alabnf_sm * state_machine, char c)
@@ -541,6 +545,7 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
       (( c >= 'a' ) && ( c <= 'f' ))
       )
     {
+      state_machine->string_type=ALABNF_ST_HEX;
       number_sm->cumulated = number_sm->cumulated << 4 | (0xa+c-'a');
       number_sm->seen++;
       state_machine->next_action = ALABNF_PA_CONTINUE;
@@ -551,6 +556,7 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
       )
     {
       //
+      state_machine->string_type=ALABNF_ST_HEX;
       number_sm->cumulated = number_sm->cumulated << 4 | (0xA+c-'A');
       number_sm->seen++;
       state_machine->next_action = ALABNF_PA_CONTINUE;
@@ -560,18 +566,25 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
 	if ( c == '.' )
 	  {
 	    // concatenation
+	    number_sm->state=ALABNF_NSM_START;
 	    state_machine->next_action = ALABNF_PA_CONTINUE;
 	    return;
 	  }
 	else
 	if ( c == '-' )
 	  {
-	    // TODO FIXME range
+	    // range
+	    number_sm->state=ALABNF_NSM_MIN_SET;
 	    state_machine->next_action = ALABNF_PA_CONTINUE;
 	    return;
 	  }
 	else
 	  {
+	    // end of parsing for hexadecimal string / range.
+	    if ( number_sm->state==ALABNF_NSM_MAX_SET )
+	      {
+		state_machine->string_type=ALABNF_ST_RANGE;		
+	      }
 	    state_machine->close_method = alabnf_close_string_rematch;
 	    state_machine->next_action = ALABNF_PA_CLOSE;
 	    return;
@@ -580,6 +593,10 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
 
   if (number_sm->seen > 1)
     {
+      if ( number_sm->state==ALABNF_NSM_MIN_SET )
+	{
+	  number_sm->state=ALABNF_NSM_MAX_SET;
+	}
       alabnf_flush_number_to_char(state_machine);
     }
 }
@@ -940,6 +957,8 @@ void alabnf_start_typed_string(struct alabnf_sm * state_machine, char c)
 {
   enum alabnf_parser_action next_action;
 
+  state_machine->number_sm.state=ALABNF_NSM_START;
+  
   switch(c)
     {
     case 'b':
@@ -1679,6 +1698,27 @@ void alabnf_stack_rule_ref(struct alabnf_sm * state_machine, struct alhash_entry
   alstack_push_ref(state_machine->stack,node);
 }
 
+void alabnf_stack_range(struct alabnf_sm * state_machine)
+{
+  struct alabnf_node * node = NULL;
+  struct alabnf_range * range = NULL;
+  struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
+
+  node = alabnf_create_node(alabnf,ALABNF_NT_RANGE);
+  if ((node == NULL) || ( node->type != ALABNF_NT_RANGE ))
+    {
+      // ooops
+      aldebug_printf(NULL,"[FATAL] invalid node %p %s:%s:%i\n",node, __FILE__,__func__,__LINE__);
+    }
+  else	
+    {
+      range = &node->content.range;
+      range->start = state_machine->number_sm.min;
+      range->end = state_machine->number_sm.max;
+    }  
+  alstack_push_ref(state_machine->stack,node);
+}
+
 void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 {
   int pending_chars = altokenizer_get_pending_chars(&state_machine->tokenizer);
@@ -1689,34 +1729,45 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 	  aldebug_printf(NULL,"[FATAL] too big token pending_chars %i > %i in %s %s %i\n",pending_chars,ALABNF_MAX_CHARS,__FILE__,__func__,__LINE__);
 	  exit(1);
 	}
-      
-      struct al_token token;
-      token.token=ALABNF_NT_STRING;
 
-      struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
-      
-
-
-      if ( state_machine->string_type == ALABNF_ST_RULENAME )
+      if ( state_machine->string_type == ALABNF_ST_RANGE )
 	{
-	  aldebug_printf(NULL,"[DEBUG] close string token %p for rule_ref in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
-	  
-	  // Exception rulename will create a rule_ref entry.
-	  alabnf_stack_rule_ref(state_machine, mytoken);
+	  aldebug_printf(NULL,"[DEBUG] close string for range in %s %s %i\n",__FILE__,__func__,__LINE__);
+
+	  // flush pending chars they have been collected in number_sm min,max by other means.
+	  altokenizer_reset_buffer_pos(&state_machine->tokenizer);
+
+	  // Exception rulename will create a range entry.
+	  alabnf_stack_range(state_machine);
 	}
       else
 	{
-	  aldebug_printf(NULL,"[DEBUG] close string token %p in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
-	  
-	  // WARNING allocation done on generated part...
-	  struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
+	  struct al_token token;
+	  token.token=ALABNF_NT_STRING;
+      
+	  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
 
-	  if ( (unsigned long) node < 64L )
+	  if ( state_machine->string_type == ALABNF_ST_RULENAME )
 	    {
-	      aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
-	      exit(1);
+	      aldebug_printf(NULL,"[DEBUG] close string token %p for rule_ref in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
+	  
+	      // Exception rulename will create a rule_ref entry.
+	      alabnf_stack_rule_ref(state_machine, mytoken);
 	    }
-	  alstack_push_ref(state_machine->stack,node);
+	  else 
+	    {
+	      aldebug_printf(NULL,"[DEBUG] close string token %p in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
+	  
+	      // WARNING allocation done on generated part...
+	      struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
+
+	      if ( (unsigned long) node < 64L )
+		{
+		  aldebug_printf(NULL,"[FATAL] invalid pointer node %p\n",node);
+		  exit(1);
+		}
+	      alstack_push_ref(state_machine->stack,node);
+	    }
 	}
     }     
 
@@ -1808,7 +1859,8 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 {
   enum alabnf_parser_action action = state_machine->next_action;
   char c = 0;
-
+  int seen_eof = 0;
+  
   do 
     {
       // capture the character to analyze
@@ -1830,6 +1882,21 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
       else
 	{
 	  c = alabnf_eat_char(state_machine);
+	  // quick fix for infinite loop in last comment
+	  if ( c == 0 )
+	    {
+	      seen_eof ++;
+	      if ( seen_eof > 100 )
+		{
+		  aldebug_printf(NULL,"[FATAL] eof char 0 seen %i times. would need a proper code fix. break.\n",seen_eof);
+		  break;		  
+		}
+		 
+	    }
+	  else
+	    {
+	      seen_eof = 0;
+	    }
 	  state_machine->rematch=c;
 	}
       action = state_machine->next_action;

@@ -64,7 +64,15 @@ enum alabnf_match abnf_match_datablock_character(struct alabnf_matcher * matcher
 	    }
 	  current_state->datablock_index=datablock_index;
 	  return ALABNF_MATCH_CONTINUE;
-	}    
+	}
+      else
+	{
+	  printf("'%c' != '%c'\n",datablock->data.ucharptr[datablock_index],next_char->uchar);
+	}
+    }
+  else
+    {
+      printf("str length %i > %i\n",datablock_index,datablock->length);
     }
   
   return ALABNF_MATCH_NONE;
@@ -100,7 +108,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	    {
 	      aldebug_printf(NULL,"[WARNING] current_node string type is a rule reference in %s:%s:%i\n",__FILE__,__func__,__LINE__);
 
-	      // TODO should match rule ...
+	      // somehow should not happen since it should not be a string but a ALABNF_NT_RULE_REF
 	    }
 	  else
 	    {
@@ -117,7 +125,8 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	      // KLUDGE TOY
 	      // stacking ... TODO
 	      state->current_node = node;
-	      return alabnf_match_character(matcher,next_char);
+	      state->next_sequence = sequence->next;
+	      return ALABNF_MATCH_REMATCH;
 	    }	  
 	}
       else if (current_node->type == ALABNF_NT_RULE_REF)
@@ -129,12 +138,17 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	      // KLUDGE TOY
 	      // stacking ... TODO
 	      state->current_node = node;
-	      return alabnf_match_character(matcher,next_char);
-	    }	  
+	      return ALABNF_MATCH_REMATCH;
+	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[WARNING] unresolved rule_ref in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	    }
+	  
 	}
       else
 	{
-	  aldebug_printf(NULL,"[WARNING] current_node type is not a string but %i in %s %s %i\n",current_node->type,__FILE__,__func__,__LINE__);
+	  aldebug_printf(NULL,"[WARNING] current_node type is not a string but %i in %s:%s:%i\n",current_node->type,__FILE__,__func__,__LINE__);
 	}
     }
   return ALABNF_MATCH_NONE;
@@ -143,12 +157,57 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 void alabnf_match(struct alabnf_matcher * matcher)
 {
   alabnf_character * next_char = NULL;
+  enum alabnf_match match = ALABNF_MATCH_NONE;
   do {
-    next_char = alabnf_matcher_get_next_char(matcher);    
-    if ( alabnf_match_character(matcher,next_char) != ALABNF_MATCH_CONTINUE )
+    if ( match != ALABNF_MATCH_REMATCH )
       {
-	break;
+	next_char = alabnf_matcher_get_next_char(matcher);
       }
+    match = alabnf_match_character(matcher,next_char);
+    if (match == ALABNF_MATCH_CONTINUE)
+    {
+      // continue;
+      if ( next_char != NULL )
+	{
+	  printf("%c",next_char->uchar);
+	}
+    }
+    else if (match == ALABNF_MATCH_FULL)
+    {      
+      if ( next_char != NULL )
+	{
+	  printf("%c",next_char->uchar);
+	}
+      
+      struct alabnf_matcher_state * state = matcher->current_state;
+
+      state->datablock_index=0;
+      // should check we consumed full sequence of root ...
+      // currently broken
+      if ( state->next_sequence != NULL )
+	{
+	  printf("#");
+	  state->current_node=state->next_sequence->node;
+	  state->next_sequence=state->next_sequence->next;
+	}
+      else
+	{
+	  state->current_node=NULL;
+	  state->next_sequence=NULL;
+	}
+      if (  state->current_node == NULL )
+	{
+	  // todo play with parent alternative.
+	  printf("matched !\n");
+	  break;
+	}
+    }
+    else if ( match != ALABNF_MATCH_REMATCH )
+    {
+      printf("'%c' match failed %i\n",next_char->uchar,match);
+      break;
+    }
+
   }
   while ( next_char != NULL );
     

@@ -19,6 +19,7 @@ enum alabnf_node_type {
 enum alabnf_string_type {
   ALABNF_ST_UNDEFINED=1,
   ALABNF_ST_RULENAME,
+  ALABNF_ST_RANGE,
   ALABNF_ST_QUOTED,
   ALABNF_ST_HEX,
   ALABNF_ST_DEC,
@@ -108,9 +109,18 @@ enum alabnf_parser_action {
   ALABNF_PA_FAIL
 };
 
+enum alabnf_number_sm_state {
+  ALABNF_NSM_START,
+  ALABNF_NSM_MIN_SET,
+  ALABNF_NSM_MAX_SET
+};
+
 struct alabnf_number_sm {
   int seen; // number of char seen (usefull for hex or binary )
-  int cumulated;    
+  int cumulated;
+  enum alabnf_number_sm_state state;
+  int min;
+  int max;
 };
 
 enum alabnf_sm_state {
@@ -124,6 +134,7 @@ enum alabnf_iterator_sm_state {
   ALABNF_ISM_MIN_SET,
   ALABNF_ISM_MAX_START
 };
+
 
 extern const int ALABNF_INFINITE_ITERATION;
   

@@ -5,8 +5,9 @@
 #include "alinput.h"
 
 enum alabnf_match {
-  ALABNF_MATCH_NONE,
+  ALABNF_MATCH_NONE =1,
   ALABNF_MATCH_CONTINUE,
+  ALABNF_MATCH_REMATCH,
   ALABNF_MATCH_FULL,
 };
 typedef struct alabnf_character_ {
@@ -16,6 +17,8 @@ typedef struct alabnf_character_ {
 struct alabnf_matcher_state {
   struct alabnf_node * current_node;
   struct alabnf_rule * current_rule;
+  // for sequences.
+  struct alabnf_sequence * next_sequence;
   // index with datablock
   int datablock_index;
   // backtracking on alternatives

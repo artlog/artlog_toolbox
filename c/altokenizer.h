@@ -54,4 +54,8 @@ void altokenizer_release(struct altokenizer * tokenizer);
 // number of characters pending to be cut
 int altokenizer_get_pending_chars(struct altokenizer * tokenizer);
 
+  // reset when word is parsed and recognized as either a reserved word or stored in variable dict with cut_string.
+void altokenizer_reset_buffer_pos (struct altokenizer *tokenizer);
+
+
 #endif // ALTOKENIZER_HEADER__

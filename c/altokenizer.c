@@ -161,8 +161,7 @@ altokenizer_cut_token_string(struct altokenizer *tokenizer)
 
   if (entry != NULL)
     {
-
-        altokenizer_reset_buffer_pos(tokenizer);
+      altokenizer_reset_buffer_pos(tokenizer);
       //  parser->last_word = TOKEN_C_DICTENTRY_ID;
 	//	parser->dict_value = &entry->value;  	
       // reset_tokenizer_buffer (tokenizer);	
