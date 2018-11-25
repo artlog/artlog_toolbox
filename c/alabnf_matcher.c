@@ -78,6 +78,12 @@ enum alabnf_match abnf_match_datablock_character(struct alabnf_matcher * matcher
   return ALABNF_MATCH_NONE;
 }
 
+struct alabnf_matcher_state *  alabnf_matcher_create_alt_state(struct alabnf_matcher_state * state, struct alabnf_alternative * alternative)
+{
+  // TODO
+  return NULL;
+}
+
 enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 				       alabnf_character * next_char)
 {
@@ -116,16 +122,37 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	      aldebug_printf(NULL,"[WARNING] current_node string type is not a quoted string but %i in %s:%s:%i\n",current_node->content.string.type,__FILE__,__func__,__LINE__);
 	    }
 	}
+      else if (current_node->type == ALABNF_NT_RANGE)
+	{
+	  struct alabnf_range * range = &current_node->content.range;
+	  int value = (int) next_char->uchar;
+	  if (( value >= range->start ) && ( value <= range->end ))
+	    {
+	      return ALABNF_MATCH_FULL;
+	    }
+	}	
       else if (current_node->type == ALABNF_NT_SEQUENCE)
 	{
 	  struct alabnf_sequence * sequence = &current_node->content.sequence;
 	  struct alabnf_node * node = sequence->node;
 	  if ( node != NULL )
 	    {
+	      state->current_node = node;
+	      state->next_sequence = sequence->next;
+	      return ALABNF_MATCH_REMATCH;
+	    }	  
+	}
+      else if (current_node->type == ALABNF_NT_ALT)
+	{
+	  struct alabnf_alternative * alternative = &current_node->content.alt;
+	  struct alabnf_node * node = alternative->node;
+	  if ( node != NULL )
+	    {
 	      // KLUDGE TOY
 	      // stacking ... TODO
 	      state->current_node = node;
-	      state->next_sequence = sequence->next;
+	      // FIXME alternative NOT supported...
+	      state->alt = alabnf_matcher_create_alt_state(state,alternative->alt);
 	      return ALABNF_MATCH_REMATCH;
 	    }	  
 	}
@@ -135,8 +162,6 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	  struct alabnf_node * node = rule_ref->resolved;
 	  if ( node != NULL )
 	    {
-	      // KLUDGE TOY
-	      // stacking ... TODO
 	      state->current_node = node;
 	      return ALABNF_MATCH_REMATCH;
 	    }
@@ -158,6 +183,7 @@ void alabnf_match(struct alabnf_matcher * matcher)
 {
   alabnf_character * next_char = NULL;
   enum alabnf_match match = ALABNF_MATCH_NONE;
+  struct alabnf_matcher_state * state = matcher->current_state;
   do {
     if ( match != ALABNF_MATCH_REMATCH )
       {
@@ -178,8 +204,6 @@ void alabnf_match(struct alabnf_matcher * matcher)
 	{
 	  printf("%c",next_char->uchar);
 	}
-      
-      struct alabnf_matcher_state * state = matcher->current_state;
 
       state->datablock_index=0;
       // should check we consumed full sequence of root ...
@@ -204,8 +228,21 @@ void alabnf_match(struct alabnf_matcher * matcher)
     }
     else if ( match != ALABNF_MATCH_REMATCH )
     {
-      printf("'%c' match failed %i\n",next_char->uchar,match);
-      break;
+      // should handle unstacking of parent context
+      // 1. is there an alternative ?
+      if ( state->alt!= NULL )
+	{
+	  // FIXME... reset input_stream...
+	  // FIXME what to do with current state, memory leak ? dispose ?
+	  matcher->current_state = state->alt;
+	  
+	  printf("'%c' match failed %i check alternative\n",next_char->uchar,match);
+	}
+      else
+	{
+	  printf("'%c' match failed %i\n",next_char->uchar,match);
+	  break;
+	}
     }
 
   }

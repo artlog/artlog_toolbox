@@ -23,7 +23,7 @@ struct alabnf_matcher_state {
   int datablock_index;
   // backtracking on alternatives
   struct alabnf_matcher_state * parent;
-
+  struct alabnf_matcher_state * alt;
 };
 
 // allows to match a alabnf syntax
