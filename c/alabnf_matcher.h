@@ -15,6 +15,8 @@ typedef struct alabnf_character_ {
 } alabnf_character;
 
 struct alabnf_matcher_state {
+  // node at state creation
+  struct alabnf_node * initial_node;
   struct alabnf_node * current_node;
   struct alabnf_rule * current_rule;
   // for sequences.

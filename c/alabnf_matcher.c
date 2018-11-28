@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <strings.h>
 
+#include <stdlib.h>
+
 void alabnf_match_init(struct alabnf_matcher * matcher,
 		       struct alabnf * alabnf,
 		       struct alinputstream * input)
@@ -84,6 +86,30 @@ struct alabnf_matcher_state *  alabnf_matcher_create_alt_state(struct alabnf_mat
   return NULL;
 }
 
+struct alabnf_matcher_state *  alabnf_matcher_create_seq_state(struct alabnf_matcher_state * state, struct alabnf_alternative * alternative)
+{
+  // TODO
+  return NULL;
+}
+
+struct alabnf_matcher_state * alabnf_matcher_create_child_state(
+								   struct alabnf_matcher_state * state,
+								   struct alabnf_node * node)
+{
+  // TODO ALLOC use matcher allocation ?
+  struct alabnf_matcher_state * child_state = malloc(sizeof(*child_state));
+
+  if ( child_state != NULL )
+    {
+      child_state->parent = state;
+      child_state->initial_node = node;
+      child_state->current_node = node;
+      child_state->next_sequence = NULL;
+      child_state->datablock_index = 0;
+    }
+  return child_state;
+}
+
 enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 				       alabnf_character * next_char)
 {
@@ -132,13 +158,29 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	    }
 	}	
       else if (current_node->type == ALABNF_NT_SEQUENCE)
-	{
+	{	  
+	  if ( state->parent == NULL )
+	    {
+	      state->parent = NULL ;//current_node;
+	    }	  
+	  // else we are first sequence or a sub sequence .. TODO FIXME
+	  // state = alabnf_matcher_create_seq_state(state,current_node);
 	  struct alabnf_sequence * sequence = &current_node->content.sequence;
 	  struct alabnf_node * node = sequence->node;
 	  if ( node != NULL )
 	    {
-	      state->current_node = node;
-	      state->next_sequence = sequence->next;
+	      if ( node->type == ALABNF_NT_SEQUENCE)
+		{
+		  // first node is a sequence ( unflatened sequence )
+		  struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, node);
+		  matcher->current_state = child_state;
+		}
+	      else
+		{
+		  // walking between next element of sequence keep same state but update node and next_sequence.
+		  state->current_node = node;
+		  state->next_sequence = sequence->next;
+		}
 	      return ALABNF_MATCH_REMATCH;
 	    }	  
 	}
@@ -183,13 +225,16 @@ void alabnf_match(struct alabnf_matcher * matcher)
 {
   alabnf_character * next_char = NULL;
   enum alabnf_match match = ALABNF_MATCH_NONE;
-  struct alabnf_matcher_state * state = matcher->current_state;
+  struct alabnf_matcher_state * state = NULL;
+  struct alabnf_matcher_state * parent = NULL;
   do {
     if ( match != ALABNF_MATCH_REMATCH )
       {
 	next_char = alabnf_matcher_get_next_char(matcher);
       }
     match = alabnf_match_character(matcher,next_char);
+    state = matcher->current_state;
+
     if (match == ALABNF_MATCH_CONTINUE)
     {
       // continue;
@@ -218,12 +263,42 @@ void alabnf_match(struct alabnf_matcher * matcher)
 	{
 	  state->current_node=NULL;
 	  state->next_sequence=NULL;
+
+	  if ( state->parent != NULL )
+	    {
+	    }
 	}
       if (  state->current_node == NULL )
 	{
-	  // todo play with parent alternative.
+	  // todo play with parent alternative or unflattened sequence
 	  printf("matched !\n");
-	  break;
+
+	  if ( parent != NULL )
+	    {	      
+	      printf("^");
+	      if ( state != parent )
+		{
+		  printf("^");
+		  // CHECKME looks fragile, required for memory leak protection
+		  if ( state != &matcher->root_state )
+		    {
+		      // TODO ALLOC use matcher allocation
+		      free(state);
+		    }
+		  // unstack
+		  state = parent;
+		  matcher->current_state = state;
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"[FATAL] parent point on itself art %s:%s:%i",__FILE__,__func__,__LINE__);
+		  break;
+		}
+	    }
+	  else
+	    {
+	      break;
+	    }
 	}
     }
     else if ( match != ALABNF_MATCH_REMATCH )
