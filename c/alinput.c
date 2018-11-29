@@ -118,6 +118,8 @@ int alinputstream_read_block(struct alinputstream * stream,
   return read(stream->fd,block->data.charptr,block->length);
 }
 
+
+
 void alinputstream_foreach_block(
 				 struct alinputstream * stream,
 				 int blocksize,
@@ -146,4 +148,93 @@ void alinputstream_foreach_block(
 int alinputstream_get_readbits(struct alinputstream * stream)
 {
   return stream->bits;
+}
+
+struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * parent, int blocksize)
+{
+  // FIXME currently allow only one child ...
+  if ( parent->child.parent == NULL )
+    {
+      struct alinputstream_share_child * child = &parent->child;
+
+      if ( parent->input.data.ptr == NULL )
+	{
+	  // TODO FIXME
+	  parent->mark = 0;
+      
+	  aldatablock block;
+	  char * datablock = (char *) malloc(blocksize);
+	  block.length=blocksize;
+	  block.data.charptr=datablock;
+	  alinputstream_setdatablock(parent, &block, 0);
+	}      
+      // else means it had buffer ... BAD...
+
+      child->parent=parent;
+    }
+
+  return parent; 
+}
+
+void alinputstream_free_shared(struct alinputstream * child)
+{
+  // FIXME currently allow only one child ...  
+  struct alinputstream * parent = child;
+  if (parent->input.data.ptr != NULL )
+    {
+      free(parent->input.data.ptr);
+      parent->input.data.ptr=NULL;
+      parent->input.length=0;
+    }
+}
+
+unsigned char alinputstream_read_and_record(struct alinputstream * stream, int offset)
+{
+  int relative = stream->mark - offset;
+  // steam->offset is number of char kept in parent stream
+  if (relative > stream->offset )
+    {
+      if ( stream->input.length < relative )
+	{
+	  aldebug_printf(NULL,"[DEBUG] CAN'T record, buffer too small in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	  return 0;
+	}
+      unsigned char c = 0;
+      c = alinputstream_readuchar(stream);
+      stream->input.data.ucharptr[relative]=c;      
+      return c;
+    }
+  else
+    {
+      return stream->input.data.ucharptr[relative];
+    }
+}
+
+// WARNING 0 char considered as EOF.
+unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
+{
+  
+  struct alinputstream_share_child * child = &childstream->child;
+  struct alinputstream * stream = childstream->child.parent;
+  unsigned char result = 0;
+
+  if ( stream != NULL )
+    {
+      if ( stream->mark >= child->offset )
+	{
+	  // we are trying to read at place that has not been record in time !
+	  // this is an error
+	  // UGLY eof
+	  return 0;
+	}
+
+      result = alinputstream_read_and_record(stream,child->offset);
+    }
+  else
+    {
+      // in facts not shared
+      result = alinputstream_readuchar(childstream);
+    }
+  
+  return result;
 }

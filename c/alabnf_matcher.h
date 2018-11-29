@@ -9,6 +9,7 @@ enum alabnf_match {
   ALABNF_MATCH_CONTINUE,
   ALABNF_MATCH_REMATCH,
   ALABNF_MATCH_FULL,
+  ALABNF_MATCH_UNSTACK,
 };
 typedef struct alabnf_character_ {
   unsigned char uchar;
@@ -19,13 +20,15 @@ struct alabnf_matcher_state {
   struct alabnf_node * initial_node;
   struct alabnf_node * current_node;
   struct alabnf_rule * current_rule;
-  // for sequences.
-  struct alabnf_sequence * next_sequence;
   // index with datablock
   int datablock_index;
-  // backtracking on alternatives
+  // backtracking on alternatives or unflaten sequences
   struct alabnf_matcher_state * parent;
-  struct alabnf_matcher_state * alt;
+  // for sequences.
+  struct alabnf_sequence * next_sequence;
+  // for alternatives
+  struct alabnf_alternative * alt;
+  struct alinputstream * input;
 };
 
 // allows to match a alabnf syntax

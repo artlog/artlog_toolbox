@@ -4,6 +4,15 @@
 #include "alstrings.h"
 #include "aldebug.h"
 
+struct alinputstream;
+
+struct alinputstream_share_child {
+  // when forked
+  struct alinputstream * parent;
+  // offset in parent;
+  int offset;
+};
+
 struct alinputstream {
   ALDEBUG_DEFINE_FLAG(debug)
   int fd;
@@ -13,7 +22,11 @@ struct alinputstream {
   aldatablock input;
   // offset within input
   int offset;
+  // when forked
+  struct alinputstream_share_child child;
+  int mark;
 };
+
 
 ALDEBUG_DECLARE_FUNCTIONS(struct alinputstream,alinputstream)
 			 
@@ -42,4 +55,15 @@ void alinputstream_foreach_block(
 /** will read in memory from datablock starting at offset byte */
 void alinputstream_setdatablock(struct alinputstream * stream, aldatablock * block, int offset);
 
+/**
+create a stream that starts at the very same place but detached from parent
+currently usable only with 
+alinputstream_shared_readuchar(struct alinputstream * stream)
+**/
+struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * parent, int blocksize);
+
+void alinputstream_free_shared(struct alinputstream * child);
+
+unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream);
+  
 #endif

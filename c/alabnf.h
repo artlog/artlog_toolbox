@@ -173,4 +173,6 @@ void alabnf_state_machine_release(struct alabnf_sm * state_machine);
 
 struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine);
 
+void alabnf_dump_node(struct alabnf_node * node );
+
 #endif

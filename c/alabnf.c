@@ -18,7 +18,6 @@ const int ALABNF_INFINITE_ITERATION=-1;
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
 void alabnf_string(struct alabnf_sm * state_machine, char c);
-void alabnf_dump_node(struct alabnf_node * node );
 void alabnf_dump_sequence(struct alabnf_sequence * start_sequence);
 void alabnf_dump_alternative(struct alabnf_alternative * alternative);
 void alabnf_dump_range(struct alabnf_range * range);
@@ -241,7 +240,7 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
   while (alternative != NULL)
     {
       next_alternative = alternative->alt;
-      aldebug_printf(NULL,"\nalt %p node %p\n", next_alternative, alternative->node);
+      aldebug_printf(NULL,"node %p alt %p\n", alternative->node, next_alternative);
       // DEBUG only, to remove
       alabnf_dump_node(alternative->node);
       if (next_alternative != NULL)
