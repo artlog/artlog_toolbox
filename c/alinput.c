@@ -124,7 +124,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
       struct alinputstream * next = stream->next_chain;
       if ( ( next != NULL ) && ( ! alinputstream_iseof(next)))
 	{
-	  result = alinputstream_readuchar(stream);
+	  result = alinputstream_readuchar(next);
 	}
       else
 	{

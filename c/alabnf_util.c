@@ -44,7 +44,7 @@ struct alabnf * alabnf_util_parse_abnf_filenames(int filenames, int offset,char 
 	}
     }
   
-  alabnf_state_machine_init(&state_machine,inputstream);
+  alabnf_state_machine_init(&state_machine,previous_inputstream);
   alabnf_state_machine_run(&state_machine);
   alabnf_state_machine_release(&state_machine);
 

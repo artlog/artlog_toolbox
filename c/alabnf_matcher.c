@@ -275,6 +275,9 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	  else
 	    {
 	      aldebug_printf(NULL,"[WARNING] unresolved rule_ref in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	      // WHAT TO DO HERE ?? skip ??
+	      aldatablock * datablock = &rule_ref->keyblock;
+	      aldebug_printf(NULL,"rulename="ALPASCALSTRFMT"\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 	    }
 	  
 	}
