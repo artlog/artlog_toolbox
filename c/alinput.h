@@ -25,6 +25,7 @@ struct alinputstream {
   // when forked
   struct alinputstream_share_child child;
   int mark;
+  struct alinputstream * next_chain;
 };
 
 
@@ -65,5 +66,12 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 void alinputstream_free_shared(struct alinputstream * child);
 
 unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream);
-  
+
+/** create a chained input, read current, then read next 
+ **/
+struct alinputstream * alinputstream_create_chain(struct alinputstream * current, struct alinputstream * next);
+
+/** return 1 is stream is eof */
+int alinputstream_iseof(struct alinputstream * stream);
+
 #endif

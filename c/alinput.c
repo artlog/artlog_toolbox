@@ -21,6 +21,16 @@ void alinputstream_setdatablock(struct alinputstream * stream, aldatablock * blo
   stream->offset=offset;
 }
 
+void alinputstream_seteof(struct alinputstream * stream)
+{
+  stream->eof=1;
+}
+
+int alinputstream_iseof(struct alinputstream * stream)
+{
+  return stream->eof;
+}
+
 unsigned int alinputstream_readuint32(struct alinputstream * stream)
 {
   if ( stream->input.data.ptr != NULL )
@@ -50,7 +60,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	      */
 	      stream->bits = remain * CHAR_BIT;
 	    }
-	  stream->eof=1;
+	  alinputstream_seteof(stream);
 	}
       
       return res;
@@ -74,7 +84,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	  else
 	    {
 	      stream->bits = total * CHAR_BIT;
-	      stream->eof=1;
+	      alinputstream_seteof(stream);
 	      break;
 	    }
 	}
@@ -96,18 +106,31 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
     }
 }
 
-// WARNING 0 char considered as EOF.
+// WARNING 0 char considered as EOF
 unsigned char alinputstream_readuchar(struct alinputstream * stream)
 {
   unsigned char result = 0;
+  if ( alinputstream_iseof(stream) )
+    {
+      return 0;
+    }
+
   if ( read(stream->fd,&result,1) == 1 )
     {
       return result;
     }
   else
     {
-      // FIXME UGLY
-      // TODO set eof
+      struct alinputstream * next = stream->next_chain;
+      if ( ( next != NULL ) && ( ! alinputstream_iseof(next)))
+	{
+	  result = alinputstream_readuchar(stream);
+	}
+      else
+	{
+	  // set eof only if ful chain is eof.
+	  alinputstream_seteof(stream);
+	}
       return 0;
     }
 }
@@ -237,4 +260,24 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
     }
   
   return result;
+}
+
+struct alinputstream *  alinputstream_create_chain(struct alinputstream * current, struct alinputstream * next)
+{
+  struct alinputstream * last = current;
+
+  while ( last != NULL )
+    {
+      if ( last->next_chain != NULL )
+	{
+	  last = last->next_chain;
+	}
+      else
+	{
+	  last->next_chain = next;
+	  last = NULL;
+	}
+    }
+  
+  return current;
 }

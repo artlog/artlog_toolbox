@@ -7,4 +7,7 @@
 
 struct alabnf * alabnf_util_parse_abnf_file(FILE * file);
 
+// open all filename in order and create a stream to parse all in one.
+struct alabnf * alabnf_util_parse_abnf_filenames(int filenames, int offset,char ** filename);
+
 #endif // ALABNF_UTIL_HEADER__
