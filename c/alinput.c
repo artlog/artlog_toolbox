@@ -28,7 +28,7 @@ void alinputstream_seteof(struct alinputstream * stream)
 
 int alinputstream_iseof(struct alinputstream * stream)
 {
-  return stream->eof;
+  return (stream->eof == 1);
 }
 
 unsigned int alinputstream_readuint32(struct alinputstream * stream)
@@ -130,8 +130,9 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
 	{
 	  // set eof only if ful chain is eof.
 	  alinputstream_seteof(stream);
+	  result = 0;
 	}
-      return 0;
+      return result;
     }
 }
 
@@ -264,20 +265,28 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 
 struct alinputstream *  alinputstream_create_chain(struct alinputstream * current, struct alinputstream * next)
 {
-  struct alinputstream * last = current;
 
-  while ( last != NULL )
+  // adding in a NULL will use first as container/start of chain. 
+  if ( current == NULL )
     {
-      if ( last->next_chain != NULL )
-	{
-	  last = last->next_chain;
-	}
-      else
-	{
-	  last->next_chain = next;
-	  last = NULL;
-	}
+      return next;
     }
+
+  {
+    struct alinputstream * last = current;
+    while ( last != NULL )
+      {
+	if ( last->next_chain != NULL )
+	  {
+	    last = last->next_chain;
+	  }
+	else
+	  {
+	    last->next_chain = next;
+	    last = NULL;
+	  }
+      }
+  }
   
   return current;
 }

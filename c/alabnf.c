@@ -411,6 +411,30 @@ void alabnf_add_char(struct alabnf_sm * state_machine, char token, char c)
     }
 }
 
+void alabnf_handle_lf(struct alabnf_sm * state_machine)
+{
+  // lf , expect a new line
+  aldebug_printf(NULL,"LF\n");
+  state_machine->lf_line ++;
+  
+  // tentative to handle mutliple files parsing, reset rule if mutliple empty lines...
+  if ( (state_machine->current_indent == 0 ) && (  state_machine->linebreak > 1 ) )
+    {
+      aldebug_printf(NULL,"[DEBUG] empty lines %i\n", state_machine->lf_line); 
+      state_machine->linebreak = 0;
+    }
+  else
+    {
+      state_machine->linebreak ++;
+    }
+  state_machine->current_indent = 0;
+
+}
+
+void alabnf_handle_space(struct alabnf_sm * state_machine)
+{
+}
+
 // cumulated number is converted to char and reset.
 void alabnf_flush_number_to_char(struct alabnf_sm * state_machine)
 {
@@ -600,7 +624,7 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
     }
 }
 
-// first char of string was recognized
+// first char of string was recognized next can then be a digit
 void alabnf_string_suffix_intern(struct alabnf_sm * state_machine, char c)
 {
   if (
@@ -1460,9 +1484,12 @@ void alabnf_new_rule(struct alabnf_sm * state_machine)
 {
   alabnf_close_rule(state_machine);
   state_machine->rule_number++;
-  aldebug_printf(NULL,"rule # %i, indent %i/%i", state_machine->rule_number,
+  aldebug_printf(NULL,"[DEBUG] rule # %i, indent %i/%i/%i at %s/%s/%i\n", state_machine->rule_number,
 	 state_machine->current_indent,
-	 state_machine->initial_indent);
+		 state_machine->initial_indent,
+		 state_machine->linebreak,
+		 __FILE__,__func__,__LINE__);
+
   state_machine->one_char_method=alabnf_name_string;
   state_machine->state = ALABNF_STATE_RULENAME;
   state_machine->string_type=ALABNF_ST_RULENAME;
@@ -1478,10 +1505,8 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case ' ':
-      //if ( state_machine->linebreak != 0 )
 	{
 	  aldebug_printf(NULL,"*");
-	  state_machine->current_indent++;
 	}
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
@@ -1515,11 +1540,6 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_CONTINUE;      
       break;
     case 10:
-      // lf , expect a new line
-      aldebug_printf(NULL,"LF\n");
-      state_machine->lf_line ++;
-      state_machine->current_indent = 0;
-      state_machine->linebreak = 1;
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case ';':
@@ -1534,11 +1554,12 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_REMATCH;
       if ( state_machine->current_indent <= state_machine->initial_indent )
 	{
-	  alabnf_new_rule(state_machine);	  
+	  alabnf_new_rule(state_machine);
 	}
       else
 	{
-	  aldebug_printf(NULL,"CONTINUE rule # %i, indent %i/%i\n", state_machine->rule_number,
+	  aldebug_printf(NULL,"[DEBUG] CONTINUE rule # %i, indent %i/%i\n",
+			 state_machine->rule_number,
 			 state_machine->current_indent,
 			 state_machine->initial_indent);
 	  state_machine->one_char_method=alabnf_iterator_string_start;
@@ -1552,12 +1573,7 @@ void alabnf_start_string(struct alabnf_sm * state_machine, char c)
 {
   switch(c)
     {
-    case ' ':      
-      state_machine->current_indent ++;
-      if ( state_machine->rule_number == 0 )
-	{
-	  state_machine->initial_indent = state_machine->current_indent;
-	}
+    case ' ':
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case '=':
@@ -1583,8 +1599,6 @@ void alabnf_start_string(struct alabnf_sm * state_machine, char c)
       break;
     case 10:
       ALABNF_DEBUG_UNEXPECTED_CHAR(c)
-      state_machine->lf_line ++;
-      state_machine->current_indent = 0;
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     default:
@@ -1606,6 +1620,7 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
       if ( state_machine->state == ALABNF_STATE_RULENAME )
 	{
 	  state_machine->one_char_method=alabnf_start_string_ruledef;
+	  state_machine->initial_indent=state_machine->current_indent;
 	  state_machine->state=ALABNF_STATE_RULEDEF;
 	}
       else
@@ -1633,8 +1648,6 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
       break;
     case 10:
       ALABNF_DEBUG_UNEXPECTED_CHAR(c)
-      state_machine->lf_line ++;
-      state_machine->current_indent = 0;
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     default:
@@ -1867,16 +1880,23 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 	{
 	  if ( action == ALABNF_PA_REMATCH )
 	    {
-	      aldebug_printf(NULL,"[FATAL] two successive rematch\n");
-	      exit(1);
+	      aldebug_printf(NULL,"[WARNING] two successive rematch at (line,column) (%i,%i) \n",
+			     state_machine->lf_line,
+			     state_machine->current_indent);
 	    }
 	  char r = state_machine->rematch;
 	  if ( c != r )
 	    {
-	      aldebug_printf(NULL,"[FATAL] rematch diff %i != %i\n",c,r);
+	      aldebug_printf(NULL,"[FATAL] rematch diff %i != %i at (line,column) (%i,%i)\n",
+			     c,r,
+			     state_machine->lf_line,
+			     state_machine->current_indent);
 	      exit(1);
 	    }	    
-	  aldebug_printf(NULL,"rematch %x '%c'\n",c,c>32 ? c:'?');
+	  aldebug_printf(NULL,"[DEBUG] rematch %x '%c' at (line,column) (%i,%i)\n",c,c>32 ? c:'?',
+			 state_machine->lf_line,
+			 state_machine->current_indent
+			 );
 	}
       else
 	{
@@ -1897,6 +1917,17 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 	      seen_eof = 0;
 	    }
 	  state_machine->rematch=c;
+	  switch(c)
+	    {
+	    case 13:
+	      break;
+	    case 10:
+	      alabnf_handle_lf(state_machine);
+	      break;
+	    default:
+	      state_machine->current_indent++;
+	    }
+	  
 	}
       action = state_machine->next_action;
 

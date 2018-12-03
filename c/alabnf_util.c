@@ -21,30 +21,25 @@ struct alabnf * alabnf_util_parse_abnf_file(FILE * file)
 struct alabnf * alabnf_util_parse_abnf_filenames(int filenames, int offset,char ** filename)
 {
   struct alabnf_sm   state_machine;
-  struct alinputstream * previous_inputstream = NULL;
+  struct alinputstream * container_inputstream = NULL;
   struct alinputstream * inputstream = NULL;
   FILE * file;
 
   for (int i=0; i <filenames; i++)
     {
-      file = fopen(filename[i+offset],"r");
+      char * fname = filename[i+offset];
+      file = fopen(fname,"r");
+      aldebug_printf(NULL,"[DEBUG] adding '%s' as abnf input\n", fname);
       if ( file != NULL )
 	{
 	  inputstream = malloc(sizeof(*inputstream));
 	  alinputstream_init(inputstream, fileno (file));
       
-	  if (previous_inputstream != NULL )
-	    {
-	      previous_inputstream=alinputstream_create_chain(previous_inputstream, inputstream);
-	    }
-	  else
-	    {
-	      previous_inputstream=inputstream;
-	    }
+	  container_inputstream=alinputstream_create_chain(container_inputstream, inputstream);
 	}
     }
   
-  alabnf_state_machine_init(&state_machine,previous_inputstream);
+  alabnf_state_machine_init(&state_machine,container_inputstream);
   alabnf_state_machine_run(&state_machine);
   alabnf_state_machine_release(&state_machine);
 
