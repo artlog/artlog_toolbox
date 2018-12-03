@@ -27,6 +27,8 @@ void alabnf_close_name_string_continue(struct alabnf_sm * state_machine, char c)
 void alabnf_close_name_string_rematch(struct alabnf_sm * state_machine, char c);
 void alabnf_close_string_rematch(struct alabnf_sm * state_machine, char c);
 void alabnf_close_string_continue(struct alabnf_sm * state_machine, char c);
+// <a>*<b>element
+void alabnf_iterator_string_start(struct alabnf_sm * state_machine, char c);
 
 struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct alabnf_node * collector, struct alabnf_node * new_node);
   
@@ -483,7 +485,13 @@ void alabnf_chevron_start(struct alabnf_sm * state_machine, char c)
 
 static int alabnf_is_closing_word(char c)
 {
+  // why not ')' ?
   return (( c == ' ') || ( c== '>' ));
+}
+
+static int alabnf_is_close_any(char c)
+{
+  return (( c == ')') || ( c== ']' ));
 }
 
 void alabnf_binary_string(struct alabnf_sm * state_machine, char c)
@@ -668,15 +676,24 @@ void alabnf_name_string_intern(struct alabnf_sm * state_machine, char c)
       alabnf_add_char(state_machine,'s',(char) c);
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
-  else    
+  else
     {
+      if (( c >= '0') && ( c <= '9' ))
+	{
+	  aldebug_printf(NULL,"[WARNING] '%i' '%c' numbers starting a string %s:%s:%i\n",
+			 c,c >=32 ? c : '.',
+			 __FILE__,__func__,__LINE__);
+	}
       if ( alabnf_is_closing_word(c) )
 	{
 	  state_machine->close_method = alabnf_close_name_string_continue;
 	}
       else
 	{
-	  ALABNF_DEBUG_UNEXPECTED_CHAR(c)
+	  if ( ! alabnf_is_close_any(c) )
+	    {
+	      ALABNF_DEBUG_UNEXPECTED_CHAR(c)
+	    }
 	  state_machine->close_method = alabnf_close_name_string_rematch;
 	}
       state_machine->next_action = ALABNF_PA_CLOSE;
@@ -794,7 +811,7 @@ void alabnf_stack_iterator(struct alabnf_sm * state_machine,int min, int max)
 {
   if ( ( min == 1 ) && ( max == 1 ))
     {
-      aldebug_printf(NULL,"[WARNING] useless iterator min == max == 1 in %s %s %i",__FILE__,__func__,__LINE__);
+      aldebug_printf(NULL,"[WARNING] useless iterator min == max == 1 at %s:%s:%i",__FILE__,__func__,__LINE__);
     }
   struct alstack * stack = state_machine->stack;
   struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
@@ -848,12 +865,15 @@ void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
     }
 }
 
-// <a>*<b>element
+// ('('|'<') element  / iterator prefix is already handled
 void alabnf_element_start(struct alabnf_sm * state_machine, char c)
 {
+
+  state_machine->one_char_method=alabnf_element_start;
   if ( c == '(' )
     {
       alabnf_group_start(state_machine,c);
+      state_machine->one_char_method=alabnf_iterator_string_start;
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
   else if ( c == '<' )
@@ -861,11 +881,21 @@ void alabnf_element_start(struct alabnf_sm * state_machine, char c)
       state_machine->one_char_method=alabnf_chevron_start;
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
-  // TODO FIXME can be typed string
-  else
+  else if ( c == ' ' )
     {
+      // ignore spaces here.
+      state_machine->next_action = ALABNF_PA_CONTINUE;
+    }
+  else
+    // TODO FIXME can be typed string
+    {
+      // string suffix since we directly call name_string_intern for first char
       state_machine->one_char_method = alabnf_string;
       state_machine->string_type=ALABNF_ST_RULENAME;
+
+      state_machine->next_action = ALABNF_PA_REMATCH;
+
+      /*
       // next_action not set by xxx_intern
       alabnf_name_string_intern(state_machine, c);
       if ( state_machine->next_action == ALABNF_PA_CLOSE )
@@ -876,10 +906,21 @@ void alabnf_element_start(struct alabnf_sm * state_machine, char c)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c,__FILE__,__func__,__LINE__);
-	      state_machine->close_method = alabnf_close_string_rematch;
+	      if ( alabnf_is_close_any(c) )
+		{
+		  alabnf_close_any(state_machine,c);
+		  state_machine->one_char_method=alabnf_iterator_string_start;
+		}
+	      else
+		{
+	      
+		  aldebug_printf(NULL,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c,__FILE__,__func__,__LINE__);
+		  state_machine->close_method = alabnf_close_string_rematch;
+		}
 	    }
 	}
+      */
+ 
     }
 }
 
@@ -1083,7 +1124,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
   struct alabnf_sequence * next_sequence=NULL;
   struct alabnf_node * node=NULL;
 
-  aldebug_printf(NULL,"in %s %s %i\n",__FILE__,__func__,__LINE__);
+  aldebug_printf(NULL,"[DEBUG] in %s %s %i\n",__FILE__,__func__,__LINE__);
   
   if ( collector != NULL )
     {
@@ -1138,16 +1179,16 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	{	  
 	  if ( new_node->type !=  ALABNF_NT_SEQUENCE )
 	    {
-	      aldebug_printf(NULL,"new node type %i in %s %s %i\n",new_node->type,__FILE__,__func__,__LINE__);
+	      aldebug_printf(NULL,"[DEBUG] new node type %i in %s:%s:%i\n",new_node->type,__FILE__,__func__,__LINE__);
 	      if ( new_node->type == ALABNF_NT_INVALID )
 		{
-		  aldebug_printf(NULL,"[FATAL] invalid new node %p in %s %s %i\n",new_node,__FILE__,__func__,__LINE__);
+		  aldebug_printf(NULL,"[FATAL] invalid new node %p in %s:%s:%i\n",new_node,__FILE__,__func__,__LINE__);
 		}
 	      node=new_node;
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"don't append to child sequence in %s %s %i\n",__FILE__,__func__,__LINE__);
+	      aldebug_printf(NULL,"don't append to child sequence in %s:%s:%i\n",__FILE__,__func__,__LINE__);
 	      node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
 	      if ( node != NULL )
 		{
@@ -1341,9 +1382,10 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] closing a sequence with a stack containing only rulename %s %s %i\n",__FILE__,__func__,__LINE__);
+	      aldebug_printf(NULL,"[ERROR] closing a sequence with a stack of size %i containing only rulename %s %s %i\n", alstack_used(stack),__FILE__,__func__,__LINE__);
 	      // HACK FIXME
 	      // alstack_push_ref(stack,node);
+	      alabnf_dump_node(collected_node);
 	      node = NULL;
 	    }
 	}
@@ -1353,6 +1395,7 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 
 void alabnf_close_group(struct alabnf_sm * state_machine, char c)
 {
+  aldebug_printf(NULL,"[DEBUG] %p  %s:%s:%i\n",alabnf_close_group,__FILE__,__func__,__LINE__);
   alabnf_close_sequence(state_machine,c);
 }
 
@@ -1495,6 +1538,7 @@ void alabnf_new_rule(struct alabnf_sm * state_machine)
   state_machine->string_type=ALABNF_ST_RULENAME;
 }
 
+// left part after =
 void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
 {
 
@@ -1505,9 +1549,6 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case ' ':
-	{
-	  aldebug_printf(NULL,"*");
-	}
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case '=':
@@ -1816,7 +1857,7 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
   token.token=ALABNF_NT_STRING;
 
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
-  aldebug_printf(NULL,"close name string %p\n",mytoken);
+  aldebug_printf(NULL,"[DEBUG] close name string %p\n",mytoken);
 
   alabnf_stack_rule_ref(state_machine, mytoken);
   
@@ -1883,6 +1924,8 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 	      aldebug_printf(NULL,"[WARNING] two successive rematch at (line,column) (%i,%i) \n",
 			     state_machine->lf_line,
 			     state_machine->current_indent);
+
+	      
 	    }
 	  char r = state_machine->rematch;
 	  if ( c != r )
@@ -1942,9 +1985,19 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 		{
 		  if ( c != 0 )
 		    {
-		      // aldebug_printf(NULL, "\nCLOSE '%i'\n", c);
 		      alabnf_close_method close_method = state_machine->close_method;
+		      aldebug_printf(NULL,"[DEBUG] CLOSE %p %x '%c' at (line,column) (%i,%i)\n",
+				     close_method,
+				     c,c>32 ? c:'?',
+				     state_machine->lf_line,
+				     state_machine->current_indent
+			 );
+
 		      close_method(state_machine,c);
+		      if ( state_machine->next_action == ALABNF_PA_CLOSE )
+			{
+			  aldebug_printf(NULL,"[WARNING] cascading CLOSE\n");
+			}
 		    }
 		  else
 		    {
