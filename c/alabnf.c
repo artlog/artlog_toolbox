@@ -11,17 +11,25 @@
                   the character set for these strings is us-ascii.
 */
 
+// maximum iteration of state machine for parsing (protection against inifinite loop )
+// in relateive size of read characters
+// 5 times number of chars in text...
+const int ALABNF_MAX_INTERNAL_REMATCH_TIMES=5;
+
+// max number char in one string
 const int ALABNF_MAX_CHARS=100;
+// const value indicating that iterator is infinite
 const int ALABNF_INFINITE_ITERATION=-1;
 
 #define ALABNF_DEBUG_UNEXPECTED_CHAR(c) aldebug_printf(NULL,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c>32 ? c : '.',__FILE__,__func__,__LINE__);
+
+#define ALABNF_DEBUG_TEXT_STATE(c,text,state_machine) aldebug_printf(NULL,"[DEBUG] %s ('%i','%c') at %i:%i  in %s %s %i\n",text,c,c>=32 ? c : '.' ,state_machine->lf_line,state_machine->current_indent,__FILE__,__func__,__LINE__);
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
 void alabnf_string(struct alabnf_sm * state_machine, char c);
 void alabnf_dump_sequence(struct alabnf_sequence * start_sequence);
 void alabnf_dump_alternative(struct alabnf_alternative * alternative);
 void alabnf_dump_range(struct alabnf_range * range);
-void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c);
 void alabnf_close_group(struct alabnf_sm * state_machine, char c);
 void alabnf_close_name_string_continue(struct alabnf_sm * state_machine, char c);
 void alabnf_close_name_string_rematch(struct alabnf_sm * state_machine, char c);
@@ -29,6 +37,8 @@ void alabnf_close_string_rematch(struct alabnf_sm * state_machine, char c);
 void alabnf_close_string_continue(struct alabnf_sm * state_machine, char c);
 // <a>*<b>element
 void alabnf_iterator_string_start(struct alabnf_sm * state_machine, char c);
+// any new element on left part ( ie after = )
+void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c);
 
 struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct alabnf_node * collector, struct alabnf_node * new_node);
   
@@ -61,7 +71,7 @@ struct alabnf_node * alabnf_create_iterator_node(struct alabnf * alabnf, int min
 
 struct alabnf_node * alabnf_create_sequence_node(struct alabnf * alabnf, struct alabnf_node * node, struct alabnf_sequence * next)
 {
-  struct alabnf_node * sequence_node=alabnf_create_node(alabnf,ALABNF_NT_ITERATOR);
+  struct alabnf_node * sequence_node=alabnf_create_node(alabnf,ALABNF_NT_SEQUENCE);
   if ( sequence_node != NULL )
     {
       struct alabnf_sequence * sequence = &sequence_node->content.sequence;
@@ -129,11 +139,11 @@ void alabnf_dump_iterator(struct alabnf_iterator * iterator)
 	{
 	  if ( iterator->max == ALABNF_INFINITE_ITERATION )
 	    {
-	      printf("%i*",iterator->min);
+	      printf("m%i*",iterator->min);
 	    }
 	  else
 	    {
-	      printf("%i*%i",iterator->min,iterator->max);
+	      printf("m%i*M%i",iterator->min,iterator->max);
 	    }
 	  alabnf_dump_node(iterator->node);
 	}
@@ -238,7 +248,8 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
 {
   struct alabnf_alternative * alternative=start_alternative;
   struct alabnf_alternative * next_alternative=NULL;
-  // debug printf("{");
+  // debug
+  //printf("{");
   while (alternative != NULL)
     {
       next_alternative = alternative->alt;
@@ -251,7 +262,8 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
 	}
       alternative=next_alternative;
     }
-  // debug printf("}");
+  // debug
+  //printf("}");
 
 
 }
@@ -454,16 +466,31 @@ void alabnf_flush_number_to_char(struct alabnf_sm * state_machine)
     }
 }
 
+// within a comment eat everything until a LF
 void alabnf_comment(struct alabnf_sm * state_machine, char c)
 {
-  if (( c != 10 ) && ( c != 13 ))
+  if ( c != 10 )
     {
+      // remark eat CR too
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
   else
     {
-      state_machine->next_action = ALABNF_PA_REMATCH;
-      state_machine->one_char_method = alabnf_start_string_ruledef;
+      if ( state_machine->state == ALABNF_STATE_RULENAME )
+	{
+	  aldebug_printf(NULL,"[ERROR] comment within rule name at %i:%i in %s %s %i\n",
+			 state_machine->lf_line,state_machine->current_indent,
+			 __FILE__,__func__,__LINE__);
+
+	  state_machine->one_char_method = alabnf_start_string;
+	  state_machine->next_action = ALABNF_PA_CONTINUE;
+	}
+      else
+	{
+	  // rematch ? sure ?
+	  state_machine->next_action = ALABNF_PA_REMATCH;
+	  state_machine->one_char_method = alabnf_start_string_ruledef;
+	}
     }
 }
 
@@ -761,6 +788,7 @@ void alabnf_string_suffix(struct alabnf_sm * state_machine, char c)
 
 void alabnf_string(struct alabnf_sm * state_machine, char c)
 {
+  ALABNF_DEBUG_TEXT_STATE(c,"string",state_machine);
   alabnf_name_string_intern(state_machine, c);
   if ( state_machine->next_action == ALABNF_PA_CLOSE )
     {
@@ -787,6 +815,8 @@ void albnf_stack_sequence(struct alabnf_sm * state_machine)
   struct alstack * stack = state_machine->stack;
   struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
 
+  ALABNF_DEBUG_TEXT_STATE('.',"stack_sequence",state_machine);
+  
   struct al_token token;
   token.token=ALABNF_NT_SEQUENCE;
 
@@ -816,6 +846,8 @@ void alabnf_stack_iterator(struct alabnf_sm * state_machine,int min, int max)
   struct alstack * stack = state_machine->stack;
   struct alabnf * alabnf = alabnf_state_machine_generated(state_machine);
 
+  ALABNF_DEBUG_TEXT_STATE('.',"stack_iterator",state_machine);
+  
   struct al_token token;
   token.token=ALABNF_NT_ITERATOR;
   
@@ -863,17 +895,22 @@ void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
 	  state_machine->iterator_index ++;
 	}
     }
+  else
+    {
+      aldebug_printf(NULL,"[FATAL] alternative left stacked part was empty %s:%s:%i\n",__FILE__,__func__,__LINE__);
+      exit(1);
+    }
 }
 
 // ('('|'<') element  / iterator prefix is already handled
 void alabnf_element_start(struct alabnf_sm * state_machine, char c)
 {
-
+  ALABNF_DEBUG_TEXT_STATE(c,"element_start",state_machine);
   state_machine->one_char_method=alabnf_element_start;
   if ( c == '(' )
     {
       alabnf_group_start(state_machine,c);
-      state_machine->one_char_method=alabnf_iterator_string_start;
+      state_machine->one_char_method=alabnf_start_string_ruledef;
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
   else if ( c == '<' )
@@ -886,6 +923,13 @@ void alabnf_element_start(struct alabnf_sm * state_machine, char c)
       // ignore spaces here.
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
+  // not smart, was detected on invalid abnf with + - non quoted.
+  // FIXME should actualy really know exhaustive list of unacceptable chars here
+  else if (  ( c == '+' ) || ( c == '-' ) )
+    {
+      ALABNF_DEBUG_UNEXPECTED_CHAR(c);      
+      state_machine->next_action = ALABNF_PA_FAIL;
+    }  
   else
     // TODO FIXME can be typed string
     {
@@ -893,34 +937,7 @@ void alabnf_element_start(struct alabnf_sm * state_machine, char c)
       state_machine->one_char_method = alabnf_string;
       state_machine->string_type=ALABNF_ST_RULENAME;
 
-      state_machine->next_action = ALABNF_PA_REMATCH;
-
-      /*
-      // next_action not set by xxx_intern
-      alabnf_name_string_intern(state_machine, c);
-      if ( state_machine->next_action == ALABNF_PA_CLOSE )
-	{
-	  if ( alabnf_is_closing_word(c) )
-	    {
-	      state_machine->close_method = alabnf_close_string_continue;
-	    }
-	  else
-	    {
-	      if ( alabnf_is_close_any(c) )
-		{
-		  alabnf_close_any(state_machine,c);
-		  state_machine->one_char_method=alabnf_iterator_string_start;
-		}
-	      else
-		{
-	      
-		  aldebug_printf(NULL,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c,__FILE__,__func__,__LINE__);
-		  state_machine->close_method = alabnf_close_string_rematch;
-		}
-	    }
-	}
-      */
- 
+      state_machine->next_action = ALABNF_PA_REMATCH; 
     }
 }
 
@@ -929,6 +946,7 @@ void alabnf_element_start(struct alabnf_sm * state_machine, char c)
 // <b>element
 void alabnf_iterator_max(struct alabnf_sm * state_machine, char c)
 {
+  ALABNF_DEBUG_TEXT_STATE(c,"iterator_max",state_machine);
   if (
       (( c >= '0' ) && ( c <= '9' ))
       )
@@ -954,6 +972,7 @@ void alabnf_iterator_max(struct alabnf_sm * state_machine, char c)
 // a+*<b>element
 void alabnf_iterator_min(struct alabnf_sm * state_machine, char c)
 {
+  ALABNF_DEBUG_TEXT_STATE(c,"iterator_min",state_machine);
   if (
       (( c >= '0' ) && ( c <= '9' ))
       )
@@ -983,6 +1002,7 @@ void alabnf_iterator_min(struct alabnf_sm * state_machine, char c)
 // <a>*<b>element
 void alabnf_iterator_string_start(struct alabnf_sm * state_machine, char c)
 {
+  ALABNF_DEBUG_TEXT_STATE(c,"iterator_string",state_machine);
   state_machine->it_state = ALABNF_ISM_START;
   state_machine->it_min=0;
   state_machine->it_max=0;
@@ -1021,6 +1041,7 @@ void alabnf_start_typed_string(struct alabnf_sm * state_machine, char c)
 {
   enum alabnf_parser_action next_action;
 
+  ALABNF_DEBUG_TEXT_STATE(c,"typed_string",state_machine);
   state_machine->number_sm.state=ALABNF_NSM_START;
   
   switch(c)
@@ -1049,6 +1070,7 @@ void alabnf_start_typed_string(struct alabnf_sm * state_machine, char c)
 void alabnf_quoted_string(struct alabnf_sm * state_machine, char c)
 {
   state_machine->string_type=ALABNF_ST_QUOTED;
+  ALABNF_DEBUG_TEXT_STATE(c,"ALABNF_ST_QUOTED",state_machine);
   switch(c)
     {
     case '"':
@@ -1063,17 +1085,15 @@ void alabnf_quoted_string(struct alabnf_sm * state_machine, char c)
 
 // where alternative are glued
 // TODO check iterator HERE too ? ( check callers ).
+// return non NULL head if entry was merged
 struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * alabnf, struct alabnf_node * head_node, struct alabnf_node * node)
 {
   if ( head_node != NULL )
     {
-      aldebug_printf(NULL,"[INFO] head node found %p type %i\n", head_node, head_node->type);
-      /*
-      printf("\n %s %s %i\n",__FILE__,__func__,__LINE__);
-      alabnf_dump_node(head_node);
-      printf("\n");
-      alabnf_dump_node(node);
-      */
+      aldebug_printf(NULL,"[INFO] head node found %p type %i node %p in %s:%s:%i\n",
+		     head_node, head_node->type, node,
+		     __FILE__,__func__,__LINE__);
+
       if ( head_node->type == ALABNF_NT_ALT )
 	{
 
@@ -1083,7 +1103,7 @@ struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * a
 	      // an empty slot : merge entry here
 	      struct alabnf_node * merge_entry = alabnf_create_alternative_node(alabnf,node,NULL);
 	      alternative->alt=&merge_entry->content.alt;
-	      aldebug_printf(NULL,"[INFO] MERGE ALTERNATIVES %p %p\n", alternative, alternative->alt);
+	      aldebug_printf(NULL,"[INFO] MERGE ALTERNATIVES %p alt %p\n", alternative, alternative->alt);
 	      /*
 	      printf("\n");
 	      alabnf_dump_node(head_node);
@@ -1091,7 +1111,7 @@ struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * a
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[INFO] SKIP ALTERNATIVES %p %p\n", alternative, alternative->alt);
+	      aldebug_printf(NULL,"[INFO] SKIP ALTERNATIVES %p alt %p\n", alternative, alternative->alt);
 	      head_node = NULL;
 	    }
 	}
@@ -1099,8 +1119,21 @@ struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * a
 	{
 	  // CHECK if iterator computation can always be done there...
 	  struct alabnf_iterator * iterator = &head_node->content.iterator;
+	  aldebug_printf(NULL,"[DEBUG] MERGE ITERATOR %p node %p type %i %p at %s:%s:%i\n",
+			 iterator->node, node, node->type, head_node,
+			 __FILE__,__func__,__LINE__);
 	  if ( iterator->node == NULL)
 	    {
+	      if ( node->type == ALABNF_NT_ITERATOR )
+		{
+		  // WEIRD two iterators to merge ?
+		}
+	      else if ( node->type == ALABNF_NT_ALT )
+		{
+		  // should convert alt in group ?
+		}
+
+	      // an empty alternative slot merge
 	      // return head_node as it is and use node as iterator node.
 	      iterator->node = node;
 	    }
@@ -1134,7 +1167,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	}
       else
 	{
-	  // collector was a simple token and new_new is a token too.
+	  // collector was a simple token and new_node is a token too ? really ?
 	  next_sequence = NULL;
 
 	  if ( ( new_node->type ==  ALABNF_NT_ALT )
@@ -1146,6 +1179,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 		  node = head_node;
 		  return node;
 		}
+	      // what about new_node here ?
 	    }
 
 	  node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
@@ -1188,7 +1222,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"don't append to child sequence in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	      aldebug_printf(NULL,"[DEBUG] don't append to child sequence in %s:%s:%i\n",__FILE__,__func__,__LINE__);
 	      node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
 	      if ( node != NULL )
 		{
@@ -1245,7 +1279,9 @@ void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
   
   struct alstackelement * element=NULL;
   struct alabnf_node * collected_node = NULL;
-
+  
+  ALABNF_DEBUG_TEXT_STATE(c,"close_iterator",state_machine);
+  
   if ( alstack_used(stack) < 2 )
     {
       aldebug_printf(NULL,"[ERROR] closing an iterator with a stack containing only rulename %s %s %i\n",__FILE__,__func__,__LINE__);
@@ -1306,7 +1342,15 @@ void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] closing an iterator with a stack containing only rulename %s %s %i\n",__FILE__,__func__,__LINE__);
+	      if ( alstack_used(stack) == 1 )
+		{
+		  // SHOULD WE push collected_node ???
+		  alstack_push_ref(stack,collected_node);
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"[ERROR] closing an iterator with a stack containing only rulename %s %s %i\n",__FILE__,__func__,__LINE__);
+		}
 	      node = NULL;
 	    }
 	      
@@ -1382,10 +1426,19 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] closing a sequence with a stack of size %i containing only rulename %s %s %i\n", alstack_used(stack),__FILE__,__func__,__LINE__);
-	      // HACK FIXME
-	      // alstack_push_ref(stack,node);
-	      alabnf_dump_node(collected_node);
+	      // considering that what remain on stack is rulename
+	      if ( alstack_used(stack) == 1 )
+		{
+		  // SHOULD WE push collected_node ???
+		  alstack_push_ref(stack,collected_node);
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"[ERROR] closing a sequence with a stack of size %i containing no rulename %s %s %i\n", alstack_used(stack),__FILE__,__func__,__LINE__);
+		  // HACK FIXME
+		  alabnf_dump_node(collected_node);
+		}
+	      
 	      node = NULL;
 	    }
 	}
@@ -1395,7 +1448,7 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 
 void alabnf_close_group(struct alabnf_sm * state_machine, char c)
 {
-  aldebug_printf(NULL,"[DEBUG] %p  %s:%s:%i\n",alabnf_close_group,__FILE__,__func__,__LINE__);
+  ALABNF_DEBUG_TEXT_STATE('.',"close_group",state_machine);
   alabnf_close_sequence(state_machine,c);
 }
 
@@ -1538,10 +1591,10 @@ void alabnf_new_rule(struct alabnf_sm * state_machine)
   state_machine->string_type=ALABNF_ST_RULENAME;
 }
 
-// left part after =
+// any new element on left part ( ie after = )
 void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
 {
-
+  ALABNF_DEBUG_TEXT_STATE(c,"string_ruledef",state_machine);
   switch(c)
     {
     case '%':
@@ -1701,6 +1754,8 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
 void alabnf_stack_rule_ref(struct alabnf_sm * state_machine, struct alhash_entry * mytoken)
 {
   struct alabnf_node * node = alabnf_get_abnf_token(mytoken);
+
+  ALABNF_DEBUG_TEXT_STATE('.',"stack_rule_ref",state_machine);
   
   struct alabnf_rule_ref * rule_ref = NULL;
   if ( node == NULL )
@@ -1899,6 +1954,7 @@ char alabnf_eat_char(struct alabnf_sm * state_machine)
   char c = (char) alinputstream_readuchar(state_machine->inputstream);
   if ( state_machine->inputstream->eof == 0 )
     {
+      state_machine->characters ++;
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
   else
@@ -1916,15 +1972,27 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
   
   do 
     {
+      state_machine->state_loop ++;      
       // capture the character to analyze
       if ( state_machine->next_action == ALABNF_PA_REMATCH )
 	{
 	  if ( action == ALABNF_PA_REMATCH )
 	    {
-	      aldebug_printf(NULL,"[WARNING] two successive rematch at (line,column) (%i,%i) \n",
+	      aldebug_printf(NULL,"[WARNING] two successive rematch %p at (line,column) (%i,%i) \n",
+			     state_machine->one_char_method,
 			     state_machine->lf_line,
 			     state_machine->current_indent);
 
+	      if ( state_machine->characters * ALABNF_MAX_INTERNAL_REMATCH_TIMES < state_machine->state_loop )
+		{
+		  aldebug_printf(NULL,"[FATAL] states loop %i too big compared to stream parsed char %i at  (line,column) (%i,%i)\n",
+				 state_machine->state_loop,
+				 state_machine->characters,
+				 state_machine->lf_line,
+				 state_machine->current_indent);
+
+		  exit(1);
+		}
 	      
 	    }
 	  char r = state_machine->rematch;
@@ -1936,7 +2004,9 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 			     state_machine->current_indent);
 	      exit(1);
 	    }	    
-	  aldebug_printf(NULL,"[DEBUG] rematch %x '%c' at (line,column) (%i,%i)\n",c,c>32 ? c:'?',
+	  aldebug_printf(NULL,"[DEBUG] rematch %p %x '%c' at (line,column) (%i,%i)\n",
+			 state_machine->one_char_method,
+			 c,c>32 ? c:'?',
 			 state_machine->lf_line,
 			 state_machine->current_indent
 			 );
@@ -2013,6 +2083,9 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 	}
     }
   while (  state_machine->next_action != ALABNF_PA_FAIL );
+
+  // last rule ...
+  alabnf_close_rule(state_machine);
 
 }
 

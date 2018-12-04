@@ -151,7 +151,9 @@ struct alabnf_sm {
   int current_indent;
   int rule_number;
   int lf_line;
-  int linebreak;
+  int characters;
+  int state_loop;
+  int linebreak;  
   // used to construct an unique id for an iterator entry
   int iterator_index;
   enum alabnf_string_type string_type;
