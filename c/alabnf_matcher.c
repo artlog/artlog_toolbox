@@ -9,6 +9,24 @@ const void * ALABNF_DEAD_CANARY = (void *) 0xdeadca01;
 // to read alternatives ...
 const int ALABNF_READBLOCKSIZE = 4096;
 
+static char descr[30];
+
+char * alabnf_matcher_get_descr(alabnf_character * achar)
+{
+  if ( achar != NULL)
+    {
+      char c = achar->uchar;
+      snprintf(descr,30,"('%i','%c')",c,c>=32 ? c : '.');
+    }
+  else
+    {
+      snprintf(descr,30,"(NULL char)");
+    }
+  return descr;
+}
+
+#define ALABNF_MATCHER_DEBUG_TEXT_STATE(achar,text,state) aldebug_printf(NULL,"[DEBUG] %s %s state %p  in %s %s %i\n",text,alabnf_matcher_get_descr(achar),state,__FILE__,__func__,__LINE__)
+
 struct alabnf_matcher_state * alabnf_matcher_state_alloc()
 {
   struct alabnf_matcher_state * state = malloc(sizeof(*state));
@@ -20,7 +38,7 @@ void alabnf_matcher_state_free(struct alabnf_matcher_state * state)
 {
   if ( state != NULL )
     {
-      aldebug_printf(NULL,"[DEBUG] matcher state free %p at %s:%s:%i\n",state,__FILE__,__func__,__LINE__);
+      ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"matcher state free",state);
       if ( state->current_node == ALABNF_DEAD_CANARY  )
 	{
 	  aldebug_printf(NULL,"[FATAL] matcher state free canary hit at %s:%s:%i",__FILE__,__func__,__LINE__);
@@ -129,7 +147,7 @@ struct alabnf_matcher_state * alabnf_matcher_create_child_state(
 {
   // TODO ALLOC use matcher allocation ?
   struct alabnf_matcher_state * child_state = alabnf_matcher_state_alloc();
-
+  ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"create child state", child_state);
   if ( child_state != NULL )
     {
       alabnf_matcher_init_state(child_state,parent,node);
@@ -137,13 +155,44 @@ struct alabnf_matcher_state * alabnf_matcher_create_child_state(
   return child_state;
 }
 
+enum alabnf_match alabnf_matcher_process_alternative(struct alabnf_matcher * matcher, struct alabnf_matcher_state * state,struct alabnf_alternative * alternative)
+  {
+    ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"process alt",state);
+    struct alabnf_node * node = alternative->node;
+    // remark initial node is kept as it is as ALABNF_NT_ALT, then not set.
+    state->current_node = node;
+    if ( node != NULL )
+      {
+	// new alternative is next one.
+	state->alt=alternative->alt;
+	struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, node);
+	// current state should remember stream position
+	// child_state->input = alinputstream_create_mark_shared(state->input,ALABNF_READBLOCKSIZE);
+	child_state->input = state->input;
+	matcher->current_state = child_state;
+	return ALABNF_MATCH_REMATCH;
+      }
+    else
+      {
+	aldebug_printf(NULL,"[ERROR] null node in alternative in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+      }
+    return ALABNF_MATCH_NONE;
+  }
+
 enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 				       alabnf_character * next_char)
 {
   struct alabnf_matcher_state * state = matcher->current_state;
 
+  if (next_char == NULL)
+    {
+      // TO CHECK
+      return ALABNF_MATCH_NONE;
+    }
+  
   if ( state != NULL )
     {
+      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match character",state);
       struct alabnf_node * current_node = state->current_node;
       struct alabnf_node * initial_node = state->initial_node;
 
@@ -166,6 +215,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 
       if (initial_node->type == ALABNF_NT_ALT)
 	{
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match alt",state);
 	  // current_node is one node within flat list of alternatives if not first time
 
 	  // related SET_ALTERNATIVE
@@ -189,23 +239,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	    }
 	  if ( alternative != NULL )
 	    {
-	      struct alabnf_node * node = alternative->node;
-	      // remark initial node is kept as it is as ALABNF_NT_ALT, then not set.
-	      state->current_node = node;
-	      if ( node != NULL )
-		{
-		  // new alternative is next one.
-		  state->alt=alternative->alt;
-		  struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, node);
-		  // current state should remember stream position
-		  child_state->input = alinputstream_create_mark_shared(state->input,ALABNF_READBLOCKSIZE);
-		  matcher->current_state = child_state;
-		  return ALABNF_MATCH_REMATCH;
-		}
-	      else
-		{
-		  aldebug_printf(NULL,"[WARNING] null node in alternative in %s:%s:%i\n",__FILE__,__func__,__LINE__);
-		}
+	      return alabnf_matcher_process_alternative(matcher,state, alternative);
 	    }
 	  // else all alternatives have been evaluated => ALABNF_MATCH_NONE	  
 	}
@@ -281,9 +315,18 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	    }
 	  
 	}
+      else if (current_node->type == ALABNF_NT_ALT)
+	{
+	  // WARNING this means initial node is NOT an alternative but current is.
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"current is alt while initial is not", state);
+	  // FIXME...
+	  // what should we do ? push a new alt state here ?
+	  struct alabnf_alternative * alternative = &current_node->content.alt;
+	  return alabnf_matcher_process_alternative(matcher,state, alternative);	  
+	}
       else
 	{
-	  aldebug_printf(NULL,"[WARNING] current_node type is not a string but %i in %s:%s:%i\n",current_node->type,__FILE__,__func__,__LINE__);
+	  aldebug_printf(NULL,"[WARNING] current_node type is not a string but %i , initial type is %i in %s:%s:%i\n",current_node->type,initial_node->type,__FILE__,__func__,__LINE__);
 	}
     }
   return ALABNF_MATCH_NONE;
