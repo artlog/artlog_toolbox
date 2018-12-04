@@ -243,6 +243,15 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	    }
 	  // else all alternatives have been evaluated => ALABNF_MATCH_NONE	  
 	}
+      else if (current_node->type == ALABNF_NT_ITERATOR)
+	{
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match ALABNF_NT_ITERATOR",state);
+	  struct alabnf_iterator * iterator = &current_node->content.iterator;	  
+	  // TODO handle repetition min,max
+	  current_node = iterator->node;
+	  state->current_node = current_node;
+	  return ALABNF_MATCH_REMATCH;
+	}
       else if (current_node->type == ALABNF_NT_SEQUENCE)
 	{
 	  struct alabnf_sequence * sequence = &current_node->content.sequence;
@@ -294,7 +303,17 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	  int value = (int) next_char->uchar;
 	  if (( value >= range->start ) && ( value <= range->end ))
 	    {
+	      aldebug_printf(NULL,"[DEBUG] match ALABNF_NT_RANGE %i <=%i<=%i in %s:%s:%i\n",
+			     range->start,value,range->end,
+			     __FILE__,__func__,__LINE__);
 	      return ALABNF_MATCH_FULL;
+	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[DEBUG] UNmatch ALABNF_NT_RANGE %i , %i ,%i in %s:%s:%i\n",
+			     range->start,value,range->end,
+			     __FILE__,__func__,__LINE__);
+
 	    }
 	}	
       else if (current_node->type == ALABNF_NT_RULE_REF)
@@ -363,11 +382,13 @@ void alabnf_match(struct alabnf_matcher * matcher)
 
     if (match == ALABNF_MATCH_CONTINUE)
     {
+      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_CONTINUE",state);
       // continue;
     }
     else
     if (match == ALABNF_MATCH_UNSTACK)
     {
+      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_UNSTACK",state);
       // current state was fully matched, need to check parents.
       if ( parent != NULL )
 	{	      
@@ -402,7 +423,8 @@ void alabnf_match(struct alabnf_matcher * matcher)
 
     }
     else if (match == ALABNF_MATCH_FULL)
-    {      
+    {
+      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_FULL",state);
       if ( next_char != NULL )
 	{
 	  printf("%c",next_char->uchar);
@@ -473,18 +495,20 @@ void alabnf_match(struct alabnf_matcher * matcher)
     }
     else if ( match == ALABNF_MATCH_NONE )
     {
+      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_NONE",state);
       // should handle unstacking of parent context
       // 1. is there an alternative ?
 
       if ( parent != NULL )
 	{	      
-	  printf("|");
+	  printf("|\n");
 	  if ( state != parent )
 	    {
-	      printf("^");	      
+	      printf("^\n");
 	      struct alabnf_node * parent_node = parent->initial_node;
 	      if ( parent_node->type == ALABNF_NT_ALT )
 		{
+		  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"request unstack",parent);
 		  // related SET_ALTERNATIVE
 		  // unstack
 		  // CHECKME looks fragile, required for memory leak protection
@@ -494,6 +518,13 @@ void alabnf_match(struct alabnf_matcher * matcher)
 		    }
 		  state = parent;
 		  matcher->current_state = state;
+		}
+	      // else this is not an alternative ...
+	      else
+		{
+		  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match failed",state);
+		  printf("'%c' match failed %i\n",next_char->uchar,match);
+		  break;
 		}
 	    }
 	  else
@@ -510,6 +541,7 @@ void alabnf_match(struct alabnf_matcher * matcher)
     }
     else if ( match == ALABNF_MATCH_REMATCH )
       {
+	ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_REMATCH",state);
       // rematch !
       }
     else
