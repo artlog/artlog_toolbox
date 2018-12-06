@@ -229,8 +229,10 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 	  parent->type = ALINPUTSTREAM_TYPE_SHARED;
 	  // TODO FIXME
 	  parent->mark = 0;
+	  parent->self_offset = parent->mark;
 	  parent->child.ptr = child_stream;
-      
+
+	  // ALLOC will be release at alinputstream_release_shared
 	  aldatablock block;
 	  char * datablock = (char *) malloc(blocksize);
 	  block.length=blocksize;
@@ -300,6 +302,29 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
   return child_stream; 
 }
 
+void alinputstream_release_shared(struct alinputstream * parent)
+{  
+  if ( parent->type == ALINPUTSTREAM_TYPE_SHARED )
+    {
+      aldebug_printf(NULL,"[DEBUG] free shared parent %p in %s:%s:%i\n",
+		     parent,
+		     __FILE__,__func__,__LINE__);
+
+      if ( parent->child.ptr == NULL )
+	{		      
+	  if (parent->input.data.ptr != NULL )
+	    {
+	      free(parent->input.data.ptr);
+	      parent->input.data.ptr=NULL;
+	      parent->input.length=0;
+	      parent->mark=0;
+	    }
+	  parent->type = ALINPUTSTREAM_TYPE_FD;
+	}
+    }
+
+}
+
 void alinputstream_free_shared(struct alinputstream * child_stream)
 {  
   if ( child_stream != NULL )
@@ -316,20 +341,8 @@ void alinputstream_free_shared(struct alinputstream * child_stream)
 
 	      if ( parent->child.ptr == child_stream )
 		{
-		  // this was head
-		  if ( child->next == NULL )
-		    {
-		      // this was last child
-		      
-		      if (parent->input.data.ptr != NULL )
-			{
-			  free(parent->input.data.ptr);
-			  parent->input.data.ptr=NULL;
-			  parent->input.length=0;
-			  parent->mark=0;
-			}
-		      parent->type = ALINPUTSTREAM_TYPE_FD;
-		    }
+		  // this was head, might set head to NULL
+		  // release of buffer will be done by parent later with alinputstream_release_shared
 		  parent->child.ptr = child->next;
 		}
 	      else		
@@ -357,7 +370,12 @@ void alinputstream_free_shared(struct alinputstream * child_stream)
 
 unsigned char alinputstream_read_and_record(struct alinputstream * stream, int offset)
 {
-  int relative = stream->mark - offset;
+  int relative = offset - stream->mark;
+  if ( relative < 0 )
+    {
+      aldebug_printf(NULL,"[ERROR] reading before mark in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+      return 0;    
+    }
   // steam->offset is number of char kept in parent stream after mark.
   if (relative >= stream->offset )
     {
@@ -405,11 +423,11 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 	      aldebug_printf(NULL,"[ERROR] reading %i  before mark %i in %s:%s:%i\n",
 			     child->offset,
 			     stream->mark,
-			     __FILE__,__func__,__LINE__);
+			     __FILE__,__func__,__LINE__);	      
 	      return 0;
 	    }
-
 	  result = alinputstream_read_and_record(stream,child->offset);
+	  child->offset++;
 	}
     }
   else
@@ -418,7 +436,7 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
       if (  childstream->type == ALINPUTSTREAM_TYPE_SHARED )
 	{
 	  // TODO FIXME case ALINPUTSTREAM_TYPE_SHARED reading in a shared directly, not though a child ...
-	  aldebug_printf(NULL,"[WARNING] reading directly within ALINPUTSTREAM_TYPE_SHARED %p in %s:%s:%i\n",
+	  aldebug_printf(NULL,"[DEBUG] reading directly within ALINPUTSTREAM_TYPE_SHARED %p in %s:%s:%i\n",
 			 childstream,
 			 __FILE__,__func__,__LINE__);
 	  if ( childstream->child.ptr != NULL )
@@ -434,14 +452,19 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 		   )
 	    {
 	      // did we consume all our buffer ?
-	      int relative = childstream->mark - childstream->self_offset;
+	      int relative = childstream->self_offset -childstream->mark;
 	      result=childstream->input.data.ucharptr[relative];
 	      childstream->self_offset++;
-	      // TODO is it safe to dispose shared buffer now ?
 	    }
 	  else
 	    {
+	      
 	      result = alinputstream_readuchar(childstream);
+	      if (childstream->self_offset >= childstream->mark + childstream->offset )
+		{
+		  // time to dispose
+		  alinputstream_release_shared(childstream);
+		}
 	    }
 	}
       else
