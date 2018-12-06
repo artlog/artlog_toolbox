@@ -28,6 +28,8 @@ struct alabnf_matcher_state {
   struct alabnf_sequence * next_sequence;
   // for alternatives
   struct alabnf_alternative * alt;
+  // for iterator
+  int iteration;
   struct alinputstream * input;
 };
 

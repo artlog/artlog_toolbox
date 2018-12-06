@@ -6,15 +6,30 @@
 
 struct alinputstream;
 
+enum alinputstream_type {
+  ALINPUTSTREAM_TYPE_FD,
+  ALINPUTSTREAM_TYPE_SHARED,
+  ALINPUTSTREAM_TYPE_SHARED_CHILD,
+};
+
 struct alinputstream_share_child {
   // when forked
   struct alinputstream * parent;
-  // offset in parent;
+  // offset from mark in parent;
   int offset;
+  // next child sharing same parent should be a ALINPUTSTREAM_TYPE_SHARED_CHILD
+  // that should have an offset >= current
+  struct alinputstream * next;
+};
+
+struct alinputstream_fd {
+  // TODO
+  int todo;
 };
 
 struct alinputstream {
   ALDEBUG_DEFINE_FLAG(debug)
+  enum alinputstream_type type;
   int fd;
   int eof;
   int bits; // last bits read during last operation ( with eof )
@@ -22,9 +37,13 @@ struct alinputstream {
   aldatablock input;
   // offset within input
   int offset;
-  // when forked
-  struct alinputstream_share_child child;
+  union {
+    // when a child type
+    struct alinputstream_share_child self;
+    struct alinputstream * ptr;
+  } child;
   int mark;
+  int self_offset;
   struct alinputstream * next_chain;
 };
 
@@ -63,6 +82,7 @@ alinputstream_shared_readuchar(struct alinputstream * stream)
 **/
 struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * parent, int blocksize);
 
+// when child usage is complete, release it to cleanup parent buffer
 void alinputstream_free_shared(struct alinputstream * child);
 
 unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream);

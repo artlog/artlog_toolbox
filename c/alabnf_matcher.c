@@ -10,6 +10,7 @@ const void * ALABNF_DEAD_CANARY = (void *) 0xdeadca01;
 const int ALABNF_READBLOCKSIZE = 4096;
 
 static char descr[30];
+static char state_descr[255];
 
 char * alabnf_matcher_get_descr(alabnf_character * achar)
 {
@@ -25,7 +26,20 @@ char * alabnf_matcher_get_descr(alabnf_character * achar)
   return descr;
 }
 
-#define ALABNF_MATCHER_DEBUG_TEXT_STATE(achar,text,state) aldebug_printf(NULL,"[DEBUG] %s %s state %p  in %s %s %i\n",text,alabnf_matcher_get_descr(achar),state,__FILE__,__func__,__LINE__)
+char * alabnf_matcher_get_state_descr(struct alabnf_matcher_state * state)
+{
+  if ( state != NULL)
+    {
+      snprintf(state_descr,255,"('%p' type %i current %p current_type %i index %i)",state,state->initial_node == NULL ? -1 : state->initial_node->type,state->current_node,state->current_node !=NULL ? state->current_node->type : -1,state->datablock_index);
+    }
+  else
+    {
+      snprintf(state_descr,255,"(NULL state)");
+    }
+  return state_descr;
+}
+
+#define ALABNF_MATCHER_DEBUG_TEXT_STATE(achar,text,state) aldebug_printf(NULL,"[DEBUG] %s %s state %s  in %s %s %i\n",text,alabnf_matcher_get_descr(achar),alabnf_matcher_get_state_descr(state),__FILE__,__func__,__LINE__)
 
 struct alabnf_matcher_state * alabnf_matcher_state_alloc()
 {
@@ -41,7 +55,13 @@ void alabnf_matcher_state_free(struct alabnf_matcher_state * state)
       ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"matcher state free",state);
       if ( state->current_node == ALABNF_DEAD_CANARY  )
 	{
-	  aldebug_printf(NULL,"[FATAL] matcher state free canary hit at %s:%s:%i",__FILE__,__func__,__LINE__);
+	  aldebug_printf(NULL,"[FATAL] matcher state free canary hit in %s:%s:%i",__FILE__,__func__,__LINE__);
+	  return;
+	}
+      if ( state->initial_node->type == ALABNF_NT_ALT )
+	{
+	  aldebug_printf(NULL,"[DEBUG] free inputstream  in  %s:%s:%i",__FILE__,__func__,__LINE__);
+	  alinputstream_free_shared(state->input);
 	}
       state->current_node = ALABNF_DEAD_CANARY;
       free(state);
@@ -55,6 +75,7 @@ void alabnf_matcher_init_state(
 {
   if ( state != NULL )
     {
+      aldebug_printf(NULL,"[DEBUG] init state %p parent %p node %p node->type %i\n",state,parent,node,(node == NULL) ? -1 : node->type);
       state->parent = parent;
       state->initial_node = node;
       state->current_node = node;
@@ -63,6 +84,10 @@ void alabnf_matcher_init_state(
       if ( parent != NULL )
 	{
 	  state->current_rule = parent->current_rule;
+	}
+      if (node == NULL )
+	{
+	  aldebug_printf(NULL,"[FATAL] init state %p parent %p node NULL\n",state,parent);
 	}
     }
 }
@@ -112,8 +137,9 @@ alabnf_character * alabnf_matcher_get_next_char(struct alabnf_matcher * matcher,
 enum alabnf_match abnf_match_datablock_character(struct alabnf_matcher * matcher,
 						 aldatablock * datablock,	 
 						 alabnf_character * next_char)
-{
+{      
   struct alabnf_matcher_state * current_state = matcher->current_state;
+  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"MATCH DATABLOCK",current_state); 
   int datablock_index = current_state->datablock_index;
   if ( datablock_index < datablock->length )
     {
@@ -147,7 +173,8 @@ struct alabnf_matcher_state * alabnf_matcher_create_child_state(
 {
   // TODO ALLOC use matcher allocation ?
   struct alabnf_matcher_state * child_state = alabnf_matcher_state_alloc();
-  ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"create child state", child_state);
+  // don't print it since not yet initialized can contian heavy garbage
+  // ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"create child state", child_state);
   if ( child_state != NULL )
     {
       alabnf_matcher_init_state(child_state,parent,node);
@@ -155,26 +182,59 @@ struct alabnf_matcher_state * alabnf_matcher_create_child_state(
   return child_state;
 }
 
-enum alabnf_match alabnf_matcher_process_alternative(struct alabnf_matcher * matcher, struct alabnf_matcher_state * state,struct alabnf_alternative * alternative)
+// will stack parent alternative to point on next  and process current node one.
+enum alabnf_match alabnf_matcher_process_alternative(alabnf_character * next_char,
+						     struct alabnf_matcher * matcher,
+						     struct alabnf_matcher_state * state,
+						     struct alabnf_alternative * alternative)
   {
-    ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"process alt",state);
+    ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"process alt",state);
     struct alabnf_node * node = alternative->node;
-    // remark initial node is kept as it is as ALABNF_NT_ALT, then not set.
-    state->current_node = node;
+    // current_node is NULL meaning we have to walk next alternative for this state.
+    state->current_node = NULL;
+    // new alternative is next one.
+    state->alt=alternative->alt;
     if ( node != NULL )
       {
-	// new alternative is next one.
-	state->alt=alternative->alt;
 	struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, node);
 	// current state should remember stream position
-	// child_state->input = alinputstream_create_mark_shared(state->input,ALABNF_READBLOCKSIZE);
+	child_state->input = alinputstream_create_mark_shared(state->input,ALABNF_READBLOCKSIZE);
 	child_state->input = state->input;
 	matcher->current_state = child_state;
 	return ALABNF_MATCH_REMATCH;
       }
     else
       {
-	aldebug_printf(NULL,"[ERROR] null node in alternative in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	aldebug_printf(next_char,"[ERROR] null node in alternative in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+      }
+    return ALABNF_MATCH_NONE;
+  }
+
+// will stack parent iterator to point on next  and process current node one.
+enum alabnf_match alabnf_matcher_process_iterator(alabnf_character * next_char,
+						     struct alabnf_matcher * matcher,
+						     struct alabnf_matcher_state * state,
+						     struct alabnf_iterator * iterator)
+  {
+    ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"process iterator",state);
+    if ( ( iterator->max == ALABNF_INFINITE_ITERATION) || ( state->iteration < iterator->max ) )
+      {
+	struct alabnf_node * node = iterator->node;
+	// current_node is NULL meaning we have to walk next iterator for this state.
+	state->current_node = NULL;
+	// new iterator is next one.
+	state->iteration++;
+	if ( node != NULL )
+	  {
+	    struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, node);
+	    child_state->input = state->input;
+	    matcher->current_state = child_state;
+	    return ALABNF_MATCH_REMATCH;
+	  }
+	else
+	  {
+	    aldebug_printf(next_char,"[ERROR] null node in iterator in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	  }
       }
     return ALABNF_MATCH_NONE;
   }
@@ -196,83 +256,136 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
       struct alabnf_node * current_node = state->current_node;
       struct alabnf_node * initial_node = state->initial_node;
 
+      // current node NULL mean we have to progress depending on initial node.
       if (current_node == NULL )
 	{
 	  if (initial_node != NULL )
 	    {
+	      // progress within a sequence
+	      if (initial_node->type == ALABNF_NT_SEQUENCE)
+		{
+		  // it means we are progressing  in a sequence
+		  struct alabnf_sequence * sequence = NULL;
+		  struct alabnf_node * node = NULL;
+		  sequence = state->next_sequence;
+		  if (sequence != NULL)
+		    {
+		      // get node for this sequence.
+		      node = sequence->node;
+		    }
+		  else
+		    {
+		      // we are at end of this sequence, it is completed AND need a rematch / unstack
+		      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"end of sequence -> unstack ",state);
+		      state->current_node=NULL;
+		      return ALABNF_MATCH_UNSTACK;      
+		    }
+		  state->current_node = node;
+		  // walking between next element of sequence keep same state but update node and next_sequence.
+		  state->next_sequence = sequence->next;
+		  if ( node != NULL )
+		    {
+		      // will rematch with a non NULL current node.
+		      return ALABNF_MATCH_REMATCH;
+		    }
+		  else
+		    {
+		      // node for sequence is NULL => looks like an invalid case
+		      aldebug_printf(NULL,"[ERROR] node is NULL within a sequence in %s:%s:%i\n",
+				     __FILE__,__func__,__LINE__);
+		    }
+		}
+	      else if (initial_node->type == ALABNF_NT_ALT)
+		{
+		  // progress within alternatives.
+		  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match next alt",state);
+		  // related SET_ALTERNATIVE
+		  // this is here that we gather next alternative, this is mandatory else we hit an infinite loop
+		  struct alabnf_alternative * alternative = NULL; 
+		  // will take next alternative
+		  alternative = state->alt;
+		  // alternative can be NULL for last one.	
+		  if ( alternative != NULL )
+		    {
+		      return alabnf_matcher_process_alternative(next_char,matcher,state, alternative);
+		    }
+		  else
+		    {
+		      // else all alternatives have been evaluated => ALABNF_MATCH_NONE
+		      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"all alternatives done",state);		  
+		      // should rematch or unstack ... ?
+		      return ALABNF_MATCH_NONE;
+		    }
+		}
+	      else
+		{
+		  aldebug_printf(NULL,"[WARNING] no initial or current_node in %s %s %i\n",__FILE__,__func__,__LINE__);
+		  return ALABNF_MATCH_NONE;
+		}
 	      // FIXME, done for alternative case when matched.
+	      ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"current node NULL -> unstack ",state);
 	      return ALABNF_MATCH_UNSTACK;
-	    }
-	  else
-	    {
-	      aldebug_printf(NULL,"[WARNING] no initial or current_node in %s %s %i\n",__FILE__,__func__,__LINE__);
-	      return ALABNF_MATCH_NONE;
 	    }
 	}
 
-      aldebug_printf(NULL,"[DEBUG] match char on node type %i %p state %p\n",current_node->type, current_node, state);
+      // here current_node != NULL
+      
+      aldebug_printf(NULL,"[DEBUG] match char on initial node type %i current node type %i %p state %p\n",
+		     initial_node->type, current_node->type, current_node, state);
       alabnf_dump_node(current_node);
 
-      if (initial_node->type == ALABNF_NT_ALT)
+      if (current_node->type == ALABNF_NT_ALT)
 	{
-	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match alt",state);
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match alt current ALABNF_NT_ALT",state);
+	  if (initial_node != current_node)
+	    {
+	      // ex in sequence.
+	      // move current alt node to be an initial state.
+	      state->current_node = NULL;
+	      struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, current_node);
+	      // current state should remember stream position
+	      // child_state->input = alinputstream_create_mark_shared(state->input,ALABNF_READBLOCKSIZE);
+	      child_state->input = state->input;
+	      matcher->current_state = child_state;
+	      return ALABNF_MATCH_REMATCH;
+	    }
 	  // current_node is one node within flat list of alternatives if not first time
-
-	  // related SET_ALTERNATIVE
-	  // this is here that we gather next alternative, this is mandatory else we hit an infinite loop
-	  struct alabnf_alternative * alternative = NULL; 
-	  if ( state->alt == NULL )
-	    {
-	      // really first time we open this state with this alt node
-	      if ( current_node == initial_node )
-		{
-		  // take first alternative attached to current_node
-		  alternative = &initial_node->content.alt;
-		}
-	      // else alternative is NULL
-	    }
-	  else
-	    {
-	      // will take next alternative
-	      alternative = state->alt;
-	      // alternative can be NULL for last one.
-	    }
-	  if ( alternative != NULL )
-	    {
-	      return alabnf_matcher_process_alternative(matcher,state, alternative);
-	    }
-	  // else all alternatives have been evaluated => ALABNF_MATCH_NONE	  
+	  return alabnf_matcher_process_alternative(next_char,matcher,state, &current_node->content.alt);
 	}
       else if (current_node->type == ALABNF_NT_ITERATOR)
 	{
 	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match ALABNF_NT_ITERATOR",state);
-	  struct alabnf_iterator * iterator = &current_node->content.iterator;	  
-	  // TODO handle repetition min,max
-	  current_node = iterator->node;
-	  state->current_node = current_node;
-	  return ALABNF_MATCH_REMATCH;
+	  return alabnf_matcher_process_iterator(next_char,matcher,state, &current_node->content.iterator);
 	}
       else if (current_node->type == ALABNF_NT_SEQUENCE)
 	{
-	  struct alabnf_sequence * sequence = &current_node->content.sequence;
-	  struct alabnf_node * node = sequence->node;
-	  if ( node != NULL )
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match current ALABNF_NT_SEQUENCE",state);
+	  // it means we are entering a sequence
+	  struct alabnf_sequence * sequence = NULL;
+	  struct alabnf_node * node = NULL;
+	  if ( initial_node == current_node )
 	    {
-	      if ( node->type == ALABNF_NT_SEQUENCE)
+	      // entering in a sequence as flat use next_sequence to progress in it when current_node is NULL.
+	      sequence = &current_node->content.sequence;
+	      node = sequence->node;
+	      // next_sequence point on second element ?
+	      state->next_sequence = sequence->next;
+	      state->current_node = node;
+	      if ( node == NULL )
 		{
-		  // first node is a sequence ( unflatened sequence )
-		  struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, node);
-		  child_state->input=state->input;
-		  matcher->current_state = child_state;
+		  // node for sequence is NULL => looks like an invalid case
+		  aldebug_printf(NULL,"[ERROR] node is NULL within a sequence in %s:%s:%i\n",
+				 __FILE__,__func__,__LINE__);
 		}
-	      else
-		{
-		  // walking between next element of sequence keep same state but update node and next_sequence.
-		  state->current_node = node;
-		  state->next_sequence = sequence->next;
-		}
-	      return ALABNF_MATCH_REMATCH;
-	    }	  
+	    }
+	  else
+	    {
+	      // node is a sequence ( unflatened sequence ) walk in depth first		      
+	      struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, current_node);
+	      child_state->input=state->input;
+	      matcher->current_state = child_state;
+	    }
+	  return ALABNF_MATCH_REMATCH;
 	}      
       else if (current_node->type == ALABNF_NT_STRING)
 	{
@@ -318,6 +431,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	}	
       else if (current_node->type == ALABNF_NT_RULE_REF)
 	{
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match current ALABNF_NT_RULE_REF",state);
 	  struct alabnf_rule_ref * rule_ref = &current_node->content.rule_ref;
 	  struct alabnf_node * node = rule_ref->resolved;
 	  if ( node != NULL )
@@ -341,7 +455,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	  // FIXME...
 	  // what should we do ? push a new alt state here ?
 	  struct alabnf_alternative * alternative = &current_node->content.alt;
-	  return alabnf_matcher_process_alternative(matcher,state, alternative);	  
+	  return alabnf_matcher_process_alternative(next_char,matcher,state, alternative);	  
 	}
       else
 	{
@@ -351,17 +465,279 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
   return ALABNF_MATCH_NONE;
 }
 
+// set state to parent state.
+int alabnf_matcher_unstack(struct alabnf_matcher * matcher,
+			   struct alabnf_matcher_state * state,
+			   struct alabnf_matcher_state * parent)
+{
+  if ( state != parent )
+    {
+      printf("^");      
+      // CHECKME looks fragile, required for memory leak protection
+      if ( state != &matcher->root_state )
+	{
+	  struct alabnf_node * node = state->initial_node;
+	  aldebug_printf(NULL,"[DEBUG] unstack state for initial node %i at %s:%s:%i\n",
+			 node->type,
+			 __FILE__,__func__,__LINE__);
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"unstack free",state);
+	  alabnf_matcher_state_free(state);
+	}
+      // unstack
+      state = parent;
+      matcher->current_state = state;
+
+      return 1;
+    }
+  else
+    {
+      aldebug_printf(NULL,"[FATAL] parent point on itself at %s:%s:%i\n",__FILE__,__func__,__LINE__);
+      return 0;
+    }
+}
+
+int alabnf_matcher_unstack_until(
+				 alabnf_character * next_char,
+				 enum alabnf_node_type node_type,
+				 struct alabnf_matcher * matcher,
+				 struct alabnf_matcher_state * state,
+				 struct alabnf_matcher_state * parent)
+{  
+  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"request unstack until",state);
+  struct alabnf_node * node = state->initial_node;
+
+  while ( (state != NULL ) && ( node->type != node_type ))
+    {  
+
+      // unstack
+      if ( ! alabnf_matcher_unstack(matcher,state,parent))
+	{
+	  return 0;
+	}
+      state = matcher->current_state;
+      if ( state != NULL )
+	{
+	  node = state->initial_node;
+	  parent = state->parent;
+	}
+      else
+	{
+	  parent = NULL;
+	}
+    }
+  if ( state != NULL )
+    {
+      aldebug_printf(NULL,"[DEBUG] unstack until node %p type %i found %s:%s:%i\n",
+		     node,node->type,
+		     __FILE__,__func__,__LINE__);
+		     
+    }
+  return ( state != NULL );
+}
+
+int alabnf_matcher_unstack_while(
+				 alabnf_character * next_char,
+				 enum alabnf_node_type node_type,
+				 struct alabnf_matcher * matcher,
+				 struct alabnf_matcher_state * state,
+				 struct alabnf_matcher_state * parent)
+{  
+  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"request unstack while",state);
+  struct alabnf_node * node = state->initial_node;
+
+  while ( (state != NULL ) && ( node->type == node_type ))
+    {  
+
+      aldebug_printf(NULL,"[DEBUG] unstack while node %p type %i %s:%s:%i\n",
+		     node,node->type,
+		     __FILE__,__func__,__LINE__);
+
+      // unstack
+      if ( ! alabnf_matcher_unstack(matcher,state,parent))
+	{
+	  return 0;
+	}
+      state = matcher->current_state;
+      if ( state != NULL )
+	{
+	  node = state->initial_node;
+	  
+	  parent = state->parent;
+	}
+      else
+	{
+	  parent = NULL;
+	}
+    }
+  if ( state != NULL )
+    {
+      aldebug_printf(NULL,"[DEBUG] FOUND unstack while node %p type %i found %s:%s:%i\n",
+		     node,node->type,
+		     __FILE__,__func__,__LINE__);
+		     
+    }
+  return ( state != NULL );
+}
+
+int alabnf_matcher_is_terminal(struct alabnf_node * node)
+{
+  if ( node != NULL )
+    {
+      switch (node->type)
+	{
+	case ALABNF_NT_INVALID:
+	case ALABNF_NT_STRING:
+	case ALABNF_NT_RANGE:
+	  return 1;
+	case ALABNF_NT_RULE_REF:
+	case ALABNF_NT_ITERATOR:
+	case ALABNF_NT_SEQUENCE:
+	case ALABNF_NT_ALT:
+	default:
+	  return 0;
+	}
+    }
+  return 1;
+
+}
+int alabnf_matcher_state_is_terminal(struct alabnf_matcher_state * state)
+{
+  struct alabnf_node * initial = state->initial_node;
+
+  return alabnf_matcher_is_terminal(initial);
+}
+
+int alabnf_matcher_state_has_next_type(struct alabnf_matcher_state * state, enum alabnf_node_type node_type)
+{
+  struct alabnf_node * initial = state->initial_node;
+
+  if (initial->type == 	node_type)
+    {
+      return ( initial != state->current_node );
+    }
+
+  return 0;
+}
+
+int alabnf_matcher_state_has_next_sequence(struct alabnf_matcher_state * state)
+{
+  return alabnf_matcher_state_has_next_type(state,ALABNF_NT_SEQUENCE);
+}
+
+int alabnf_matcher_state_has_next_alternative(struct alabnf_matcher_state * state)
+{
+  return alabnf_matcher_state_has_next_type(state,ALABNF_NT_ALT);
+}
+
+// current failed need to find next alternatives
+int alabnf_matcher_find_next_fail(
+				 alabnf_character * current_char,
+				 struct alabnf_matcher * matcher,
+				 struct alabnf_matcher_state * state,
+				 struct alabnf_matcher_state * parent)
+{
+
+  if ( alabnf_matcher_state_has_next_alternative(state) )
+    {
+      // force progression.
+      state->current_node=NULL;
+      return 1;
+    }
+
+  // unstack all alternatives, one alternative match all.
+  state = matcher->current_state;
+  if ( state != NULL )
+    {
+      parent = state->parent;
+    }
+  else
+    {
+      parent = NULL;
+    }
+
+  return alabnf_matcher_unstack_until(current_char, ALABNF_NT_ALT,matcher,state,parent);
+}
+
+// current did fully match, need to complete all alternatives
+int alabnf_matcher_find_next_success(
+				 alabnf_character * current_char,
+				 struct alabnf_matcher * matcher,
+				 struct alabnf_matcher_state * state,
+				 struct alabnf_matcher_state * parent)
+{
+
+  if ( alabnf_matcher_state_has_next_sequence(state) )
+    {
+      // force progression.
+      state->current_node=NULL;
+      return 1;
+    }
+
+  // unstack current terminal
+  if ( alabnf_matcher_state_is_terminal(state))
+    {
+      
+      if ( ! alabnf_matcher_unstack(matcher,state,parent))
+	{
+	  return 0;
+	}
+    }
+
+  // unstack all alternatives, one alternative match all.
+  state = matcher->current_state;
+  if ( state != NULL )
+    {
+      parent = state->parent;
+    }
+  else
+    {
+      parent = NULL;
+    }
+
+  return alabnf_matcher_unstack_while(current_char, ALABNF_NT_ALT,matcher,state,parent);
+}
+
 void alabnf_match(struct alabnf_matcher * matcher)
 {
   alabnf_character * next_char = NULL;
   enum alabnf_match match = ALABNF_MATCH_NONE;
   struct alabnf_matcher_state * state = NULL;
   struct alabnf_matcher_state * parent = NULL;
+
+  // protect against rematches infinite loop
+  int rematches = 0;
+  int maxrematches = 10;
+  
   do {
     state = matcher->current_state;
-    if ( match != ALABNF_MATCH_REMATCH )
+    if ( state == NULL )
       {
-	next_char = alabnf_matcher_get_next_char(matcher,state);
+	// did we complete 
+	aldebug_printf(NULL,"[DEBUG] null state at %s:%s:%i",__FILE__,__func__,__LINE__);
+	printf("readched top of the stack -> match \n");
+	break;
+      }
+    
+    if ( match == ALABNF_MATCH_REMATCH )
+      {
+	rematches ++;
+	if (rematches > maxrematches )
+	  {
+	    aldebug_printf(NULL,"[FATAL] too many rematches at %s:%s:%i",
+			   __FILE__,__func__,__LINE__);
+	    break;
+	  }
+      }
+    else
+      {
+	rematches = 0;
+	next_char = alabnf_matcher_get_next_char(matcher,state);	
+      }
+    
+    if ( next_char == NULL)
+      {
+	ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"NULL char",state);
+	break;
       }
     match = alabnf_match_character(matcher,next_char);
     state = matcher->current_state;
@@ -391,29 +767,26 @@ void alabnf_match(struct alabnf_matcher * matcher)
       ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_UNSTACK",state);
       // current state was fully matched, need to check parents.
       if ( parent != NULL )
-	{	      
-	  if ( state != parent )
+	{
+	  printf("*");
+	  struct alabnf_node * parent_node = parent->initial_node;
+	  if (
+	      ( parent_node->type == ALABNF_NT_ALT )
+	      || ( parent_node->type == ALABNF_NT_SEQUENCE ) )
 	    {
-	      printf("*");
-	      struct alabnf_node * parent_node = parent->initial_node;
-	      if ( parent_node->type == ALABNF_NT_ALT )
+	      if ( ! alabnf_matcher_unstack(matcher,state,parent))
 		{
-		  // related SET_ALTERNATIVE
-		  // unstack
-		  // CHECKME looks fragile, required for memory leak protection
-		  if ( state != &matcher->root_state )
-		    {
-		      alabnf_matcher_state_free(state);
-		    }
-		  state = parent;
-		  matcher->current_state = state;
+		  break;
 		}
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[FATAL] parent point on itself at %s:%s:%i",__FILE__,__func__,__LINE__);
+	      aldebug_printf(NULL,"[FATAL] parent not a sequence or alternative but %i at %s:%s:%i",
+			     parent_node->type,
+			     __FILE__,__func__,__LINE__);
 	      break;
 	    }
+	  // SHOULD we REMATCH ?
 	}
       else
 	{
@@ -430,114 +803,19 @@ void alabnf_match(struct alabnf_matcher * matcher)
 	  printf("%c",next_char->uchar);
 	}
       printf("+");
-
+      
       state->datablock_index=0;
-      // should check we consumed full sequence of root ...
-      // currently broken
-      if ( state->next_sequence != NULL )
-	{
-	  printf("#");
-	  state->current_node=state->next_sequence->node;
-	  state->next_sequence=state->next_sequence->next;
-	}
-      else
-	{
-	  state->current_node=NULL;
-	  state->next_sequence=NULL;
-	}
-      if (  state->current_node == NULL )
-	{
-	  // todo play with parent alternative or unflattened sequence
-	  printf("matched !\n");
 
-	  if ( parent != NULL )
-	    {	      
-	      struct alabnf_node * parent_node = parent->initial_node;
-	      if ( parent_node->type == ALABNF_NT_ALT )
-		{
-		  // parent is an alternative but one did altready matched
-		  // => don't check other alternative, consider alternative itself as resolved
-		  // DOES THIS work ?
-		  printf("\\");
-		  parent->current_node = NULL;
-		}
-	      else if ( parent_node->type == ALABNF_NT_SEQUENCE )
-		{
-		  if ( state != parent )
-		    {
-		      printf("^");
-		      // CHECKME looks fragile, required for memory leak protection
-		      if ( state != &matcher->root_state )
-			{
-			  alabnf_matcher_state_free(state);
-			}
-		      // unstack
-		      state = parent;
-		      matcher->current_state = state;
-		    }
-		  else
-		    {
-		      aldebug_printf(NULL,"[FATAL] parent point on itself at %s:%s:%i\n",__FILE__,__func__,__LINE__);
-		      break;
-		    }
-		}
-	      else
-		{
-		  aldebug_printf(NULL,"[FATAL] unexpected parent type (%i) on itself at %s:%s:%i\n",parent_node->type,__FILE__,__func__,__LINE__);
-		  break;
-		}
-	    }
-	  else
-	    {
-	      break;
-	    }
-	}
+      alabnf_matcher_find_next_success(next_char,matcher,state,parent);
     }
     else if ( match == ALABNF_MATCH_NONE )
     {
       ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_NONE",state);
       // should handle unstacking of parent context
-      // 1. is there an alternative ?
+      // related SET_ALTERNATIVE
+      alabnf_matcher_find_next_fail(next_char,matcher,state,parent);
 
-      if ( parent != NULL )
-	{	      
-	  printf("|\n");
-	  if ( state != parent )
-	    {
-	      printf("^\n");
-	      struct alabnf_node * parent_node = parent->initial_node;
-	      if ( parent_node->type == ALABNF_NT_ALT )
-		{
-		  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"request unstack",parent);
-		  // related SET_ALTERNATIVE
-		  // unstack
-		  // CHECKME looks fragile, required for memory leak protection
-		  if ( state != &matcher->root_state )
-		    {
-		      alabnf_matcher_state_free(state);
-		    }
-		  state = parent;
-		  matcher->current_state = state;
-		}
-	      // else this is not an alternative ...
-	      else
-		{
-		  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match failed",state);
-		  printf("'%c' match failed %i\n",next_char->uchar,match);
-		  break;
-		}
-	    }
-	  else
-	    {
-	      aldebug_printf(NULL,"[FATAL] parent point on itself at %s:%s:%i",__FILE__,__func__,__LINE__);
-	      break;
-	    }
-	}
-      else
-	{
-	  printf("'%c' match failed %i\n",next_char->uchar,match);
-	  break;
-	}
+      match = ALABNF_MATCH_REMATCH;
     }
     else if ( match == ALABNF_MATCH_REMATCH )
       {

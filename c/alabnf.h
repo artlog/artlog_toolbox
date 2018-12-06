@@ -166,6 +166,8 @@ struct alabnf_sm {
   int it_max;
 };
 
+extern const int ALABNF_INFINITE_ITERATION;
+
 // setup and allocate , to dispose use alabnf_state_machine_release
 void alabnf_state_machine_init(struct alabnf_sm *state_machine,   struct alinputstream * inputstream);
 

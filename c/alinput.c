@@ -12,7 +12,8 @@ void alinputstream_init(struct alinputstream * stream, int fd)
 {
   bzero(stream, sizeof(*stream));
   stream->fd=fd;
-  stream->input.data.ptr=NULL;  
+  stream->input.data.ptr=NULL;
+  stream->type = ALINPUTSTREAM_TYPE_FD;
 }
 
 void alinputstream_setdatablock(struct alinputstream * stream, aldatablock * block, int offset)
@@ -174,49 +175,191 @@ int alinputstream_get_readbits(struct alinputstream * stream)
   return stream->bits;
 }
 
+  // create a new child stream ALLOC on heap
+struct alinputstream * alinputstream_share_child_alloc()
+{
+  struct alinputstream * child_stream = NULL;
+  child_stream = (struct alinputstream *) calloc(1,sizeof(*child_stream));
+  child_stream->type =  ALINPUTSTREAM_TYPE_SHARED_CHILD;
+  return child_stream;
+}
+
+void alinputstream_share_child_init(struct alinputstream_share_child * child, struct alinputstream * parent)
+{
+  child->parent = parent;
+  child->offset = 0;
+  child->next = NULL;
+}
+
+struct alinputstream * alinputstream_find_last_child(struct alinputstream * child)
+{
+  struct alinputstream * last_child = NULL;
+  while ( child != NULL )
+    {
+      last_child = child;
+      child = child->child.self.next;
+    }
+  return last_child;
+}
+
+struct alinputstream * alinputstream_find_previous_child(struct alinputstream * from, struct alinputstream * child)
+{
+  struct alinputstream * previous_child = NULL;
+  while ((from != NULL) && ( from != child ))
+    {
+      previous_child = from;
+      from = from->child.self.next;      
+    }
+  return previous_child;
+}
+
 struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * parent, int blocksize)
 {
-  // FIXME currently allow only one child ...
-  if ( parent->child.parent == NULL )
-    {
-      struct alinputstream_share_child * child = &parent->child;
+  struct alinputstream * child_stream = NULL;
 
+  if ( parent->type ==  ALINPUTSTREAM_TYPE_FD )
+    {
+      child_stream=alinputstream_share_child_alloc();
+      struct alinputstream_share_child * child = &child_stream->child.self;
+      alinputstream_share_child_init(child,parent);
+
+      // parent is a root stream, ie not a child kind
       if ( parent->input.data.ptr == NULL )
 	{
+	  parent->type = ALINPUTSTREAM_TYPE_SHARED;
 	  // TODO FIXME
 	  parent->mark = 0;
+	  parent->child.ptr = child_stream;
       
 	  aldatablock block;
 	  char * datablock = (char *) malloc(blocksize);
 	  block.length=blocksize;
 	  block.data.charptr=datablock;
 	  alinputstream_setdatablock(parent, &block, 0);
-	}      
-      // else means it had buffer ... BAD...
+	}
+      else
+	{
+	  // else means it had buffer ... BAD...
+	  aldebug_printf(NULL,"[ERROR] parent buffer unexpected in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	}
+    }
+  else if ( parent->type ==  ALINPUTSTREAM_TYPE_SHARED )
+    {
+      struct alinputstream * head_child = parent->child.ptr;
+      if (( head_child != NULL ) && ( head_child->child.self.parent == parent ))
+	{
+	  child_stream=alinputstream_share_child_alloc();
+	  struct alinputstream_share_child * child = &child_stream->child.self;
+	  alinputstream_share_child_init(child,parent);
 
-      child->parent=parent;
+	  // parent is a root stream, ie not a child kind
+	  aldatablock * block = &parent->input;
+	  if ( block->data.ptr != NULL )
+	    {
+	      // TODO FIXME
+	      child->offset=parent->mark;
+	      // chain at end
+	      struct alinputstream * last_child = alinputstream_find_last_child(head_child);
+	      last_child->child.self.next = child_stream;
+	      if ( block->length < blocksize )
+		{
+		  // TODO reallaoc ? warn ?
+		}
+	    }
+	  else
+	    {
+	      // else means it had buffer ... BAD...
+	      aldebug_printf(NULL,"[ERROR] parent buffer shared NULLn %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	    }
+	}
+      else
+	{
+	  aldebug_printf(NULL,"[ERROR] shared stream %p without a child parent set to it %p in %s:%s:%i\n",
+			 parent,
+			 head_child,
+			 __FILE__,__func__,__LINE__);
+	}
+    }
+  else if ( parent->type ==  ALINPUTSTREAM_TYPE_SHARED_CHILD )
+    {
+      // parent is already a child
+      struct alinputstream_share_child * child = &parent->child.self;
+      parent = child->parent;      
+      // RECURSIVE on parent to create a sister or brother
+      child_stream = alinputstream_create_mark_shared(parent,blocksize);
+    }
+  else
+    {     
+      aldebug_printf(NULL,"[ERROR] creating a child of child for parent %p type %i child.parent %p in %s:%s:%i\n",
+		     parent,
+		     parent->type,
+		     parent->child.self.parent,
+		     __FILE__,__func__,__LINE__);
     }
 
-  return parent; 
+  return child_stream; 
 }
 
-void alinputstream_free_shared(struct alinputstream * child)
-{
-  // FIXME currently allow only one child ...  
-  struct alinputstream * parent = child;
-  if (parent->input.data.ptr != NULL )
+void alinputstream_free_shared(struct alinputstream * child_stream)
+{  
+  if ( child_stream != NULL )
     {
-      free(parent->input.data.ptr);
-      parent->input.data.ptr=NULL;
-      parent->input.length=0;
+      if ( child_stream->type == ALINPUTSTREAM_TYPE_SHARED_CHILD )
+	{
+	  struct alinputstream_share_child * child = &child_stream->child.self;
+	  struct alinputstream * parent = child->parent;
+	  if ( parent->type == ALINPUTSTREAM_TYPE_SHARED )
+	    {
+	      aldebug_printf(NULL,"[DEBUG] free shared child %p in %s:%s:%i\n",
+			     child_stream,
+			     __FILE__,__func__,__LINE__);
+
+	      if ( parent->child.ptr == child_stream )
+		{
+		  // this was head
+		  if ( child->next == NULL )
+		    {
+		      // this was last child
+		      
+		      if (parent->input.data.ptr != NULL )
+			{
+			  free(parent->input.data.ptr);
+			  parent->input.data.ptr=NULL;
+			  parent->input.length=0;
+			  parent->mark=0;
+			}
+		      parent->type = ALINPUTSTREAM_TYPE_FD;
+		    }
+		  parent->child.ptr = child->next;
+		}
+	      else		
+		{
+		  // this is not head, should remove it from next of its previous.
+		  struct alinputstream * previous_child = alinputstream_find_previous_child(parent->child.ptr,child_stream);
+		  if ( previous_child != NULL )
+		    {
+		      previous_child->child.self.next=child->next;
+		    }
+		}
+	    }
+	  else
+	    {
+	      aldebug_printf(NULL,"[ERROR] free shared child %p with invalid parent type %i in %s:%s:%i\n",
+			     child_stream,
+			     parent->type,
+			     __FILE__,__func__,__LINE__);
+
+	    }
+	  free(child_stream);
+	}
     }
 }
 
 unsigned char alinputstream_read_and_record(struct alinputstream * stream, int offset)
 {
   int relative = stream->mark - offset;
-  // steam->offset is number of char kept in parent stream
-  if (relative > stream->offset )
+  // steam->offset is number of char kept in parent stream after mark.
+  if (relative >= stream->offset )
     {
       if ( stream->input.length < relative )
 	{
@@ -224,8 +367,17 @@ unsigned char alinputstream_read_and_record(struct alinputstream * stream, int o
 	  return 0;
 	}
       unsigned char c = 0;
+      // FIXME should read as many characters needed to fill..
       c = alinputstream_readuchar(stream);
-      stream->input.data.ucharptr[relative]=c;      
+      if ( relative != stream->offset )
+	{
+	  aldebug_printf(NULL,"[ERROR] leaving a hole in parent read %i %i in %s:%s:%i\n",
+			 relative,
+			 stream->offset,
+			 __FILE__,__func__,__LINE__);
+	}
+      stream->input.data.ucharptr[relative]=c;
+      stream->offset=relative+1;
       return c;
     }
   else
@@ -237,27 +389,65 @@ unsigned char alinputstream_read_and_record(struct alinputstream * stream, int o
 // WARNING 0 char considered as EOF.
 unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 {
-  
-  struct alinputstream_share_child * child = &childstream->child;
-  struct alinputstream * stream = childstream->child.parent;
   unsigned char result = 0;
-
-  if ( stream != NULL )
+  struct alinputstream * stream = NULL;
+  if ( childstream->type == ALINPUTSTREAM_TYPE_SHARED_CHILD )
     {
-      if ( stream->mark >= child->offset )
+      struct alinputstream_share_child * child = &childstream->child.self;
+      stream = child->parent;
+      if ( stream != NULL )
 	{
-	  // we are trying to read at place that has not been record in time !
-	  // this is an error
-	  // UGLY eof
-	  return 0;
-	}
+	  if ( stream->mark > child->offset )
+	    {
+	      // we are trying to read at place that has not been record in time !
+	      // this is an error
+	      // UGLY eof
+	      aldebug_printf(NULL,"[ERROR] reading %i  before mark %i in %s:%s:%i\n",
+			     child->offset,
+			     stream->mark,
+			     __FILE__,__func__,__LINE__);
+	      return 0;
+	    }
 
-      result = alinputstream_read_and_record(stream,child->offset);
+	  result = alinputstream_read_and_record(stream,child->offset);
+	}
     }
   else
     {
-      // in facts not shared
-      result = alinputstream_readuchar(childstream);
+      // consider it not shared
+      if (  childstream->type == ALINPUTSTREAM_TYPE_SHARED )
+	{
+	  // TODO FIXME case ALINPUTSTREAM_TYPE_SHARED reading in a shared directly, not though a child ...
+	  aldebug_printf(NULL,"[WARNING] reading directly within ALINPUTSTREAM_TYPE_SHARED %p in %s:%s:%i\n",
+			 childstream,
+			 __FILE__,__func__,__LINE__);
+	  if ( childstream->child.ptr != NULL )
+	    {
+	      // we still have children
+	      result = alinputstream_read_and_record(childstream,childstream->self_offset);
+	      childstream->self_offset++;
+	    }
+	  else if (
+		   (childstream->self_offset > childstream->mark )
+		   &&
+		   (childstream->self_offset < childstream->mark + childstream->offset )
+		   )
+	    {
+	      // did we consume all our buffer ?
+	      int relative = childstream->mark - childstream->self_offset;
+	      result=childstream->input.data.ucharptr[relative];
+	      childstream->self_offset++;
+	      // TODO is it safe to dispose shared buffer now ?
+	    }
+	  else
+	    {
+	      result = alinputstream_readuchar(childstream);
+	    }
+	}
+      else
+	{
+	  result = alinputstream_readuchar(childstream);
+	}
     }
   
   return result;
