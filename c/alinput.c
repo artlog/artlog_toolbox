@@ -259,7 +259,6 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 	  if ( block->data.ptr != NULL )
 	    {
 	      // TODO FIXME
-	      child->offset=parent->mark;
 	      // chain at end
 	      struct alinputstream * last_child = alinputstream_find_last_child(head_child);
 	      last_child->child.self.next = child_stream;
@@ -267,6 +266,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 		{
 		  // TODO reallaoc ? warn ?
 		}
+	      child->offset=parent->mark;
 	    }
 	  else
 	    {
@@ -286,9 +286,12 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
     {
       // parent is already a child
       struct alinputstream_share_child * child = &parent->child.self;
-      parent = child->parent;      
+      struct alinputstream * shared_parent = child->parent;      
       // RECURSIVE on parent to create a sister or brother
-      child_stream = alinputstream_create_mark_shared(parent,blocksize);
+      child_stream = alinputstream_create_mark_shared(shared_parent,blocksize);
+      // new child starts where parent is even if parent is a shared child.
+      child = &child_stream->child.self;
+      child->offset=parent->child.self.offset;
     }
   else
     {     
@@ -299,6 +302,13 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 		     __FILE__,__func__,__LINE__);
     }
 
+  if (( child_stream != NULL )&&(child_stream->type != ALINPUTSTREAM_TYPE_SHARED_CHILD))
+    {
+      aldebug_printf(NULL,"[FATAL] creating a child stream of wrong type %i in %s:%s:%i\n",
+		     child_stream->type,
+		     __FILE__,__func__,__LINE__);
+    }
+    
   return child_stream; 
 }
 

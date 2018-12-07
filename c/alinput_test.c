@@ -32,11 +32,20 @@ int main(int argc, char * argv[])
   printf("shared child 20 chars \n");
   readsome(child,20);
 
+  struct alinputstream * child2;
+
+  child2 = alinputstream_create_mark_shared(child,100);
+  printf("shared child2 10 chars \n");
+  readsome(child2,10);  
+  
   printf("free child\n");
   alinputstream_free_shared(child);
 
   printf("replay parent 20 characters \n");
   readsome(&input,20);
+
+  printf("free child2\n");
+  alinputstream_free_shared(child2);
 
   // test buffer was really release
   printf("replay parent 150 characters \n");

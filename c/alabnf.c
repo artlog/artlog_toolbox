@@ -249,7 +249,7 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
   struct alabnf_alternative * alternative=start_alternative;
   struct alabnf_alternative * next_alternative=NULL;
   // debug
-  //printf("{");
+  printf("{");
   while (alternative != NULL)
     {
       next_alternative = alternative->alt;
@@ -263,7 +263,7 @@ void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
       alternative=next_alternative;
     }
   // debug
-  //printf("}");
+  printf("}");
 
 
 }
