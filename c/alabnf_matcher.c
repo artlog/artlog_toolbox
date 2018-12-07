@@ -255,14 +255,22 @@ enum alabnf_match alabnf_matcher_process_iterator(alabnf_character * next_char,
 	if ( node != NULL )
 	  {
 	    struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, node);
-	    child_state->input = state->input;
+	    // CHECK STREAM private stream for child, should be commited to current state only if fully matched.
+	    child_state->input = alinputstream_create_mark_shared(state->input,ALABNF_READBLOCKSIZE);
 	    matcher->current_state = child_state;
 	    return ALABNF_MATCH_REMATCH;
 	  }
 	else
 	  {
 	    aldebug_printf(next_char,"[ERROR] null node in iterator in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	    return ALABNF_MATCH_ERROR;
 	  }
+      }
+    if ( state->iteration > iterator->min )
+      {
+	// did match a valid number of iteration ...
+	// CHECK STREAM private stream for child, should be commited to current state only if fully matched.
+	return ALABNF_MATCH_SUCCESS_UNSTACK;
       }
     return ALABNF_MATCH_NONE;
   }
@@ -391,6 +399,15 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 		  
 		  return ALABNF_MATCH_ERROR;
 		}
+	      if (initial_node->type == ALABNF_NT_ITERATOR)
+		{
+		  // should progress within iterator
+		  return alabnf_matcher_process_iterator(next_char,
+							 matcher,
+							 state,
+							 &initial_node->content.iterator);
+	  
+		}
 	      else
 		{
 		  aldebug_printf(NULL,"[WARNING] no initial or current_node in %s %s %i\n",__FILE__,__func__,__LINE__);
@@ -464,16 +481,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 		  aldebug_printf(NULL,"[ERROR] node is NULL within a sequence in %s:%s:%i\n",
 				 __FILE__,__func__,__LINE__);
 		}
-	      // FIXME look like a hack
-	      // should have a char to match ...
-	      if ( next_char == NULL )
-		{
-		  return ALABNF_MATCH_CONTINUE;
-		}
-	      else
-		{
-		  return ALABNF_MATCH_REMATCH;
-		}
+	      return ALABNF_MATCH_REMATCH;
 	    }
 	  else
 	    {
@@ -484,7 +492,11 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	    }
 	  return ALABNF_MATCH_REMATCH;
 	}      
-
+      else if (current_node->type == ALABNF_NT_ITERATOR)
+	{
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match ALABNF_NT_ITERATOR",state);
+	  return alabnf_matcher_process_iterator(next_char,matcher,state, &current_node->content.iterator);
+	}
       
       if (next_char == NULL)
 	{
@@ -497,12 +509,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 		     initial_node->type, current_node->type, current_node, state);
       // alabnf_dump_node(current_node);
 
-      if (current_node->type == ALABNF_NT_ITERATOR)
-	{
-	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match ALABNF_NT_ITERATOR",state);
-	  return alabnf_matcher_process_iterator(next_char,matcher,state, &current_node->content.iterator);
-	}
-      else if (current_node->type == ALABNF_NT_STRING)
+      if (current_node->type == ALABNF_NT_STRING)
 	{
 	  enum alabnf_string_type string_type = current_node->content.string.type;
 	  if (
@@ -980,6 +987,10 @@ void alabnf_match(struct alabnf_matcher * matcher)
 	break;
       }
 
+    if ( ( match == ALABNF_MATCH_REMATCH ) && ( next_char == NULL ) )
+      {
+	match = ALABNF_MATCH_CONTINUE;
+      }
   }
   while ( state != NULL );  
   // todo free ....
