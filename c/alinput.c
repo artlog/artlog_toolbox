@@ -107,6 +107,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
     }
 }
 
+ 
 // WARNING 0 char considered as EOF
 unsigned char alinputstream_readuchar(struct alinputstream * stream)
 {
@@ -125,6 +126,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
       struct alinputstream * next = stream->next_chain;
       if ( ( next != NULL ) && ( ! alinputstream_iseof(next)))
 	{
+	  // WARNING RECURSIVE
 	  result = alinputstream_readuchar(next);
 	}
       else

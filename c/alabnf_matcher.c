@@ -300,6 +300,34 @@ alabnf_matcher_specialize_iterator(struct alabnf_matcher_state * state,
 }
 
 struct alabnf_matcher_state *
+alabnf_matcher_specialize_reference(struct alabnf_matcher_state * state,
+				   struct alabnf_node * node)
+{
+  struct alabnf_rule_ref * rule_ref = &node->content.rule_ref;
+  state->type = ALABNF_MATCHER_ST_REF;
+  state->iteration = 0;
+
+  struct alabnf_node * resolved = rule_ref->resolved;
+  if ( resolved != NULL )
+    {
+      // create a child
+      struct alabnf_matcher_state * child_state = alabnf_matcher_create_child_state(state, resolved);
+      // share same input stream.
+      child_state->input = state->input;
+      return child_state;
+    }
+  else
+    {
+      aldebug_printf(NULL,"[WARNING] unresolved rule_ref in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+      // WHAT TO DO HERE ?? skip ??
+      aldatablock * datablock = &rule_ref->keyblock;
+      aldebug_printf(NULL,"rulename="ALPASCALSTRFMT"\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+      return state;
+    }
+
+}
+
+struct alabnf_matcher_state *
 alabnf_matcher_specialize(struct alabnf_matcher_state * state)
 {
   if ( state->type == ALABNF_MATCHER_ST_UNSET )
@@ -316,6 +344,9 @@ alabnf_matcher_specialize(struct alabnf_matcher_state * state)
 	  break;
 	case ALABNF_NT_ITERATOR:
 	  state=alabnf_matcher_specialize_iterator(state,node);
+	  break;
+	case ALABNF_NT_RULE_REF:
+	  state=alabnf_matcher_specialize_reference(state,node);
 	  break;
 	default:
 	  state->type = ALABNF_MATCHER_ST_NODE;
@@ -481,6 +512,30 @@ enum alabnf_match alabnf_matcher_unstack_child_iterator( struct alabnf_matcher *
 }
 
 
+// unstack a child of any kind to be a reference parent.
+enum alabnf_match alabnf_matcher_unstack_child_reference( struct alabnf_matcher * matcher,
+						 struct alabnf_matcher_state * child,
+						 struct alabnf_matcher_state * parent,
+						 enum alabnf_match match
+						 )
+{
+  struct alabnf_node * node = parent->initial_node;
+  struct alabnf_rule_ref * rule_ref = &node->content.rule_ref;
+  alabnf_matcher_unstack(matcher,child,parent);
+  
+  if ( match == ALABNF_MATCH_SUCCESS_UNSTACK )
+    {
+      aldatablock * datablock = &rule_ref->keyblock;
+      aldebug_printf(NULL,"rule match "ALPASCALSTRFMT"\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));      
+      return match;
+    }
+  else
+    {
+      return match;
+    }
+
+}
+
 enum alabnf_match alabnf_matcher_unstack_child( struct alabnf_matcher * matcher,
 						struct alabnf_matcher_state * child,
 						struct alabnf_matcher_state * parent,
@@ -499,6 +554,9 @@ enum alabnf_match alabnf_matcher_unstack_child( struct alabnf_matcher * matcher,
 	  break;
 	case ALABNF_MATCHER_ST_IT:
 	  return alabnf_matcher_unstack_child_iterator(matcher,child,parent,match);
+	  break;
+	case ALABNF_MATCHER_ST_REF:
+	  return alabnf_matcher_unstack_child_reference(matcher,child,parent,match);
 	  break;
 	default:
 	  ALABNF_MATCHER_DEBUG_TEXT_STATE(&matcher->tempchar1,"MATCH ERROR",parent);       
@@ -744,33 +802,20 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	      aldebug_printf(NULL,"[DEBUG] UNmatch ALABNF_NT_RANGE %i , %i ,%i in %s:%s:%i\n",
 			     range->start,value,range->end,
 			     __FILE__,__func__,__LINE__);
+	      return ALABNF_MATCH_FAIL_UNSTACK;
 
 	    }
 	}	
       else if (current_node->type == ALABNF_NT_RULE_REF)
 	{
-	  // FIXME SHOULD BE specialization turn
-	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"match current ALABNF_NT_RULE_REF",state);
-	  struct alabnf_rule_ref * rule_ref = &current_node->content.rule_ref;
-	  struct alabnf_node * node = rule_ref->resolved;
-	  if ( node != NULL )
-	    {
-	      // morph rule_ref into rule content.
-	      state->current_node = node;
-	      return ALABNF_MATCH_REMATCH;
-	    }
-	  else
-	    {
-	      aldebug_printf(NULL,"[WARNING] unresolved rule_ref in %s:%s:%i\n",__FILE__,__func__,__LINE__);
-	      // WHAT TO DO HERE ?? skip ??
-	      aldatablock * datablock = &rule_ref->keyblock;
-	      aldebug_printf(NULL,"rulename="ALPASCALSTRFMT"\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-	    }
+	  // DONE in specialization turn should not be hit
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"matching current ALABNF_NT_RULE_REF type ERROR",state);
+	  return ALABNF_MATCH_NONE;
 	  
 	}
       else
 	{
-	  aldebug_printf(NULL,"[WARNING] current_node type is not a string but %i , initial type is %i in %s:%s:%i\n",current_node->type,initial_node->type,__FILE__,__func__,__LINE__);
+	  aldebug_printf(NULL,"[WARNING] current_node type %i is not supported , initial type is %i in %s:%s:%i\n",current_node->type,initial_node->type,__FILE__,__func__,__LINE__);
 	}
     }
   else

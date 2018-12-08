@@ -21,6 +21,8 @@ struct alabnf * alabnf_util_parse_abnf_file(FILE * file)
 struct alabnf * alabnf_util_parse_abnf_filenames(int filenames, int offset,char ** filename)
 {
   struct alabnf_sm   state_machine;
+
+  // TODO Use alinput_util currently code in alinput_test.c
   struct alinputstream * container_inputstream = NULL;
   struct alinputstream * inputstream = NULL;
   FILE * file;

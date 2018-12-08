@@ -19,6 +19,7 @@ enum alabnf_matcher_state_type {
   ALABNF_MATCHER_ST_OR, // alternative
   ALABNF_MATCHER_ST_AND, // sequence
   ALABNF_MATCHER_ST_IT, // iterator
+  ALABNF_MATCHER_ST_REF, // reference
   ALABNF_MATCHER_ST_NODE
 };
 
