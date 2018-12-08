@@ -12,6 +12,23 @@ const int ALABNF_READBLOCKSIZE = 4096;
 static char descr[30];
 static char state_descr[255];
 
+#define ALABNF_MATCHER_LOG_TEXT_STATE(loglevel,achar,text,state) aldebug_printf(NULL,"%s %s %s state %s  in %s %s %i\n",loglevel,text,alabnf_matcher_get_descr(achar),alabnf_matcher_get_state_descr(state),__FILE__,__func__,__LINE__)
+
+
+#define ALABNF_MATCHER_DEBUG_TEXT_STATE(achar,text,state) ALABNF_MATCHER_LOG_TEXT_STATE("[DEBUG]",achar,text,state)
+
+#define ALABNF_MATCHER_FATAL_TEXT_STATE(achar,text,state) ALABNF_MATCHER_LOG_TEXT_STATE("[FATAL]",achar,text,state)
+
+#define ALABNF_MATCHER_LIMIT_STEPS(matcher,state) \
+  {\
+	matcher->steps++;\
+	if ( matcher->steps > matcher->maxsteps )\
+	  {\
+            ALABNF_MATCHER_FATAL_TEXT_STATE(NULL,"TOO MANY STEPS",state); \
+	    exit(1);\
+	  }\
+  }
+
 // forward declaration
 struct alabnf_matcher_state * alabnf_matcher_create_child_state(
 								   struct alabnf_matcher_state * parent,
@@ -74,7 +91,6 @@ char * alabnf_matcher_get_state_descr(const struct alabnf_matcher_state * state)
   return state_descr;
 }
 
-#define ALABNF_MATCHER_DEBUG_TEXT_STATE(achar,text,state) aldebug_printf(NULL,"[DEBUG] %s %s state %s  in %s %s %i\n",text,alabnf_matcher_get_descr(achar),alabnf_matcher_get_state_descr(state),__FILE__,__func__,__LINE__)
 
 void alabnf_set_matcher_state_input(struct alabnf_matcher * matcher, struct alabnf_matcher_state * state)  
 {
@@ -104,10 +120,14 @@ void alabnf_matcher_state_free(struct alabnf_matcher_state * state)
 	  aldebug_printf(NULL,"[FATAL] matcher state free canary hit in %s:%s:%i",__FILE__,__func__,__LINE__);
 	  return;
 	}
-      if ( state->initial_node->type == ALABNF_NT_ALT )
+      struct alinputstream * stream = state->input;      
+      if ( (stream != NULL) && ( stream->type == ALINPUTSTREAM_TYPE_SHARED_CHILD ) )
 	{
-	  aldebug_printf(NULL,"[DEBUG] free inputstream  in  %s:%s:%i",__FILE__,__func__,__LINE__);
-	  alinputstream_free_shared(state->input);
+	  aldebug_printf(NULL,"[DEBUG] free inputstream %p  in  %s:%s:%i",
+			 stream,
+			 __FILE__,__func__,__LINE__);
+	  // FIXME DEACTIVATED
+	  // alinputstream_free_shared(stream);
 	}
       state->current_node = ALABNF_DEAD_CANARY;
       free(state);
@@ -141,7 +161,7 @@ void alabnf_matcher_init_state(
 }
 
 
-// set state to parent state.
+// set current state to parent state.
 int alabnf_matcher_unstack(struct alabnf_matcher * matcher,
 			   struct alabnf_matcher_state * state,
 			   struct alabnf_matcher_state * parent)
@@ -160,8 +180,7 @@ int alabnf_matcher_unstack(struct alabnf_matcher * matcher,
 	  alabnf_matcher_state_free(state);
 	}
       // unstack
-      state = parent;
-      alabnf_set_matcher_state_input(matcher,state);
+      alabnf_set_matcher_state_input(matcher,parent);
 
       return 1;
     }
@@ -306,6 +325,7 @@ alabnf_matcher_specialize(struct alabnf_matcher_state * state)
   return state;
 }
 
+// unstack a child of any kind to be a alternative parent.
 enum alabnf_match alabnf_matcher_unstack_child_alt( struct alabnf_matcher * matcher,
 					    struct alabnf_matcher_state * child,
 					    struct alabnf_matcher_state * parent,
@@ -357,29 +377,32 @@ enum alabnf_match alabnf_matcher_unstack_child_alt( struct alabnf_matcher * matc
   return ALABNF_MATCH_ERROR;
 }
 
-
+// unstack a child of any kind to be a sequence parent.
 enum alabnf_match alabnf_matcher_unstack_child_sequence( struct alabnf_matcher * matcher,
 						 struct alabnf_matcher_state * child,
 						 struct alabnf_matcher_state * parent,
 						 enum alabnf_match match
 						 )
 {
-  alabnf_matcher_unstack(matcher,child,parent);
-  
   if ( match == ALABNF_MATCH_FAIL_UNSTACK )
     {
+      alabnf_matcher_unstack(matcher,child,parent);
       return match;
     }
   else if ( match == ALABNF_MATCH_SUCCESS_UNSTACK )
     {
+      // TO BE DONE at any successfull unstack ?
+      // very important to realign current stream with child result
+      // alinputstream_align_shared_with_child(parent->input,child->input);
+      alabnf_matcher_unstack(matcher,child,parent);
+
       struct alabnf_matcher_state * state = parent;
       // find next alt
       // progress within alternatives.
       ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"match next sequence",state);
 
-      struct alabnf_sequence * sequence = NULL;
-      // will take next sequence
-      sequence = sequence->next;
+      struct alabnf_sequence * sequence = state->next_sequence;
+     
       // alternative can be NULL for last one.	
       if ( sequence != NULL )
 	{
@@ -396,7 +419,7 @@ enum alabnf_match alabnf_matcher_unstack_child_sequence( struct alabnf_matcher *
 	}
       else
 	{
-	  ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"all sequences have been evaluated",state);
+	  ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"sequence nodes fully evaluted",state);
 	  return match;
 	}
 
@@ -404,6 +427,7 @@ enum alabnf_match alabnf_matcher_unstack_child_sequence( struct alabnf_matcher *
   return ALABNF_MATCH_ERROR;
 }
 
+// unstack a child of any kind to be an iterator parent.
 enum alabnf_match alabnf_matcher_unstack_child_iterator( struct alabnf_matcher * matcher,
 						 struct alabnf_matcher_state * child,
 						 struct alabnf_matcher_state * parent,
@@ -417,6 +441,7 @@ enum alabnf_match alabnf_matcher_unstack_child_iterator( struct alabnf_matcher *
     {
       // very important to realign current stream with child result
       alinputstream_align_shared_with_child(parent->input,child->input);
+      ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"iterator aligned parent with child",parent);
       alabnf_matcher_unstack(matcher,child,parent);
       // iterate      
       parent->iteration ++;
@@ -428,8 +453,8 @@ enum alabnf_match alabnf_matcher_unstack_child_iterator( struct alabnf_matcher *
 	      // FIXME does infinite loop
 	      // current state should remember stream position
 	      child_state->input = alinputstream_create_mark_shared(parent->input,ALABNF_READBLOCKSIZE);
+	      aldebug_printf(NULL,"%p %p NEXT iteration %i  < iterator->max %i stream %p\n", parent, child_state, parent->iteration, iterator->max, child_state->input);
 	      alabnf_set_matcher_state_input(matcher,child_state);
-	      aldebug_printf(NULL,"%p %p iteration %i  < iterator->max %i", parent, child_state, parent->iteration, iterator->max);
 	      return ALABNF_MATCH_CONTINUE;
 	    }
 	  else
@@ -438,6 +463,7 @@ enum alabnf_match alabnf_matcher_unstack_child_iterator( struct alabnf_matcher *
 	    }
 	}
       // matched maximum iteration
+      aldebug_printf(NULL,"%p iteration FULLY COMPLETED  %i  >= iterator->max %i\n", parent, parent->iteration, iterator->max);
       return match;
     }
   else if ( match == ALABNF_MATCH_FAIL_UNSTACK )
@@ -446,6 +472,7 @@ enum alabnf_match alabnf_matcher_unstack_child_iterator( struct alabnf_matcher *
       if ( parent->iteration >= iterator->min )
 	{
 	  // did match minimal iteration => ok
+	  aldebug_printf(NULL,"%p iteration PARTIALY COMPLETED  %i  >= iterator->min %i\n", parent, parent->iteration, iterator->min);
 	  return ALABNF_MATCH_SUCCESS_UNSTACK;
 	}
       return match;
@@ -525,17 +552,26 @@ alabnf_character * alabnf_matcher_get_next_char(struct alabnf_matcher * matcher,
   else
     {
       struct alinputstream * stream = state->input;
-      aldebug_printf(NULL,"[DEBUG] get next char on stream %p type %i\n", stream, stream->type);  
-      unsigned char uchar = alinputstream_shared_readuchar(stream);
-      if ( uchar == 0 )
+      if ( stream != NULL )
 	{
-	  return NULL;
+	  aldebug_printf(NULL,"[DEBUG] get next char on stream %p type %i\n", stream, stream->type);  
+	  unsigned char uchar = alinputstream_shared_readuchar(stream);
+	  if ( uchar == 0 )
+	    {
+	      return NULL;
+	    }
+	  else
+	    {      
+	      matcher->tempchar1.uchar = uchar;
+	      return &matcher->tempchar1;
+	    }
 	}
       else
-	{      
-	  matcher->tempchar1.uchar = uchar;
-	  
-	  return &matcher->tempchar1;
+	{
+	  aldebug_printf(NULL,"[FATAL] NULL stream for state %p in %s:%s:%i\n",
+			 state,
+			 __FILE__,__func__,__LINE__);
+	  exit(1);
 	}
     }
 }
@@ -751,7 +787,8 @@ struct alabnf_matcher_state * alabnf_matcher_resolve_state_node(struct alabnf_ma
   while ( ( state != NULL ) && ( state->type == ALABNF_MATCHER_ST_UNSET ) )
       {
 	state = alabnf_matcher_specialize(state);
-      }  
+	ALABNF_MATCHER_LIMIT_STEPS(matcher,state);
+      }
   return state;
 }
 
@@ -790,6 +827,7 @@ void alabnf_match(struct alabnf_matcher * matcher)
 	matcher->rematches = 0;
 	next_char = alabnf_matcher_get_next_char(matcher,state);
       }
+    ALABNF_MATCHER_LIMIT_STEPS(matcher,state);
     match = alabnf_match_character(matcher,state,next_char);
     matcher->last_match = match;
     
@@ -817,6 +855,10 @@ void alabnf_match(struct alabnf_matcher * matcher)
 	ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_UNSTACK",state);
 
 	match = alabnf_matcher_unstack_child(matcher,state,parent,match);
+
+	// need to get current matcher that since state might have been freed.
+	state = matcher->current_state;
+	ALABNF_MATCHER_DEBUG_TEXT_STATE(next_char,"ALABNF_MATCH_UNSTACK done",state);
 
 	// unstacking state can create an unresolved brother
 	state = alabnf_matcher_resolve_state_node(matcher);	

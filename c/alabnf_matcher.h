@@ -57,8 +57,12 @@ struct alabnf_matcher {
   struct alabnf_matcher_state * current_state;
   enum alabnf_match last_match;
   // protect against rematches infinite loop
-  int rematches;
   int maxrematches;
+  int rematches;
+
+  // limit steps
+  int maxsteps;
+  int steps;
   
 };
 

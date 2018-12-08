@@ -1,0 +1,1 @@
+IRI            = scheme ":" ihier-part [ "?" iquery ] [ "#" ifragment ]

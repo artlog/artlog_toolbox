@@ -266,13 +266,47 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 		{
 		  // TODO reallaoc ? warn ?
 		}
-	      child->offset=parent->mark;
+	      // child->offset=parent->mark;
+	      child->offset=parent->self_offset;
 	    }
 	  else
 	    {
-	      // else means it had buffer ... BAD...
-	      aldebug_printf(NULL,"[ERROR] parent buffer shared NULLn %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	      // else means it had NO buffer ... BAD...
+	      aldebug_printf(NULL,"[ERROR] parent buffer shared NULL %s:%s:%i\n", __FILE__,__func__,__LINE__);
 	    }
+	}
+      else if ( head_child == NULL ) 
+	{	  
+	  // head child can be NULL and still be a ALINPUTSTREAM_TYPE_SHARED ( due to unflushed characters ).
+	  child_stream=alinputstream_share_child_alloc();
+	  struct alinputstream_share_child * child = &child_stream->child.self;
+	  alinputstream_share_child_init(child,parent);
+
+	  // parent is a root stream, ie not a child kind
+	  if ( parent->input.data.ptr == NULL )
+	    {
+	      // means it had NO buffer ... BAD...
+	      aldebug_printf(NULL,"[ERROR] parent buffer unexpected in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+
+	      parent->type = ALINPUTSTREAM_TYPE_SHARED;
+	      // TODO FIXME
+	      parent->mark = 0;
+	      parent->self_offset = parent->mark;
+	      parent->child.ptr = child_stream;
+	      
+	      // ALLOC will be release at alinputstream_release_shared
+	      aldatablock block;
+	      char * datablock = (char *) malloc(blocksize);
+	      block.length=blocksize;
+	      block.data.charptr=datablock;
+	      alinputstream_setdatablock(parent, &block, 0);
+	    }
+	  else
+	    {
+	      // child->offset=parent->mark;
+	      child->offset=parent->self_offset;
+	    }
+	  
 	}
       else
 	{

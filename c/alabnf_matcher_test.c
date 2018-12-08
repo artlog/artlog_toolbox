@@ -1,6 +1,7 @@
 #include "alabnf_matcher.h"
 #include "alabnf_util.h"
 #include "aldebug.h"
+#include <stdlib.h>
 
 int main(int argc, char * argv[])
 {
@@ -15,6 +16,9 @@ int main(int argc, char * argv[])
   if ( argc > offset )
     {
 
+      int maxsteps=(int) strtol(argv[1],NULL,10);
+      
+      offset=2;
       alabnf = alabnf_util_parse_abnf_filenames(argc-offset,offset,argv);
 
       if ( alabnf != NULL )
@@ -22,9 +26,11 @@ int main(int argc, char * argv[])
 	  aldebug_printf(NULL,"[INFO] parsed abnf %p\n", alabnf);
 	  
 	  alinputstream_init(&input,fileno(file));
-	  
+
 	  alabnf_match_init(&matcher,alabnf,&input);
 
+	  matcher.maxsteps=maxsteps;
+	  
 	  alabnf_match(&matcher);
 
 	  // TODO release alabnf
