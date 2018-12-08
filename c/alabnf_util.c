@@ -29,19 +29,29 @@ struct alabnf * alabnf_util_parse_abnf_filenames(int filenames, int offset,char 
     {
       char * fname = filename[i+offset];
       file = fopen(fname,"r");
-      aldebug_printf(NULL,"[DEBUG] adding '%s' as abnf input\n", fname);
       if ( file != NULL )
 	{
+	  aldebug_printf(NULL,"[DEBUG] adding '%s' as abnf input\n", fname);
 	  inputstream = malloc(sizeof(*inputstream));
 	  alinputstream_init(inputstream, fileno (file));
       
 	  container_inputstream=alinputstream_create_chain(container_inputstream, inputstream);
 	}
+      else
+	{
+	  aldebug_printf(NULL,"[ERROR] adding '%s' fopen failed \n", fname);
+	}
     }
-  
-  alabnf_state_machine_init(&state_machine,container_inputstream);
-  alabnf_state_machine_run(&state_machine);
-  alabnf_state_machine_release(&state_machine);
 
-  return alabnf_state_machine_generated(&state_machine);
+  if (container_inputstream != NULL )
+    {
+      alabnf_state_machine_init(&state_machine,container_inputstream);
+      alabnf_state_machine_run(&state_machine);
+      alabnf_state_machine_release(&state_machine);
+
+      return alabnf_state_machine_generated(&state_machine);
+    }
+
+  return NULL;
+
 }

@@ -94,4 +94,6 @@ struct alinputstream * alinputstream_create_chain(struct alinputstream * current
 /** return 1 is stream is eof */
 int alinputstream_iseof(struct alinputstream * stream);
 
+void alinputstream_align_shared_with_child(struct alinputstream * parent, struct alinputstream * childstream);
+
 #endif

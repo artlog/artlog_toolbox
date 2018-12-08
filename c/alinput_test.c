@@ -36,7 +36,16 @@ int main(int argc, char * argv[])
 
   child2 = alinputstream_create_mark_shared(child,100);
   printf("shared child2 10 chars \n");
-  readsome(child2,10);  
+  readsome(child2,10);
+
+  printf("shared child 2 chars \n");
+  readsome(child,2);
+
+  printf("align shared child on child2 \n");
+  alinputstream_align_shared_with_child(child,child2);
+
+  printf("shared child 20 chars \n");
+  readsome(child,20);
   
   printf("free child\n");
   alinputstream_free_shared(child);

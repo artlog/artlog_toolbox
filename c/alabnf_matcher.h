@@ -15,8 +15,10 @@ enum alabnf_match {
 };
 
 enum alabnf_matcher_state_type {
-  ALABNF_MATCHER_ST_OR = 16,
-  ALABNF_MATCHER_ST_AND,
+  ALABNF_MATCHER_ST_UNSET = 16,
+  ALABNF_MATCHER_ST_OR, // alternative
+  ALABNF_MATCHER_ST_AND, // sequence
+  ALABNF_MATCHER_ST_IT, // iterator
   ALABNF_MATCHER_ST_NODE
 };
 
@@ -53,6 +55,11 @@ struct alabnf_matcher {
   alabnf_character tempchar1;
   struct alabnf_matcher_state root_state;
   struct alabnf_matcher_state * current_state;
+  enum alabnf_match last_match;
+  // protect against rematches infinite loop
+  int rematches;
+  int maxrematches;
+  
 };
 
 // init matcher with an input stream

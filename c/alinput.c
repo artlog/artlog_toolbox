@@ -513,3 +513,34 @@ struct alinputstream *  alinputstream_create_chain(struct alinputstream * curren
   
   return current;
 }
+
+void alinputstream_align_shared_with_child(struct alinputstream * parent, struct alinputstream * childstream)
+{
+
+  if ( ( childstream != NULL ) && ( parent != NULL ) )
+    {
+      if ( childstream->type == ALINPUTSTREAM_TYPE_SHARED_CHILD )
+	{
+	  struct alinputstream_share_child * child = &childstream->child.self;
+	  if ( parent->type ==  ALINPUTSTREAM_TYPE_SHARED_CHILD )
+	    {
+	      // parent is already a child
+	      parent->child.self.offset=child->offset;
+	    }
+	  else if ( parent->type ==  ALINPUTSTREAM_TYPE_SHARED )
+	    {
+	      // crossing fingers ...
+	      parent->self_offset=child->offset;
+	    }
+	}
+      else
+	{
+	  aldebug_printf(NULL,"[ERROR] can't align parent %p on a child %p that is not a ALINPUTSTREAM_TYPE_SHARED_CHILD but %i  in %s:%s:%i\n",
+			 parent,
+			 childstream,
+			 childstream->type,
+			 __FILE__,__func__,__LINE__);	      
+
+	}
+    }
+}
