@@ -16,6 +16,10 @@
 #define todo(text) printf("todo(%s)\n",text);
 #endif
 
+// if this value is found as a pointer it might indicate double free
+// still it is statistally possible that this is a real pointer value
+// select odd
+void * const ALJSON_DEAD_CANARY = (void *) 0xdeadada1;
 
 struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
   {
@@ -244,15 +248,19 @@ void json_growable_release_object(struct json_object * object)
   if (object->growable.size > 1)
     {
       struct json_link * link = object->growable.head.next;
+      struct json_link * next = NULL;
       while ((link != NULL)&&(object->growable.size>0))
 	{
-	  link=link->next;
+	  next=link->next;
+	  link->next=ALJSON_DEAD_CANARY;
+	  // FIXME since object might link to other objects... ?
 	  free(link);
+	  link=next;
 	  object->growable.size--;
 	}
     }
-  // fixme
-  // free(object);
+  object->growable.head.next=ALJSON_DEAD_CANARY;
+  free(object);
 }
 
 void json_release_object(struct json_object * object)
