@@ -18,7 +18,7 @@ salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c
 bitfield: albitfield_test.c al_options.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
-alpadfile: alpadfile.c al_options.c
+alpadfile: alpadfile.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
 hashtree: alhashtree.c alhashtree_test.c alcryptohash.c
@@ -45,6 +45,9 @@ alabnf_matcher: alabnf.c alabnf_util.c alabnf_matcher.c alabnf_matcher_test.c al
 
 alinput_test: alinput_test.c
 	gcc -Wall -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic 
+
+alimp: 	alimp.c
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
 clean:
 	rm c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alabnf
