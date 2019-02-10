@@ -1,0 +1,35 @@
+#include "alcommon.h"
+
+// a paleceholder
+struct alpathfile_options {
+  // currently unused
+  long timeout;
+};
+
+enum alpathfile_reply
+  {
+   ALPATHFILE_REPLY_ERROR=0,
+   ALPATHFILE_REPLY_IS_DIR=1,
+   ALPATHFILE_REPLY_IS_FILE=2,
+   ALPATHFILE_REPLY_NO_PARENT=4,
+   ALPATHFILE_REPLY_NO_ENTRY=8,
+   ALPATHFILE_REPLY_TIMEOUT=16,
+   // might be a socket or a device
+   ALPATHFILE_REPLY_IS_OTHER=32,
+};
+
+typedef unsigned int alpathfile_reply_set;
+
+struct alpathfile_options * alpathfile_get_default_options();
+
+/**
+options use alpathfile_get_default_options()
+pathanme0 full path NUL terminated string
+ **/
+alpathfile_reply_set alpathfile_check_exists(struct alpathfile_options * options, char * pathname0 );
+
+enum al_global_error_code alpathfile_is_directory(char * pathname0 );
+
+enum al_global_error_code alpathfile_is_file(char * pathname0 );
+
+enum al_global_error_code alpathfile_exists(char * pathname0);
