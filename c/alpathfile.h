@@ -1,3 +1,6 @@
+#ifndef __ALPATHFILE_H__
+#define __ALPATHFILE_H__
+
 #include "alcommon.h"
 
 // a paleceholder
@@ -14,7 +17,8 @@ enum alpathfile_reply
    ALPATHFILE_REPLY_NO_PARENT=4,
    ALPATHFILE_REPLY_NO_ENTRY=8,
    ALPATHFILE_REPLY_TIMEOUT=16,
-   // might be a socket or a device
+   ALPATHFILE_REPLY_IS_LINK=32,
+   // might be a socket or a device ( block or character) or a fifo
    ALPATHFILE_REPLY_IS_OTHER=32,
 };
 
@@ -33,3 +37,7 @@ enum al_global_error_code alpathfile_is_directory(char * pathname0 );
 enum al_global_error_code alpathfile_is_file(char * pathname0 );
 
 enum al_global_error_code alpathfile_exists(char * pathname0);
+
+enum al_global_error_code alpathfile_can_open(char * pathname0);
+
+#endif
