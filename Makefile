@@ -5,6 +5,7 @@ LD=gcc
 CPPFLAGS=-g
 
 BUILD=build
+TMPTESTDIR=$(BUILD)/tmp
 
 libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c c/aljson_dump.c
 src=c/aljson_main.c
@@ -72,10 +73,12 @@ $(libobjects): | $(BUILD)/lib
 
 tests: testjson testhash $(BUILD)/test_alstack testbtree
 
+testhash: $(BUILD)/hash $(TMPTESTDIR)
+	$< alhashsample/sample2.txt 2>$(TMPTESTDIR)/$@.sample2.out.2 >$(TMPTESTDIR)/sample2.out
+	$< c/c_parser.c 2>$(TMPTESTDIR)/$@.c_parser.out.2 >$(TMPTESTDIR)/c_parser.out
+	@$< alhashsample/words.txt 2>$(TMPTESTDIR)/$@.words.out.2 >$(TMPTESTDIR)/words.out
+	@diff alhashsample/words.out $(TMPTESTDIR)/words.out && echo "hash words [OK]"
 
-testhash: $(BUILD)/hash
-	$^ alhashsample/sample2.txt
-	$^ c/c_parser.c
 
 $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -lalcommon -Wl,-Bdynamic
@@ -89,6 +92,9 @@ testjson:$(BUILD)/json
 	diff test/parse1.json test/parse2.json
 	diff test/parse1.json test/parse3.json
 	$^ template/test2.json
+
+$(BUILD)/tmp:
+	mkdir -p $@
 
 $(BUILD)/json: $(objects)
 	@echo link json objects $(objects) and libjson
