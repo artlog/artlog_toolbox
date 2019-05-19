@@ -63,10 +63,6 @@ $(BUILD)/testbtree: $(BUILD)/obj/albtree.o $(BUILD)/obj/albtreetest.o
 	$(LD) -o $@ $(LDFLAGS) $^
 
 
-testbtree: $(BUILD)/testbtree
-	$(BUILD)/testbtree ceci est un test depuis le makefile
-
-
 $(objects): | $(BUILD)/obj
 
 
@@ -74,6 +70,11 @@ $(libobjects): | $(BUILD)/lib
 
 
 tests: testjson testhash $(BUILD)/test_alstack testbtree
+
+
+testbtree: $(BUILD)/testbtree $(TMPTESTDIR)
+	$< ceci est un test depuis le makefile 2>$(TMPTESTDIR)/$@.out.2 >$(TMPTESTDIR)/$@.out
+
 
 testhash: $(BUILD)/hash $(TMPTESTDIR)
 	$< $(TEMPLATEHASH)/sample2.txt 2>$(TMPTESTDIR)/$@.sample2.out.2 >$(TMPTESTDIR)/sample2.out
