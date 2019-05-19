@@ -85,15 +85,15 @@ testhash: $(BUILD)/hash $(TMPTESTDIR)
 $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -lalcommon -Wl,-Bdynamic
 
-testjson:$(BUILD)/json
-	$^ template/test.json >test/parse1.json
-	$^ template/parse1.json >test/parse2.json
-	$^ template/refnawak.json >test/parse3.json
-	$^ template/test.json template/refnawak.json
-	$^ template/refnawak.json template/template.json -debug
-	diff test/parse1.json test/parse2.json
-	diff test/parse1.json test/parse3.json
-	$^ template/test2.json
+testjson:$(BUILD)/json $(TMPTESTDIR)
+	$< $(TEMPLATE)/test.json >$(TMPTESTDIR)/parse1.json 2>$(TMPTESTDIR)/$@.parse1.json.out.2
+	$< $(TEMPLATE)/parse1.json >$(TMPTESTDIR)/parse2.json 2>$(TMPTESTDIR)/$@.parse2.json.out.2
+	$< $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/parse3.json 2>$(TMPTESTDIR)/$@.parse3.json.out.2
+	$< $(TEMPLATE)/test.json $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/$@.test.refnawak.json.out 2>$(TMPTESTDIR)/$@.refnawak.json.out.2
+	$< $(TEMPLATE)/refnawak.json $(TEMPLATE)/template.json -debug 2>$(TMPTESTDIR)/$@.parse1.json.out.12 1>&2
+	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse2.json && echo "parse2.json [OK]"
+	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse3.json && echo "parse3.json [OK]"
+	$< $(TEMPLATE)/test2.json  >$(TMPTESTDIR)/test2.json 2>$(TMPTESTDIR)/$@.test2.json.out.2
 
 $(BUILD)/tmp:
 	mkdir -p $@
