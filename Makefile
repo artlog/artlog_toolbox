@@ -6,6 +6,8 @@ CPPFLAGS=-g
 
 BUILD=build
 TMPTESTDIR=$(BUILD)/tmp
+TEMPLATE=template
+TEMPLATEHASH=$(TEMPLATE)/alhashsample
 
 libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c c/aljson_dump.c
 src=c/aljson_main.c
@@ -74,10 +76,10 @@ $(libobjects): | $(BUILD)/lib
 tests: testjson testhash $(BUILD)/test_alstack testbtree
 
 testhash: $(BUILD)/hash $(TMPTESTDIR)
-	$< alhashsample/sample2.txt 2>$(TMPTESTDIR)/$@.sample2.out.2 >$(TMPTESTDIR)/sample2.out
+	$< $(TEMPLATEHASH)/sample2.txt 2>$(TMPTESTDIR)/$@.sample2.out.2 >$(TMPTESTDIR)/sample2.out
 	$< c/c_parser.c 2>$(TMPTESTDIR)/$@.c_parser.out.2 >$(TMPTESTDIR)/c_parser.out
-	@$< alhashsample/words.txt 2>$(TMPTESTDIR)/$@.words.out.2 >$(TMPTESTDIR)/words.out
-	@diff alhashsample/words.out $(TMPTESTDIR)/words.out && echo "hash words [OK]"
+	@$< $(TEMPLATEHASH)/words.txt 2>$(TMPTESTDIR)/$@.words.out.2 >$(TMPTESTDIR)/words.out
+	@diff $(TEMPLATEHASH)/words.out $(TMPTESTDIR)/words.out && echo "hash words [OK]"
 
 
 $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
