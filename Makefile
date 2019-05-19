@@ -69,7 +69,7 @@ $(objects): | $(BUILD)/obj
 $(libobjects): | $(BUILD)/lib
 
 
-tests: testjson testhash $(BUILD)/test_alstack testbtree
+tests: testjson testhash $(BUILD)/test_alstack testbtree testallist
 
 
 testbtree: $(BUILD)/testbtree $(TMPTESTDIR)
@@ -96,6 +96,12 @@ testjson:$(BUILD)/json $(TMPTESTDIR)
 	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse3.json && echo "parse3.json [OK]"
 	$< $(TEMPLATE)/test2.json  >$(TMPTESTDIR)/test2.json 2>$(TMPTESTDIR)/$@.test2.json.out.2
 
+testallist:$(BUILD)/testallist $(TMPTESTDIR)
+	$< 10x 10x 10x -decomp >$(TMPTESTDIR)/$@.1000.decomp.out
+
+$(BUILD)/testallist: $(BUILD)/private/obj/tests/allist_test.o
+	gcc -g $^ -o $@ -I$(BUILD)/include -L$(BUILD)/lib -Wl,-Bstatic -lallist -lalcommon -laltest -Wl,-Bdynamic
+
 $(BUILD)/tmp:
 	mkdir -p $@
 
@@ -104,6 +110,9 @@ $(BUILD)/json: $(objects)
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson  -lalstack -lalhash -lalcommon  -Wl,-Bdynamic
 
 $(BUILD)/obj:
+	mkdir -p $@
+
+$(BUILD)/private/obj:
 	mkdir -p $@
 
 $(BUILD)/lib:
@@ -118,6 +127,11 @@ $(BUILD)/include/%.h: c/%.h $(BUILD)/include
 $(BUILD)/obj/%.o: c/%.c $(BUILD)/obj
 	@echo compile $< 
 	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+$(BUILD)/private/obj/%.o: c/%.c $(BUILD)/private/obj
+	@echo "bad hack fixme" && mkdir $(BUILD)/private/obj/tests
+	@echo compile private $< 
+	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I c/private $< -o $@
 
 clean:
 	rm -rf $(BUILD)
