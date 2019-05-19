@@ -131,16 +131,16 @@ int test_indexset()
 
   set.set=0x4100000000L;
   int rindex = indexset_getrelindex(&set,32);
-  printf(" %i 0x%lx\n", rindex, set.set);
+  printf(" %i 0x%llx\n", rindex, set.set);
   if ( indexset_get(&set,32) != 1 )
     {
-      printf("get 32 fail  0x%lx\n", set.set);
+      printf("get 32 fail  0x%llx\n", set.set);
       return -1;
     }
   if ( indexset_set(&set,38) != 0 )
     {
       // was already set
-      printf("set 38 fail 0x%lx\n", set.set);
+      printf("set 38 fail 0x%llx\n", set.set);
       return -2;
     }
   if ( indexset_getrelindex(&set, 38) != (rindex + 1))
@@ -557,7 +557,6 @@ int main(int argc, char * argv[])
 		}
 	    }
 	}
-      int step = 0;
       time_t start;
       
       prime_context=create_prime_context(count);

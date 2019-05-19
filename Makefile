@@ -129,7 +129,7 @@ $(BUILD)/obj/%.o: c/%.c $(BUILD)/obj
 	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(BUILD)/private/obj/%.o: c/%.c $(BUILD)/private/obj
-	@echo "bad hack fixme" && mkdir $(BUILD)/private/obj/tests
+	@echo "bad hack fixme" && mkdir -p $(BUILD)/private/obj/tests
 	@echo compile private $< 
 	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I c/private $< -o $@
 
