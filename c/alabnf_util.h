@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "alabnf.h"
+#include "alinput_util.h"
 
 struct alabnf * alabnf_util_parse_abnf_file(FILE * file);
 

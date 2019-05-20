@@ -37,19 +37,19 @@ tests: c_parser albase json_to_c_stub_sample cryptohash bitfield
 aljson_ld: aljson_ld.c aljson_ld_test.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -laldev -lalhash  -lalstack -lalcommon -Wl,-Bdynamic
 
-alabnf: alabnf.c alabnf_util.c alabnf_test.c altoken.c altokenizer.c
+alabnf: alabnf.c alabnf_util.c alabnf_test.c altoken.c altokenizer.c alinput_util.c
 	gcc -Wall -Wextra -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -laljson -lalhash  -lalstack -lalcommon  -Wl,-Bdynamic
 
-alabnf_matcher: alabnf.c alabnf_util.c alabnf_matcher.c alabnf_matcher_test.c altoken.c altokenizer.c
+alabnf_matcher: alabnf.c alabnf_util.c alabnf_matcher.c alabnf_matcher_test.c altoken.c altokenizer.c alinput_util.c
 	gcc -Wall -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -laljson -lalhash  -lalstack -lalcommon  -Wl,-Bdynamic
 
-alinput_test: alinput_test.c
+alinput_test: alinput_test.c alinput_util.c
 	gcc -Wall -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic 
 
 alimp: 	alimp.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
 clean:
-	rm c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alabnf
+	rm c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alabnf alabnf_matcher alinput_test
 
 .PHONY: clean tests

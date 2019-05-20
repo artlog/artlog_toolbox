@@ -22,29 +22,11 @@ struct alabnf * alabnf_util_parse_abnf_filenames(int filenames, int offset,char 
 {
   struct alabnf_sm   state_machine;
 
-  // TODO Use alinput_util currently code in alinput_test.c
-  struct alinputstream * container_inputstream = NULL;
-  struct alinputstream * inputstream = NULL;
-  FILE * file;
-
-  for (int i=0; i <filenames; i++)
-    {
-      char * fname = filename[i+offset];
-      file = fopen(fname,"r");
-      if ( file != NULL )
-	{
-	  aldebug_printf(NULL,"[DEBUG] adding '%s' as abnf input\n", fname);
-	  inputstream = malloc(sizeof(*inputstream));
-	  alinputstream_init(inputstream, fileno (file));
-      
-	  container_inputstream=alinputstream_create_chain(container_inputstream, inputstream);
-	}
-      else
-	{
-	  aldebug_printf(NULL,"[ERROR] adding '%s' fopen failed \n", fname);
-	}
-    }
-
+  struct alinputstream * container_inputstream =
+    alinput_util_build_chain_stream_from_filenames(filenames,
+						   offset,
+						   filename);
+						   
   if (container_inputstream != NULL )
     {
       alabnf_state_machine_init(&state_machine,container_inputstream);
