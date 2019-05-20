@@ -2,7 +2,7 @@
 #include "aldebug.h"
 #include <limits.h>
 
-int print_c_size()
+void print_c_size()
 {
   aldebug_printf(NULL,"CHAR_BIT size %zu bits\n", CHAR_BIT);
   aldebug_printf(NULL,"(int) size %zu bits\n", sizeof(int) * CHAR_BIT);

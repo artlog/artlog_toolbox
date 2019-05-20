@@ -1,4 +1,5 @@
 BUILD=../../build
+INCLUDES=$(BUILD)/include
 
 tests: save_test
 	./save_test_setup.sh
@@ -15,6 +16,20 @@ save_test:  save_main.o
 alinput_test: alinput_test.c ../alinput_util.c
 	gcc -Wall -g -o $@ $^ -I.. -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic 
 
+aldebug: aldebug_test.c
+	gcc -Wall -g -o $@ $^ -I$(INCLUDES) -I../private -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic
+
+test0:
+	$(BUILD)/albase
+	$(BUILD)/json_to_c_stub_sample
+	$(BUILD)/c_parser infile=$(BUILD)/input_for_c_parser.h outform=aljson_stub
+	$(BUILD)/cryptohash '' d
+	$(BUILD)/cryptohash $(BUILD)/cryptohash
+	$(BUILD)/bitfield outfile=bitfieldcopy
+	$(BUILD)/hashtree 'ceci est la premiere pharse' 'la seconde phrase' 'la troisieme phrase' '4' '5' '6'
+	$(BUILD)/salsa20
+
+
 
 clean:
 	rm save_test
@@ -22,4 +37,4 @@ clean:
 	rm -rf savetest
 	rm -f alinput_test
 
-.PHONY: tests clean
+.PHONY: test0 tests clean

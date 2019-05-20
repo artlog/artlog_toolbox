@@ -2,6 +2,7 @@
 #define ALJSON_LD_HEADER_
 
 #include "alhash.h"
+#include "aliri.h"
 
 extern char * aljson_ld_keywords[];
 
