@@ -11,8 +11,8 @@
                   the character set for these strings is us-ascii.
 */
 
-// maximum iteration of state machine for parsing (protection against inifinite loop )
-// in relateive size of read characters
+// maximum iteration of state machine for parsing (protection against infinite loop )
+// in relative size of read characters
 // 5 times number of chars in text...
 const int ALABNF_MAX_INTERNAL_REMATCH_TIMES=5;
 
@@ -398,6 +398,7 @@ void alabnf_state_machine_init(struct alabnf_sm *state_machine,   struct alinput
 
 void alabnf_state_machine_release(struct alabnf_sm * state_machine)
 {
+  // WARNING BE SURE TO RELEASE ONLY IF ALABNF WON'T BE USED ANYMORE
   altokenizer_release(&state_machine->tokenizer);  
 };
 
@@ -1553,9 +1554,30 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 		  // TODO collect other than initial rule ...
 		  if ( alabnf->root_rule.value == NULL )
 		    {
-		      // FIXME dangerous no check of types
-		      memcpy(&alabnf->root_rule.rule_name,&node->content.string,sizeof(node->content.string));
-		      alabnf->root_rule.value = collector;
+		      if ( node->type == ALABNF_NT_STRING )
+			{
+			  aldebug_printf(NULL,"RESET root rule name\n");
+			  // FIXME dangerous no check of types
+			  memcpy(&alabnf->root_rule.rule_name,&node->content.string,sizeof(node->content.string));
+			  alabnf->root_rule.value = collector;
+			}
+		      else if ( node->type == ALABNF_NT_RULE_REF )
+			{
+			  aldebug_printf(NULL,
+					 "[DEBUG] RESET root rule name from ALABNF_NT_RULE_REF t%i %p "
+					 ALPASCALSTRFMT
+					 "\n"
+					 ,node->content.rule_ref.keyblock.type,node->content.rule_ref.keyblock.data.charptr,ALPASCALSTRARGS(node->content.rule_ref.keyblock.length,node->content.rule_ref.keyblock.data.charptr));
+			  // state type or node type ?
+			  alabnf->root_rule.rule_name.type=ALABNF_ST_RULENAME;
+
+			  memcpy(&alabnf->root_rule.rule_name.strbloc,&node->content.rule_ref.keyblock,sizeof(node->content.rule_ref.keyblock));
+			  alabnf->root_rule.value = collector;			  
+			}
+		      else			
+			{
+			  aldebug_printf(NULL,"[ERROR] RESET root rule name WRONG content type %i\n", node->type);
+			}
 		    }
 
 		}
@@ -1771,6 +1793,10 @@ void alabnf_stack_rule_ref(struct alabnf_sm * state_machine, struct alhash_entry
       else	
 	{
 	  rule_ref = &node->content.rule_ref;
+	  
+	  aldatablock * datablock = &mytoken->key;
+	  aldebug_printf(NULL,"[INFO] NEW RULE '"ALPASCALSTRFMT"'\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+	  
 	  memcpy(&rule_ref->keyblock,&mytoken->key,sizeof(rule_ref->keyblock));
 	  // IS it REALLY changing content of hash table ? YES
 	  mytoken->value.data.ptr=node;

@@ -17,7 +17,9 @@ int main(int argc, char * argv[])
     {
 
       int maxsteps=(int) strtol(argv[1],NULL,10);
-      
+
+      aldebug_printf(NULL,"[INFO] max steps set to %i\n", maxsteps);
+ 
       offset=2;
       alabnf = alabnf_util_parse_abnf_filenames(argc-offset,offset,argv);
 

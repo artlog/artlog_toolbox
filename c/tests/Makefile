@@ -36,5 +36,6 @@ clean:
 	rm *.o
 	rm -rf savetest
 	rm -f alinput_test
+	rm -f bitfieldcopy
 
 .PHONY: test0 tests clean

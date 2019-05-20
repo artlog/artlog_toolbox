@@ -1,5 +1,3 @@
-file to parse 'rfc5234_core.abnf'
-
 ALPHA= %x41.5a/%x61.7a
 
 BIT= "0"/"1"

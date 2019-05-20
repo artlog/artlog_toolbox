@@ -29,6 +29,26 @@ static char state_descr[255];
 	  }\
   }
 
+int alabnf_fill_rule_info(char * rule_descr, int max, struct alabnf_rule * current_rule)
+{
+  int prefix=0;
+  if ( current_rule != NULL )
+    {
+      aldatablock * datablock = &current_rule->rule_name.strbloc;
+      if (current_rule->rule_name.type == ALABNF_ST_RULENAME )
+	{		
+	  prefix=snprintf(rule_descr,max,"S%i." ALPASCALSTRFMT ".%p.%x\n",datablock->length,
+			  ALPASCALSTRARGS(datablock->length,datablock->data.charptr),datablock->data.charptr,*(datablock->data.uintptr));
+	}
+      else
+	{
+	  prefix=snprintf(rule_descr,max,"T%iS%i",current_rule->rule_name.type,datablock->length);
+	}	  	  
+    }
+
+  return prefix;
+}
+
 // forward declaration
 struct alabnf_matcher_state * alabnf_matcher_create_child_state(
 								   struct alabnf_matcher_state * parent,
@@ -82,7 +102,8 @@ char * alabnf_matcher_get_state_descr(const struct alabnf_matcher_state * state)
 {
   if ( state != NULL)
     {
-      snprintf(state_descr,255,"('%p' type %i initial type %i current %p current_type %i index %i)",state,state->type,state->initial_node == NULL ? -1 : state->initial_node->type,state->current_node,state->current_node !=NULL ? state->current_node->type : -1,state->datablock_index);
+      int prefix = alabnf_fill_rule_info(state_descr,100,state->current_rule);
+      snprintf(state_descr+prefix,255-prefix,"('%p' T%i IT%i current %p current_type %i index %i)",state,state->type,state->initial_node == NULL ? -1 : state->initial_node->type,state->current_node,state->current_node !=NULL ? state->current_node->type : -1,state->datablock_index);
     }
   else
     {
@@ -152,6 +173,10 @@ void alabnf_matcher_init_state(
       if ( parent != NULL )
 	{
 	  state->current_rule = parent->current_rule;
+	}
+      else
+	{
+	  state->current_rule = NULL;
 	}
       if (node == NULL )
 	{
@@ -588,9 +613,20 @@ void alabnf_match_init(struct alabnf_matcher * matcher,
       // should setup root state
       {
 	struct alabnf_node * node = alabnf->root_rule.value;
+	
 	alabnf_matcher_init_state(state,NULL,node);
+	
 	state->current_rule = &alabnf->root_rule;
+
+	{
+	  char descr[255];
+	  int prefix = alabnf_fill_rule_info(descr, 255, state->current_rule);
+	  descr[prefix]=0;
+	  aldebug_printf(NULL,"[DEBUG]  init root rule %s\n",descr);
+	}
+
 	state->input=matcher->input;
+
       }
     }
 }
@@ -676,7 +712,7 @@ struct alabnf_matcher_state * alabnf_matcher_create_child_state(
 {
   // TODO ALLOC use matcher allocation ?
   struct alabnf_matcher_state * child_state = alabnf_matcher_state_alloc();
-  // don't print it since not yet initialized can contian heavy garbage
+  // don't print it since not yet initialized can contain heavy garbage
   // ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"create child state", child_state);
   if ( child_state != NULL )
     {
