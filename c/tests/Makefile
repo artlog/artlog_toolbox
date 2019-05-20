@@ -12,9 +12,14 @@ save_main.o: save_main.c
 save_test:  save_main.o
 	gcc -o $@ $^ -I$(BUILD)/include -L$(BUILD)/lib -Wl,-Bstatic -lalsave -lalcommon -Wl,-Bdynamic
 
+alinput_test: alinput_test.c ../alinput_util.c
+	gcc -Wall -g -o $@ $^ -I.. -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic 
+
+
 clean:
 	rm save_test
 	rm *.o
 	rm -rf savetest
+	rm -f alinput_test
 
 .PHONY: tests clean

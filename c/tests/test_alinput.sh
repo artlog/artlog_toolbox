@@ -5,4 +5,4 @@ make libs
 popd
 rm alinput_test
 make alinput_test
-./alinput_test <t
+echo "1234567890ABCDEFGHIJKLMNOPQ" | ./alinput_test 

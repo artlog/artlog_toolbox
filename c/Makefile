@@ -43,13 +43,10 @@ alabnf: alabnf.c alabnf_util.c alabnf_test.c altoken.c altokenizer.c alinput_uti
 alabnf_matcher: alabnf.c alabnf_util.c alabnf_matcher.c alabnf_matcher_test.c altoken.c altokenizer.c alinput_util.c
 	gcc -Wall -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -laljson -lalhash  -lalstack -lalcommon  -Wl,-Bdynamic
 
-alinput_test: alinput_test.c alinput_util.c
-	gcc -Wall -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic 
-
 alimp: 	alimp.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
 
 clean:
-	rm c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alabnf alabnf_matcher alinput_test
+	rm c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alabnf alabnf_matcher 
 
 .PHONY: clean tests
