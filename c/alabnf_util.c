@@ -13,7 +13,7 @@ struct alabnf * alabnf_util_parse_abnf_file(FILE * file)
   alabnf_state_machine_init(&state_machine,inputstream);
   alabnf_state_machine_run(&state_machine);
   // NOPE , else pointer to tokens in alabnf are just plain wrong
-  // TODO : should shrink and copy to keep only usefull information
+  // TODO : should shrink and copy to keep only useful information
   // alabnf_state_machine_release(&state_machine);
 
   return alabnf_state_machine_generated(&state_machine);
@@ -33,7 +33,9 @@ struct alabnf * alabnf_util_parse_abnf_filenames(int filenames, int offset,char 
     {
       alabnf_state_machine_init(&state_machine,container_inputstream);
       alabnf_state_machine_run(&state_machine);
-      alabnf_state_machine_release(&state_machine);
+      // NOPE , else pointer to tokens in alabnf are just plain wrong
+      // TODO : should shrink and copy to keep only useful information
+      // alabnf_state_machine_release(&state_machine);
 
       return alabnf_state_machine_generated(&state_machine);
     }
