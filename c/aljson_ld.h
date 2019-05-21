@@ -81,4 +81,7 @@ enum aljson_ld_keyword_index aljson_ld_is_keyword(char * string);
 
 const char * aljson_ld_c_keyword(int index);
 
+// list hardcoded keywords
+void aljson_ld_list_keywords();
+
 #endif // ALJSON_LD_HEADER_

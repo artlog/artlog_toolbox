@@ -5,7 +5,15 @@
 #include <string.h>
 #include "aldebug_output.h"
 
-const int ALJSONLD_ROWS=3;
+// number of fields
+const int ALJSONLD_KEYWORDS_FIELDS=3;
+
+enum aljsonld_field
+  {
+   ALJSONLD_KEYWORD_FIELD=0,   
+   ALJSONLD_EXPLANATION_FIELD=1,
+   ALJSONLD_C_KEYWORD_FIELD=2 
+  };
 
 char * aljson_ld_keywords[] = {
   // keyword, explanation, placeholder for c keyword
@@ -24,7 +32,28 @@ char * aljson_ld_keywords[] = {
   "@graph","Used to express a graph. This keyword is described in section 6.13 Named Graphs.",NULL,
   ":","The separator for JSON keys and values that use compact IRIs.",NULL,
   0
-    };
+};
+
+
+const int aljsons_ld_keyword_field_index(int index, int field)
+{
+  return (index * ALJSONLD_KEYWORDS_FIELDS) + field;
+}
+
+const char * aljson_ld_keyword(int index)
+{
+  return aljson_ld_keywords[aljsons_ld_keyword_field_index(index,ALJSONLD_KEYWORD_FIELD)];
+}
+
+const char * aljson_ld_c_keyword(int index)
+{
+  return aljson_ld_keywords[aljsons_ld_keyword_field_index(index,ALJSONLD_C_KEYWORD_FIELD)];
+}
+
+const char * aljson_ld_c_keyword_explanation(int index)
+{
+  return aljson_ld_keywords[aljsons_ld_keyword_field_index(index,ALJSONLD_EXPLANATION_FIELD)];
+}
 
 struct aljson_ld_context aljson_ld_global_context;
 struct alhash_table * aljson_ld_keyword_table = NULL;
@@ -93,12 +122,12 @@ void aljson_ld()
   table = &aljson_ld_global_context.hash_context.dict;
 
 
-  while (  aljson_ld_keywords[index * ALJSONLD_ROWS] != NULL )
+  while (  aljson_ld_keywords[index * ALJSONLD_KEYWORDS_FIELDS] != NULL )
     {
-      char * keystr=aljson_ld_keywords[index * ALJSONLD_ROWS];
-      char * valuestr=aljson_ld_keywords[1+(index * ALJSONLD_ROWS)];
+      char * keystr=aljson_ld_keywords[index * ALJSONLD_KEYWORDS_FIELDS];
+      char * valuestr=aljson_ld_keywords[1+(index * ALJSONLD_KEYWORDS_FIELDS)];
 
-      printf("%i %s %s\n", index, keystr, valuestr);
+      // printf("%i %s %s\n", index, keystr, valuestr);
       
       struct alhash_datablock key;
       struct alhash_datablock value;
@@ -123,17 +152,31 @@ void aljson_ld()
 
   aljson_ld_keyword_table=table;
 
+  // fill C KEYWORD
   index = 0;
-  while (  aljson_ld_keywords[index * ALJSONLD_ROWS] != NULL )
+  while (  aljson_ld_keywords[index * ALJSONLD_KEYWORDS_FIELDS] != NULL )
     {
-      char * up = strtoupper(aljson_ld_keywords[index * ALJSONLD_ROWS], &aljson_ld_global_context.hash_context);
-      printf("ALJSONLD_KEYWORD_%s_IDX,\n", up);
+      char * up = strtoupper(aljson_ld_keywords[index * ALJSONLD_KEYWORDS_FIELDS], &aljson_ld_global_context.hash_context);
+      // printf("ALJSONLD_KEYWORD_%s_IDX,\n", up);
       // fill keyword C naming.
-      aljson_ld_keywords[((index+1) * ALJSONLD_ROWS) -1]=up;
+      aljson_ld_keywords[((index+1) * ALJSONLD_KEYWORDS_FIELDS) -1]=up;
       index ++;
     }
 }
 
+void aljson_ld_list_keywords()
+{
+  int index = 0;
+  while (  aljson_ld_keywords[index * ALJSONLD_KEYWORDS_FIELDS] != NULL )
+    {
+      const char * keyword = aljson_ld_keyword(index);
+      const char * explanation =  aljson_ld_c_keyword_explanation(index);
+      const char * c_keyword =  aljson_ld_c_keyword(index);
+      printf("%i %s %s %s\n", index, keyword, c_keyword, explanation);
+      index ++;
+    }
+
+}
 
 enum aljson_ld_keyword_index aljson_ld_is_keyword(char * string)
 {
@@ -148,7 +191,3 @@ enum aljson_ld_keyword_index aljson_ld_is_keyword(char * string)
     }
 }
 
-const char * aljson_ld_c_keyword(int index)
-{
-  return aljson_ld_keywords[((index+1) * ALJSONLD_ROWS) -1];
-}
