@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "aldebug_output.h"
 
 void alcryptohash_tool_dump_result(struct alsha2_internal * shax, aldatablock * result)
 {

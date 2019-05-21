@@ -1,5 +1,5 @@
-#ifndef ALIRI_HEADER_
-#define ALIRI_HEADER_
+#ifndef _ALIRI_HEADER_
+#define _ALIRI_HEADER_
 
 // https://www.ietf.org/rfc/rfc3987.txt
 

@@ -4,6 +4,7 @@
 #include "alstrings.h"
 #include "alinput.h"
 #include "aloutput.h"
+#include "aldebug_output.h"
 
 /** from a char input of lenght length return a 'malloc' 
     allocated base64 string padded */

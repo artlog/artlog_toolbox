@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#include "aldebug_output.h"
 
 const int ALJSONLD_ROWS=3;
 

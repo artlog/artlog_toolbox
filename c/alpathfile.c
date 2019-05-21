@@ -1,5 +1,5 @@
 #include "alpathfile.h"
-#include "aldebug.h"
+#include "aldebug_output.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/types.h>

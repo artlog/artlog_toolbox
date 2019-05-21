@@ -2,6 +2,7 @@
 #include "alabnf_util.h"
 #include "aldebug.h"
 #include <stdlib.h>
+#include "aldebug_output.h"
 
 int main(int argc, char * argv[])
 {

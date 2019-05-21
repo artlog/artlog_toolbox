@@ -3,6 +3,7 @@
 #include <strings.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "aldebug_output.h"
 
 char altokenizer_get_next_char_default (struct altokenizer *ctx, void *data)
 {

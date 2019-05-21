@@ -5,6 +5,7 @@
 #include "alhashtree.h"
 #include "altodo.h"
 #include "alcryptohash.h"
+#include "aldebug_output.h"
 
 aldatablock emptyhash;
 

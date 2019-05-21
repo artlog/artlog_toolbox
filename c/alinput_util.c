@@ -1,6 +1,7 @@
 #include "alinput_util.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "aldebug_output.h"
 
 struct alinputstream * alinput_util_build_chain_stream_from_filenames(int filenames, int offset,char ** filename)
 {

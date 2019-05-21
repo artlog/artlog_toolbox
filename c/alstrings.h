@@ -31,6 +31,7 @@ typedef struct alhash_datablock {
   } data;
 } aldatablock;
 
+
 /** char buffer RING ( circular list allocated by al_token_char_buffer_alloc(int times); )
  can be filled ONLY ( no removal ).
  pointer should not move ( once allocated, can be moved ).
@@ -132,7 +133,6 @@ void aldatablock_setcstring(aldatablock * block,char * cstring);
  negative means reservation did not complete.
  **/
 int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * data, int bytelength);
-
 
 
 #endif

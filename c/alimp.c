@@ -4,6 +4,7 @@
 #include "aldebug.h"
 
 #include <stdlib.h>
+#include "aldebug_output.h"
 
 static const char * INFILESTR0="infile";
 

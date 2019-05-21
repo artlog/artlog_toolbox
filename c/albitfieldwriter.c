@@ -2,7 +2,7 @@
 #include <limits.h>
 #include "albitfieldwriter.h"
 #include "altodo.h"
-#include "aldebug.h"
+#include "aldebug_output.h"
 
 int bits_per_int = sizeof(int) * CHAR_BIT;
 

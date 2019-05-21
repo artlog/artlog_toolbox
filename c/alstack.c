@@ -5,6 +5,7 @@
 #include "alstack.h"
 #include "alcommon.h"
 #include "aldebug.h"
+#include "aldebug_output.h"
 
 int alstack_debug_flag = 0;
 

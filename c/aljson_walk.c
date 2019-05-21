@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "aldebug_output.h"
 
 struct json_object * json_dict_path_get_value(struct json_path * path, struct json_object * object)
 {

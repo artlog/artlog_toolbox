@@ -5,6 +5,8 @@
 #include "alstrings.h"
 #include "alcommon.h"
 #include "aldebug.h"
+#include "aldebug_output.h"
+
 
 enum alstrings_debug_flags {
   ALSTRINGS_DEBUG_FLAG = 1,

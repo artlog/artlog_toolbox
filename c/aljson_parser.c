@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include "aljson_parser.h"
+#include "aldebug_output.h"
 
 // TODO factorize using altokenizer
 

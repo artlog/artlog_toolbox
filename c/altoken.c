@@ -1,6 +1,7 @@
 #include "altoken.h"
 
 #include <stdlib.h>
+#include "aldebug_output.h"
 
 int altoken_char_buffer_add_char(struct token_char_buffer * ctx, char c)
 {

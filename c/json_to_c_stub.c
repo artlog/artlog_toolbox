@@ -4,6 +4,7 @@
 #include "json_to_c_stub.h"
 #include "altodo.h"
 #include "albase.h"
+#include "aldebug_output.h"
 
 // part of generic tools.
 

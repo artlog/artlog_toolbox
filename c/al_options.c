@@ -4,6 +4,7 @@
 
 #include "al_options.h"
 #include "altodo.h"
+#include "aldebug_output.h"
 
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 

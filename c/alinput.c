@@ -5,6 +5,7 @@
 #include <limits.h>
 #include "alinput.h"
 #include "aldebug.h"
+#include "aldebug_output.h"
 
 ALDEBUG_DEFINE_STRUCT_FUNCTIONS(alinputstream)
 

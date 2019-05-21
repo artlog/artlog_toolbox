@@ -8,6 +8,7 @@
 #include "aljson.h"
 #include "alstack.h"
 #include "aljson_dump.h"
+#include "aldebug_output.h"
 
 #ifdef JSON_TODO
 #include "todo.h"

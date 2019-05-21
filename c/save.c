@@ -7,6 +7,7 @@
 
 #include "save.h"
 #include "aldebug.h"
+#include "aldebug_output.h"
 
 int save_debug=0;
 

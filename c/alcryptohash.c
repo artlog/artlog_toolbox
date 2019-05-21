@@ -3,6 +3,7 @@
 #include "altodo.h"
 #include <string.h>
 #include <limits.h>
+#include "aldebug_output.h"
 
 // somed defines to ease RFC -> C code conversion
 #define OR |

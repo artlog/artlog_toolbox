@@ -8,6 +8,7 @@ BUILD=build
 TMPTESTDIR=$(BUILD)/tmp
 TEMPLATE=template
 TEMPLATEHASH=$(TEMPLATE)/alhashsample
+INCLUDEDIR=$(BUILD)/include
 
 libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c c/aljson_dump.c
 src=c/aljson_main.c
@@ -16,13 +17,18 @@ libraries=aljson alsave altest allist aldev alhash alcommon alstack
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 
+LIBINCLUDES=aljson.h aljson_errors.h aljson_import_internal.h aljson_parser.h alstrings.h json_to_c_stub.h albitfieldreader.h albitfieldwriter.h albase.h al_options.h altoken.h aljson_print.h alpathfile.h
+LIBINCLUDESABS=$(addprefix $(BUILD)/include/,$(LIBINCLUDES))
+
+COMMONOBJS=alstrings.o aloutput.o alinput.o alcommon.o aldebug.o  albtree.o albitfieldreader.o albitfieldwriter.o albase.o alpathfile.o
+COMMONOBJSABS=$(addprefix $(BUILD)/obj/,$(COMMONOBJS))
 
 # default target is to build libraries
 libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
 all: libs tests libinclude
 
-libinclude: $(BUILD)/include/aljson.h $(BUILD)/include/aljson_errors.h $(BUILD)/include/aljson_import_internal.h $(BUILD)/include/aljson_parser.h $(BUILD)/include/alstrings.h $(BUILD)/include/json_to_c_stub.h $(BUILD)/include/albitfieldreader.h $(BUILD)/include/albitfieldwriter.h $(BUILD)/include/albase.h $(BUILD)/include/al_options.h $(BUILD)/include/altoken.h $(BUILD)/include/aljson_print.h $(BUILD)/include/alpathfile.h
+libinclude: $(LIBINCLUDESABS)
 
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
@@ -39,11 +45,11 @@ $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test
 $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/altodo.o $(BUILD)/include/altodo.h
 	ar rccs $@ $<
 
-$(BUILD)/lib/libalcommon.a: $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/aldebug.o $(BUILD)/obj/albtree.o $(BUILD)/obj/albitfieldreader.o $(BUILD)/obj/albitfieldwriter.o $(BUILD)/obj/albase.o $(BUILD)/obj/alpathfile.o $(BUILD)/include/alinput.h $(BUILD)/include/aloutput.h $(BUILD)/include/alcommon.h $(BUILD)/include/aldebug.h $(BUILD)/include/albase.h $(BUILD)/include/alpathfile.h
-	ar rccs $@  $(BUILD)/obj/aloutput.o $(BUILD)/obj/alinput.o $(BUILD)/obj/alcommon.o $(BUILD)/obj/albtree.o $(BUILD)/obj/aldebug.o  $(BUILD)/obj/albitfieldreader.o $(BUILD)/obj/albitfieldwriter.o  $(BUILD)/obj/albase.o $(BUILD)/obj/alpathfile.o
+$(BUILD)/lib/libalcommon.a: $(COMMONOBJSABS)  $(BUILD)/include/alinput.h $(BUILD)/include/aloutput.h $(BUILD)/include/alcommon.h $(BUILD)/include/aldebug.h $(BUILD)/include/albase.h $(BUILD)/include/alpathfile.h
+	ar rccs $@  $(COMMONOBJSABS)
 
-$(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o $(BUILD)/include/alhash.h
-	ar rccs $@  $(BUILD)/obj/alhash.o $(BUILD)/obj/alstrings.o
+$(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/include/alhash.h
+	ar rccs $@  $(BUILD)/obj/alhash.o
 
 $(BUILD)/lib/libalstack.a:  $(BUILD)/obj/alstack.o $(BUILD)/include/alstack.h
 	ar rccs $@ $<
@@ -55,9 +61,9 @@ $(BUILD)/test_auto_c_gen:  $(BUILD)/obj/json_to_c_stub.o
 	@echo link json objects $^ and libjson
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -Wl,-Bdynamic
 
-$(BUILD)/test_alstack:  $(BUILD)/obj/test_alstack.o
+$(BUILD)/test_alstack:  $(BUILD)/private/obj/tests/test_alstack.o
 	@echo link test objects $^ and libalstack
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -lalcommon -Wl,-Bdynamic
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -lalhash -lalcommon -Wl,-Bdynamic
 
 $(BUILD)/testbtree: $(BUILD)/obj/albtree.o $(BUILD)/obj/albtreetest.o
 	$(LD) -o $@ $(LDFLAGS) $^
@@ -126,12 +132,12 @@ $(BUILD)/include/%.h: c/%.h $(BUILD)/include
 
 $(BUILD)/obj/%.o: c/%.c $(BUILD)/obj
 	@echo compile $< 
-	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) $< -o $@
+	$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I$(INCLUDEDIR) $< -o $@
 
 $(BUILD)/private/obj/%.o: c/%.c $(BUILD)/private/obj
 	@echo "bad hack fixme" && mkdir -p $(BUILD)/private/obj/tests
 	@echo compile private $< 
-	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I c/private $< -o $@
+	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I$(INCLUDEDIR) -I c/private $< -o $@
 
 clean:
 	rm -rf $(BUILD)

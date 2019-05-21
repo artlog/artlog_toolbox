@@ -8,6 +8,7 @@
 #include "aljson_import_internal.h"
 #include "al_options.h"
 #include "alcommon.h"
+#include "aldebug_output.h"
 
 
 void

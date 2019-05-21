@@ -2,6 +2,7 @@
 #include "albitfieldwriter.h"
 #include "al_options.h"
 #include "aldebug.h"
+#include "aldebug_output.h"
 
 void usage()
 {

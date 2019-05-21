@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <assert.h>
+#include "aldebug_output.h"
 
 FILE * aljson_getoutfile(struct print_ctx * print_ctx)
 {

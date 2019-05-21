@@ -1,5 +1,4 @@
 #include "altodo.h"
-#include "aldebug.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -7,5 +6,5 @@
 
 void todo(char * text)
 {
-  aldebug_printf(NULL,"[TODO] %s\n",text);
+  fprintf(stderr,"[TODO] %s\n",text);
 }

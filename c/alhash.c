@@ -11,6 +11,7 @@ implementation of a hashtable in a miserable way.
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#include "aldebug_output.h"
 
 alhash_context alhash_context_default = {
   .debug = 0,

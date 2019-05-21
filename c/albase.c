@@ -2,6 +2,7 @@
 #include <string.h>
 #include "alstrings.h"
 #include "aldebug.h"
+#include "aldebug_output.h"
 
 #define LOCAL_BUFFER_SIZE 128
 

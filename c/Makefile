@@ -5,11 +5,10 @@ BUILT_BINARIES=$(addprefix $(BUILD)/,$(BINARIES))
 
 all: $(BUILT_BINARIES)
 
-
 $(BUILD)/c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c aljson.c alstack.c altoken.c aljson_dump.c
 	gcc -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -lalhash -Wl,-Bdynamic
 
-$(BUILD)/albase: albase.c albase_test.c  alstrings.c aldebug.c
+$(BUILD)/albase: albase.c albase_test.c  alstrings.c aldebug.c aloutput.c
 	gcc -o $@ $^
 
 $(BUILD)/json_to_c_stub_sample: json_to_c_stub.c json_to_c_stub_sample.c albase.c
@@ -18,7 +17,7 @@ $(BUILD)/json_to_c_stub_sample: json_to_c_stub.c json_to_c_stub_sample.c albase.
 $(BUILD)/cryptohash: alcryptohash_test.c alcryptohash.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alcryptohash_tool.c aloutput.c
 	gcc -g -O0 -o $@ $^
 
-$(BUILD)/salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c 
+$(BUILD)/salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c  aloutput.c
 	gcc -g -O0 -o $@ $^
 
 $(BUILD)/bitfield: albitfield_test.c al_options.c

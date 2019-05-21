@@ -8,6 +8,7 @@
 #include "aldebug.h"
 #include "aljson_unify.h"
 #include "aljson_walk.h"
+#include "aldebug_output.h"
 
 const char * aljson_main_version="0.1";
 
@@ -111,7 +112,7 @@ int main(int argc, char ** argv)
 		  json_context.parsing_depth=json_context.max_depth;
 		  break;
 		default:
-		  aldebug_printf("[ERROR] unrecognized %s name option\n", &argv[i][1]);
+		  aldebug_printf(NULL,"[ERROR] unrecognized %s name option\n", &argv[i][1]);
 		}		  
 	    }
 	}

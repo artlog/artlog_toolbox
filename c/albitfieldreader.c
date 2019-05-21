@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include "albitfieldreader.h"
+#include "aldebug_output.h"
 
 struct bitfieldreader * new_fieldreader()
 {

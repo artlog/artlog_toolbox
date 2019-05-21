@@ -26,6 +26,7 @@ struct aloutputstream {
   int fd;
   int debug;
   enum aloutput_target target;
+  // prereserved buffer
   aldatablock buffer;
   // offset within buffer
   unsigned int offset;
@@ -70,5 +71,11 @@ int aloutputstream_getfd(struct aloutputstream * stream);
 FILE * aloutputstream_file(struct aloutputstream * stream);
 
 void aloutputstream_close(struct aloutputstream * stream);
+
+/** printf to stream limited to 1kiB **/
+int aloutputstream_printf_1k(struct aloutputstream * stream, const char *format, ...);
+
+/** printf to stream limited to 1kiB **/
+int aloutputstream_vprintf_1k(struct aloutputstream * stream, const char *format, va_list args);
 
 #endif // #ifndef __ALOUTPUTSTREAM_H__

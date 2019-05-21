@@ -4,6 +4,7 @@
 
 #include "alcommon.h"
 #include "aljson_import_internal.h"
+#include "aldebug_output.h"
 
 char json_read_char(struct json_import_context_data * json_import_data)
 {

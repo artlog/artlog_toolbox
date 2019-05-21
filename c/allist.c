@@ -5,6 +5,7 @@
 #include <assert.h>
 #include "alcommon.h"
 #include "aldebug.h"
+#include "aldebug_output.h"
 
 #include "dump.h"
 

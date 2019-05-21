@@ -1,9 +1,10 @@
 #include "aloutput.h"
-#include "aldebug.h"
+#include "aldebug_output.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <stdarg.h>
 
 void aloutputstream_init(struct aloutputstream * stream, FILE * file)
 {
@@ -184,4 +185,51 @@ void aloutputstream_close(struct aloutputstream * stream)
 	    }	
 	}
     }
+}
+
+
+int aloutputstream_memcpy(int written, struct aloutputstream * stream, char * localbuffer)
+{
+   if (written > 0)
+    {
+      if ( aloutputstream_is_file( stream ) )
+	{
+	  write(stream->fd,localbuffer,written);
+	}
+      else if ( aloutputstream_is_buffer(stream) )
+	{
+	  int offset = stream->offset;
+	  if ( offset + written < stream->buffer.length)
+	    {
+	      memcpy(stream->buffer.data.charptr+offset,localbuffer,written);
+	      stream->offset+=written;
+	    }
+	}
+    }
+  
+  return written;
+}
+  
+int aloutputstream_printf_1k(struct aloutputstream * stream, const char *format, ...)
+{
+  char localbuffer[1024];
+  int written=0;
+
+  va_list args;
+  va_start(args, format);
+  written=vsnprintf(localbuffer, 1024, format, args);
+  va_end(args);
+
+  return aloutputstream_memcpy(written, stream, localbuffer);
+
+}
+
+int aloutputstream_vprintf_1k(struct aloutputstream * stream, const char *format, va_list args)
+{
+  char localbuffer[1024];
+  int written=0;
+
+  written=vsnprintf(localbuffer, 1024, format, args);
+
+  return aloutputstream_memcpy(written, stream, localbuffer);
 }

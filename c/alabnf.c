@@ -3,12 +3,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "aldebug_output.h"
 
 /* code created by a human brain */
 
 /*
       NOTE:     ABNF strings are case-insensitive and
                   the character set for these strings is us-ascii.
+*/
+
+
+/*
+
+This code intent :
+
+read/parse a stream of ABNF syntax and create and struct abnf* internal represenation of it
+
 */
 
 // maximum iteration of state machine for parsing (protection against infinite loop )

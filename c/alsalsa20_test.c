@@ -1,6 +1,7 @@
 #include "alsalsa20.h"
 #include <stddef.h>
 #include <string.h>
+#include "aldebug_output.h"
 
 /*
 doubleround(0x00000001, 0x00000000, 0x00000000, 0x00000000,

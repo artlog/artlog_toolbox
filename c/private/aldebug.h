@@ -1,10 +1,10 @@
 #ifndef __ALDEBUG_H__
 #define __ALDEBUG_H__
 
+#include "alcommon.h"
 /**
 support xxx_set_debug(object,flags) and xxx_is_debug(object,flag);
  */
-#include "alcommon.h"
 
 // add a member ( or a global varable )
 #define ALDEBUG_DEFINE_FLAG(x) int x;
@@ -37,7 +37,5 @@ int prefix ##_is_debug(member_type * m,int flag) \
 
 #define ALDEBUG_IF_DEBUG(object, prefix, debug)	\
   if ( prefix ##_is_debug( object, 1))
-
-void aldebug_printf(void * debugconfig, const char *format, ...);
 
 #endif // #ifndef __ALDEBUG_H__

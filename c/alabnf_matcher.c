@@ -1,6 +1,7 @@
 #include "alabnf_matcher.h"
 #include <stdio.h>
 #include <strings.h>
+#include "aldebug_output.h"
 
 #include <stdlib.h>
 
@@ -37,12 +38,12 @@ int alabnf_fill_rule_info(char * rule_descr, int max, struct alabnf_rule * curre
       aldatablock * datablock = &current_rule->rule_name.strbloc;
       if (current_rule->rule_name.type == ALABNF_ST_RULENAME )
 	{		
-	  prefix=snprintf(rule_descr,max,"S%i." ALPASCALSTRFMT ".%p.%x\n",datablock->length,
-			  ALPASCALSTRARGS(datablock->length,datablock->data.charptr),datablock->data.charptr,*(datablock->data.uintptr));
+	  prefix=snprintf(rule_descr,max, ALPASCALSTRFMT,
+			  ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 	}
       else
 	{
-	  prefix=snprintf(rule_descr,max,"T%iS%i",current_rule->rule_name.type,datablock->length);
+	  prefix=snprintf(rule_descr,max,"#ERR_T%iS%i",current_rule->rule_name.type,datablock->length);
 	}	  	  
     }
 
@@ -861,7 +862,7 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
   return ALABNF_MATCH_NONE;
 }
 
-// process alternative, sequence, iterator speicialization
+// process alternative, sequence, iterator specialization
 struct alabnf_matcher_state * alabnf_matcher_resolve_state_node(struct alabnf_matcher * matcher)
 {
   struct alabnf_matcher_state * state =  matcher->current_state;  
