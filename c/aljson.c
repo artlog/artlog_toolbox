@@ -11,7 +11,7 @@
 #include "aldebug_output.h"
 
 #ifdef JSON_TODO
-#include "todo.h"
+#include "altodo.h"
 #else
 // ignore :-(
 #define todo(text) printf("todo(%s)\n",text);

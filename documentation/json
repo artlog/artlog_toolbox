@@ -1,0 +1,30 @@
+build/json 
+First argument : filename to open in read only mode to parse in json.
+Second argument : filename to open in read only mode to parse in json for template.
+                  template is used for json unification ie extratcing fields from a template pattern
+Output : dump parsed json to standard output.
+-d debug
+-m non recursive
+-p path
+-c check only (no print)
+
+aljson_main version 0.1
+
+
+__________________________________________________________________
+
+
+build/json template/list.json 
+[
+  "a",
+  "b",
+  "c",
+  "d",
+  "e"
+
+]p
+
+
+
+check : checks file is a uses a valid json syntax.
+

@@ -30,6 +30,7 @@ void usage()
   aldebug_printf(NULL,"-m non recursive\n");
   aldebug_printf(NULL,"-p path\n");
   aldebug_printf(NULL,"-c check only (no print)\n");
+  aldebug_printf(NULL,"-b bare : no indent");
   aldebug_printf(NULL,"\naljson_main version %s\n",aljson_main_version);
 }
 
@@ -111,6 +112,11 @@ int main(int argc, char ** argv)
 		  // force non recursive.
 		  json_context.parsing_depth=json_context.max_depth;
 		  break;
+		case 'b':
+		  // bare => no indent
+		  print_context.do_indent = 0;
+		  print_context.indent = 0;
+		  break;
 		default:
 		  aldebug_printf(NULL,"[ERROR] unrecognized %s name option\n", &argv[i][1]);
 		}		  
@@ -149,7 +155,6 @@ int main(int argc, char ** argv)
 	  if ( checkonly == 0 )
 	    {
 	      aljson_output(&json_context,root,&print_context);
-	      aldebug_printf(NULL,"\n");
 	    }
 	  else
 	    {
