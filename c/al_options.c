@@ -319,6 +319,20 @@ void al_option_dump(struct al_options * options, struct aloutputstream output)
   return;
 }
 
+int al_option_get_embed_number(struct al_options * options, const char * ikey)
+{
+  struct alhash_datablock * entry = al_option_get(options,ikey);
+  if ( entry != NULL )
+    {
+      if (ALC_FLAG_IS_SET(entry->type,ALTYPE_FLAG_EMBED))
+	{
+	  return (int) entry->data.number;
+	}		
+    }
+
+  return 0;
+}
+
 int al_option_getargsnumber(struct al_options * options)
 {
   if ( options->argsnumber > 0 )
@@ -327,14 +341,7 @@ int al_option_getargsnumber(struct al_options * options)
     }
   else
     {
-      struct alhash_datablock * entry = al_option_get(options,"arg#");
-      if ( entry != NULL )
-	{
-	  if (ALC_FLAG_IS_SET(entry->type,ALTYPE_FLAG_EMBED))
-	    {
-	      return (int) entry->data.number;
-	    }		
-	}
+      return al_option_get_embed_number(options,"arg#");
     }
   return 0;
 }

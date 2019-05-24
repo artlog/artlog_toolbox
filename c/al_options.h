@@ -49,4 +49,7 @@ int al_option_getargsnumber(struct al_options * options);
 
 char * al_option_getarg(struct al_options * options, int arg);
 
+// usefull for multivalued ex "key#"
+int al_option_get_embed_number(struct al_options * options, const char * ikey);
+
 #endif
