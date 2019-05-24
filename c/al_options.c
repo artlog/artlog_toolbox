@@ -346,23 +346,27 @@ int al_option_getargsnumber(struct al_options * options)
   return 0;
 }
 
+char * al_option_array_at(struct al_options * options, const char * name,int arg)
+{
+  char buffer[1024];
+
+  snprintf(buffer, 1024, "%s[%i]",name,arg);
+  struct alhash_datablock * value = al_option_get(options,buffer);
+  if ( value != NULL )
+    {
+      return value->data.charptr;
+    }
+  else
+    {
+      return NULL;
+    }
+}
+
 char * al_option_getarg(struct al_options * options, int arg)
 {
-  char buffer[128];
-
   if ( arg < al_option_getargsnumber(options))
     {
-      snprintf(buffer, 128, "arg[%i]",arg);
-      struct alhash_datablock * value = al_option_get(options,buffer);
-      if ( value != NULL )
-	{
-	  return value->data.charptr;
-	}
-      else
-	{
-	  return NULL;
-	}
-
+      return al_option_array_at(options,"arg",arg);
     }
   else
     {
