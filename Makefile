@@ -48,8 +48,8 @@ $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/altodo.o $(BUILD)/include/altodo.h
 $(BUILD)/lib/libalcommon.a: $(COMMONOBJSABS)  $(BUILD)/include/alinput.h $(BUILD)/include/aloutput.h $(BUILD)/include/alcommon.h $(BUILD)/include/aldebug.h $(BUILD)/include/albase.h $(BUILD)/include/alpathfile.h
 	ar rccs $@  $(COMMONOBJSABS)
 
-$(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/include/alhash.h
-	ar rccs $@  $(BUILD)/obj/alhash.o
+$(BUILD)/lib/libalhash.a:  $(BUILD)/obj/alhash.o $(BUILD)/obj/alhash_output.o $(BUILD)/include/alhash.h 
+	ar rccs $@  $(BUILD)/obj/alhash.o $(BUILD)/obj/alhash_output.o
 
 $(BUILD)/lib/libalstack.a:  $(BUILD)/obj/alstack.o $(BUILD)/include/alstack.h
 	ar rccs $@ $<

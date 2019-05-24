@@ -15,6 +15,7 @@ TODO => provide it through a json value will allow list and persitency.
 #include "aljson.h"
 #include "alhash.h"
 #include "aldebug.h"
+#include "aloutput.h"
 
 struct al_options {
   ALDEBUG_DEFINE_FLAG(debug);
@@ -39,5 +40,7 @@ void al_option_add(struct al_options * options,const char * key,const char * val
 
 // free options created with al_create_options.
 void al_options_release(struct al_options * options);
+
+void al_option_dump(struct al_options * options, struct aloutputstream output);
 
 #endif

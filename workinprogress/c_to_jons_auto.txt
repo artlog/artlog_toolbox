@@ -45,6 +45,6 @@ when stored in json enum are stored as string
 
 to use as input for c generation ...
 
-should it remains an external resource (file) or embedded in storing/resotring c code ?
+should it remains an external resource (file) or embedded in storing/restoring c code ?
 ==> internal
 

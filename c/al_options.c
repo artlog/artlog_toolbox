@@ -155,3 +155,15 @@ struct alhash_datablock * al_option_get(struct al_options * options,const char *
       return &entry->value;
     }
 }
+
+void al_option_dump(struct al_options * options, struct aloutputstream output)
+{
+  int alhash_walk_callback_collision(struct alhash_entry * entry, void * data, int index);
+
+void alhash_dump_entry_as_string(struct alhash_entry * entry);
+
+int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int index);
+
+ 
+
+}

@@ -1,4 +1,5 @@
 #include "alhash.h"
+#include "alhash_output.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,27 +14,14 @@ void usage()
   printf("content of file is a list of lines where key is seperated from value with a space or a tabulation\n");
 }
 
-int alhash_walk_callback_simple_dump (struct alhash_entry * entry, void * data, int index)
-{
-    if ( entry != NULL )
-    {
-      if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
-	{
-	  printf(
-			 "'" ALPASCALSTRFMT "' = '" ALPASCALSTRFMT "'\n",
-			 ALPASCALSTRARGS(entry->key.length, (char *) entry->key.data.ptr),
-			 ALPASCALSTRARGS(entry->value.length, (char *)  entry->value.data.ptr));
-	}
-      else
-	{
-	   printf( "%p NULL\n", entry);
-	}
-    }
-  return 0;
-}
-
 int main(int argc, char ** argv)
 {
+  struct aloutputstream output;
+  aloutputstream_init(&output, stdout);
+
+  struct aloutputstream output2;
+  aloutputstream_init(&output2, stderr);
+  
   if ( argc > 1 )
     {
       char * filename = argv[1];
@@ -91,10 +79,10 @@ int main(int argc, char ** argv)
 	    line = NULL; // force realloc for every line, see manpage getline(3)
 	  }	     
 	  fclose(f);
-	  printf("\ninternal ordering dump \n");
-	  alhash_walk_table(table, alhash_walk_callback_dump, NULL);
-	  printf("\nclassical dump \n");
-	  alhash_walk_table(table, alhash_walk_callback_simple_dump, NULL);
+	  aloutputstream_printf_1k(&output2,"internal ordering dump \n");
+	  alhash_walk_table(table, alhash_output_dump_entry_callback_cast_outputstream, (void *) &output2);
+	  aloutputstream_printf_1k(&output,"classical dump \n");
+	  alhash_walk_table(table, alhash_output_walk_simple_callback_cast_outputstream, (void *) &output);
 	}
       else
 	{
