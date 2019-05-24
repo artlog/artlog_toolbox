@@ -22,10 +22,7 @@ struct alinputstream_share_child {
   struct alinputstream * next;
 };
 
-struct alinputstream_fd {
-  // TODO
-  int todo;
-};
+typedef int (*alinput_callback) (struct alinputstream * input);
 
 struct alinputstream {
   ALDEBUG_DEFINE_FLAG(debug)
@@ -45,12 +42,15 @@ struct alinputstream {
   int mark;
   int self_offset;
   struct alinputstream * next_chain;
+  alinput_callback close_callback;
+  void * private;  
 };
-
 
 ALDEBUG_DECLARE_FUNCTIONS(struct alinputstream,alinputstream)
 			 
 void alinputstream_init(struct alinputstream * stream, int fd);
+
+void alinputstream_set_close_callback(struct alinputstream * stream, alinput_callback input_callback, void * data);
 
 /**
 if 4 bytes can't be read, result eof will be set
@@ -95,5 +95,7 @@ struct alinputstream * alinputstream_create_chain(struct alinputstream * current
 int alinputstream_iseof(struct alinputstream * stream);
 
 void alinputstream_align_shared_with_child(struct alinputstream * parent, struct alinputstream * childstream);
+
+void alinputstream_close(struct alinputstream * input);
 
 #endif

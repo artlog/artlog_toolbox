@@ -17,10 +17,10 @@ libraries=aljson alsave altest allist aldev alhash alcommon alstack
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 
-LIBINCLUDES=aljson.h aljson_errors.h aljson_import_internal.h aljson_parser.h alstrings.h json_to_c_stub.h albitfieldreader.h albitfieldwriter.h albase.h al_options.h al_options_output.h altoken.h aljson_print.h alpathfile.h aldebug.h aldebug_output.h
+LIBINCLUDES=aljson.h aljson_errors.h aljson_import_internal.h aljson_parser.h alstrings.h json_to_c_stub.h albitfieldreader.h albitfieldwriter.h albase.h al_options.h al_options_output.h altoken.h aljson_print.h alpathfile.h aldebug.h aldebug_output.h alinput_file.h
 LIBINCLUDESABS=$(addprefix $(BUILD)/include/,$(LIBINCLUDES))
 
-COMMONOBJS=alstrings.o aloutput.o alinput.o alcommon.o aldebug.o  albtree.o albitfieldreader.o albitfieldwriter.o albase.o alpathfile.o
+COMMONOBJS=alstrings.o aloutput.o alinput.o alcommon.o aldebug.o  albtree.o albitfieldreader.o albitfieldwriter.o albase.o alpathfile.o alinput_file.o
 COMMONOBJSABS=$(addprefix $(BUILD)/obj/,$(COMMONOBJS))
 
 # default target is to build libraries
@@ -36,7 +36,7 @@ $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/in
 $(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o $(BUILD)/obj/alstrings.o $(BUILD)/obj/json_to_c_stub.o $(BUILD)/obj/al_options.o $(BUILD)/obj/al_options_output.o $(BUILD)/obj/aljson_dump.o $(BUILD)/obj/aljson_unify.o $(BUILD)/obj/aljson_walk.o $(BUILD)/obj/altoken.o
 	ar rccs $@ $^
 
-$(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
+$(BUILD)/lib/libalsave.a:  $(BUILD)/obj/alsave.o  $(BUILD)/include/alsave.h
 	ar rccs $@ $<
 
 $(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(BUILD)/include/check_test.h

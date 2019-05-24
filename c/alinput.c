@@ -17,6 +17,12 @@ void alinputstream_init(struct alinputstream * stream, int fd)
   stream->type = ALINPUTSTREAM_TYPE_FD;
 }
 
+void alinputstream_set_close_callback(struct alinputstream * stream, alinput_callback input_callback, void * data)
+{
+  stream->close_callback=input_callback;
+  stream->private=data;
+}
+
 void alinputstream_setdatablock(struct alinputstream * stream, aldatablock * block, int offset)
 {
   memcpy(&stream->input, block, sizeof(stream->input));
@@ -579,5 +585,14 @@ void alinputstream_align_shared_with_child(struct alinputstream * parent, struct
 			 __FILE__,__func__,__LINE__);	      
 
 	}
+    }
+}
+
+void alinputstream_close(struct alinputstream * stream)
+{
+  if ( stream->close_callback != NULL )
+    {
+      stream->close_callback(stream);
+      stream->close_callback=NULL;
     }
 }

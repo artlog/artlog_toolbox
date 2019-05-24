@@ -10,6 +10,9 @@
 // protect against too long short options.
 const int MAXOPTIONS=1024;
 
+// max characters in generated keys and parsed multivalues
+#define ALOPTION_MAX_CHAR_BUFFER 1024
+
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 
 int al_options_get_duplicates(struct al_options * options,const char * ikey)
@@ -79,8 +82,8 @@ void al_option_parse_multivalued(struct al_options * options,const char * ikey,c
 {
   if (( ivalue != NULL) && (ivalue[0] == '[' ) )
     {
-      char arraykey[1024];
-      char buffer[1024];
+      char arraykey[ALOPTION_MAX_CHAR_BUFFER];
+      char buffer[ALOPTION_MAX_CHAR_BUFFER];
       int bufindex= 0;
       // mutlivalued case ivalue[0] assumed to be '['
       int charindex = 1;
@@ -118,7 +121,7 @@ void al_option_parse_multivalued(struct al_options * options,const char * ikey,c
 	      if ( bufindex > 0 )
 		{
 		  buffer[bufindex]=0;
-		  snprintf(arraykey,1024,"%s[%i]",ikey,index);
+		  snprintf(arraykey,ALOPTION_MAX_CHAR_BUFFER,"%s[%i]",ikey,index);
 		  al_option_add(options,arraykey,buffer);
 		  bufindex = 0;
 		}
@@ -129,7 +132,7 @@ void al_option_parse_multivalued(struct al_options * options,const char * ikey,c
       // store number of elements directly as embedded int ( system endianness )
       {
 	// this is number of elements key#
-	snprintf(arraykey,1024,"%s#",ikey);
+	snprintf(arraykey,ALOPTION_MAX_CHAR_BUFFER,"%s#",ikey);
 
         struct alhash_datablock key;
 	int withnullbyte=1; // include null byte '\0'
@@ -173,8 +176,8 @@ void al_option_parse_multivalued(struct al_options * options,const char * ikey,c
 void al_options_init(struct al_options * options)
 {
   bzero(options,sizeof(*options));
-  // HARDCODED 15 words, 1024 bytes initial buffer and 78% (200/256th)
-  alhash_context_init(&options->context,15,1024,200);
+  // HARDCODED 15 words, ALOPTION_MAX_CHAR_BUFFER bytes initial buffer and 78% (200/256th)
+  alhash_context_init(&options->context,15,ALOPTION_MAX_CHAR_BUFFER,200);
 }
 
 void al_options_release(struct al_options * options)
@@ -190,8 +193,8 @@ void al_options_release(struct al_options * options)
 struct al_options * al_options_create(int argc, char ** argv)
 {
   struct al_options * options = malloc(sizeof(*options));
-  // WARNING HARDCODED LIMIT 1024 chars
-  char buffer[1024];
+  // WARNING HARDCODED LIMIT ALOPTION_MAX_CHAR_BUFFER chars
+  char buffer[ALOPTION_MAX_CHAR_BUFFER];
   
   al_options_init(options);
   int checkshortoptions = 1;
@@ -280,7 +283,7 @@ struct al_options * al_options_create(int argc, char ** argv)
       else
 	{
 	  // directly create arg[0], arg[1] arg[2]...., 
-	  snprintf( buffer, 1024, "arg[%i]", argnumber);
+	  snprintf( buffer, ALOPTION_MAX_CHAR_BUFFER, "arg[%i]", argnumber);
 	  al_option_add(options,buffer,argv[i]);
 	  argnumber++;
 	  key=NULL;
@@ -314,11 +317,6 @@ struct alhash_datablock * al_option_get(struct al_options * options,const char *
     }
 }
 
-void al_option_dump(struct al_options * options, struct aloutputstream output)
-{
-  return;
-}
-
 int al_option_get_embed_number(struct al_options * options, const char * ikey)
 {
   struct alhash_datablock * entry = al_option_get(options,ikey);
@@ -348,9 +346,9 @@ int al_option_getargsnumber(struct al_options * options)
 
 char * al_option_array_at(struct al_options * options, const char * name,int arg)
 {
-  char buffer[1024];
+  char buffer[ALOPTION_MAX_CHAR_BUFFER];
 
-  snprintf(buffer, 1024, "%s[%i]",name,arg);
+  snprintf(buffer, ALOPTION_MAX_CHAR_BUFFER, "%s[%i]",name,arg);
   struct alhash_datablock * value = al_option_get(options,buffer);
   if ( value != NULL )
     {

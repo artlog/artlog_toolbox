@@ -5,26 +5,26 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include "save.h"
+#include "alsave.h"
 #include "aldebug.h"
 #include "aldebug_output.h"
 
-int save_debug=0;
+int alsave_debug=0;
 
-int save_set_debug(int debug)
+int alsave_set_debug(int debug)
 {
-  int previous_debug=save_debug;
-  save_debug=debug;
+  int previous_debug=alsave_debug;
+  alsave_debug=debug;
   return previous_debug;
 }
 
-int save_file_exists(char * template)
+int alsave_file_exists(char * template)
 {
   FILE * test=fopen(template,"r");
   if ( test == NULL )
     {
       if (errno == ENOENT) {
-	if (save_debug > 0) {printf("file %s doesn't exist\n", template);}
+	if (alsave_debug > 0) {printf("file %s doesn't exist\n", template);}
 	return -1;
       }
       else if ( errno == EINVAL )
@@ -40,14 +40,14 @@ int save_file_exists(char * template)
     }
   else
     {
-      if (save_debug>0) {printf("file %s already exists\n", template);}
+      if (alsave_debug>0) {printf("file %s already exists\n", template);}
       fclose(test);
       return 0;
     }
   return -3;
 }
 
-int save_init_context(struct savecontext * context, char * dir, char* prefix, char * extension)
+int alsave_init_context(struct alsavecontext * context, char * dir, char* prefix, char * extension)
 {
   strncpy(context->dir,dir,sizeof(context->dir));
   strncpy(context->prefix,prefix,sizeof(context->prefix));
@@ -64,7 +64,7 @@ int save_init_context(struct savecontext * context, char * dir, char* prefix, ch
  * every file with a prefix prefix.[0..9]+.extension will be rename with a superior index if room is needed.
  * what about prefix.extension ( ie without 0 between prefix and extension ) ?
  */
-int save_shift_file_name(struct savecontext * savecontext)
+int alsave_shift_file_name(struct alsavecontext * savecontext)
 {
   char fullpath[5000];
   DIR *currentdir;
@@ -100,7 +100,7 @@ int save_shift_file_name(struct savecontext * savecontext)
       {
 	sprintf(fullpath,"%s/%s",savecontext->dir,template);
 	// file exists ?
-	if ( save_file_exists(fullpath) == -1)
+	if ( alsave_file_exists(fullpath) == -1)
 	  {
 	    // file does not exist : GOOD, free file is found !
 	    freefile=template;
@@ -125,7 +125,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 	      int index;
 	      if (sscanf(fileentry->d_name,template,&index) == 1)
 		{
-		  if ( save_debug >0 ) {
+		  if ( alsave_debug >0 ) {
 		    printf("FOUND index %i in\n",index);
 		    printf("%s %i==",template, index);
 		    printf(template, index);
@@ -136,7 +136,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 		  // ex: "non matching sscanf selection cube.9.record != cube.9.cubemodel"
 		  if ( strcmp(newpath,fileentry->d_name) != 0 )
 		    {
-		      if ( save_debug > 0 )
+		      if ( alsave_debug > 0 )
 			{
 			  printf("non matching sscanf selection %s != %s\n", newpath,fileentry->d_name);
 			}
@@ -159,7 +159,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 		}
 	    }
 	  freeindex=index_max+1;
-	  if ( save_debug > 1 )
+	  if ( alsave_debug > 1 )
 	    {
 	      if ( count < (index_max-index_min+1) )
 		{
@@ -187,7 +187,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 		      sprintf(oldpath,"%s.%i.%s", prefix,i,extension);
 		      sprintf(fullpath,"%s/%s",savecontext->dir,oldpath);
 		      // file exists
-		      if ( save_file_exists(fullpath) == -1 )
+		      if ( alsave_file_exists(fullpath) == -1 )
 			{
 			  freeindex = i;
 			  break;
@@ -199,7 +199,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 		{		
 		  sprintf(oldpath,"%s.%i.%s", prefix,i,extension);		
 		  sprintf(newpath,"%s.%i.%s", prefix,i+1,extension);
-		  if (save_debug > 0) {printf("rename %s->%s\n", oldpath, newpath);}
+		  if (alsave_debug > 0) {printf("rename %s->%s\n", oldpath, newpath);}
 		  if ( renameat(dir_fd, oldpath,
 				dir_fd, newpath) != 0 )
 		    {
@@ -217,7 +217,7 @@ int save_shift_file_name(struct savecontext * savecontext)
 	  sprintf(oldpath,"%s.%s", prefix,extension);
 	  freefile = oldpath;
 	  sprintf(newpath,"%s.%i.%s", prefix,1,extension);
-	  if ( save_debug > 0 ) { printf("rename %s->%s\n", oldpath, newpath);}
+	  if ( alsave_debug > 0 ) { printf("rename %s->%s\n", oldpath, newpath);}
 	  if ( renameat(dir_fd, oldpath,
 			dir_fd, newpath) != 0 )
 	    {

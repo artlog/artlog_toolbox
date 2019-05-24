@@ -1,5 +1,5 @@
-#ifndef _AL_OPTIONS_H_
-#define _AL_OPTIONS_H_
+#ifndef AL_OPTIONS_HEADER_
+#define AL_OPTIONS_HEADER_
 
 /**
 keep options of a program 
@@ -12,10 +12,8 @@ TODO => provide it through a json value will allow list and persitency.
 
  **/
 
-#include "aljson.h"
 #include "alhash.h"
 #include "aldebug.h"
-#include "aloutput.h"
 
 struct al_options {
   ALDEBUG_DEFINE_FLAG(debug);
@@ -43,8 +41,6 @@ void al_option_add(struct al_options * options,const char * key,const char * val
 // free options created with al_create_options.
 void al_options_release(struct al_options * options);
 
-void al_option_dump(struct al_options * options, struct aloutputstream output);
-
 int al_option_getargsnumber(struct al_options * options);
 
 char * al_option_getarg(struct al_options * options, int arg);
@@ -53,4 +49,5 @@ char * al_option_getarg(struct al_options * options, int arg);
 int al_option_get_embed_number(struct al_options * options, const char * ikey);
 
 char * al_option_array_at(struct al_options * options, const char * name,int arg);
-#endif
+
+#endif // AL_OPTIONS_HEADER_
