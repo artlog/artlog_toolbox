@@ -75,6 +75,101 @@ void al_option_add(struct al_options * options,const char * ikey,const char * iv
     }
 }
 
+void al_option_parse_multivalued(struct al_options * options,const char * ikey,const char * ivalue)
+{
+  if (( ivalue != NULL) && (ivalue[0] == '[' ) )
+    {
+      char arraykey[1024];
+      char buffer[1024];
+      int bufindex= 0;
+      // mutlivalued case ivalue[0] assumed to be '['
+      int charindex = 1;
+      // if set to 1 will collect word constructed in buffer.
+      int collect = 0;
+      // index and number of elements
+      int index = 0;
+      
+      while (charindex > 0)
+	{
+	  char current_char = ivalue[charindex];
+	  
+	  if (( current_char == ']' ) || ( current_char == 0 ))
+	    {
+	      // last element collection
+	      // ignore anything after ']'
+	      charindex = 0;
+	      collect = 1;
+	    }
+	  else if (current_char == ',')
+	    {
+	      // ignore separator but collect
+	      collect = 1;
+	      charindex++;
+	    }
+	  else
+	    {
+	      collect = 0;
+	      buffer[bufindex]=current_char;             ;
+	      bufindex++;
+	      charindex++;
+	    }
+	  if ( collect == 1 )
+	    {
+	      if ( bufindex > 0 )
+		{
+		  buffer[bufindex]=0;
+		  snprintf(arraykey,1024,"%s[%i]",ikey,index);
+		  al_option_add(options,arraykey,buffer);
+		  bufindex = 0;
+		}
+	      index ++;
+	    }
+	}
+
+      // store number of elements directly as embedded int ( system endianness )
+      {
+	// this is number of elements key#
+	snprintf(arraykey,1024,"%s#",ikey);
+
+        struct alhash_datablock key;
+	int withnullbyte=1; // include null byte '\0'
+	key.type = ALTYPE_STR0;
+	key.length = strlen(arraykey) + withnullbyte; 
+	key.data.constcharptr = arraykey;
+
+	struct alhash_entry *entry = alhash_get_entry(&options->context.dict, &key);
+	if ( entry == NULL )
+	  {
+	    struct alhash_datablock value;
+	    // not true given length provided but type should the same
+	    key.type = ALTYPE_STR0;
+	    key.data.ptr=al_copy_block(&options->context.allocator.ringbuffer, &key);
+	    key.length -= withnullbyte; // don't keep null byte for hash...
+	    value.type = ALTYPE_FLAG_EMBED;
+	    value.length = 0;
+	    value.data.number=index;
+	    entry = alhash_put (&options->context.dict, &key, &value);
+	    if (entry == NULL)
+	      {
+		aldebug_printf(NULL, "[FATAL] FAIL to insert '%s:%i' into options\n", key.data.charptr,index);
+	      }
+	    else
+	      {
+		ALDEBUG_IF_DEBUG(options, al_options, debug)
+		  {
+		    aldebug_printf(NULL,"[DEBUG] entry '%s'='i\n", entry->key.data.charptr, index);
+		  }
+	      }
+	  }
+      }
+
+    }
+  else
+    {
+      al_option_add(options,ikey,ivalue);
+    }
+}
+
 void al_options_init(struct al_options * options)
 {
   bzero(options,sizeof(*options));
@@ -156,7 +251,9 @@ struct al_options * al_options_create(int argc, char ** argv)
 		{
 		  aldebug_printf(NULL,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
 		}
-	      al_option_add(options,key,value);
+
+	      // shoudl support key=[value0,value1,...] => "key[0]", "key[1]" ..., "key#" = 2
+	      al_option_parse_multivalued(options,key,value);
 	    }
 	  else
 	    {
@@ -224,7 +321,22 @@ void al_option_dump(struct al_options * options, struct aloutputstream output)
 
 int al_option_getargsnumber(struct al_options * options)
 {
-  return options->argsnumber;
+  if ( options->argsnumber > 0 )
+    {
+      return options->argsnumber;
+    }
+  else
+    {
+      struct alhash_datablock * entry = al_option_get(options,"arg#");
+      if ( entry != NULL )
+	{
+	  if (ALC_FLAG_IS_SET(entry->type,ALTYPE_FLAG_EMBED))
+	    {
+	      return (int) entry->data.number;
+	    }		
+	}
+    }
+  return 0;
 }
 
 char * al_option_getarg(struct al_options * options, int arg)
