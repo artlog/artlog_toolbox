@@ -17,7 +17,7 @@ libraries=aljson alsave altest allist aldev alhash alcommon alstack
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 
-LIBINCLUDES=aljson.h aljson_errors.h aljson_import_internal.h aljson_parser.h alstrings.h json_to_c_stub.h albitfieldreader.h albitfieldwriter.h albase.h al_options.h altoken.h aljson_print.h alpathfile.h
+LIBINCLUDES=aljson.h aljson_errors.h aljson_import_internal.h aljson_parser.h alstrings.h json_to_c_stub.h albitfieldreader.h albitfieldwriter.h albase.h al_options.h al_options_output altoken.h aljson_print.h alpathfile.h
 LIBINCLUDESABS=$(addprefix $(BUILD)/include/,$(LIBINCLUDES))
 
 COMMONOBJS=alstrings.o aloutput.o alinput.o alcommon.o aldebug.o  albtree.o albitfieldreader.o albitfieldwriter.o albase.o alpathfile.o
@@ -33,7 +33,7 @@ libinclude: $(LIBINCLUDESABS)
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
-$(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o $(BUILD)/obj/alstrings.o $(BUILD)/obj/json_to_c_stub.o $(BUILD)/obj/al_options.o $(BUILD)/obj/aljson_dump.o $(BUILD)/obj/aljson_unify.o $(BUILD)/obj/aljson_walk.o $(BUILD)/obj/altoken.o
+$(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o $(BUILD)/obj/alstrings.o $(BUILD)/obj/json_to_c_stub.o $(BUILD)/obj/al_options.o $(BUILD)/obj/al_options_output.o $(BUILD)/obj/aljson_dump.o $(BUILD)/obj/aljson_unify.o $(BUILD)/obj/aljson_walk.o $(BUILD)/obj/altoken.o
 	ar rccs $@ $^
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/save.o  $(BUILD)/include/save.h
@@ -93,14 +93,14 @@ $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -lalcommon -Wl,-Bdynamic
 
 testjson:$(BUILD)/json $(TMPTESTDIR)
-	$< $(TEMPLATE)/test.json >$(TMPTESTDIR)/parse1.json 2>$(TMPTESTDIR)/$@.parse1.json.out.2
-	$< $(TEMPLATE)/parse1.json >$(TMPTESTDIR)/parse2.json 2>$(TMPTESTDIR)/$@.parse2.json.out.2
-	$< $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/parse3.json 2>$(TMPTESTDIR)/$@.parse3.json.out.2
-	$< $(TEMPLATE)/test.json $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/$@.test.refnawak.json.out 2>$(TMPTESTDIR)/$@.refnawak.json.out.2
-	$< $(TEMPLATE)/refnawak.json $(TEMPLATE)/template.json -debug 2>$(TMPTESTDIR)/$@.parse1.json.out.12 1>&2
+	$< -- $(TEMPLATE)/test.json >$(TMPTESTDIR)/parse1.json 2>$(TMPTESTDIR)/$@.parse1.json.out.2
+	$< -- $(TEMPLATE)/parse1.json >$(TMPTESTDIR)/parse2.json 2>$(TMPTESTDIR)/$@.parse2.json.out.2
+	$< -- $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/parse3.json 2>$(TMPTESTDIR)/$@.parse3.json.out.2
+	$< -- $(TEMPLATE)/test.json $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/$@.test.refnawak.json.out 2>$(TMPTESTDIR)/$@.refnawak.json.out.2
+	$< -- $(TEMPLATE)/refnawak.json $(TEMPLATE)/template.json -debug 2>$(TMPTESTDIR)/$@.parse1.json.out.12 1>&2
 	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse2.json && echo "parse2.json [OK]"
 	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse3.json && echo "parse3.json [OK]"
-	$< $(TEMPLATE)/test2.json  >$(TMPTESTDIR)/test2.json 2>$(TMPTESTDIR)/$@.test2.json.out.2
+	$< -- $(TEMPLATE)/test2.json  >$(TMPTESTDIR)/test2.json 2>$(TMPTESTDIR)/$@.test2.json.out.2
 
 testallist:$(BUILD)/testallist $(TMPTESTDIR)
 	$< 10x 10x 10x -decomp >$(TMPTESTDIR)/$@.1000.decomp.out

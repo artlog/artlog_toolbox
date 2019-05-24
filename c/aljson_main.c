@@ -9,6 +9,8 @@
 #include "aljson_unify.h"
 #include "aljson_walk.h"
 #include "aldebug_output.h"
+#include "al_options.h"
+#include "al_options_output.h"
 
 const char * aljson_main_version="0.1";
 
@@ -22,15 +24,18 @@ static int main_debug=0;
 
 void usage()
 {
-  aldebug_printf(NULL,"First argument : filename to open in read only mode to parse in json.\n");
-  aldebug_printf(NULL,"Second argument : filename to open in read only mode to parse in json for template.\n");
-  aldebug_printf(NULL,"                  template is used for json unification ie extratcing fields from a template pattern\n");
   aldebug_printf(NULL,"Output : dump parsed json to standard output.\n");
   aldebug_printf(NULL,"-d debug\n");
   aldebug_printf(NULL,"-m non recursive\n");
-  aldebug_printf(NULL,"-p path\n");
+  // aldebug_printf(NULL,"-p path\n");
+  aldebug_printf(NULL,"path=<path>\n");
   aldebug_printf(NULL,"-c check only (no print)\n");
   aldebug_printf(NULL,"-b bare : no indent");
+  aldebug_printf(NULL,"-- to separate options from arguments\n");  
+  aldebug_printf(NULL,"First argument : filename to open in read only mode to parse in json.\n");
+  aldebug_printf(NULL,"Second argument : filename to open in read only mode to parse in json for template.\n");
+  aldebug_printf(NULL,"                  template is used for json unification ie extratcing fields from a template pattern\n");
+
   aldebug_printf(NULL,"\naljson_main version %s\n",aljson_main_version);
 }
 
@@ -66,64 +71,39 @@ int main(int argc, char ** argv)
   print_template_context.indent = 0;
   print_template_context.s_indent = "";
 
+  struct al_options * options = al_options_create(argc,argv);
 
-  // arguments options , TODO use aloptions
+  // don't set debug to options
+  al_options_set_debug(options,0);
+
+  debug = (al_option_get(options,"d") == NULL) ? 0 : 1;
+  checkonly = (al_option_get(options,"c") == NULL) ? 0 : 1;
+  path = (al_option_get(options,"p") == NULL) ? 0 : 1;
   
-  if ( argc > 1 )
+  struct alhash_datablock * json_path_value = al_option_get(options,"json_path");
+  if ( json_path_value != NULL )
     {
-      for (int i =1; i< argc ; i++)
-	{
-	  if ( argv[i][0] != '-' )
-	    {
-	      if ( path == 1 )
-		{
-		  if ( json_path == NULL )
-		    {
-		      json_path = argv[i];
-		    }
-		  path =  0;
-		}
-	      else
-		{
-		  if ( json_filename == NULL )
-		    {
-		      json_filename = argv[i];
-		    }
-		  else if ( json_template == NULL )
-		    {
-		      json_template = argv[i];
-		    }
-		}
-	    }
-	  else
-	    {
-	      switch(argv[i][1])
-		{
-		case 'd':
-		  debug=1;
-		  break;
-		case 'c':
-		  checkonly=1;
-		  break;
-		case 'p':
-		  path=1;
-		  break;
-		case 'm':
-		  // force non recursive.
-		  json_context.parsing_depth=json_context.max_depth;
-		  break;
-		case 'b':
-		  // bare => no indent
-		  print_context.do_indent = 0;
-		  print_context.indent = 0;
-		  break;
-		default:
-		  aldebug_printf(NULL,"[ERROR] unrecognized %s name option\n", &argv[i][1]);
-		}		  
-	    }
-	}
+      json_path = json_path_value->data.charptr;
     }
 
+  if ( al_option_get(options,"b") != NULL )
+    {
+      // bare => no indent
+      print_context.do_indent = 0;
+      print_context.indent = 0;
+    }
+
+  if ( al_option_getargsnumber(options) > 0 )
+    {
+      json_filename = al_option_getarg(options,0);
+      json_template = al_option_getarg(options,1);
+    }
+  
+  struct aloutputstream output;
+  aloutputstream_init(&output,stderr);
+  
+  al_option_dump_output(options,&output);
+			
   json_set_debug(debug);
   json_ctx_set_debug(&json_tokenizer,debug);
   json_ctx_set_debug(&json_template_tokenizer,debug);

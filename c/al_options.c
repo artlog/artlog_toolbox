@@ -4,7 +4,11 @@
 
 #include "al_options.h"
 #include "altodo.h"
+#include "aldebug.h"
 #include "aldebug_output.h"
+
+// protect against too long short options.
+const int MAXOPTIONS=1024;
 
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 
@@ -42,8 +46,7 @@ void al_option_add(struct al_options * options,const char * ikey,const char * iv
       entry = alhash_put (&options->context.dict, &key, &value);
       if (entry == NULL)
 	{
-	  fprintf (stderr,
-		   "[FATAL] FAIL to insert '%s:%s' into options\n", key.data.charptr,value.data.charptr);
+	  aldebug_printf(NULL, "[FATAL] FAIL to insert '%s:%s' into options\n", key.data.charptr,value.data.charptr);
 	}
       else
 	{
@@ -92,45 +95,103 @@ void al_options_release(struct al_options * options)
 struct al_options * al_options_create(int argc, char ** argv)
 {
   struct al_options * options = malloc(sizeof(*options));
+  // WARNING HARDCODED LIMIT 1024 chars
+  char buffer[1024];
+  
   al_options_init(options);
+  int checkshortoptions = 1;
+
+  // parse x=y
+  char * key = NULL;
+  char * value = NULL;
+
+  int argnumber = 0;
 
   for (int i=0; i< argc;i++)
     {
-      // parse x=y
-      char * key = NULL;
-      char * value = NULL;
-      // key=value
-      sscanf(argv[i],"%m[^=]=%m[^=]",&key,&value);
-      if ( ( key != NULL )  && (value != NULL))
+
+      if (checkshortoptions == 1 )
 	{
-	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	  char * arg = argv[i];
+	  char first = arg[0];
+	  if ( first == '-' )
 	    {
-	      aldebug_printf(NULL,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
+	      // option case
+	      if ( arg[1] == '-' )
+		{
+		  // long option
+		  if ( arg[2] == 0 )
+		    {
+		      // options separator '--'
+		      checkshortoptions = 0;
+		    }
+		  // prefix '--'
+		  // TODO --longoption=value
+		  // current accept only longoption without any value
+		  al_option_add(options,&arg[2],"true");
+		}
+	      else
+		{
+		  // short option
+		  // any following char considered as option char
+		  buffer[1]=0;
+		  int index = 1;
+		  int maxloop = MAXOPTIONS;
+		  while ((arg[index] != 0 ) && (index < maxloop))
+		    {
+		      // TODO should pick corresponding key longoption name if defined.
+		      buffer[0]=arg[index];
+		      al_option_add(options,buffer,"true");
+		      index ++;
+		    }
+		}
+	      continue;
 	    }
-	  al_option_add(options,key,value);
+      
+	  // key=value
+	  sscanf(argv[i],"%m[^=]=%m[^=]",&key,&value);
+	  if ( ( key != NULL )  && (value != NULL))
+	    {
+	      ALDEBUG_IF_DEBUG(options, al_options, debug)
+		{
+		  aldebug_printf(NULL,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
+		}
+	      al_option_add(options,key,value);
+	    }
+	  else
+	    {
+	      // key only
+	      sscanf(argv[i],"%m[^=]",&key);
+	      ALDEBUG_IF_DEBUG(options, al_options, debug)
+		{
+		  aldebug_printf(NULL,"[DEBUG] option recognized : '--%s' ( as %s=true) \n",key,key);
+		}
+	      al_option_add(options,key,"true");	  
+	    }
+      
+	  if (key != NULL )
+	    {
+	      free(key);
+	      key=NULL;
+	    }
+	  if (value != NULL)
+	    {
+	      free(value);
+	      value=NULL;
+	    }      
 	}
       else
 	{
-	  // key only
-	  sscanf(argv[i],"%m[^=]",&key);
-	  ALDEBUG_IF_DEBUG(options, al_options, debug)
-	    {
-	      aldebug_printf(NULL,"[DEBUG] option recognized : '--%s' ( as %s=true) \n",key,key);
-	    }
-	  al_option_add(options,key,"true");	  
-	}
-	if (key != NULL )
-	  {
-	  free(key);
+	  // directly create arg[0], arg[1] arg[2]...., 
+	  snprintf( buffer, 1024, "arg[%i]", argnumber);
+	  al_option_add(options,buffer,argv[i]);
+	  argnumber++;
 	  key=NULL;
 	}
-	if (value != NULL)
-	  {
-	  free(value);
-	  value=NULL;
-	}
-	
     }
+
+  options->argsnumber=argnumber;
+  
   return options;
 }
 
@@ -158,12 +219,35 @@ struct alhash_datablock * al_option_get(struct al_options * options,const char *
 
 void al_option_dump(struct al_options * options, struct aloutputstream output)
 {
-  int alhash_walk_callback_collision(struct alhash_entry * entry, void * data, int index);
-
-void alhash_dump_entry_as_string(struct alhash_entry * entry);
-
-int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int index);
-
- 
-
+  return;
 }
+
+int al_option_getargsnumber(struct al_options * options)
+{
+  return options->argsnumber;
+}
+
+char * al_option_getarg(struct al_options * options, int arg)
+{
+  char buffer[128];
+
+  if ( arg < al_option_getargsnumber(options))
+    {
+      snprintf(buffer, 128, "arg[%i]",arg);
+      struct alhash_datablock * value = al_option_get(options,buffer);
+      if ( value != NULL )
+	{
+	  return value->data.charptr;
+	}
+      else
+	{
+	  return NULL;
+	}
+
+    }
+  else
+    {
+      return NULL;
+    }
+}
+

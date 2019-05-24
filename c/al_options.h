@@ -20,6 +20,8 @@ TODO => provide it through a json value will allow list and persitency.
 struct al_options {
   ALDEBUG_DEFINE_FLAG(debug);
   struct alparser_ctx context;
+  // keys arg[<index>] ex 'arg[3]' is fourth parsed arg
+  int argsnumber;
 };
 
 ALDEBUG_DECLARE_FUNCTIONS(struct al_options, al_options);
@@ -42,5 +44,9 @@ void al_option_add(struct al_options * options,const char * key,const char * val
 void al_options_release(struct al_options * options);
 
 void al_option_dump(struct al_options * options, struct aloutputstream output);
+
+int al_option_getargsnumber(struct al_options * options);
+
+char * al_option_getarg(struct al_options * options, int arg);
 
 #endif
