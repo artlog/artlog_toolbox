@@ -47,7 +47,7 @@ int alsave_file_exists(char * template)
   return -3;
 }
 
-int alsave_init_context(struct alsavecontext * context, char * dir, char* prefix, char * extension)
+int alsave_init_context(struct alsavecontext * context, const char * dir, const char* prefix, const char * extension)
 {
   strncpy(context->dir,dir,sizeof(context->dir));
   strncpy(context->prefix,prefix,sizeof(context->prefix));

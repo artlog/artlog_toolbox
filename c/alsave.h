@@ -15,7 +15,7 @@ struct alsavecontext {
  */
 int alsave_set_debug(int debug);
 
-int alsave_init_context(struct alsavecontext * context, char * dir, char* prefix, char * extension);
+int alsave_init_context(struct alsavecontext * context, const char * dir, const char* prefix, const char * extension);
 
 int alsave_shift_file_name(struct alsavecontext * savecontext);
 

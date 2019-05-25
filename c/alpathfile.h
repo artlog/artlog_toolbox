@@ -30,14 +30,14 @@ struct alpathfile_options * alpathfile_get_default_options();
 options use alpathfile_get_default_options()
 pathanme0 full path NUL terminated string
  **/
-alpathfile_reply_set alpathfile_check_exists(struct alpathfile_options * options, char * pathname0 );
+alpathfile_reply_set alpathfile_check_exists(struct alpathfile_options * options, const char * pathname0 );
 
-enum al_global_error_code alpathfile_is_directory(char * pathname0 );
+enum al_global_error_code alpathfile_is_directory(const char * pathname0 );
 
-enum al_global_error_code alpathfile_is_file(char * pathname0 );
+enum al_global_error_code alpathfile_is_file(const char * pathname0 );
 
-enum al_global_error_code alpathfile_exists(char * pathname0);
+enum al_global_error_code alpathfile_exists(const char * pathname0);
 
-enum al_global_error_code alpathfile_can_open(char * pathname0);
+enum al_global_error_code alpathfile_can_open(const char * pathname0);
 
 #endif
