@@ -38,9 +38,3 @@ enum al_global_error_code  alinput_file_open_init(struct alinputstream * input, 
     }
   return AL_EC_INVALID_PARAMETER;
 }
-
-void alinput_file_init(struct alinputstream * input, FILE * file)
-{
-  alinputstream_init(input,fileno(file));
-}
-
