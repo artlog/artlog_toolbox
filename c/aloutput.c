@@ -6,19 +6,10 @@
 #include <string.h>
 #include <stdarg.h>
 
-void aloutputstream_init(struct aloutputstream * stream, FILE * file)
+void aloutputstream_fd_init(struct aloutputstream * stream, int fd)
 {
-  if ( file != NULL )
-    {
-      stream->file=file;
-      stream->fd = fileno(file);
-      stream->target=ALOUTPUT_TARGET_FILE;
-    }
-  else
-    {
-      stream->file=NULL;
-      stream->fd=-1;
-    }
+  stream->fd = fd;
+  stream->target=ALOUTPUT_TARGET_FD;
   stream->callback_writeint32 = NULL;
   stream->callback_flush = NULL;
   stream->callback_close = NULL;
@@ -27,7 +18,6 @@ void aloutputstream_init(struct aloutputstream * stream, FILE * file)
 void aloutputstream_init_shared_buffer(struct aloutputstream * stream, aldatablock * buffer, int offset)
 {
   stream->target=ALOUTPUT_TARGET_BUFFER;
-  stream->file= NULL;
   stream->fd = -1;
   memcpy(&stream->buffer,buffer,sizeof(stream->buffer));
   stream->offset=0;
@@ -49,14 +39,13 @@ void aloutputstream_set_callback(
   stream->callback_close = callback_close;
 }
 
-int alaloutputstream_getfd(struct aloutputstream * stream)
+void aloutputstream_set_close_callback(
+				 struct aloutputstream * stream,
+				 aloutput_callback_close callback_close,
+				 void * data)
 {
-  return stream->fd;
-}
-
-FILE * aloutputstream_file(struct aloutputstream * stream)
-{
-  return stream->file;
+  stream->callback_close = callback_close;
+  stream->data=data;
 }
 
 void aloutputstream_writeint32_fd(struct aloutputstream * stream, int word, int fd, int bytes)
@@ -81,9 +70,15 @@ void aloutputstream_writeint32_fd(struct aloutputstream * stream, int word, int 
 }
 
 
+static int aloutputstream_is_fd( struct aloutputstream * stream )
+{
+  return ( stream->target == ALOUTPUT_TARGET_FD );
+}
+
+// hack, file is deprecated, only fd is supported
 static int aloutputstream_is_file( struct aloutputstream * stream )
 {
-  return ( stream->target == ALOUTPUT_TARGET_FILE );
+  return aloutputstream_is_fd(stream);
 }
 
 static int aloutputstream_is_buffer( struct aloutputstream * stream )
@@ -171,12 +166,14 @@ void aloutputstream_close(struct aloutputstream * stream)
     {
       if ( aloutputstream_is_file(stream) )
 	{
+	  /**
 	  if ( stream->file != NULL )
 	    {
 	      fclose(stream->file);
 	      stream->fd=-1;
 	    }
 	  else
+	  */
 	    {
 	      if (stream->fd >=0)
 		{
@@ -194,7 +191,7 @@ int aloutputstream_memcpy(int written, struct aloutputstream * stream, char * lo
     {
       if ( aloutputstream_is_file( stream ) )
 	{
-	  write(stream->fd,localbuffer,written);
+	  write(stream->fd,localbuffer,written);	  
 	}
       else if ( aloutputstream_is_buffer(stream) )
 	{

@@ -1,5 +1,6 @@
 #include "alhash_output.h"
 #include "aldebug_output.h"
+#include <stddef.h>
 
 int alhash_output_walk_collision_callback(struct alhash_entry * entry, struct aloutputstream * output, int index)
 {
@@ -74,7 +75,7 @@ int alhash_output_walk_simple_callback_cast_outputstream (struct alhash_entry * 
 	    }
 	  else
 	    {
-	      printf( "%p NULL\n", entry);
+	      aldebug_printf(NULL, "[ERROR] %p NULL\n", entry);
 	    }
 	}
       else

@@ -1,12 +1,13 @@
 #include "albitfieldreader.h"
 #include "albitfieldwriter.h"
 #include "al_options.h"
-#include "aldebug.h"
+#include "aldebug_output.h"
+#include <stdio.h>
 
 void usage()
 {
-  printf("add some character at end of file\n");
-  printf("outfile: file to edit\n");
+  aldebug_printf(NULL,"add some character at end of file\n");
+  aldebug_printf(NULL,"outfile: file to edit\n");
 }
 
 int main(int argc, char ** argv)

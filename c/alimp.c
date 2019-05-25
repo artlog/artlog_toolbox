@@ -4,7 +4,9 @@
 #include "aldebug.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "aldebug_output.h"
+#include "alinput_file.h"
 
 static const char * INFILESTR0="infile";
 
@@ -30,18 +32,14 @@ struct alinputstream * getinputstream(struct al_options * options)
   if ( opt1 != NULL )
     {
       char * filename = opt1->data.charptr;
-      FILE * fin = fopen(filename, "r");
-      if (fin != NULL )
-	{
-	  inputstream = malloc(sizeof(*inputstream));
-	  alinputstream_init(inputstream, fileno (fin));
-	}
-      else
+      inputstream = malloc(sizeof(*inputstream));
+      if ( alinput_file_open_init(inputstream,filename) != AL_EC_OK )
 	{
 	  aldebug_printf(NULL,"[ERROR] no such '%s' file\n", filename);
+	  free(inputstream);
+	  inputstream = NULL;
 	}
-    } 
-  
+    }  
   return inputstream;
 }
 

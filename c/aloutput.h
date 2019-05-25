@@ -1,9 +1,7 @@
-#ifndef __ALOUTPUTSTREAM_H__
-#define __ALOUTPUTSTREAM_H__
+#ifndef ALOUTPUT_HEADER_
+#define ALOUTPUT_HEADER_
 
 #include "alstrings.h"
-
-#include <stdio.h>
 
 struct aloutputstream;
 
@@ -16,13 +14,12 @@ typedef void (*aloutput_callback_flush) (struct aloutputstream * stream, int wor
 typedef void (*aloutput_callback_close) (struct aloutputstream * stream);
 
 enum aloutput_target {
-  ALOUTPUT_TARGET_FILE = 1,
+		      ALOUTPUT_TARGET_FILE = 1, // deprecated
   ALOUTPUT_TARGET_FD = 2,
   ALOUTPUT_TARGET_BUFFER = 3
 };
 
 struct aloutputstream {
-  FILE * file;
   int fd;
   int debug;
   enum aloutput_target target;
@@ -39,7 +36,10 @@ struct aloutputstream {
   void * data;  
 };
 
-void aloutputstream_init(struct aloutputstream * stream, FILE * file);
+// please see aloutput_file_open_init(struct aloutputstream * output, const char * filename) in aloutput_file.h
+// void aloutputstream_init(struct aloutputstream * stream, FILE * file);
+
+void aloutputstream_fd_init(struct aloutputstream * stream, int fd);
 
 /** create an outputstream over a contiguous prereserved buffer */
 void aloutputstream_init_shared_buffer(struct aloutputstream * stream, aldatablock * buffer, int offset);
@@ -51,6 +51,10 @@ void aloutputstream_set_callback(
 				 aloutput_callback_flush callback_flush,
 				 aloutput_callback_close callback_close);
 
+void aloutputstream_set_close_callback(
+				 struct aloutputstream * stream,
+				 aloutput_callback_close callback_close,
+				 void * data);
 
 void aloutputstream_write_byte(struct aloutputstream * stream, unsigned char byte);
 
@@ -66,9 +70,9 @@ void aloutputstream_flush(struct aloutputstream * stream, int word, int bits);
 /** in buffer target it is possible to obtain a pointer over a contigous buffer */
 void * aloutputstream_get_data(struct aloutputstream * stream);
 
-int aloutputstream_getfd(struct aloutputstream * stream);
-
-FILE * aloutputstream_file(struct aloutputstream * stream);
+// DON'T provide access to inner backend anymore
+// int aloutputstream_getfd(struct aloutputstream * stream);
+// FILE * aloutputstream_file(struct aloutputstream * stream);
 
 void aloutputstream_close(struct aloutputstream * stream);
 
@@ -76,6 +80,7 @@ void aloutputstream_close(struct aloutputstream * stream);
 int aloutputstream_printf_1k(struct aloutputstream * stream, const char *format, ...);
 
 /** printf to stream limited to 1kiB **/
+#include <stdarg.h>
 int aloutputstream_vprintf_1k(struct aloutputstream * stream, const char *format, va_list args);
 
-#endif // #ifndef __ALOUTPUTSTREAM_H__
+#endif // #ifndef ALOUTPUT_HEADER_

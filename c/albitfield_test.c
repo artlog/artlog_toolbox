@@ -1,14 +1,18 @@
+#include <stddef.h>
+
 #include "albitfieldreader.h"
 #include "albitfieldwriter.h"
 #include "al_options.h"
 #include "aldebug.h"
 #include "aldebug_output.h"
+#include "alinput_file.h"
+#include "aloutput_file.h"
 
 void usage()
 {
-  printf("test bitfield writer/reader\n");
-  printf(" will copy input to output with bit chunks\n");
-  printf("outfile: file to create\n");
+  aldebug_printf(NULL,"test bitfield writer/reader\n");
+  aldebug_printf(NULL," will copy input to output with bit chunks\n");
+  aldebug_printf(NULL,"outfile: file to create\n");
 }
 
 int main(int argc, char ** argv)
@@ -22,26 +26,24 @@ int main(int argc, char ** argv)
   struct alhash_datablock * opt1 = al_option_get(options,"outfile");
   if ( opt1 != NULL )
     {
-      FILE * fout = fopen(opt1->data.charptr, "w");
-      if ( fout != NULL )
+      enum al_global_error_code outputerr =  aloutput_file_open_init(&output,opt1->data.charptr);
+      if ( outputerr == AL_EC_OK )
 	{
 	  struct bitfieldwriter writer;
 	  struct alhash_datablock * opt2 = al_option_get(options,"infile");
-	  FILE * file = NULL;
+	  enum al_global_error_code inputerr = AL_EC_OK;
 	  if ( opt2 == NULL )
 	    {
-	      file = fopen(argv[0],"r");
+	      inputerr=alinput_file_open_init(&input,argv[0]);
 	    }
 	  else
 	    {
-	      file = fopen(opt2->data.charptr,"r");
+	      inputerr=alinput_file_open_init(&input,opt2->data.charptr);
 	    }
-	  aloutputstream_init(&output,fout);
 	  bitfieldwriter_init(&writer);
 	  bitfieldwriter_setoutputstream(&writer,&output);
-	  if ( file != NULL )
+	  if ( inputerr == AL_EC_OK )
 	    {     
-	      alinputstream_init(&input,fileno(file));
 	      int bits = 32;
 	      struct bitfieldreader bfreader;
 	      fieldreader_init(&bfreader);
@@ -69,7 +71,7 @@ int main(int argc, char ** argv)
 		}
 	      bitfieldwriter_padtobyte(&writer);
 	      aldebug_printf(NULL,"total bits %i, bytes %i", total_bits, total_bits/8);
-	      fclose(file);
+	      alinputstream_close(&input);
 	    }
 	  aloutputstream_close(&output);
 	}

@@ -17,10 +17,10 @@ void usage()
 int main(int argc, char ** argv)
 {
   struct aloutputstream output;
-  aloutputstream_init(&output, stdout);
+  aloutputstream_fd_init(&output, fileno(stdout));
 
   struct aloutputstream output2;
-  aloutputstream_init(&output2, stderr);
+  aloutputstream_fd_init(&output2, fileno(stderr));
   
   if ( argc > 1 )
     {
