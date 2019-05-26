@@ -37,9 +37,6 @@ const int ALABNF_INFINITE_ITERATION=-1;
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
 void alabnf_string(struct alabnf_sm * state_machine, char c);
-void alabnf_dump_sequence(struct alabnf_sequence * start_sequence);
-void alabnf_dump_alternative(struct alabnf_alternative * alternative);
-void alabnf_dump_range(struct alabnf_range * range);
 void alabnf_close_group(struct alabnf_sm * state_machine, char c);
 void alabnf_close_name_string_continue(struct alabnf_sm * state_machine, char c);
 void alabnf_close_name_string_rematch(struct alabnf_sm * state_machine, char c);
@@ -49,6 +46,7 @@ void alabnf_close_string_continue(struct alabnf_sm * state_machine, char c);
 void alabnf_iterator_string_start(struct alabnf_sm * state_machine, char c);
 // any new element on left part ( ie after = )
 void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c);
+
 
 struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct alabnf_node * collector, struct alabnf_node * new_node);
   
@@ -96,219 +94,6 @@ struct alabnf_node * alabnf_create_sequence_node(struct alabnf * alabnf, struct 
   return NULL;
 }
 
-void alabnf_print_token(struct alhash_entry * mytoken)
-{
-    if ( mytoken != NULL )
-    {
-      if ( mytoken->key.data.ptr != NULL )
-	{
-	  struct alhash_datablock * datablock = &mytoken->key;
-	  printf(ALPASCALSTRFMT" ",
-		 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-	}
-    }
-
-}
-
-void alabnf_dump_iterator(struct alabnf_iterator * iterator)
-{
-  if ( iterator != NULL )
-    {
-      if ( iterator->min == 0 )
-	{
-	  // prefix
-	  if ( iterator->max == 1 )
-	    {
-	      // optional
-	      printf("[");
-	    }
-	  else if ( iterator->max == 0 )
-	    {
-	      // well empty whatever
-	      printf("0");
-	    }
-	  else if ( iterator->max == ALABNF_INFINITE_ITERATION )
-	    {
-	      printf("*");		   
-	    }
-	  else
-	    {
-	      printf("%i*%i",iterator->min,iterator->max);
-
-	    }
-	  alabnf_dump_node(iterator->node);
-	  // suffix
-	  if ( iterator->max == 1 )
-	    {
-	      // optional
-	      printf("]");
-	    }
-
-	}
-      else
-	{
-	  if ( iterator->max == ALABNF_INFINITE_ITERATION )
-	    {
-	      printf("m%i*",iterator->min);
-	    }
-	  else
-	    {
-	      printf("m%i*M%i",iterator->min,iterator->max);
-	    }
-	  alabnf_dump_node(iterator->node);
-	}
-    }
-}
-
-void alabnf_dump_hex_string(aldatablock * string )
-{
-  printf("%%x");
-  for (int i=0; i< string->length-1; i++)
-    {
-      printf("%x.",string->data.charptr[i]);
-    }
-  printf("%x",string->data.charptr[string->length-1]);
-}
-
-void alabnf_dump_rule_ref(struct alabnf_rule_ref * rule_ref)
-{
-  struct alhash_datablock * datablock = &rule_ref->keyblock;
-  if ( datablock->data.ptr != NULL )
-    {
-      printf(ALPASCALSTRFMT,
-	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-    }
-  else
-    {
-      printf("unamed_rule_ref%p",rule_ref);
-    }
-
-}
-
-void alabnf_dump_node(struct alabnf_node * node )
-{
-  if ( node != NULL )
-    {
-      if ( (unsigned long) node <  64L )
-	{
-	  // corrupted pointer (often address within a NULL struct )
-	  aldebug_printf(NULL,"[FATAL] node pointer %p invalid in %s",node, __FILE__);
-	  //return;
-	}
-      enum alabnf_node_type type = node->type;
-      switch(type)
-	{
-	case ALABNF_NT_ITERATOR:
-	  alabnf_dump_iterator(&node->content.iterator);
-	  break;
-	case ALABNF_NT_SEQUENCE:
-	  alabnf_dump_sequence(&node->content.sequence);
-	  break;
-	case ALABNF_NT_STRING:
-	  {
-	    struct alhash_datablock * datablock = &node->content.string.strbloc;
-	    enum alabnf_string_type string_type = node->content.string.type;
-	    if ( string_type == ALABNF_ST_RULENAME )
-	      {		
-		// for debug : printf("'"ALPASCALSTRFMT"'",
-		printf(ALPASCALSTRFMT,
-		       ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-	      }
-	    else if ( string_type == ALABNF_ST_QUOTED )
-	      {			
-		printf("\""ALPASCALSTRFMT"\"",
-		       ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-
-	      }
-	    else if ( string_type == ALABNF_ST_UNDEFINED )
-	      {
-		printf("ALABNF_ST_UNDEFINED_");
-		alabnf_dump_hex_string(datablock);
-	      }
-	    else
-	      {
-		// need a better printf to support non printable strings as hex,int, quoted ...
-		alabnf_dump_hex_string(datablock);
-	      }
-
-	  }
-	  break;
-	case ALABNF_NT_ALT:
-	  alabnf_dump_alternative(&node->content.alt);
-	  break;
-	case ALABNF_NT_RANGE:
-	  alabnf_dump_range(&node->content.range);
-	  break;
-	case ALABNF_NT_RULE_REF:
-	  alabnf_dump_rule_ref(&node->content.rule_ref);
-	  break;
-	default:
-	  printf("unrecognized abnf type %i\n",type);
-	}
-    }
-  else
-    {
-      // NULL
-      aldebug_printf(NULL,"[ERROR] node pointer NULL in %s %s %i", __FILE__, __func__,__LINE__);
-      printf("¤");
-    }
-}
-
-void alabnf_dump_alternative(struct alabnf_alternative * start_alternative)
-{
-  struct alabnf_alternative * alternative=start_alternative;
-  struct alabnf_alternative * next_alternative=NULL;
-  // debug
-  printf("{");
-  while (alternative != NULL)
-    {
-      next_alternative = alternative->alt;
-      aldebug_printf(NULL,"node %p alt %p\n", alternative->node, next_alternative);
-      // DEBUG only, to remove
-      alabnf_dump_node(alternative->node);
-      if (next_alternative != NULL)
-	{
-	  printf("/");
-	}
-      alternative=next_alternative;
-    }
-  // debug
-  printf("}");
-
-
-}
-
-void alabnf_dump_range(struct alabnf_range * range)
-{
-  // TODO
-  printf("%%x%x-%x",range->start,range->end);
-}
-
-void alabnf_dump_sequence(struct alabnf_sequence * start_sequence)
-{
-  struct alabnf_sequence * sequence=start_sequence;
-  struct alabnf_sequence * next_sequence=NULL;
-  printf("(");
-  while (sequence != NULL)
-    {
-      next_sequence = sequence->next;
-      aldebug_printf(NULL,"\nnext %p node %p\n", next_sequence, sequence->node);
-      // debug printf("§");
-      alabnf_dump_node(sequence->node);
-      // debug printf("$");
-      if (next_sequence != NULL)
-	{
-	  printf(" ");
-	}
-      sequence=next_sequence;
-    }
-  printf(")");
-}
-
-void alabnf_dump_rule(struct alabnf_rule * rule)
-{
-  // TODO
-}
 
 struct alabnf_node * alabnf_create_node_string(
 					       struct alabnf * alabnf, aldatablock * block,
@@ -1447,7 +1232,7 @@ void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 		{
 		  aldebug_printf(NULL,"[ERROR] closing a sequence with a stack of size %i containing no rulename %s %s %i\n", alstack_used(stack),__FILE__,__func__,__LINE__);
 		  // HACK FIXME
-		  alabnf_dump_node(collected_node);
+		  // alabnf_dump_node(output,collected_node);
 		}
 	      
 	      node = NULL;
@@ -1553,13 +1338,13 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 		}
 
 	      // FIXME TOY CODE
-	      printf("\n");
+	      //aloutputstream_printf_1k,output("\n");
 	      // alabnf_print_token(mytoken);
-	      alabnf_dump_node(node);
+	      //alabnf_dump_node(output,node);
 	      if ( collector != NULL )
 		{
-		  printf("= ");
-		  alabnf_dump_node(collector);
+		  //aloutputstream_printf_1k(output,"= ");
+		  //alabnf_dump_node(output,collector);
 
 		  // TODO collect other than initial rule ...
 		  if ( alabnf->root_rule.value == NULL )
@@ -1591,10 +1376,8 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 		    }
 
 		}
-	      printf("\n");
+	      //aloutputstream_printf_1k(output,"\n");
 	    }
-
-
 	}
       else
 	{

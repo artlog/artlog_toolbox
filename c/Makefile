@@ -33,7 +33,7 @@ $(BUILD)/hashtree: alhashtree.c alhashtree_test.c alcryptohash.c
 $(BUILD)/aljson_ld: aljson_ld.c aljson_ld_test.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -laldev -lalhash  -lalstack -lalcommon -Wl,-Bdynamic
 
-$(BUILD)/alabnf: alabnf.c alabnf_util.c alabnf_test.c altoken.c altokenizer.c alinput_util.c
+$(BUILD)/alabnf: alabnf.c alabnf_util.c alabnf_test.c altoken.c altokenizer.c alinput_util.c alabnf_dump.c
 	gcc -Wall -Wextra -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -laljson -lalhash  -lalstack -lalcommon  -Wl,-Bdynamic
 
 $(BUILD)/alabnf_matcher: alabnf.c alabnf_util.c alabnf_matcher.c alabnf_matcher_test.c altoken.c altokenizer.c alinput_util.c

@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "aldebug_output.h"
+#include "aloutput.h"
+#include "alabnf_dump.h"
 
 void alabnf_normalize_name(char * in, char ** out)
 {
@@ -27,7 +29,10 @@ int main(int argc, char ** argv)
 	}
       else
 	{
-	  alabnf_util_parse_abnf_file(file);
+	  struct alabnf * alabnf = alabnf_util_parse_abnf_file(file);
+	  struct aloutputstream output;
+	  aloutputstream_fd_init(&output, fileno(stderr));
+	  alabnf_dump_rule(&output,&alabnf->root_rule);			   
 	}
     }
   else
