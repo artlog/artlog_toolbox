@@ -22,7 +22,7 @@ enum al_global_error_code  aloutput_file_open_init(struct aloutputstream * outpu
 {
   if (output != NULL )
     {
-      int fd = open(filename,O_WRONLY|O_CREAT);
+      int fd = open(filename,O_WRONLY|O_CREAT,S_IRUSR|S_IWUSR|S_IRGRP);
       if ( fd >= 0)
 	{
 	  aloutputstream_fd_init(output,fd);
