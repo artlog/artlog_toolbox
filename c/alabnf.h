@@ -5,6 +5,7 @@
 #include "alhash.h"
 #include "alinput.h"
 #include "alstack.h"
+#include "aldebug.h"
 
 enum alabnf_node_type {
   ALABNF_NT_INVALID=1,
@@ -25,6 +26,14 @@ enum alabnf_string_type {
   ALABNF_ST_DEC,
   ALABNF_ST_BIN
 };
+
+struct alabnf_global_ {
+  ALDEBUG_DEFINE_FLAG(debug);
+};
+
+extern struct alabnf_global_  alabnf_global;
+
+ALDEBUG_DECLARE_FUNCTIONS(struct alabnf_global_, alabnf)
 
 struct alabnf_node;
 

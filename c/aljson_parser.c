@@ -14,6 +14,9 @@ JSON_TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
 
 ALDEBUG_DEFINE_FUNCTIONS(struct json_ctx, json_ctx,debug_level)
 
+// prepare to replace it with real debug with correct outputstream
+#define DBGSTREAM NULL
+
 /**
  return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
 */
@@ -82,7 +85,7 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
   ctx->pos--;
   ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
     {
-      aldebug_printf(NULL,"[DEBUG] (pushback %c)\n",pushback);      
+      aldebug_printf(DBGSTREAM,"[DEBUG] (pushback %c)\n",pushback);      
     }
 }
 
@@ -91,7 +94,7 @@ int add_char(struct json_ctx * ctx, char token, char c)
 {
   if ( json_ctx_is_debug(ctx,TOKENIZER_DEBUG_ADD) )
     {
-      printf("%c", c);
+      aldebug_printf(DBGSTREAM,"%c", c);
     }
   // DISREGARD token
   return altoken_char_buffer_add_char(&ctx->token_buf,c);
@@ -101,7 +104,7 @@ void debug_tag(struct json_ctx *ctx,char c)
 {
   ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
     {
-      printf("%c",c);
+      aldebug_printf(DBGSTREAM,"%c",c);
     }
 }
 
@@ -145,7 +148,7 @@ enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char f
       // fixme was > 3 now i s 1
       ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
 	{
-	  printf("(number state %i)",state);
+	  aldebug_printf(DBGSTREAM,"(number state %i)",state);
 	}
       switch(state)
 	{
@@ -241,7 +244,7 @@ enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char f
 	      char d = ctx->next_char(ctx,data);
 	      if ( d != c )
 		{
-		  aldebug_printf(NULL,"(pushback end of number FAILS '%c'!='%c')\n",c, d);
+		  aldebug_printf(DBGSTREAM,"(pushback end of number FAILS '%c'!='%c')\n",c, d);
 		}
 	      ctx->pushback_char(ctx,data,c);
 	    }
@@ -300,7 +303,7 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	  case ',':
 	  case ':':
 	  case '?':
-	    printf("%c[%x]\n",c,c);
+	    aldebug_printf(DBGSTREAM,"%c[%x]\n",c,c);
 	    /*
 	    if (parent != NULL)
 	      {
@@ -308,10 +311,10 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 		aljson_output(ctx,parent,NULL);
 	      }
 	    */
-	    puts("\n-------");
+	    aldebug_printf(DBGSTREAM,"\n-------");
 	    break;
 	  default:
-	    printf("%c",c);
+	    aldebug_printf(DBGSTREAM,"%c",c);
 	  }
       }
 
@@ -327,12 +330,12 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	  {
 	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
-		printf("%c", c);	
+		aldebug_printf(DBGSTREAM,"%c", c);	
 	      }
 	    else
 	      {
 		// start to ignore ...
-		printf("<ignore %c", c);
+		aldebug_printf(DBGSTREAM,"<ignore %c", c);
 	      }
 	  }
 	ctx->internal_flags |= JSON_FLAG_IGNORE;
@@ -343,7 +346,7 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	    // we were ignoring and now will we stop ...
 	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
-		aldebug_printf(NULL,"ignore>");
+		aldebug_printf(DBGSTREAM,"ignore>");
 	      }
 	  }
 	ctx->internal_flags &= !JSON_FLAG_IGNORE;
@@ -405,7 +408,7 @@ struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
 	    break;
 	  default: // unexpected char ?
 	    // PUSHBACK ? TO CHECK
-	    aldebug_printf(NULL,"[ERROR] unexpected char %c\n,",c);
+	    aldebug_printf(DBGSTREAM,"[ERROR] unexpected char %c\n,",c);
 	    JSON_TOKEN(EOF);
 	    // ctx->pushback_char(ctx,data,c);
 	  }

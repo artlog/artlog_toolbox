@@ -31,9 +31,13 @@ const int ALABNF_MAX_CHARS=100;
 // const value indicating that iterator is infinite
 const int ALABNF_INFINITE_ITERATION=-1;
 
+struct alabnf_global_  alabnf_global = {.debug=0};
+
+ALDEBUG_DEFINE_FUNCTIONS(struct alabnf_global_,alabnf,debug);
+
 #define ALABNF_DEBUG_UNEXPECTED_CHAR(c) aldebug_printf(NULL,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c>32 ? c : '.',__FILE__,__func__,__LINE__);
 
-#define ALABNF_DEBUG_TEXT_STATE(c,text,state_machine) aldebug_printf(NULL,"[DEBUG] %s ('%i','%c') at %i:%i  in %s %s %i\n",text,c,c>=32 ? c : '.' ,state_machine->lf_line,state_machine->current_indent,__FILE__,__func__,__LINE__);
+#define ALABNF_DEBUG_TEXT_STATE(c,text,state_machine)  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] %s ('%i','%c') at %i:%i  in %s %s %i\n",text,c,c>=32 ? c : '.' ,state_machine->lf_line,state_machine->current_indent,__FILE__,__func__,__LINE__);
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
 void alabnf_string(struct alabnf_sm * state_machine, char c);
@@ -136,7 +140,7 @@ struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
     }
 
   // can happen with rule_ref name.
-  aldebug_printf(NULL,"[DEBUG] existing token entry %p %s:%s:%i\n",entry, __FILE__,__func__,__LINE__);
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] existing token entry %p %s:%s:%i\n",entry, __FILE__,__func__,__LINE__);
   // was implemented this way but altering tokenizer token and mixing terminals with non terminal is a bad idea
   struct alabnf_node * node = (struct alabnf_node *) entry->value.data.ptr;
 
@@ -201,7 +205,7 @@ void alabnf_state_machine_release(struct alabnf_sm * state_machine)
 int alabnf_flush_number(struct alabnf_number_sm * state_machine)
 {
   int value = state_machine->cumulated;
-  aldebug_printf(NULL,"\n%i 0x%x '%c'\n",value,value,( ( value > 32 ) && ( value < 128 )) ? (char) value : '.');
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"\n%i 0x%x '%c'\n",value,value,( ( value > 32 ) && ( value < 128 )) ? (char) value : '.');
   state_machine->cumulated=0;
   state_machine->seen=0;
 
@@ -210,7 +214,7 @@ int alabnf_flush_number(struct alabnf_number_sm * state_machine)
 
 void alabnf_add_char(struct alabnf_sm * state_machine, char token, char c)
 {
-  //aldebug_printf(NULL,"%c%c",token,c);
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug)  aldebug_printf(NULL,"[DEBUG] add char %c%c",token,c);
   altokenizer_add_char(&state_machine->tokenizer,token,c);
 
   int pending_chars = altokenizer_get_pending_chars(&state_machine->tokenizer);
@@ -224,7 +228,7 @@ void alabnf_add_char(struct alabnf_sm * state_machine, char token, char c)
 void alabnf_handle_lf(struct alabnf_sm * state_machine)
 {
   // lf , expect a new line
-  aldebug_printf(NULL,"LF\n");
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] LF\n");
   state_machine->lf_line ++;
   
   // tentative to handle mutliple files parsing, reset rule if mutliple empty lines...
@@ -886,7 +890,7 @@ struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * a
 {
   if ( head_node != NULL )
     {
-      aldebug_printf(NULL,"[INFO] head node found %p type %i node %p in %s:%s:%i\n",
+      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] head node found %p type %i node %p in %s:%s:%i\n",
 		     head_node, head_node->type, node,
 		     __FILE__,__func__,__LINE__);
 
@@ -899,7 +903,7 @@ struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * a
 	      // an empty slot : merge entry here
 	      struct alabnf_node * merge_entry = alabnf_create_alternative_node(alabnf,node,NULL);
 	      alternative->alt=&merge_entry->content.alt;
-	      aldebug_printf(NULL,"[INFO] MERGE ALTERNATIVES %p alt %p\n", alternative, alternative->alt);
+	      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] MERGE ALTERNATIVES %p alt %p\n", alternative, alternative->alt);
 	      /*
 	      printf("\n");
 	      alabnf_dump_node(head_node);
@@ -907,7 +911,7 @@ struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * a
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[INFO] SKIP ALTERNATIVES %p alt %p\n", alternative, alternative->alt);
+	      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] SKIP ALTERNATIVES %p alt %p\n", alternative, alternative->alt);
 	      head_node = NULL;
 	    }
 	}
@@ -915,7 +919,7 @@ struct alabnf_node * alabnf_merge_alt_and_iterator_with_head(  struct alabnf * a
 	{
 	  // CHECK if iterator computation can always be done there...
 	  struct alabnf_iterator * iterator = &head_node->content.iterator;
-	  aldebug_printf(NULL,"[DEBUG] MERGE ITERATOR %p node %p type %i %p at %s:%s:%i\n",
+	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] MERGE ITERATOR %p node %p type %i %p at %s:%s:%i\n",
 			 iterator->node, node, node->type, head_node,
 			 __FILE__,__func__,__LINE__);
 	  if ( iterator->node == NULL)
@@ -953,7 +957,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
   struct alabnf_sequence * next_sequence=NULL;
   struct alabnf_node * node=NULL;
 
-  aldebug_printf(NULL,"[DEBUG] in %s %s %i\n",__FILE__,__func__,__LINE__);
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] in %s %s %i\n",__FILE__,__func__,__LINE__);
   
   if ( collector != NULL )
     {
@@ -1009,7 +1013,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	{	  
 	  if ( new_node->type !=  ALABNF_NT_SEQUENCE )
 	    {
-	      aldebug_printf(NULL,"[DEBUG] new node type %i in %s:%s:%i\n",new_node->type,__FILE__,__func__,__LINE__);
+	      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] new node type %i in %s:%s:%i\n",new_node->type,__FILE__,__func__,__LINE__);
 	      if ( new_node->type == ALABNF_NT_INVALID )
 		{
 		  aldebug_printf(NULL,"[FATAL] invalid new node %p in %s:%s:%i\n",new_node,__FILE__,__func__,__LINE__);
@@ -1018,7 +1022,7 @@ struct alabnf_node * alabnf_collect_node_sequence(struct alabnf * alabnf, struct
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[DEBUG] don't append to child sequence in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] don't append to child sequence in %s:%s:%i\n",__FILE__,__func__,__LINE__);
 	      node =  alabnf_create_node(alabnf, ALABNF_NT_SEQUENCE);
 	      if ( node != NULL )
 		{
@@ -1290,7 +1294,7 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
   struct alstackelement * element=NULL;
   struct alabnf_node * collector = NULL;
   
-  aldebug_printf(NULL,"[INFO] parsing a rule in stack of %i tokens .\n",  entries );
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] parsing a rule in stack of %i tokens .\n",  entries );
   
   // we are unstacking so popping next before previous.
   for (int i=1; i<entries; i++)
@@ -1305,7 +1309,7 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"add node type %i in rule sequence\n", node->type);
+	      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] add node type %i in rule sequence\n", node->type);
 	      collector = alabnf_collect_node_sequence(alabnf,collector,node);
 	    }
 	}
@@ -1315,7 +1319,7 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
       struct alstackelement * rule=alstack_pop(stack);
       if ( rule != NULL )
 	{
-	  aldebug_printf(NULL,"[INFO] in %s:%s:%i\n", __FILE__, __func__,__LINE__ );
+	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] in %s:%s:%i\n", __FILE__, __func__,__LINE__ );
 	  struct alabnf_node * node = (struct alabnf_node *)  rule->reference;
 	  if ( node != NULL )
 	    {
@@ -1351,14 +1355,15 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 		    {
 		      if ( node->type == ALABNF_NT_STRING )
 			{
-			  aldebug_printf(NULL,"RESET root rule name\n");
+			  
+			  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"RESET root rule name\n");
 			  // FIXME dangerous no check of types
 			  memcpy(&alabnf->root_rule.rule_name,&node->content.string,sizeof(node->content.string));
 			  alabnf->root_rule.value = collector;
 			}
 		      else if ( node->type == ALABNF_NT_RULE_REF )
 			{
-			  aldebug_printf(NULL,
+			  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,
 					 "[DEBUG] RESET root rule name from ALABNF_NT_RULE_REF t%i %p "
 					 ALPASCALSTRFMT
 					 "\n"
@@ -1395,7 +1400,7 @@ void alabnf_new_rule(struct alabnf_sm * state_machine)
 {
   alabnf_close_rule(state_machine);
   state_machine->rule_number++;
-  aldebug_printf(NULL,"[DEBUG] rule # %i, indent %i/%i/%i at %s/%s/%i\n", state_machine->rule_number,
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] rule # %i, indent %i/%i/%i at %s/%s/%i\n", state_machine->rule_number,
 	 state_machine->current_indent,
 		 state_machine->initial_indent,
 		 state_machine->linebreak,
@@ -1445,7 +1450,7 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       break;
     case 13:
       // cr, expect lf now
-      aldebug_printf(NULL,"CR\n");
+      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] CR\n");
       state_machine->next_action = ALABNF_PA_CONTINUE;      
       break;
     case 10:
@@ -1467,7 +1472,7 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
 	}
       else
 	{
-	  aldebug_printf(NULL,"[DEBUG] CONTINUE rule # %i, indent %i/%i\n",
+	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] CONTINUE rule # %i, indent %i/%i\n",
 			 state_machine->rule_number,
 			 state_machine->current_indent,
 			 state_machine->initial_indent);
@@ -1588,7 +1593,7 @@ void alabnf_stack_rule_ref(struct alabnf_sm * state_machine, struct alhash_entry
 	  rule_ref = &node->content.rule_ref;
 	  
 	  aldatablock * datablock = &mytoken->key;
-	  aldebug_printf(NULL,"[INFO] NEW RULE '"ALPASCALSTRFMT"'\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
+	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[INFO] NEW RULE '"ALPASCALSTRFMT"'\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 	  
 	  memcpy(&rule_ref->keyblock,&mytoken->key,sizeof(rule_ref->keyblock));
 	  // IS it REALLY changing content of hash table ? YES
@@ -1659,7 +1664,7 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 
       if ( state_machine->string_type == ALABNF_ST_RANGE )
 	{
-	  aldebug_printf(NULL,"[DEBUG] close string for range in %s %s %i\n",__FILE__,__func__,__LINE__);
+	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] close string for range in %s %s %i\n",__FILE__,__func__,__LINE__);
 
 	  // flush pending chars they have been collected in number_sm min,max by other means.
 	  altokenizer_reset_buffer_pos(&state_machine->tokenizer);
@@ -1676,14 +1681,14 @@ void alabnf_close_string(struct alabnf_sm * state_machine, char c)
 
 	  if ( state_machine->string_type == ALABNF_ST_RULENAME )
 	    {
-	      aldebug_printf(NULL,"[DEBUG] close string token %p for rule_ref in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
+	      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] close string token %p for rule_ref in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
 	  
 	      // Exception rulename will create a rule_ref entry.
 	      alabnf_stack_rule_ref(state_machine, mytoken);
 	    }
 	  else 
 	    {
-	      aldebug_printf(NULL,"[DEBUG] close string token %p in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
+	      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] close string token %p in %s %s %i\n",mytoken,__FILE__,__func__,__LINE__);
 	  
 	      // WARNING allocation done on generated part...
 	      struct alabnf_node * node = alabnf_build_abnf_node(state_machine, mytoken);
@@ -1731,7 +1736,7 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
   token.token=ALABNF_NT_STRING;
 
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,c);
-  aldebug_printf(NULL,"[DEBUG] close name string %p\n",mytoken);
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] close name string %p\n",mytoken);
 
   alabnf_stack_rule_ref(state_machine, mytoken);
   
@@ -1823,7 +1828,7 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 			     state_machine->current_indent);
 	      exit(1);
 	    }	    
-	  aldebug_printf(NULL,"[DEBUG] rematch %p %x '%c' at (line,column) (%i,%i)\n",
+	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] rematch %p %x '%c' at (line,column) (%i,%i)\n",
 			 state_machine->one_char_method,
 			 c,c>32 ? c:'?',
 			 state_machine->lf_line,
@@ -1875,13 +1880,12 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 		  if ( c != 0 )
 		    {
 		      alabnf_close_method close_method = state_machine->close_method;
-		      aldebug_printf(NULL,"[DEBUG] CLOSE %p %x '%c' at (line,column) (%i,%i)\n",
+		      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(NULL,"[DEBUG] CLOSE %p %x '%c' at (line,column) (%i,%i)\n",
 				     close_method,
 				     c,c>32 ? c:'?',
 				     state_machine->lf_line,
 				     state_machine->current_indent
 			 );
-
 		      close_method(state_machine,c);
 		      if ( state_machine->next_action == ALABNF_PA_CLOSE )
 			{

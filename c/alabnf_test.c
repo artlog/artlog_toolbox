@@ -31,7 +31,7 @@ int main(int argc, char ** argv)
 	{
 	  struct alabnf * alabnf = alabnf_util_parse_abnf_file(file);
 	  struct aloutputstream output;
-	  aloutputstream_fd_init(&output, fileno(stderr));
+	  aloutputstream_fd_init(&output, fileno(stdout));
 	  alabnf_dump_rule(&output,&alabnf->root_rule);			   
 	}
     }
