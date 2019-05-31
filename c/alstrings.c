@@ -171,6 +171,12 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
     {
       aldebug_printf(NULL,"allocate buffer (%p) next (%p) !\n", buffer, next);
     }
+
+  if ( ((unsigned long long) next) < 1024 )
+    {
+      fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", buffer);
+    }
+
   return next;
 }
 
@@ -195,6 +201,10 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 		  buffer = al_token_char_buffer_grow(buffer, length);
 		  if ( buffer != NULL )
 		    {
+		      if ( ((unsigned long long) buffer) < 1024 )
+			{
+			  fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", buffer);
+			}
 		      // could consider this bucket as new head to not walk from start always
 		      (*ringbufferp) = buffer;
 		    }
@@ -465,6 +475,10 @@ int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbu
 	      ringbuffer = al_token_char_buffer_grow(ringbuffer, bytelength);
 	      if ( ringbuffer != NULL )
 		{
+		  if ( ((unsigned long long) ringbuffer) < 1024 )
+		    {
+		      fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", ringbuffer);
+		    }
 		  offset = ringbuffer->bufpos;
 		  offset = alstrings_ringbuffer_get_datablock_internal(ringbuffer, data,offset);
 		  if ( offset >= 0 )

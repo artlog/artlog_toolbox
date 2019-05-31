@@ -15,8 +15,8 @@ typedef void (*aloutput_callback_close) (struct aloutputstream * stream);
 
 enum aloutput_target {
 		      ALOUTPUT_TARGET_FILE = 1, // deprecated
-  ALOUTPUT_TARGET_FD = 2,
-  ALOUTPUT_TARGET_BUFFER = 3
+		      ALOUTPUT_TARGET_FD = 2,
+		      ALOUTPUT_TARGET_BUFFER = 3
 };
 
 struct aloutputstream {
@@ -82,5 +82,11 @@ int aloutputstream_printf_1k(struct aloutputstream * stream, const char *format,
 /** printf to stream limited to 1kiB **/
 #include <stdarg.h>
 int aloutputstream_vprintf_1k(struct aloutputstream * stream, const char *format, va_list args);
+
+// order 1 or 0
+// 1 : big endian, 0 little endian
+// group = 2 short, 4 word, 8 long word ...
+void alouput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * datablock, int order, int group);
+
 
 #endif // #ifndef ALOUTPUT_HEADER_

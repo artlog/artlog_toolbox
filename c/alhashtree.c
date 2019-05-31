@@ -41,7 +41,7 @@ void alsha256hashfunc(
   if ( treenode != NULL )
     {
       struct alsha2_internal intern;
-      alsha256_init(&intern);
+      alsha256_init(&intern);      
       alsha2x_add_block(&intern,blockA);
       if ( blockB != NULL )
 	{
@@ -247,12 +247,12 @@ struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree,
     {
       // add_left children.
       added = (struct alhashtreenode *) albtree_insert_left(&parent->btree, NULL);
-      alhashtree_specific_init(added, added->context, NULL, NULL, parent);
+      alhashtree_specific_init(added, intree->context, NULL, NULL, parent);
       parent=added;
     }
 
   (*newroot) = root;
-  
+
   return added;
 }
 
@@ -283,6 +283,7 @@ struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, alda
 	}
       else
 	{
+	  aldebug_printf(NULL,"to hash alhashtree context ringbuffer %p\n",&added->context->ringbuffer);
 	  (*intree->func.hashmethod)(added,block,NULL);
 	  alhashtree_recompute_upto_root(added);
 	}

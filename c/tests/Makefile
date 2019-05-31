@@ -16,6 +16,9 @@ save_test:  save_main.o
 alinput_test: alinput_test.c ../alinput_util.c
 	gcc -Wall -g -o $@ $^ -I.. -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic 
 
+aloutput_test: aloutput_test.c 
+	gcc -Wall -g -o $@ $^ -I.. -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic 
+
 aldebug: aldebug_test.c
 	gcc -Wall -g -o $@ $^ -I$(INCLUDES) -I../private -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic
 
@@ -37,5 +40,6 @@ clean:
 	rm -rf savetest
 	rm -f alinput_test
 	rm -f bitfieldcopy
+	rm -f aloutput_test
 
 .PHONY: test0 tests clean

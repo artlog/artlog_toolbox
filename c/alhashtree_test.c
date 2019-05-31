@@ -18,6 +18,9 @@ void alhashtree_data_process(void * data, void * contextdata, struct albtree * b
   // to improve
   struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
   aldebug_printf(NULL,"dumping treenode %p\n hash :", treenode);
+
+  aldebug_printf(NULL,"treenode %p context %p ringbuffer %p\n",treenode, treenode->context, treenode->context->ringbuffer);
+  
   aldatablock_dump(&treenode->hash);
   if ( treenode->btree.data != NULL )
     {
@@ -56,6 +59,7 @@ int main(int argc, char ** argv)
     {
       char * param = argv[i];
       aldatablock_setcstring(&block,param);
+      aldebug_printf(NULL,"rightmost %p context %p ringbuffer %p\n",rightmost, rightmost->context, rightmost->context->ringbuffer);
       rightmost = alhashtree_add_block(rightmost, &block);
       if (rightmost != NULL)
 	{

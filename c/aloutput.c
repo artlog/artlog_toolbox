@@ -10,6 +10,7 @@ void aloutputstream_fd_init(struct aloutputstream * stream, int fd)
 {
   stream->fd = fd;
   stream->target=ALOUTPUT_TARGET_FD;
+  stream->callback_write_byte = NULL;
   stream->callback_writeint32 = NULL;
   stream->callback_flush = NULL;
   stream->callback_close = NULL;
@@ -21,6 +22,7 @@ void aloutputstream_init_shared_buffer(struct aloutputstream * stream, aldatablo
   stream->fd = -1;
   memcpy(&stream->buffer,buffer,sizeof(stream->buffer));
   stream->offset=0;
+  stream->callback_write_byte = NULL;
   stream->callback_writeint32 = NULL;
   stream->callback_flush = NULL;
   stream->callback_close = NULL;
@@ -96,7 +98,8 @@ void aloutputstream_write_byte(struct aloutputstream * stream, unsigned char byt
     {
       if ( aloutputstream_is_file(stream) )
 	{
-	  aloutputstream_writeint32_fd(stream,byte,stream->fd,1);
+	  // write a byte ...
+	  write(stream->fd,&byte,1);
 	}
       else if ( aloutputstream_is_buffer(stream) )
 	{
@@ -123,7 +126,8 @@ void aloutputstream_writeint32(struct aloutputstream * stream, int word)
 	}
     }
 }
- 
+
+
 void aloutputstream_flush(struct aloutputstream * stream, int word, int bits)
 {
   if ( stream->callback_flush != NULL )
@@ -230,3 +234,47 @@ int aloutputstream_vprintf_1k(struct aloutputstream * stream, const char *format
 
   return aloutputstream_memcpy(written, stream, localbuffer);
 }
+
+const char * hexchars = "0123456789abcdef";
+
+// order 1 or 0
+// 1 : big endian, 0 little endian
+// group = 4 word, 8 long word ...
+void alouput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * datablock, int order, int group)
+{
+  unsigned char *chr_a = datablock->data.ucharptr;
+  int len = datablock->length;
+  
+  // 1=>1 0=>-1;
+  int step = order * 2 -1;
+
+  /*
+  int last = len % group;
+  if ( last != 0 )
+    {
+      aldebug_printf(NULL,"using a length '%i' that is not a mutliple of group '%i'",len, group);
+    }
+  */
+  
+  // 1 : 0 .. len-1
+  // -1 : (len-1) .. 0   
+  for (int i = 0; i < len; i+=group)
+    {
+      // 1 => i , 0  => i + group - 1;
+      int start =  i + ( group - 1 )  * ( 1 - order );      
+      for (int j = 0; j < group; j++)
+	{
+	  int index = start + step * j;	  
+	  unsigned char uc = '\0';
+	  if ( index < len )
+	    {
+	      uc = chr_a[ index ];
+	    }
+	  int higher = (int) (uc >> 4);
+	  int lower = (int) (uc & 0xf);       
+	  aloutputstream_write_byte(stream, hexchars[higher]);
+	  aloutputstream_write_byte(stream, hexchars[lower]);
+	}
+    }
+}
+
