@@ -173,12 +173,12 @@ int main(int argc, char ** argv)
 		  aldebug_printf(NULL,"\n");
 		  if ( aljson_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
 		    {
-		      aldebug_printf(NULL,"\n%s and %s json match\n", argv[1], argv[2]);
+		      aldebug_printf(NULL,"\ntemplate '%s' and '%s' json match\n", json_template, json_filename);
 		      exit(0);
 		    }
 		  else
 		    {
-		      aldebug_printf(NULL,"\n%s and %s json DOES NOT match\n", argv[1], argv[2]);
+		      aldebug_printf(NULL,"\ntemplate '%s' and '%s' json DOES NOT match\n", json_template, json_filename);
 		      exit(1);
 		    }
 		}

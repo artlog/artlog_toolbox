@@ -504,3 +504,38 @@ int aldatablock_write_int32be(aldatablock * data, int offset, int word)
 	
   return offset + 4;
 }
+
+char * alstrings_copy_str_block(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * str)
+{
+  if ( str->type == ALTYPE_SUBSTR )
+    {
+      // copy it and add a final NUL
+      str->type = ALTYPE_STR0;
+      str->length += 1;
+    }
+  // todo reserve for last NUL should be an extra param of copy block ( alloc more than copy ).
+  // using al_copy_block allows to have data block autogrowth.
+  char * newstr=al_copy_block(ringbufferp, str);
+  if ( ( newstr != NULL ) && ( str->type == ALTYPE_STR0 ) )
+    {
+      newstr[str->length-1] = '\0';
+    }
+  str->data.charptr=newstr;
+  return newstr;
+}
+
+int alstrings_compare_str0_substr(struct alhash_datablock * str0, struct alhash_datablock * substr)
+{
+  if ( str0->length == (substr->length + 1) )
+    {
+      if ( str0->data.ptr == substr->data.ptr )
+	{
+	  return 0;
+	}
+      if ( (str0->data.ptr != NULL) && ( substr->data.ptr != NULL ) )
+	{
+	  return memcmp(str0->data.ptr, substr->data.ptr, substr->length) ;
+	}
+    }
+  return 1;
+}

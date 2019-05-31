@@ -8,7 +8,8 @@ enum altype {
   ALTYPE_OPAQUE=0, // opaque type meaning no encoding type known.
   ALTYPE_CINTLE=1, // NYI c integer in little endian, length is externaly defined in bytes 
   ALTYPE_CINTBE=2, // NYI c integer in big endian, length is externaly defined in bytes
-  ALTYPE_STR0=3, // NYI c string \0 terminated
+  ALTYPE_STR0=3, // c string \0 terminated. its length includes the final '\0' byte.
+  ALTYPE_SUBSTR=4, // c string NOT necessary \0 terminated, length does not include '\0' if any.
   ALTYPE_FLAG_EMBED=64, // NFI(not fully implemented) value is not a pointer in data.ptr but might be a number see aldatablock_embeded
   ALTYPE_MAX=128,
 };
@@ -40,8 +41,9 @@ typedef struct alhash_datablock {
 token_char_buffer circular linked list is built at first time
 BUT buf and its size is allocated on request only.
 = so initial *times* buckets drives limit =
+
+remark inital name comes from json parser, kept to not rename everywhere
 */
-// to rename since borrowed from json_parser project
 typedef struct token_char_buffer {
   // internal buffer to collect data of allocated capacity bufsize.
   char * buf;
@@ -134,5 +136,17 @@ void aldatablock_setcstring(aldatablock * block,char * cstring);
  **/
 int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * data, int bytelength);
 
+
+/** 
+will copy block pointed by str->data and convert it to STR0 if a SUBSTR
+it means a final NUL is added to actualy make a printable string with %s
+and return new char * of new string
+WARNING alter str->data 
+**/
+char * alstrings_copy_str_block(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * str);
+
+
+/** return 0 if both a equal, else return something different than 0, not yet relevant for ordering*/
+int alstrings_compare_str0_substr(struct alhash_datablock * str0, struct alhash_datablock * substr);
 
 #endif

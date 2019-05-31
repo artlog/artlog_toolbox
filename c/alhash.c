@@ -53,6 +53,84 @@ enum alhash_match_result aldatablock_is_empty(struct alhash_datablock * key)
 }
 
 /**
+key and keyB contiain values that are identical
+one interest is for str0 and substr comparison where one ends with '\0' and the other not.
+ */
+enum alhash_match_result alhash_is_identical(struct alhash_datablock * key,
+					     struct alhash_datablock * keyB,
+					     int alhash_debug)
+{
+  if ( key == keyB )
+    {
+      return ALH_MR_EQUAL;
+    }
+  
+  if ( (key != NULL) && (keyB != NULL) )
+    {
+      if ( key->type != keyB->type )
+	{
+	  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT KEY TYPE %i!=%i \n", key->type,keyB->type);}
+
+	  // handle str0 substr case here  
+	  if ( key->type == ALTYPE_STR0 ) 
+	    {
+	      if ( keyB->type == ALTYPE_SUBSTR )
+		{
+		  if ( alstrings_compare_str0_substr(key,keyB) == 0 )
+		    {
+		      return  ALH_MR_EQUAL;
+		    }
+		}
+	    }
+	  else if ( ( key->type == ALTYPE_SUBSTR ) && (keyB->type == ALTYPE_STR0 ) )
+	    {
+	      if ( alstrings_compare_str0_substr(keyB,key) == 0 )
+		{
+		  return  ALH_MR_EQUAL;
+		}
+	    }
+
+	  return  ALH_MR_NOT_EQUAL;
+	}
+
+      if (key->length == keyB->length)
+	{
+	  // if one is embed the other too since type have been checked to be the same
+	  if ( aldatablock_embeded(key))
+	    {
+	      // Don't even care of hash, use number.
+	      if ( key->data.number == keyB->data.number )
+		{
+		  // obvious case, point on very same value of same size.
+		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] IDENTICAL VALUES\n");}
+		  return ALH_MR_EQUAL;
+		}
+	      else
+		{
+		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT VALUES\n");}
+		  return  ALH_MR_NOT_EQUAL;
+		}	      
+	    }
+	  else
+	    {
+	      if ( key->data.ptr == keyB->data.ptr )
+		{
+		  // obvious case, point on very same value of same size.
+		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] IDENTICAL KEY\n");}
+		  return ALH_MR_EQUAL;
+		}
+	      return (memcmp(keyB->data.ptr, key->data.ptr, key->length) == 0) ? ALH_MR_EQUAL : ALH_MR_NOT_EQUAL;
+	    }
+	}
+      if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT SIZE\n");}
+      return ALH_MR_NOT_EQUAL;
+    }
+
+  return  ALH_MR_NOT_EQUAL;
+  
+}
+
+/**
 return if key matches entry ( see enum alhash_match_result comments )
 **/
 enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alhash_entry * entry, long hash, int alhash_debug)
@@ -69,52 +147,18 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 	  if ( alhash_debug ) {aldebug_printf(NULL,"[DEBUG] NULL values are wrong.\n");}
 	  return ALH_MR_INVALID;
 	}
-      if ( key->type != entry->key.type )
+
+      if ( hash == entry->hash_key )
 	{
-	  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT KEY TYPE %i!=%i \n", key->type,entry->key.type);}
+	  // should be the very same key.
+	  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] same hashkey %ul\n", hash);}
+	  return alhash_is_identical(key, &entry->key,alhash_debug);
+	}
+      else
+	{
+	  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
 	  return  ALH_MR_NOT_EQUAL;
 	}
-      if (key->length == entry->key.length)
-	{
-	  // if one is embed the other too since type have been checked to be the same
-	  if ( aldatablock_embeded(key))
-	    {
-	      // Don't even care of hash, use number.
-	      if ( key->data.number == entry->key.data.number )
-		{
-		  // obvious case, point on very same value of same size.
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] IDENTICAL VALUES\n");}
-		  return ALH_MR_EQUAL;
-		}
-	      else
-		{
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT VALUES\n");}
-		  return  ALH_MR_NOT_EQUAL;
-		}	      
-	    }
-	  else
-	    {
-	      if ( key->data.ptr == entry->key.data.ptr )
-		{
-		  // obvious case, point on very same value of same size.
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] IDENTICAL KEY\n");}
-		  return ALH_MR_EQUAL;
-		}
-	      else if ( hash == entry->hash_key )
-		{
-		  // should be the very same key.
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] SAME KEY\n");}
-		  return (memcmp(entry->key.data.ptr, key->data.ptr, key->length) == 0) ? ALH_MR_EQUAL : ALH_MR_NOT_EQUAL;
-		}
-	      else
-		{
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
-		  return  ALH_MR_NOT_EQUAL;
-		}
-	    }
-	}
-      if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT SIZE\n");}
-      return ALH_MR_NOT_EQUAL;
     }
   return ALH_MR_INVALID;
 }
@@ -124,6 +168,12 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 long alhash_hash_string(void * value, int length)
 {
   char * string = (char *) value;
+  // hack for NUL terminated string ie ALTYPE_STR0 hash.
+  // keep only interesting part
+  if ( (length > 0)  && (string[length-1] == '\0') )
+    {
+      length = length -1;
+    }
   long hash = 0xdeadbeef00112233;
   if ( length >= 8 )
     {
