@@ -11,6 +11,7 @@
 
 #include "albtree.h"
 #include "alstrings.h"
+#include "aloutput.h"
 
 // not used yet ( somehow lazzily set )
 enum alhashnodetype {		     
@@ -50,6 +51,9 @@ struct alhashtreenode {
 // compute empty sha256 hash globally.
 void alhashtree_global_init_sha256(struct alallocation_ctx * context);
 
+// MANDATORY to setup up this lib
+void alhashtree_global_init(struct aloutputstream * output, struct alallocation_ctx * context);
+
 struct alhashtreenode * alhashtree_create(struct alallocation_ctx * context);
 
 void alhashtree_clean(struct alhashtreenode * treenode);
@@ -68,5 +72,8 @@ void alhashtree_set_data(struct alhashtreenode * treenode, void * data);
 void * alhashtree_get_data(struct alhashtreenode * treenode);
 
 int alhashtree_depth_to_root(struct alhashtreenode *intree, struct alhashtreenode ** newroot);
+
+// if output is NULL will use output from alhashtree_glogal_init
+void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreenode * treenode);
 
 #endif // #ifndef __ALHASHTREE_H__

@@ -240,7 +240,7 @@ const char * hexchars = "0123456789abcdef";
 // order 1 or 0
 // 1 : big endian, 0 little endian
 // group = 4 word, 8 long word ...
-void alouput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * datablock, int order, int group)
+void aloutput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * datablock, int order, int group)
 {
   unsigned char *chr_a = datablock->data.ucharptr;
   int len = datablock->length;

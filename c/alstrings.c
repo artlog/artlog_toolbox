@@ -421,7 +421,7 @@ unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
   return result;  
 }
   
-
+// deprecated, prefer aloutput_bytes_as_hex(stream,block,1,8)
 void aldatablock_dump( aldatablock * block )
 {
   if ( block != NULL )

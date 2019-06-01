@@ -86,7 +86,7 @@ int aloutputstream_vprintf_1k(struct aloutputstream * stream, const char *format
 // order 1 or 0
 // 1 : big endian, 0 little endian
 // group = 2 short, 4 word, 8 long word ...
-void alouput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * datablock, int order, int group);
+void aloutput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * datablock, int order, int group);
 
 
 #endif // #ifndef ALOUTPUT_HEADER_

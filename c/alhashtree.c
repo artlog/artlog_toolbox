@@ -6,17 +6,14 @@
 #include "altodo.h"
 #include "alcryptohash.h"
 #include "aldebug_output.h"
-#include "aloutput_file.h"
 
 aldatablock emptyhash;
 
-struct aloutputstream globalout;
+struct aloutputstream * globalout;
 
 // compute and initialize emptyhash
 void alhashtree_global_init_sha256(struct alallocation_ctx * context)
-{
-  aloutput_file_open_init(&globalout, "debug.out");
-  
+{  
   // use emptyhash first as an empty block in input.
   bzero(&emptyhash,sizeof(emptyhash));  
   struct alsha2_internal intern;
@@ -29,6 +26,12 @@ void alhashtree_global_init_sha256(struct alallocation_ctx * context)
   aldebug_printf(NULL,"[DEBUG] emptyhash charptr %p\n",emptyhash.data.charptr);
 }
 
+// compute and initialize emptyhash
+void alhashtree_global_init(struct aloutputstream * output, struct alallocation_ctx * context)
+{
+  globalout = output;
+  alhashtree_global_init_sha256(context);
+}
 
 struct alhashtreenode * alhashtree_allocate()
 {
@@ -40,8 +43,7 @@ struct alhashtreenode * alhashtree_allocate()
 
 void alhashtree_dump_btreenode(struct aloutputstream * output, struct albtree * btreenode)  
 {
- 
-    aldebug_printf(NULL,
+  aloutputstream_printf_1k(output,
 		   "btreenode %p\n"
 		   "allocate %p (should be %p and not %p)\n"
 		   "left %p\n"
@@ -56,10 +58,13 @@ void alhashtree_dump_btreenode(struct aloutputstream * output, struct albtree * 
 
 void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreenode * treenode)
 {
-   aldebug_printf(NULL,"[DEBUG] emptyhash charptr %p\n",emptyhash.data.charptr);
-   
-  //aloutput_printf_1k(output,
-  aldebug_printf(NULL,
+
+  if ( output == NULL )
+    {
+      output = globalout;
+    }
+
+  aloutputstream_printf_1k(output,
 		 "treenode %p\n"
 		 "parent %p\n"
 		 "nodetype %x\n"
@@ -76,19 +81,27 @@ void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreen
 
   if ( treenode->hash.length > 0 )
     {
-      //alouput_bytes_as_hex(&globalout, &treenode->hash, 0, 4);
+      aloutput_bytes_as_hex(output, &treenode->hash, 0, 4);
+      // quite coslty for a newline ...
+      aloutputstream_printf_1k(output,"\n");
     }
-  
-  
+
+  if ( treenode->btree.data != NULL )
+    {
+      aloutputstream_printf_1k(output," data : '%s'\n",(char *) treenode->btree.data);
+    }
+
   struct albtree * btreenode = &treenode->btree;
 
   alhashtree_dump_btreenode(output, btreenode);
 
+  /* with parent ...
   if ( treenode->parent !=NULL)
     {
       btreenode = &treenode->parent->btree;      
       alhashtree_dump_btreenode(output, btreenode);
     }
+  */
   
 }
 
@@ -170,7 +183,7 @@ void alhashtree_specific_init(
 {
 
   struct albtree * btree = &treenode->btree;  
-  if ( btree->allocate != alhashtree_allocate )
+  if ( btree->allocate != (albtreeallocator) alhashtree_allocate )
     {
       aldebug_printf(NULL,"[FATAL] specific init a node %p with wrong allocation method %p / default %p\n",btree, btree->allocate,alhashtree_allocate);
       alhashtree_fatal();

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <strings.h>
 #include "aldebug_output.h"
-
+#include "aloutput_file.h"
 
 void usage()
 {
@@ -18,20 +18,7 @@ void alhashtree_data_process(void * data, void * contextdata, struct albtree * b
 {
   // to improve
   struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
-  aldebug_printf(NULL,"dumping treenode %p\n hash :", treenode);
-
-  aldebug_printf(NULL,"treenode %p context %p ringbuffer %p\n",treenode, treenode->context, treenode->context->ringbuffer);
-  
-  aldatablock_dump(&treenode->hash);
-  if ( treenode->btree.data != NULL )
-    {
-      /*
-      struct alhash_datablock * block = (struct alhash_datablock *) treenode->btree.data;
-      aldebug_printf(NULL,"\n data :");
-      aldatablock_dump(block);
-      */
-      aldebug_printf(NULL," data : %s\n",(char *) data);
-    }
+  alhashtree_dump_treenode(NULL,treenode);
 }
   
 int main(int argc, char ** argv)
@@ -51,8 +38,10 @@ int main(int argc, char ** argv)
   bzero(&context,sizeof(context));
   // alstrings_ringbuffer_init_autogrow(&context.ringbuffer,20,256);
   alstrings_ringbuffer_init_autogrow(&context.ringbuffer,20,1024);
-				     
-  alhashtree_global_init_sha256(&context);
+
+  struct aloutputstream out;
+  aloutput_file_open_init(&out,"out.dbg");
+  alhashtree_global_init(&out,&context);
 
   treenode = alhashtree_create(&context);
 
