@@ -3,6 +3,8 @@
 
 #include "aldebug.h"
 
+#define ALSTRINGBUFCANARY 0xbebedada
+
 // type of one object (struct alhash_datablock ) within ( struct token_char_buffer )
 enum altype {
   ALTYPE_OPAQUE=0, // opaque type meaning no encoding type known.
@@ -44,13 +46,14 @@ BUT buf and its size is allocated on request only.
 
 remark inital name comes from json parser, kept to not rename everywhere
 */
-typedef struct token_char_buffer {
+typedef struct token_char_buffer {  
   // internal buffer to collect data of allocated capacity bufsize.
   char * buf;
   // position of token buffer where to add data within buf
   int bufpos;
   // buffer size to be grown if needed ( see al_token_char_buffer_grow )
   int bufsize;
+  int canary; // bebedada
   // linked list
   // first always point to allocated first
   struct token_char_buffer * first;

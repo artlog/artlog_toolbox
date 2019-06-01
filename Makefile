@@ -66,7 +66,7 @@ $(BUILD)/test_alstack:  $(BUILD)/private/obj/tests/test_alstack.o
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -lalhash -lalcommon -Wl,-Bdynamic
 
 $(BUILD)/testbtree: $(BUILD)/obj/albtree.o $(BUILD)/obj/albtreetest.o
-	$(LD) -o $@ $(LDFLAGS) $^
+	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalstack -lalhash -lalcommon -Wl,-Bdynamic
 
 
 $(objects): | $(BUILD)/obj

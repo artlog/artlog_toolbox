@@ -7,18 +7,20 @@
 /** since now we are in blockchain era having a merkle tree
     in your tools hide the fact that implementation is crap indeed */
 
+#define ALHASHTREECANARY 0xdabe000f
+
 #include "albtree.h"
 #include "alstrings.h"
 
-enum alhashnodetype {
-  AL_TREELEAF,
-  AL_BTREENODE,
-  AL_TREENODE
+// not used yet ( somehow lazzily set )
+enum alhashnodetype {		     
+		     AL_TREELEAF, // is a leaf, ie left and right are NULL
+		     AL_TREENODE // is not a leaf
 };
 
 struct alhashtreenode;
 
-// blockA for intial leaf computation then blockA is left and blockB is right
+// blockA for initial leaf computation then blockA is left and blockB is right
 typedef void (*alhashtreehashfunc) (struct alhashtreenode * treenode, aldatablock * blockA, aldatablock * blockB);
 
 struct alhashtreefunc {
@@ -34,10 +36,11 @@ struct alhashtreenode {
   // left point on a alhashtreenode
   // right point on a alhashtreenode
   struct albtree btree;
-  // add parent to be able to walf from a child.
+  // add parent to be able to walk from a child.
   struct alhashtreenode * parent;
   enum alhashnodetype nodetype;
   aldatablock  hash;
+  int canary;
   struct alhashtreefunc func;
   // allocation context
   struct alallocation_ctx * context;
@@ -51,7 +54,7 @@ struct alhashtreenode * alhashtree_create(struct alallocation_ctx * context);
 
 void alhashtree_clean(struct alhashtreenode * treenode);
   
-// inoutroot :
+// in out root 
 // at input to walk tree to find a free place in binary tree for insert
 // at output return newly added rightmost leaf.
 // trigger a recomputation of hash

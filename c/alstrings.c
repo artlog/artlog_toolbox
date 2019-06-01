@@ -45,11 +45,14 @@ struct token_char_buffer * al_token_char_buffer_alloc(int times)
 // allocate buffer of chars bytes on heap not zeroed.
 void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer buffer, int chars)
 {
-
+  
   buffer->bufsize = chars;
   buffer->bufpos = 0;
   // allocated on heap, NOT zeroed.
-  buffer->buf = malloc(buffer->bufsize);
+  // why not ?
+  //buffer->buf = malloc(buffer->bufsize);
+  buffer->buf = calloc(1,buffer->bufsize);
+  buffer->canary = ALSTRINGBUFCANARY;
   // can be freed with int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * data)
   // don't set first or next  
 }
@@ -119,7 +122,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
     {
       aldebug_printf(NULL,"grow token_char_buffer %p %i/%i\n", buffer, buffer->bufpos, buffer->bufsize);
     }
-  // last point on first, circular
+  // last point on first; this is circular
   while ( ( next != NULL ) && ( next != buffer ) )
     {
       if ( next->buf == NULL )
@@ -130,10 +133,8 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	    {
 	      bufsize = length;
 	    }
-	  next->bufpos=0;
-	  next->bufsize = bufsize;
-	  // created on heap
-	  next->buf = calloc(1,bufsize);
+	  al_token_char_buffer_init_internal(next, bufsize);
+	  // what about first and next_free ?
 	  if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	    {
 	      aldebug_printf(NULL,"allocate new next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
@@ -186,6 +187,10 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
   if ( ringbufferp != NULL )
     {
       struct token_char_buffer * buffer = (*ringbufferp);
+      if ( buffer->canary !=  ALSTRINGBUFCANARY )
+	{
+	  aldebug_printf(NULL,"[FATAL] wrong allocation buffer %p, wrong canary %x\n",buffer, buffer->canary);	  
+	}
       if ( length > 0 )
 	{
 	  if ( buffer != NULL )
@@ -282,6 +287,7 @@ void alstrings_ringbuffer_init_autogrow(alstrings_ringbuffer_pointer * ringbuffe
     {
       struct token_char_buffer * allocated = al_token_char_buffer_alloc(buckets);
       al_token_char_buffer_init_internal(allocated,firstbucketlength);
+      aldebug_printf(NULL,"[DEBUG] allocated %p\n", allocated);
       *ringbufferp = allocated;
      }
 }
@@ -293,6 +299,7 @@ int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * 
       // see what is done in void al_token_char_buffer_init_internal(struct token_char_buffer * buffer, int chars)
       if (bucket->buf != NULL )
 	{
+	  aldebug_printf(NULL,"[DEBUG] free bucket %p\n", bucket->buf);
 	  free( bucket->buf);
 	}
       bucket->bufsize = 0;

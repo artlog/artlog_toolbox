@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
 #include "aldebug_output.h"
 
 
@@ -47,7 +48,9 @@ int main(int argc, char ** argv)
       exit(0);
     }
 
-  alstrings_ringbuffer_init_autogrow(&context.ringbuffer,10,256);
+  bzero(&context,sizeof(context));
+  // alstrings_ringbuffer_init_autogrow(&context.ringbuffer,20,256);
+  alstrings_ringbuffer_init_autogrow(&context.ringbuffer,20,1024);
 				     
   alhashtree_global_init_sha256(&context);
 

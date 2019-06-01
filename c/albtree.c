@@ -1,11 +1,13 @@
 #include "albtree.h"
 #include <stdlib.h>
 #include <string.h>
+#include "aldebug_output.h"
 
 /** allocate a binary tree */
 struct albtree * albtree_allocate()
 {
-  return calloc(1,sizeof(struct albtree));
+  struct albtree * newtree =  (struct albtree *) calloc(1,sizeof(struct albtree));
+  return newtree;
 }
 
 struct albtreeprocessinfo {
@@ -23,7 +25,11 @@ void freealbtreeprocess(void * data, void * datacontext, struct albtree * btree)
 	}
       btree->right = NULL;
       btree->left = NULL;
-      (*btree->clean)( (void *) btree);
+      aldebug_printf(NULL,"[DEBUG] free btree %p\n", btree);
+      if ( btree->clean != NULL )
+	{
+	  (*btree->clean)( (void *) btree);
+	}
     }
 }
 
@@ -72,22 +78,29 @@ void albtree_set_right(struct albtree * btree, struct albtree * right)
   btree->right=right;
 }
 
+struct albtree * albtree_internal_alloc(struct albtree * btree, void * data)
+{ 
+  struct albtree * newtree = (*btree->allocate)();
+  // if there is already a left part then this is inserted before it.
+  albtree_init(newtree,data,btree->left,NULL); 
+  // same allocator than btree.
+  newtree->allocate=btree->allocate;
+  newtree->clean=btree->clean;
+  return newtree;
+}
+
 struct albtree * albtree_insert_left(struct albtree * btree, void * data)
 {
-  struct albtree * lefttree = (*btree->allocate)();
-  // if there is already a left part then this is inserted before it.
-  albtree_init(lefttree,data,btree->left,NULL);
-  btree->left=lefttree;
+  struct albtree * lefttree = albtree_internal_alloc(btree,data);
+  albtree_set_left(btree,lefttree);
   return lefttree;
 }
 
 // very same as albtree_insert_left, but with right ...
 struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 {
-  struct albtree * righttree = (*btree->allocate)();
-  // if there is already a right  part then this is inserted before it.
-  albtree_init(righttree,data,NULL,btree->right);
-  btree->right=righttree;
+  struct albtree * righttree = albtree_internal_alloc(btree,data);
+  albtree_set_right(btree,righttree);
   return righttree;
 }
 

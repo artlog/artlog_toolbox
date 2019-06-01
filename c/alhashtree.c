@@ -6,12 +6,17 @@
 #include "altodo.h"
 #include "alcryptohash.h"
 #include "aldebug_output.h"
+#include "aloutput_file.h"
 
 aldatablock emptyhash;
 
-// compute empty hash.
+struct aloutputstream globalout;
+
+// compute and initialize emptyhash
 void alhashtree_global_init_sha256(struct alallocation_ctx * context)
 {
+  aloutput_file_open_init(&globalout, "debug.out");
+  
   // use emptyhash first as an empty block in input.
   bzero(&emptyhash,sizeof(emptyhash));  
   struct alsha2_internal intern;
@@ -21,15 +26,75 @@ void alhashtree_global_init_sha256(struct alallocation_ctx * context)
   memcpy(&emptyhash,result,sizeof(emptyhash));
   // data pointer is in alsha2_internal intern on stack, use this of context.
   emptyhash.data.charptr=al_copy_block(&context->ringbuffer,result);
+  aldebug_printf(NULL,"[DEBUG] emptyhash charptr %p\n",emptyhash.data.charptr);
 }
-  
+
+
 struct alhashtreenode * alhashtree_allocate()
 {
-  return (struct alhashtreenode *) calloc(1,sizeof(struct alhashtreenode));
+  struct alhashtreenode * newnode = (struct alhashtreenode *) calloc(1,sizeof(struct alhashtreenode));
+  newnode->canary=ALHASHTREECANARY;
+  aldebug_printf(NULL,"[DEBUG] alhashtree_allocate %p\n",newnode);
+  return newnode;
+}
+
+void alhashtree_dump_btreenode(struct aloutputstream * output, struct albtree * btreenode)  
+{
+ 
+    aldebug_printf(NULL,
+		   "btreenode %p\n"
+		   "allocate %p (should be %p and not %p)\n"
+		   "left %p\n"
+		   "right %p\n",
+		   btreenode,
+		   btreenode->allocate,
+		   alhashtree_allocate,
+		   albtree_allocate,
+		   btreenode->left,
+		   btreenode->right);
+}
+
+void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreenode * treenode)
+{
+   aldebug_printf(NULL,"[DEBUG] emptyhash charptr %p\n",emptyhash.data.charptr);
+   
+  //aloutput_printf_1k(output,
+  aldebug_printf(NULL,
+		 "treenode %p\n"
+		 "parent %p\n"
+		 "nodetype %x\n"
+		 "canary %x\n"
+		 "context %p\n"
+		 "hash length %i\n",
+		 treenode,
+		 treenode->nodetype,
+		 treenode->parent,
+		 treenode->canary,
+		 treenode->context,
+		 treenode->hash.length
+		 );
+
+  if ( treenode->hash.length > 0 )
+    {
+      //alouput_bytes_as_hex(&globalout, &treenode->hash, 0, 4);
+    }
+  
+  
+  struct albtree * btreenode = &treenode->btree;
+
+  alhashtree_dump_btreenode(output, btreenode);
+
+  if ( treenode->parent !=NULL)
+    {
+      btreenode = &treenode->parent->btree;      
+      alhashtree_dump_btreenode(output, btreenode);
+    }
+  
 }
 
 void alhashtree_clean(struct alhashtreenode * treenode)
 {
+  aldebug_printf(NULL,"[DEBUG] alhashtree_clean %p\n",treenode);
   free(treenode);
 }
 
@@ -40,6 +105,17 @@ void alsha256hashfunc(
 {
   if ( treenode != NULL )
     {
+      if ( treenode->canary != ALHASHTREECANARY )
+	{
+	  aldebug_printf(NULL,"[FATAL] wrong canary %i for treenode %p\n",treenode->canary, treenode);
+	  alhashtree_dump_treenode(NULL,treenode);
+	  
+	}
+      if ( treenode->hash.data.ptr != NULL)
+	{
+	  aldebug_printf(NULL,"[WARNING] treenode hash data already set %p %i\n", treenode->hash.data.ptr, treenode->hash.length);
+	}	 
+      
       struct alsha2_internal intern;
       alsha256_init(&intern);      
       alsha2x_add_block(&intern,blockA);
@@ -57,15 +133,32 @@ void alsha256hashfunc(
 	  alsha2x_add_block(&intern,blockB);
 	}
       aldatablock * result=alsha2x_final(&intern);
-      memcpy(&treenode->hash,result,sizeof(treenode->hash));
+
+      if ( treenode->context == NULL )
+	{
+	  aldebug_printf(NULL,"[FATAL] NULL context %p\n",treenode);
+	  alhashtree_dump_treenode(NULL,treenode);
+	}
       // data pointer is in alsha2_internal intern on stack, use this of context.
-      treenode->hash.data.charptr=al_copy_block(&treenode->context->ringbuffer,result);
+      char * newdata=al_copy_block(&treenode->context->ringbuffer,result);
+      aldebug_printf(NULL,"[DEBUG] %p -> newdata %p length  %i ringbuffer %p\n", result->data.ptr, newdata, result->length, &treenode->context->ringbuffer);
+
+      //memcpy(&treenode->hash,result,sizeof(treenode->hash));
+      treenode->hash.type=ALTYPE_OPAQUE;
+      treenode->hash.length=result->length;
+      treenode->hash.data.charptr=newdata;
     }
   else
     {
       aldebug_printf(NULL, "[FATAL] alsha256hashfunc for a NULL treenode\n");
     }
   
+}
+
+void alhashtree_fatal()
+{
+  // should stop here
+  aldebug_printf(NULL,"[FATAL] exiting program on fatal error\n");
 }
 
 void alhashtree_specific_init(
@@ -75,6 +168,14 @@ void alhashtree_specific_init(
 			     struct alhashtreenode * right,
 			     struct alhashtreenode * parent)
 {
+
+  struct albtree * btree = &treenode->btree;  
+  if ( btree->allocate != alhashtree_allocate )
+    {
+      aldebug_printf(NULL,"[FATAL] specific init a node %p with wrong allocation method %p / default %p\n",btree, btree->allocate,alhashtree_allocate);
+      alhashtree_fatal();
+    }
+
   if (( left == NULL ) && (right == NULL))
     {
       treenode->nodetype=AL_TREELEAF;
@@ -84,7 +185,13 @@ void alhashtree_specific_init(
       treenode->nodetype=AL_TREENODE;
     }
   treenode->context=context;
-  if (parent ==NULL)
+
+  if ( treenode->func.hashmethod != NULL )
+    {
+      aldebug_printf(NULL,"[WARNING] hashmethod already set %p\n", treenode->func.hashmethod);
+    }
+
+  if (parent == NULL)
     {
       treenode->func.hashmethod=alsha256hashfunc;
       memcpy(&treenode->func.emptyhash,&emptyhash,sizeof(treenode->func.emptyhash));
@@ -104,11 +211,15 @@ void alhashtree_specific_init(
     }
 }
 
-// called once for initial root, after it is done through albtree allocation and requere a call to alhashtree_specific_init
+// called once for initial root, after it is done through albtree allocation and reqiere a call to alhashtree_specific_init
 // first call it is a leaf with an empty block.
 void alhashtree_init(struct alhashtreenode * treenode, struct alallocation_ctx * context, struct albtree * left, struct albtree * right)
 {
   struct albtree * btree = &treenode->btree;
+  if ( btree->allocate != NULL )
+    {
+      aldebug_printf(NULL,"[WARNING] reinit a btree %p that has an allocate method %p / default %p\n",btree, btree->allocate,alhashtree_allocate);
+    }
   albtree_init(btree,NULL,left,right);
   btree->allocate = (albtreeallocator) alhashtree_allocate;
   btree->clean = (albtrecleaner) alhashtree_clean;
@@ -126,6 +237,7 @@ struct alhashtreenode * alhashtree_create(struct alallocation_ctx * context)
   alhashtree_init(treenode,context,NULL,NULL);
 }
 
+// alter newroot
 // return depth
 int alhashtree_depth_to_root(struct alhashtreenode *intree, struct alhashtreenode ** newroot)
 {
@@ -183,6 +295,7 @@ int alhashtree_recompute_upto_root(struct alhashtreenode *intree)
   while ( parent != NULL )
     {
       current = parent;
+      aldebug_printf(NULL,"recompute current node %p at depth %i\n", current, depth);
       alhashtree_recompute_direct_children(current);
       ++ depth;           
       parent=parent->parent;
@@ -191,6 +304,7 @@ int alhashtree_recompute_upto_root(struct alhashtreenode *intree)
   return depth;
 }
 
+// WARNING set *newroot with computed root from parent links and with new root if created
 // assuming intree is already rightmost deeper leaf.
 struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree, struct alhashtreenode ** newroot)
 {
@@ -237,19 +351,22 @@ struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree,
       return right;
     }
 
-  aldebug_printf(NULL,"create a new root with previous root at left for depth %i\n", depth);
-  root = alhashtree_allocate();
+  root = alhashtree_allocate();  
   alhashtree_init(root,intree->context, &previous_root->btree,&right->btree);
+  aldebug_printf(NULL,"create a new root %p with previous root %p at left for depth %i right %p\n",root,previous_root, depth, right);
 
   parent=right;
-  
-  for (int i;i<depth;i++)
+
+  // culprit code causes heap corruption
+  for (int i=0;i<depth;i++)
     {
       // add_left children.
       added = (struct alhashtreenode *) albtree_insert_left(&parent->btree, NULL);
+      aldebug_printf(NULL,"[DEBUG] add left child %i/%i %p parent %p\n", i, depth, added, parent);
       alhashtree_specific_init(added, intree->context, NULL, NULL, parent);
       parent=added;
     }
+
 
   (*newroot) = root;
 
@@ -274,6 +391,7 @@ struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, alda
       else
 	{
 	  struct alhashtreenode * root;
+	  root = NULL; // to check
 	  added = alhashtree_create_sibling(intree, &root);
 	}
       

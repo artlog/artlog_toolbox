@@ -489,7 +489,8 @@ aldatablock * alsha2x_final(struct alsha2_internal * intern)
 
   // return pointer over internal H
   intern->output.type=ALTYPE_OPAQUE;
-  intern->output.data.ptr=&intern->H;
+  //intern->output.data.ptr=&intern->H;
+  intern->output.data.ptr=intern->H;
   intern->output.length=sizeof(intern->H);
   return &intern->output;
 }
