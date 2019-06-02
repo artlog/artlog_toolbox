@@ -34,6 +34,8 @@ int main(int argc, char ** argv)
       exit(0);
     }
 
+  aldebug_start(NULL);
+  
   bzero(&context,sizeof(context));
   // alstrings_ringbuffer_init_autogrow(&context.ringbuffer,20,256);
   alstrings_ringbuffer_init_autogrow(&context.ringbuffer,20,1024);
@@ -90,6 +92,8 @@ int main(int argc, char ** argv)
   alhashtree_clean(treenode);
 
   alstrings_ringbuffer_release(&context.ringbuffer);
+
+  aldebug_end();
   
   return 0;  
 }

@@ -7,31 +7,32 @@ struct aldebugconfig aldebug_default;
 
 void aldebug_start(char * filename)
 {
-  // todo
+  if ( filename == NULL )
+    {
+      aloutputstream_fd_init(&aldebug_default.output,fileno(stderr));
+    }
+  else
+    {
+      aloutputstream_fd_init(&aldebug_default.output,fileno(stderr));
+    }
+      
 }
 
 void aldebug_end()
 {
-  // todo
+  aloutputstream_close(&aldebug_default.output);
 }
 
 
 void aldebug_printf(struct aldebugconfig * debugconfig, const char *format, ...)
 {
-
-  if ( debugconfig == NULL )
+  if ( debugconfig != NULL )
     {
       va_list args;
       va_start(args, format);
 
-      // todo prefix with [DEBUG]
-      vfprintf(stderr,format, args);
+      aloutputstream_vprintf_1k(&debugconfig->output,format,args);
   
       va_end(args);
-    }
-  else
-    {
-      // !!! how are handled optional arguments...!!!
-      aloutputstream_printf_1k(&debugconfig->output,format);
     }
 }

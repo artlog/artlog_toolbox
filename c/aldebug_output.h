@@ -3,13 +3,17 @@
 
 #include "aloutput.h"
 
-#define DBGSTREAM NULL
-
 struct aldebugconfig {
   struct aloutputstream output;
 };
 
 extern struct aldebugconfig aldebug_default;
+
+#define DBGSTREAM &aldebug_default
+
+void aldebug_start(char * filename);
+
+void aldebug_end();
 
 void aldebug_printf(struct aldebugconfig * debugconfig, const char *format, ...);
 

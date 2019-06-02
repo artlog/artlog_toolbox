@@ -51,6 +51,8 @@ int main(int argc, char ** argv)
   FILE * data_file;
   FILE * template_file;
 
+  aldebug_start(NULL);
+  
   // intialisation of json content parser
   
   struct json_parser_ctx json_context;
@@ -195,6 +197,8 @@ int main(int argc, char ** argv)
     {
       usage();
     }
+
+  aldebug_end();
   exit(0);
 }
 
