@@ -27,6 +27,8 @@ int main(int argc, char ** argv)
 {
   struct aloutputstream out;
 
+  aldebug_start(NULL);
+  
   if ( argc > 1 )
     {
       char * filename = argv[1];
@@ -44,7 +46,9 @@ int main(int argc, char ** argv)
 	}
       else
 	{
-	  aldebug_printf(NULL,"[ERROR] code %i\n",ec);
+	  aldebug_printf(DBGSTREAM,"[ERROR] code %i\n",ec);
 	}
     }
+  
+  aldebug_end();
 }

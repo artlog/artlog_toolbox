@@ -14,6 +14,8 @@ int main(int argc, char * argv[])
 
   FILE * file = stdin;
 
+  aldebug_start(NULL);
+  
   if ( argc > offset )
     {
 
@@ -44,4 +46,6 @@ int main(int argc, char * argv[])
     {
       aldebug_printf(DBGSTREAM,"[ERROR] expected abnf syntax file as first argument\n");
     }
+
+  aldebug_end(NULL);
 }
