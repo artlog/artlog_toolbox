@@ -1,0 +1,85 @@
+
+
+- french -
+
+déclarer dans un fichier à la syntaxe json la liste des options que le programme va accepter.
+
+s'en servir pour afficher l'aide ( usage() ) et pour construitre les paramètres du programme.
+
+_______________________________________________________
+
+
+première utilisation : le programme json lui-même
+
+actuellement il n'utilise pas al_options.
+
+build/json
+First argument : filename to open in read only mode to parse in json.
+Second argument : filename to open in read only mode to parse in json for template.
+                  template is used for json unification ie extratcing fields from a template pattern
+Output : dump parsed json to standard output.
+-d debug
+-m non recursive
+-p path
+-c check only (no print)
+-b bare : no indent
+aljson_main version 0.1
+
+
+_______________________________________________________
+
+
+compatiblité simple avec la librairie c standard de 'parsing' des arguments.
+
+Quele est elle ?
+
+https://stackoverflow.com/questions/9642732/parsing-command-line-arguments-in-c
+
+libUCW option parser, Arg or Getopt
+
+
+https://github.com/jamesderlin/dropt
+
+
+
+shell getopt :
+Each parameter is classified as a short option, a long option, an argument to an option, or a non-option parameter.
+
+POSIXLY_CORRECT  : à la première non option toutes les autres sont considérée comme non option.
+
+
+glibc getopt
+
+man 3 getopt  
+
+
+ #include <unistd.h>
+
+       int getopt(int argc, char * const argv[],
+                  const char *optstring);
+
+       extern char *optarg;
+       extern int optind, opterr, optopt;
+
+       #include <getopt.h>
+
+       int getopt_long(int argc, char * const argv[],
+                  const char *optstring,
+                  const struct option *longopts, int *longindex);
+
+       int getopt_long_only(int argc, char * const argv[],
+                  const char *optstring,
+                  const struct option *longopts, int *longindex);
+
+
+
+commandline=command *option *argument
+
+
+
+https://stackoverflow.com/questions/5243885/json-command-line-formatter-tool-for-linux
+
+
+https://stedolan.github.io/jq/
+
+
