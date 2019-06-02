@@ -145,7 +145,7 @@ void aljson_ld()
 	}
       else
 	{
-	  aldebug_printf(NULL,"[FATAL] unexpected duplicated json_ld keyword %s", keystr);
+	  aldebug_printf(DBGSTREAM,"[FATAL] unexpected duplicated json_ld keyword %s", keystr);
 	}
       index ++;
     }

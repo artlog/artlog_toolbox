@@ -15,7 +15,7 @@ struct alinputstream * alinput_util_build_chain_stream_from_filenames(int filena
       file = fopen(fname,"r");
       if ( file != NULL )
 	{
-	  aldebug_printf(NULL,"[DEBUG] adding '%s' as input\n", fname);
+	  aldebug_printf(DBGSTREAM,"[DEBUG] adding '%s' as input\n", fname);
 	  inputstream = malloc(sizeof(*inputstream));
 	  alinputstream_init(inputstream, fileno (file));
       
@@ -23,7 +23,7 @@ struct alinputstream * alinput_util_build_chain_stream_from_filenames(int filena
 	}
       else
 	{
-	  aldebug_printf(NULL,"[ERROR] adding '%s' fopen failed \n", fname);
+	  aldebug_printf(DBGSTREAM,"[ERROR] adding '%s' fopen failed \n", fname);
 	}
     }
 

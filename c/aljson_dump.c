@@ -257,12 +257,12 @@ void aljson_dump_constant_object(struct json_parser_ctx * ctx, struct json_objec
 	  fprintf(outfile,"null");
 	  break;
 	default:
-	  aldebug_printf(NULL,"ERROR constant type %c %p",object->type, print_ctx);
+	  aldebug_printf(DBGSTREAM,"ERROR constant type %c %p",object->type, print_ctx);
 	}
     }
   else
     {
-      aldebug_printf(NULL,"ERROR constant type %c %p NULL",object->type, print_ctx);
+      aldebug_printf(DBGSTREAM,"ERROR constant type %c %p NULL",object->type, print_ctx);
     }
     
 }
@@ -294,7 +294,7 @@ void aljson_dump_object(struct json_parser_ctx * ctx, struct json_object * objec
 
   if ( depth > print_ctx->max_depth )
     {
-      aldebug_printf(NULL,"... depth > %i ...\n", print_ctx->max_depth);
+      aldebug_printf(DBGSTREAM,"... depth > %i ...\n", print_ctx->max_depth);
       --depth;
       return;
     }
@@ -339,12 +339,12 @@ void aljson_dump_object(struct json_parser_ctx * ctx, struct json_object * objec
 	  aljson_dump_error_object(ctx,object, print_ctx);
 	  break;
         default:
-	  aldebug_printf(NULL,"ERROR type %c %p",object->type, print_ctx);
+	  aldebug_printf(DBGSTREAM,"ERROR type %c %p",object->type, print_ctx);
 	}
     }
   else
     {
-      aldebug_printf(NULL," NULL ");
+      aldebug_printf(DBGSTREAM," NULL ");
     }
 
   --depth;

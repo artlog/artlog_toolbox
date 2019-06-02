@@ -65,7 +65,7 @@ void alsalsa20_doublerounds_internal(struct alsalsa_internal * salsa, int rounds
 
 void alsalsa20_doublerounds(struct alsalsa_internal * salsa, struct alhash_datablock * block,int rounds)
 {
-  // aldebug_printf(NULL,"salsa20_addblock feed block into parameter");
+  // aldebug_printf(DBGSTREAM,"salsa20_addblock feed block into parameter");
   if ( block->length >= sizeof(int) * 16 )
     {
       for (int n = 0; n < 16; n++)
@@ -81,7 +81,7 @@ void alsalsa20_addblock(struct alsalsa_internal * salsa, struct alhash_datablock
   // Salsa20(x) = x + doubleround^10 (x),
   alsalsa20_doublerounds(salsa, block, 10);
 
-  // aldebug_printf(NULL,"mix block input with salsa content");
+  // aldebug_printf(DBGSTREAM,"mix block input with salsa content");
   if ( block->length >= sizeof(int) * 16 )
     {
       for (int n = 0; n < 16; n++)
@@ -166,10 +166,10 @@ void alsalsa20_expand32(struct alsalsa_internal * salsa, unsigned char k0[16], u
       for (int j=0; j < 4; j++)
 	{
 	  unsigned int a = (unsigned int) ((unsigned char *) &(x[i]))[j];
-	  aldebug_printf(NULL,"%u ", a);
+	  aldebug_printf(DBGSTREAM,"%u ", a);
 	}
     }
-  aldebug_printf(NULL,"\n");
+  aldebug_printf(DBGSTREAM,"\n");
   */
 
   alsalsa20_addblock(salsa,&block);

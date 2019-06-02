@@ -55,7 +55,7 @@ int main(int argc, char ** argv)
     {
       char * param = argv[i];
       aldatablock_setcstring(&block,param);
-      aldebug_printf(NULL,"rightmost %p context %p ringbuffer %p\n",rightmost, rightmost->context, rightmost->context->ringbuffer);
+      aldebug_printf(DBGSTREAM,"rightmost %p context %p ringbuffer %p\n",rightmost, rightmost->context, rightmost->context->ringbuffer);
       rightmost = alhashtree_add_block(rightmost, &block);
       if (rightmost != NULL)
 	{
@@ -71,13 +71,13 @@ int main(int argc, char ** argv)
 
   if ( rightmost == NULL )
     {
-      aldebug_printf(NULL,"[FATAL] null treenode added\n");
+      aldebug_printf(DBGSTREAM,"[FATAL] null treenode added\n");
       exit(1);
     }
   
   depth=alhashtree_depth_to_root(rightmost, &root);
 
-  aldebug_printf(NULL,"depth %i\n",depth);
+  aldebug_printf(DBGSTREAM,"depth %i\n",depth);
 
   albtree_walk(&root->btree, ALBTREE_WP_SLR,  alhashtree_data_process, NULL, 10);
 

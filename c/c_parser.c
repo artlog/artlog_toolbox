@@ -151,7 +151,7 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
     }
   else
     {
-      // aldebug_printf(NULL,"SAME TOKEN SEEN\n");
+      // aldebug_printf(DBGSTREAM,"SAME TOKEN SEEN\n");
     }
 
   return entry;
@@ -1903,7 +1903,7 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 	      struct c_struct_info * struct_info = c_parser_ctx_allocate_c_struct_info(parser);
 	      if ( struct_info == NULL )
 		{
-		  aldebug_printf(NULL,"can't allocate memory for structure .\n");
+		  aldebug_printf(DBGSTREAM,"can't allocate memory for structure .\n");
 		  exit(1);
 		}
 
@@ -3417,7 +3417,7 @@ main (int argc, char **argv)
       file = fopen((char *)infiledata->data.ptr, "r");
       if ( file == NULL )
 	{
-	  aldebug_printf(NULL,"[ERROR] fail to open '%s'\n",infiledata->data.charptr);
+	  aldebug_printf(DBGSTREAM,"[ERROR] fail to open '%s'\n",infiledata->data.charptr);
 	}
       else
 	{
@@ -3427,7 +3427,7 @@ main (int argc, char **argv)
     }
   else
     {
-      aldebug_printf(NULL,"[ERROR] missing argument infile= file to parse.");
+      aldebug_printf(DBGSTREAM,"[ERROR] missing argument infile= file to parse.");
     }
 
   struct alhash_datablock * outformdata = al_option_get(options,"outform");

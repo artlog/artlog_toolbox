@@ -39,7 +39,7 @@ unsigned int fieldreader_nextword(struct bitfieldreader * this)
 	  this->readbits=bits;
 	  if (0)
 	    {
-	      aldebug_printf(NULL,"EOF readbits %i\n",  this->readbits);
+	      aldebug_printf(DBGSTREAM,"EOF readbits %i\n",  this->readbits);
 	    }
 	}
       else
@@ -173,7 +173,7 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 
       if (0)
 	{
-	  aldebug_printf(NULL,"head %08x tail %08x\n", head, field);
+	  aldebug_printf(DBGSTREAM,"head %08x tail %08x\n", head, field);
 	}
       // reconstruct all
       // more significant bits in first word, least in last

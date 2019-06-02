@@ -140,7 +140,7 @@ int main(int argc, char ** argv)
 	{
 	  if ( tests[testn][1][i] != out.data.uintptr[i] )
 	    {
-	      aldebug_printf(NULL,"[FATAL] mismatch in test %i value %i %08x!=%08x\n",testn, i, tests[testn][1][i],out.data.uintptr[i] );
+	      aldebug_printf(DBGSTREAM,"[FATAL] mismatch in test %i value %i %08x!=%08x\n",testn, i, tests[testn][1][i],out.data.uintptr[i] );
 	    }
 	}
 
@@ -158,14 +158,14 @@ int main(int argc, char ** argv)
 
     if ( memcmp( hashtest1_result, out.data.ucharptr, out.length) != 0 )
       {
-      aldebug_printf(NULL,"[FATAL] mismatch between expected salsa20 hashed value and computed\n");
+      aldebug_printf(DBGSTREAM,"[FATAL] mismatch between expected salsa20 hashed value and computed\n");
     }
     else
       {
-      aldebug_printf(NULL,"salsa20 hashes match ( where usualy matches create ashes )\n");
+      aldebug_printf(DBGSTREAM,"salsa20 hashes match ( where usualy matches create ashes )\n");
     }
 #else
-    aldebug_printf(NULL,"[ERROR] salsa20 hashes not yet coded for big endian");
+    aldebug_printf(DBGSTREAM,"[ERROR] salsa20 hashes not yet coded for big endian");
 #endif
 
     build_expand32_test1(&out);
@@ -173,19 +173,19 @@ int main(int argc, char ** argv)
 
     if ( memcmp( expand32test1_result, out.data.ucharptr, out.length) != 0 )
       {
-  aldebug_printf(NULL,"[FATAL] mismatch between expected salsa20 hashed value and computed\n");
+  aldebug_printf(DBGSTREAM,"[FATAL] mismatch between expected salsa20 hashed value and computed\n");
   aldatablock_dump(&out);
   for (int i =0; i < out.length; i++)
     {
 	unsigned int a = (unsigned int) out.data.ucharptr[i];
-	aldebug_printf(NULL,"%u ", a);	
+	aldebug_printf(DBGSTREAM,"%u ", a);	
       }
-    aldebug_printf(NULL,"\n");
+    aldebug_printf(DBGSTREAM,"\n");
  
 }
     else
       {
-  aldebug_printf(NULL,"salsa20 expand32 match\n");
+  aldebug_printf(DBGSTREAM,"salsa20 expand32 match\n");
 }    
 
     

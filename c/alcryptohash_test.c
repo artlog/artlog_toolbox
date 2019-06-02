@@ -108,7 +108,7 @@ int main(int argc, char ** argv)
     
 	      ALDEBUG_IF_DEBUG(&sha2x,alsha2x,debug)
 		{
-		  aldebug_printf(NULL,"open file %s\n", filename );
+		  aldebug_printf(DBGSTREAM,"open file %s\n", filename );
 		}
 
 	      aldatablock * result = alcryptohash_tool_from_input(&sha2x, &input, readblocksize);
@@ -126,7 +126,7 @@ int main(int argc, char ** argv)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] failed to open file '%s'\n", filename );
+	      aldebug_printf(DBGSTREAM,"[ERROR] failed to open file '%s'\n", filename );
 	      test_base64(filename);
 	    }
 	}

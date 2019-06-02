@@ -171,7 +171,7 @@ struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_p
 	}
       else
 	{
-	  aldebug_printf(NULL,"new json object with empty data %p\n",object);
+	  aldebug_printf(DBGSTREAM,"new json object with empty data %p\n",object);
 	}
     }
   return object;
@@ -421,7 +421,7 @@ void aljson_fill_datablock(struct json_object * object, struct alhash_datablock 
 	     printf("#");
     default:
 	     todo("data type no yet supported for datablock");
-	     aldebug_printf(NULL,"ERROR not supported datatype %c ",object->type);
+	     aldebug_printf(DBGSTREAM,"ERROR not supported datatype %c ",object->type);
     }  
   
 }
@@ -506,7 +506,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 	  // twice the space to limit collisions, should not overflow
 	  if ( json_debug )
 	    {
-	      aldebug_printf(NULL,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
+	      aldebug_printf(DBGSTREAM,"init internal json hashtable size %i * 2\n" ,  dict->nitems );
 	    }
 	  // HARDCODED 1 word init 78% autogrow.
 	  alhash_context_init(&dict->localcontext, 1, dict->nitems * 2,200);
@@ -844,7 +844,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	      }
 	    break;
 	  case JSON_TOKEN_EOF_ID:
-	    aldebug_printf(NULL,"EOF\n");
+	    aldebug_printf(DBGSTREAM,"EOF\n");
 	  default:
 	    if ( object != NULL )
 	      {
@@ -1057,7 +1057,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	if ( object != NULL )
 	  {
 	    // should be a syntax error
-	    aldebug_printf(NULL,"%s\n","WARNING non attached object before string");
+	    aldebug_printf(DBGSTREAM,"%s\n","WARNING non attached object before string");
 	    if ( json_debug > 0 )
 	      {
 		aljson_dump_object(ctx,object,&aljson_print_ctx_debug);
@@ -1169,7 +1169,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	else
 	  {
 	    // syntax error
-	    aldebug_printf(NULL,"%s","syntax error string following an object without separator");
+	    aldebug_printf(DBGSTREAM,"%s","syntax error string following an object without separator");
 	  }
 	break;
       case JSON_TOKEN_NUMBER_ID:
@@ -1211,7 +1211,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	element = alstack_pop(stack);
 	if ( element != NULL )
 	  {
-	    aldebug_printf(NULL,"EOF with parent \n");
+	    aldebug_printf(DBGSTREAM,"EOF with parent \n");
 	  }
 	object=aljson_concrete(ctx,object);
 	alstack_destroy(stack, NULL);
@@ -1339,7 +1339,7 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
 		  // WE DID IT !
 		  if ( FLAG_IS_SET(json_debug,1)  )
 		    {
-		      aldebug_printf(NULL, "[DEBUG] json_value for dict key '%s' FOUND  \n", keyname);
+		      aldebug_printf(DBGSTREAM, "[DEBUG] json_value for dict key '%s' FOUND  \n", keyname);
 		    }
 		  value = (struct json_object *) alhash_entry->value.data.ptr;
 		  // HARDCODED
@@ -1347,7 +1347,7 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
 		}
 	      else
 		{
-		  aldebug_printf(NULL,"[ERROR] value in dict is not a json_object length %i pointer %p\n", alhash_entry->value.length, alhash_entry->value.data.ptr);
+		  aldebug_printf(DBGSTREAM,"[ERROR] value in dict is not a json_object length %i pointer %p\n", alhash_entry->value.length, alhash_entry->value.data.ptr);
 		  // HARDCODED
 		  foundstatus = 1;
 		}
@@ -1374,7 +1374,7 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
   if ( ( foundstatus != 0 ) && ( value != NULL ) )
     {
       // this indicates an internal coding error or a memory corruption.
-      aldebug_printf(NULL,"[FATAL] key '%s' value is in json_dict items but not backed in hastable %p foundstatus=%i\n", keyname, object, foundstatus);
+      aldebug_printf(DBGSTREAM,"[FATAL] key '%s' value is in json_dict items but not backed in hastable %p foundstatus=%i\n", keyname, object, foundstatus);
     }
   return value;
 }
@@ -1628,7 +1628,7 @@ int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 		    }
 		  else
 		    {
-		      aldebug_printf(NULL,"[FATAL] unexpected NUL terminated string in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
+		      aldebug_printf(DBGSTREAM,"[FATAL] unexpected NUL terminated string in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, i, number->internal.length);
 		    }
 		}
 	      if ( ( c >= '0' ) && ( c <= '9' ) )
@@ -1649,7 +1649,7 @@ int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 		{
 		  if ( ( c != '.' ) && ( c != 'e' ) && ( c != 'E') )
 		    {
-		      aldebug_printf(NULL,"[FATAL] unexpected '%c' in '" ALPASCALSTRFMT "' at %i length %i during number parsing\n",
+		      aldebug_printf(DBGSTREAM,"[FATAL] unexpected '%c' in '" ALPASCALSTRFMT "' at %i length %i during number parsing\n",
 				     c,
 				     ALPASCALSTRARGS(number->internal.length,
 						     (char *) number->internal.data.charptr),
@@ -1739,7 +1739,7 @@ float json_get_float(struct json_object * object )
 		}
 	      else
 		{
-		  aldebug_printf(NULL,"[FATAL] unexpected '%c' in '" ALPASCALSTRFMT "' at %i length %i during float parsing\n",
+		  aldebug_printf(DBGSTREAM,"[FATAL] unexpected '%c' in '" ALPASCALSTRFMT "' at %i length %i during float parsing\n",
 				 separator,
 				 ALPASCALSTRARGS(number->internal.length,
 						 (char *) number->internal.data.charptr),
@@ -1769,7 +1769,7 @@ int json_get_int(struct json_object * object )
       // expecting pos to point at end of string value
       if (pos < limit )
 	{
-	  aldebug_printf(NULL,"[FATAL] unexpected in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, pos, number->internal.length);
+	  aldebug_printf(DBGSTREAM,"[FATAL] unexpected in '%s' at %i length %i for int\n", (char *) number->internal.data.ptr, pos, number->internal.length);
 	}
     }
   else
@@ -1805,12 +1805,12 @@ char * json_get_cstring(struct json_object * object)
 	      memcpy(newstring,cstring,object->string.internal.length);
 	      newstring[object->string.internal.length]='\0';
 	      cstring = newstring;
-	      aldebug_printf(NULL,"[WARNING] converted to cstring '%s'\n",newstring);
+	      aldebug_printf(DBGSTREAM,"[WARNING] converted to cstring '%s'\n",newstring);
 	    }
 	}
       else
 	{
-	  aldebug_printf(NULL,"[WARNING] cstring converted from string with empty length\n");
+	  aldebug_printf(DBGSTREAM,"[WARNING] cstring converted from string with empty length\n");
 	  cstring = NULL;
 	}
     }

@@ -6,8 +6,8 @@
 
 void usage()
 {
-  aldebug_printf(NULL,"add some character at end of file\n");
-  aldebug_printf(NULL,"outfile: file to edit\n");
+  aldebug_printf(DBGSTREAM,"add some character at end of file\n");
+  aldebug_printf(DBGSTREAM,"outfile: file to edit\n");
 }
 
 int main(int argc, char ** argv)

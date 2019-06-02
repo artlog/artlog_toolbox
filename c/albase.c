@@ -70,7 +70,7 @@ int aljson_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
   int length = LOCAL_BUFFER_SIZE - p;
   if (albase_debug != 0)
     {
-      aldebug_printf(NULL,"build string length %i\n",length);
+      aldebug_printf(DBGSTREAM,"build string length %i\n",length);
     }
   out->data.ptr = &s[p];
   out->length =  length;
@@ -79,7 +79,7 @@ int aljson_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
       if (albase_debug != 0 )
 	{
 	  // double check with libc implementation
-	  aldebug_printf(NULL,
+	  aldebug_printf(DBGSTREAM,
 			 "%i,%x=%s=" ALPASCALSTRFMT "\n",
 			 integer,
 			 integer,
@@ -89,7 +89,7 @@ int aljson_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
     }
   else
     {
-      aldebug_printf(NULL,"length %i allocation failure\n",length);
+      aldebug_printf(DBGSTREAM,"length %i allocation failure\n",length);
     }
   
   // should be 0 if everything went fine

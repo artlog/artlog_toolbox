@@ -68,11 +68,11 @@ void bitfieldwriter_write(struct bitfieldwriter * this, int field, int bits)
 {
   if ( this->dataSize >  bits_per_int )
     {
-      aldebug_printf(NULL,"[FATAL] %i data size is more than int size\n", this->dataSize, bits_per_int );
+      aldebug_printf(DBGSTREAM,"[FATAL] %i data size is more than int size\n", this->dataSize, bits_per_int );
     }
   if ( bits > this->dataSize )
     {
-      aldebug_printf(NULL,"[FATAL] %i bits is more than data size\n", bits, this->dataSize );
+      aldebug_printf(DBGSTREAM,"[FATAL] %i bits is more than data size\n", bits, this->dataSize );
     }
 
   // bits to fill a full dataSize word

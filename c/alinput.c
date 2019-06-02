@@ -108,7 +108,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
   
       ALDEBUG_IF_DEBUG(stream,alinputstream,debug)
 	{
-	  aldebug_printf(NULL,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
+	  aldebug_printf(DBGSTREAM,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
 	}  
       return (*(unsigned int*) result);
     }
@@ -251,7 +251,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
       else
 	{
 	  // else means it had buffer ... BAD...
-	  aldebug_printf(NULL,"[ERROR] parent buffer unexpected in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	  aldebug_printf(DBGSTREAM,"[ERROR] parent buffer unexpected in %s:%s:%i\n", __FILE__,__func__,__LINE__);
 	}
     }
   else if ( parent->type ==  ALINPUTSTREAM_TYPE_SHARED )
@@ -281,7 +281,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 	  else
 	    {
 	      // else means it had NO buffer ... BAD...
-	      aldebug_printf(NULL,"[ERROR] parent buffer shared NULL %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	      aldebug_printf(DBGSTREAM,"[ERROR] parent buffer shared NULL %s:%s:%i\n", __FILE__,__func__,__LINE__);
 	    }
 	}
       else if ( head_child == NULL ) 
@@ -295,7 +295,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 	  if ( parent->input.data.ptr == NULL )
 	    {
 	      // means it had NO buffer ... BAD...
-	      aldebug_printf(NULL,"[ERROR] parent buffer unexpected in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	      aldebug_printf(DBGSTREAM,"[ERROR] parent buffer unexpected in %s:%s:%i\n", __FILE__,__func__,__LINE__);
 
 	      parent->type = ALINPUTSTREAM_TYPE_SHARED;
 	      // TODO FIXME
@@ -319,7 +319,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 	}
       else
 	{
-	  aldebug_printf(NULL,"[ERROR] shared stream %p without a child parent set to it %p in %s:%s:%i\n",
+	  aldebug_printf(DBGSTREAM,"[ERROR] shared stream %p without a child parent set to it %p in %s:%s:%i\n",
 			 parent,
 			 head_child,
 			 __FILE__,__func__,__LINE__);
@@ -338,7 +338,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
     }
   else
     {     
-      aldebug_printf(NULL,"[ERROR] creating a child of child for parent %p type %i child.parent %p in %s:%s:%i\n",
+      aldebug_printf(DBGSTREAM,"[ERROR] creating a child of child for parent %p type %i child.parent %p in %s:%s:%i\n",
 		     parent,
 		     parent->type,
 		     parent->child.self.parent,
@@ -347,7 +347,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 
   if (( child_stream != NULL )&&(child_stream->type != ALINPUTSTREAM_TYPE_SHARED_CHILD))
     {
-      aldebug_printf(NULL,"[FATAL] creating a child stream of wrong type %i in %s:%s:%i\n",
+      aldebug_printf(DBGSTREAM,"[FATAL] creating a child stream of wrong type %i in %s:%s:%i\n",
 		     child_stream->type,
 		     __FILE__,__func__,__LINE__);
     }
@@ -359,7 +359,7 @@ void alinputstream_release_shared(struct alinputstream * parent)
 {  
   if ( parent->type == ALINPUTSTREAM_TYPE_SHARED )
     {
-      aldebug_printf(NULL,"[DEBUG] free shared parent %p in %s:%s:%i\n",
+      aldebug_printf(DBGSTREAM,"[DEBUG] free shared parent %p in %s:%s:%i\n",
 		     parent,
 		     __FILE__,__func__,__LINE__);
 
@@ -388,7 +388,7 @@ void alinputstream_free_shared(struct alinputstream * child_stream)
 	  struct alinputstream * parent = child->parent;
 	  if ( parent->type == ALINPUTSTREAM_TYPE_SHARED )
 	    {
-	      aldebug_printf(NULL,"[DEBUG] free shared child %p in %s:%s:%i\n",
+	      aldebug_printf(DBGSTREAM,"[DEBUG] free shared child %p in %s:%s:%i\n",
 			     child_stream,
 			     __FILE__,__func__,__LINE__);
 
@@ -410,7 +410,7 @@ void alinputstream_free_shared(struct alinputstream * child_stream)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] free shared child %p with invalid parent type %i in %s:%s:%i\n",
+	      aldebug_printf(DBGSTREAM,"[ERROR] free shared child %p with invalid parent type %i in %s:%s:%i\n",
 			     child_stream,
 			     parent->type,
 			     __FILE__,__func__,__LINE__);
@@ -426,7 +426,7 @@ unsigned char alinputstream_read_and_record(struct alinputstream * stream, int o
   int relative = offset - stream->mark;
   if ( relative < 0 )
     {
-      aldebug_printf(NULL,"[ERROR] reading before mark in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+      aldebug_printf(DBGSTREAM,"[ERROR] reading before mark in %s:%s:%i\n", __FILE__,__func__,__LINE__);
       return 0;    
     }
   // steam->offset is number of char kept in parent stream after mark.
@@ -434,7 +434,7 @@ unsigned char alinputstream_read_and_record(struct alinputstream * stream, int o
     {
       if ( stream->input.length < relative )
 	{
-	  aldebug_printf(NULL,"[DEBUG] CAN'T record, buffer too small in %s:%s:%i\n", __FILE__,__func__,__LINE__);
+	  aldebug_printf(DBGSTREAM,"[DEBUG] CAN'T record, buffer too small in %s:%s:%i\n", __FILE__,__func__,__LINE__);
 	  return 0;
 	}
       unsigned char c = 0;
@@ -442,7 +442,7 @@ unsigned char alinputstream_read_and_record(struct alinputstream * stream, int o
       c = alinputstream_readuchar(stream);
       if ( relative != stream->offset )
 	{
-	  aldebug_printf(NULL,"[ERROR] leaving a hole in parent read %i %i in %s:%s:%i\n",
+	  aldebug_printf(DBGSTREAM,"[ERROR] leaving a hole in parent read %i %i in %s:%s:%i\n",
 			 relative,
 			 stream->offset,
 			 __FILE__,__func__,__LINE__);
@@ -473,7 +473,7 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 	      // we are trying to read at place that has not been record in time !
 	      // this is an error
 	      // UGLY eof
-	      aldebug_printf(NULL,"[ERROR] reading %i  before mark %i in %s:%s:%i\n",
+	      aldebug_printf(DBGSTREAM,"[ERROR] reading %i  before mark %i in %s:%s:%i\n",
 			     child->offset,
 			     stream->mark,
 			     __FILE__,__func__,__LINE__);	      
@@ -489,7 +489,7 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
       if (  childstream->type == ALINPUTSTREAM_TYPE_SHARED )
 	{
 	  // TODO FIXME case ALINPUTSTREAM_TYPE_SHARED reading in a shared directly, not though a child ...
-	  aldebug_printf(NULL,"[DEBUG] reading directly within ALINPUTSTREAM_TYPE_SHARED %p in %s:%s:%i\n",
+	  aldebug_printf(DBGSTREAM,"[DEBUG] reading directly within ALINPUTSTREAM_TYPE_SHARED %p in %s:%s:%i\n",
 			 childstream,
 			 __FILE__,__func__,__LINE__);
 	  if ( childstream->child.ptr != NULL )
@@ -578,7 +578,7 @@ void alinputstream_align_shared_with_child(struct alinputstream * parent, struct
 	}
       else
 	{
-	  aldebug_printf(NULL,"[ERROR] can't align parent %p on a child %p that is not a ALINPUTSTREAM_TYPE_SHARED_CHILD but %i  in %s:%s:%i\n",
+	  aldebug_printf(DBGSTREAM,"[ERROR] can't align parent %p on a child %p that is not a ALINPUTSTREAM_TYPE_SHARED_CHILD but %i  in %s:%s:%i\n",
 			 parent,
 			 childstream,
 			 childstream->type,

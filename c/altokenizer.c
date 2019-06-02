@@ -71,7 +71,7 @@ altokenizer_dict_add_string (struct altokenizer *tokenizer, char * buffer, int l
   if (buffer == NULL)
     {
       assert(buffer!=NULL);
-      aldebug_printf(NULL,"[FATAL] corrupted token char buffer NULL");
+      aldebug_printf(DBGSTREAM,"[FATAL] corrupted token char buffer NULL");
       return NULL;
     }
 
@@ -83,7 +83,7 @@ altokenizer_dict_add_string (struct altokenizer *tokenizer, char * buffer, int l
     }
   if (length >= 0)
     {
-      aldebug_printf(NULL,ALPASCALSTRFMT, ALPASCALSTRARGS(length, buffer));
+      aldebug_printf(DBGSTREAM,ALPASCALSTRFMT, ALPASCALSTRARGS(length, buffer));
     }
   else
     {
@@ -121,7 +121,7 @@ altokenizer_dict_add_string (struct altokenizer *tokenizer, char * buffer, int l
       entry = alhash_put (&context->dict, &key, valuep);
       if (entry == NULL)
 	{
-	  aldebug_printf(NULL,
+	  aldebug_printf(DBGSTREAM,
 		   "[FATAL] FAIL to insert '%s' into word buffer %p \n",
 		   buffer, &context->dict);
 	  exit (1);
@@ -129,7 +129,7 @@ altokenizer_dict_add_string (struct altokenizer *tokenizer, char * buffer, int l
     }
   else
     {
-      aldebug_printf(NULL,"SAME TOKEN SEEN\n");
+      aldebug_printf(DBGSTREAM,"SAME TOKEN SEEN\n");
     }
 
   return entry;

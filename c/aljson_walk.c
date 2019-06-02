@@ -170,7 +170,7 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		  struct json_object * value = json_dict_path_get_value(current_path, current_object);
 		  if ( value == NULL )
 		    {
-		      aldebug_printf(NULL,"[ERROR] path keyname " ALPASCALSTRFMT " not found\n",
+		      aldebug_printf(DBGSTREAM,"[ERROR] path keyname " ALPASCALSTRFMT " not found\n",
 			     ALPASCALSTRARGS(current_path->string.internal.length, (char *) current_path->string.internal.data.ptr));
 		      current_object = NULL;
 		    }
@@ -183,7 +183,7 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		{
 		  if ( current_path->index < 0 )
 		    {
-		      aldebug_printf(NULL,"[ERROR] path type index %i invalid\n", current_path->index);
+		      aldebug_printf(DBGSTREAM,"[ERROR] path type index %i invalid\n", current_path->index);
 		      current_object = NULL;
 		    }
 		  else
@@ -192,7 +192,7 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		      struct json_object * value = json_list_get(current_object,current_path->index);
 		      if ( value == NULL )
 			{
-			  aldebug_printf(NULL,"[ERROR] path index %i not found.\n", current_path->index);
+			  aldebug_printf(DBGSTREAM,"[ERROR] path index %i not found.\n", current_path->index);
 			  current_object = NULL;
 			}
 		      else
@@ -203,13 +203,13 @@ struct json_object * aljson_walk_path(char * json_path, struct json_parser_ctx *
 		}
 	      else
 		{
-		  aldebug_printf(NULL,"[FATAL] json object type not supported for path search %c", current_object->type);
+		  aldebug_printf(DBGSTREAM,"[FATAL] json object type not supported for path search %c", current_object->type);
 		  current_object = NULL;
 		}
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"[ERROR] path type non matching object %c != %c\n",  current_object->type, current_path->type);
+	      aldebug_printf(DBGSTREAM,"[ERROR] path type non matching object %c != %c\n",  current_object->type, current_path->type);
 	      current_object = NULL;
 	    }
 	  current_path = current_path->child;

@@ -10,9 +10,9 @@
 
 void usage()
 {
-  aldebug_printf(NULL,"test bitfield writer/reader\n");
-  aldebug_printf(NULL," will copy input to output with bit chunks\n");
-  aldebug_printf(NULL,"outfile: file to create\n");
+  aldebug_printf(DBGSTREAM,"test bitfield writer/reader\n");
+  aldebug_printf(DBGSTREAM," will copy input to output with bit chunks\n");
+  aldebug_printf(DBGSTREAM,"outfile: file to create\n");
 }
 
 int main(int argc, char ** argv)
@@ -53,12 +53,12 @@ int main(int argc, char ** argv)
 	      while ( bitfieldreader_is_eof(&bfreader) == 0 )
 		{
 		  field = fieldreader_read(&bfreader,bits);
-		  aldebug_printf(NULL,"%i ", bits);
+		  aldebug_printf(DBGSTREAM,"%i ", bits);
 		  if ( bitfieldreader_is_eof(&bfreader) == 1 )
 		    {
 		      // special case at end where input can be unaligned.
 		      bits = bitfieldreader_get_readbits(&bfreader);
-		      aldebug_printf(NULL,"last field %08x total bits %i, last bits %i\n", field, total_bits, bits);
+		      aldebug_printf(DBGSTREAM,"last field %08x total bits %i, last bits %i\n", field, total_bits, bits);
 		      if ( bits == 0 )
 			{
 			  break;
@@ -70,7 +70,7 @@ int main(int argc, char ** argv)
 		  lastfield = ( lastfield + 1 )  ^ field;
 		}
 	      bitfieldwriter_padtobyte(&writer);
-	      aldebug_printf(NULL,"total bits %i, bytes %i", total_bits, total_bits/8);
+	      aldebug_printf(DBGSTREAM,"total bits %i, bytes %i", total_bits, total_bits/8);
 	      alinputstream_close(&input);
 	    }
 	  aloutputstream_close(&output);

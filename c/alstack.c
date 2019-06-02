@@ -105,13 +105,13 @@ void alstack_debug(char * text)
 {
   if ( alstack_debug_flag > 0 )
     {
-      aldebug_printf(NULL,"[DEBUG] %s\n",text);
+      aldebug_printf(DBGSTREAM,"[DEBUG] %s\n",text);
     }
 }
 
 void alstack_error(char * text)
 {
-  aldebug_printf(NULL,"[ERROR] %s\n",text);
+  aldebug_printf(DBGSTREAM,"[ERROR] %s\n",text);
 }
 
 struct alstackelement * alstackchunk_pop(struct alstack * stack)

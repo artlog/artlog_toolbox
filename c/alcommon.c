@@ -6,6 +6,6 @@
 
 void memory_shortage(void * ctx)
 {
-  aldebug_printf(NULL,"[FATAL] ALCOMMON Memory heap shortage. Exiting \n");
+  aldebug_printf(DBGSTREAM,"[FATAL] ALCOMMON Memory heap shortage. Exiting \n");
   exit(2);
 }

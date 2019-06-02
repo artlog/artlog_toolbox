@@ -75,12 +75,12 @@ int alhash_output_walk_simple_callback_cast_outputstream (struct alhash_entry * 
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL, "[ERROR] %p NULL\n", entry);
+	      aldebug_printf(DBGSTREAM, "[ERROR] %p NULL\n", entry);
 	    }
 	}
       else
 	{
-	  aldebug_printf(NULL,"[ERROR] Null output\n");
+	  aldebug_printf(DBGSTREAM,"[ERROR] Null output\n");
 	}
     }
   return 0;

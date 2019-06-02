@@ -155,7 +155,7 @@ void alabnf_dump_node(struct aloutputstream * output,struct alabnf_node * node )
       if ( (unsigned long) node <  64L )
 	{
 	  // corrupted pointer (often address within a NULL struct )
-	  aldebug_printf(NULL,"[FATAL] node pointer %p invalid in %s",node, __FILE__);
+	  aldebug_printf(DBGSTREAM,"[FATAL] node pointer %p invalid in %s",node, __FILE__);
 	  //return;
 	}
       enum alabnf_node_type type = node->type;
@@ -180,13 +180,13 @@ void alabnf_dump_node(struct aloutputstream * output,struct alabnf_node * node )
 	  alabnf_dump_rule_ref(output,&node->content.rule_ref);
 	  break;
 	default:
-	  aldebug_printf(NULL,"[ERROR] unrecognized abnf type %i\n",type);
+	  aldebug_printf(DBGSTREAM,"[ERROR] unrecognized abnf type %i\n",type);
 	}
     }
   else
     {
       // NULL
-      aldebug_printf(NULL,"[ERROR] node pointer NULL in %s %s %i", __FILE__, __func__,__LINE__);
+      aldebug_printf(DBGSTREAM,"[ERROR] node pointer NULL in %s %s %i", __FILE__, __func__,__LINE__);
       aloutputstream_printf_1k(output,"¤");
     }
 }
@@ -200,7 +200,7 @@ void alabnf_dump_alternative(struct aloutputstream * output,struct alabnf_altern
   while (alternative != NULL)
     {
       next_alternative = alternative->alt;
-      aldebug_printf(NULL,"node %p alt %p\n", alternative->node, next_alternative);
+      aldebug_printf(DBGSTREAM,"node %p alt %p\n", alternative->node, next_alternative);
       // DEBUG only, to remove
       alabnf_dump_node(output,alternative->node);
       if (next_alternative != NULL)
@@ -229,7 +229,7 @@ void alabnf_dump_sequence(struct aloutputstream * output,struct alabnf_sequence 
   while (sequence != NULL)
     {
       next_sequence = sequence->next;
-      aldebug_printf(NULL,"\nnext %p node %p\n", next_sequence, sequence->node);
+      aldebug_printf(DBGSTREAM,"\nnext %p node %p\n", next_sequence, sequence->node);
       // debug printf("§");
       alabnf_dump_node(output,sequence->node);
       // debug printf("$");

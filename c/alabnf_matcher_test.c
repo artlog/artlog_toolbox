@@ -19,14 +19,14 @@ int main(int argc, char * argv[])
 
       int maxsteps=(int) strtol(argv[1],NULL,10);
 
-      aldebug_printf(NULL,"[INFO] max steps set to %i\n", maxsteps);
+      aldebug_printf(DBGSTREAM,"[INFO] max steps set to %i\n", maxsteps);
  
       offset=2;
       alabnf = alabnf_util_parse_abnf_filenames(argc-offset,offset,argv);
 
       if ( alabnf != NULL )
 	{
-	  aldebug_printf(NULL,"[INFO] parsed abnf %p\n", alabnf);
+	  aldebug_printf(DBGSTREAM,"[INFO] parsed abnf %p\n", alabnf);
 	  
 	  alinputstream_init(&input,fileno(file));
 
@@ -42,6 +42,6 @@ int main(int argc, char * argv[])
     }
   else
     {
-      aldebug_printf(NULL,"[ERROR] expected abnf syntax file as first argument\n");
+      aldebug_printf(DBGSTREAM,"[ERROR] expected abnf syntax file as first argument\n");
     }
 }

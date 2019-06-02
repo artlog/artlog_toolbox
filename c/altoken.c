@@ -18,12 +18,12 @@ int altoken_char_buffer_add_char(struct token_char_buffer * ctx, char c)
       bufsize=ctx->bufsize + ctx->bufsize / 2;
       if ( bufsize > ALTOKEN_BUFSIZE_MAX )
 	{
-	  aldebug_printf(NULL,"[FATAL] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_MAX);
+	  aldebug_printf(DBGSTREAM,"[FATAL] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_MAX);
 	  exit(0);
 	}
       if ( bufsize > ALTOKEN_BUFSIZE_WARNING )
 	{
-	  aldebug_printf(NULL,"[WARNING] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_WARNING);
+	  aldebug_printf(DBGSTREAM,"[WARNING] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_WARNING);
 	}
       char * newbuf=realloc(ctx->buf,bufsize);
       if (newbuf != NULL)
@@ -37,7 +37,7 @@ int altoken_char_buffer_add_char(struct token_char_buffer * ctx, char c)
 	}
       else
 	{
-	  aldebug_printf(NULL,"FATAL memory shortage in %s %s %i\n", __FILE__, __FUNCTION__, __LINE__ );
+	  aldebug_printf(DBGSTREAM,"FATAL memory shortage in %s %s %i\n", __FILE__, __FUNCTION__, __LINE__ );
 	}
     }
   ctx->buf[ctx->bufpos++]=c;

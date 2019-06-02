@@ -59,7 +59,7 @@ void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer buffer, int
 
 void al_token_char_buffer_init(alstrings_ringbuffer_pointer buffer, int chars)
 {  
-  aldebug_printf(NULL,"[WARNING] use alstrings_ringbuffer_init_autogrow instead of deprecated  al_token_char_buffer_init\n");  
+  aldebug_printf(DBGSTREAM,"[WARNING] use alstrings_ringbuffer_init_autogrow instead of deprecated  al_token_char_buffer_init\n");  
   al_token_char_buffer_init_internal(buffer,chars);
 }
 
@@ -81,7 +81,7 @@ struct token_char_buffer *  al_token_char_buffer_get_previous(struct token_char_
     {
       if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	{
-	  aldebug_printf(NULL,"[FATAL] long loop (infinite ? ) on  al_token_char_buffer_get_previous\n");
+	  aldebug_printf(DBGSTREAM,"[FATAL] long loop (infinite ? ) on  al_token_char_buffer_get_previous\n");
 	}
       // HARD EXIT
       exit(1);
@@ -120,7 +120,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 
   if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
     {
-      aldebug_printf(NULL,"grow token_char_buffer %p %i/%i\n", buffer, buffer->bufpos, buffer->bufsize);
+      aldebug_printf(DBGSTREAM,"grow token_char_buffer %p %i/%i\n", buffer, buffer->bufpos, buffer->bufsize);
     }
   // last point on first; this is circular
   while ( ( next != NULL ) && ( next != buffer ) )
@@ -137,7 +137,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	  // what about first and next_free ?
 	  if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	    {
-	      aldebug_printf(NULL,"allocate new next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
+	      aldebug_printf(DBGSTREAM,"allocate new next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
 	    }
 	  return next;
 	}
@@ -148,7 +148,7 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	    {
 	      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		{		  
-		  aldebug_printf(NULL,"found place next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
+		  aldebug_printf(DBGSTREAM,"found place next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
 		}
 	      return next;
 	    }
@@ -164,13 +164,13 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
   // ==> that it was not possible to allocate a buffer
   if (  next == buffer )
     {
-      aldebug_printf(NULL,"[WARNING] not possible to allocate a buffer. allocate buffer (%p) next (%p) \n", buffer, next);
+      aldebug_printf(DBGSTREAM,"[WARNING] not possible to allocate a buffer. allocate buffer (%p) next (%p) \n", buffer, next);
       // shouldn't we return NULL ?
     }
   
   if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
     {
-      aldebug_printf(NULL,"allocate buffer (%p) next (%p) !\n", buffer, next);
+      aldebug_printf(DBGSTREAM,"allocate buffer (%p) next (%p) !\n", buffer, next);
     }
 
   if ( ((unsigned long long) next) < 1024 )
@@ -189,7 +189,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
       struct token_char_buffer * buffer = (*ringbufferp);
       if ( buffer->canary !=  ALSTRINGBUFCANARY )
 	{
-	  aldebug_printf(NULL,"[FATAL] wrong allocation buffer %p, wrong canary %x\n",buffer, buffer->canary);	  
+	  aldebug_printf(DBGSTREAM,"[FATAL] wrong allocation buffer %p, wrong canary %x\n",buffer, buffer->canary);	  
 	}
       if ( length > 0 )
 	{
@@ -224,7 +224,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 		{
 		  if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		    {
-		      aldebug_printf(NULL,"[FATAL] token char buffer allocation shortage");
+		      aldebug_printf(DBGSTREAM,"[FATAL] token char buffer allocation shortage");
 		    }
 		  exit(1);
 		}
@@ -233,7 +233,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 	    {
 	      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		{
-		  aldebug_printf(NULL,"[FATAL] token char buffer is NULL");
+		  aldebug_printf(DBGSTREAM,"[FATAL] token char buffer is NULL");
 		}
 	      exit(1);
 	    }
@@ -271,7 +271,7 @@ char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * d
 	    {
 	      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		{
-		  aldebug_printf(NULL,"[FATAL] token char buffer allocation shortage");
+		  aldebug_printf(DBGSTREAM,"[FATAL] token char buffer allocation shortage");
 		}
 	      exit(1);
 	    }
@@ -287,7 +287,7 @@ void alstrings_ringbuffer_init_autogrow(alstrings_ringbuffer_pointer * ringbuffe
     {
       struct token_char_buffer * allocated = al_token_char_buffer_alloc(buckets);
       al_token_char_buffer_init_internal(allocated,firstbucketlength);
-      aldebug_printf(NULL,"[DEBUG] allocated %p\n", allocated);
+      aldebug_printf(DBGSTREAM,"[DEBUG] allocated %p\n", allocated);
       *ringbufferp = allocated;
      }
 }
@@ -299,7 +299,7 @@ int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * 
       // see what is done in void al_token_char_buffer_init_internal(struct token_char_buffer * buffer, int chars)
       if (bucket->buf != NULL )
 	{
-	  aldebug_printf(NULL,"[DEBUG] free bucket %p\n", bucket->buf);
+	  aldebug_printf(DBGSTREAM,"[DEBUG] free bucket %p\n", bucket->buf);
 	  free( bucket->buf);
 	}
       bucket->bufsize = 0;
@@ -416,7 +416,7 @@ unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
     }
   else
     {
-      aldebug_printf(NULL,"get int out of bound %i/%i\n", offset,data->length);
+      aldebug_printf(DBGSTREAM,"get int out of bound %i/%i\n", offset,data->length);
     }
   return result;  
 }
@@ -430,13 +430,13 @@ void aldatablock_dump( aldatablock * block )
 	{
 	  for (int i=0; i < block->length / sizeof(int); i ++)
 	    {
-	      aldebug_printf(NULL,"%08x ", block->data.uintptr[i]);
+	      aldebug_printf(DBGSTREAM,"%08x ", block->data.uintptr[i]);
 	    }
-	  aldebug_printf(NULL,"\n");
+	  aldebug_printf(DBGSTREAM,"\n");
 	}
       else
 	{
-	  aldebug_printf(NULL,"NULL datablock ptr in %p\n", block);
+	  aldebug_printf(DBGSTREAM,"NULL datablock ptr in %p\n", block);
 	}
     }
 }
@@ -444,6 +444,7 @@ void aldatablock_dump( aldatablock * block )
 void aldatablock_setcstring(aldatablock * block,char * cstring)
 {
   block->data.charptr = cstring;
+  // TODO should be + 1 to include trailing '\0'
   block->length = strlen(cstring);
   block->type = ALTYPE_STR0; 
 }

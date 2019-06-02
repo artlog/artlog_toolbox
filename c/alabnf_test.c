@@ -25,7 +25,7 @@ int main(int argc, char ** argv)
       FILE * file = fopen((char *)infiledata->data.ptr, "r");
       if ( file == NULL )
 	{
-	  aldebug_printf(NULL,"[ERROR] fail to open '%s'\n",infiledata->data.charptr);
+	  aldebug_printf(DBGSTREAM,"[ERROR] fail to open '%s'\n",infiledata->data.charptr);
 	}
       else
 	{
@@ -37,9 +37,9 @@ int main(int argc, char ** argv)
     }
   else
     {
-      aldebug_printf(NULL,"[ERROR] missing argument infile= file to parse.");
+      aldebug_printf(DBGSTREAM,"[ERROR] missing argument infile= file to parse.");
     }
     
-  aldebug_printf(NULL,"[TODO]\n");
+  aldebug_printf(DBGSTREAM,"[TODO]\n");
   
 }

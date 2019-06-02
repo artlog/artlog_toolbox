@@ -20,8 +20,8 @@ struct alimp_info {
 
 void usage()
 {
-  aldebug_printf(NULL,"try something on .imp leica format\n");
-  aldebug_printf(NULL,"infile: file to read\n");
+  aldebug_printf(DBGSTREAM,"try something on .imp leica format\n");
+  aldebug_printf(DBGSTREAM,"infile: file to read\n");
 }
 
 
@@ -35,7 +35,7 @@ struct alinputstream * getinputstream(struct al_options * options)
       inputstream = malloc(sizeof(*inputstream));
       if ( alinput_file_open_init(inputstream,filename) != AL_EC_OK )
 	{
-	  aldebug_printf(NULL,"[ERROR] no such '%s' file\n", filename);
+	  aldebug_printf(DBGSTREAM,"[ERROR] no such '%s' file\n", filename);
 	  free(inputstream);
 	  inputstream = NULL;
 	}
@@ -54,7 +54,7 @@ void alimp_dump_hexline(  struct alinputstream * inputstream, int blocksize, int
   if ( blocksize > 1024 )
     {
       blocksize = 1024;
-      aldebug_printf(NULL,"[FATAL] call paramter exceed internal buffer size %i\n", blocksize);
+      aldebug_printf(DBGSTREAM,"[FATAL] call paramter exceed internal buffer size %i\n", blocksize);
     }
   int cpl = charsperline;
   int l = 0;

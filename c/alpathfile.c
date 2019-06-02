@@ -108,7 +108,7 @@ enum al_global_error_code alpathfile_can_open(const char * pathname0)
       }
       else if ( errno == EINVAL )
 	{
-	  aldebug_printf(NULL,"weird invalid argument, contact developper (in function %s:%i)\n",__func__,__LINE__);
+	  aldebug_printf(DBGSTREAM,"weird invalid argument, contact developper (in function %s:%i)\n",__func__,__LINE__);
 	  return AL_EC_INVALID_INPUT;
 	}
       else

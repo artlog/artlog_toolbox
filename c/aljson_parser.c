@@ -14,9 +14,6 @@ JSON_TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
 
 ALDEBUG_DEFINE_FUNCTIONS(struct json_ctx, json_ctx,debug_level)
 
-// prepare to replace it with real debug with correct outputstream
-#define DBGSTREAM NULL
-
 /**
  return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
 */

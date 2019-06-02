@@ -39,13 +39,13 @@ enum alhash_match_result aldatablock_is_empty(struct alhash_datablock * key)
   // this means that embeded 0 value is OK.
   if ( key->length  < 0 )
     {
-      aldebug_printf(NULL,"[FATAL] key->length %i < 0\n",key->length);
+      aldebug_printf(DBGSTREAM,"[FATAL] key->length %i < 0\n",key->length);
       return ALH_MR_INVALID;
     }
   // don't accept unknow types
   if ( key->type > ALTYPE_MAX )
     {
-      aldebug_printf(NULL,"[FATAL] key->type %i > ALTYPE_MAX(%i) in datablock %p length %i \n", key->type, ALTYPE_MAX, key, key->length);
+      aldebug_printf(DBGSTREAM,"[FATAL] key->type %i > ALTYPE_MAX(%i) in datablock %p length %i \n", key->type, ALTYPE_MAX, key, key->length);
       return ALH_MR_INVALID;
     }
   // return (key->length >0) && ( aldatablock_embeded(key) || (key->data.ptr != NULL));
@@ -69,7 +69,7 @@ enum alhash_match_result alhash_is_identical(struct alhash_datablock * key,
     {
       if ( key->type != keyB->type )
 	{
-	  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT KEY TYPE %i!=%i \n", key->type,keyB->type);}
+	  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] DIFFERENT KEY TYPE %i!=%i \n", key->type,keyB->type);}
 
 	  // handle str0 substr case here  
 	  if ( key->type == ALTYPE_STR0 ) 
@@ -102,12 +102,12 @@ enum alhash_match_result alhash_is_identical(struct alhash_datablock * key,
 	      if ( key->data.number == keyB->data.number )
 		{
 		  // obvious case, point on very same value of same size.
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] IDENTICAL VALUES\n");}
+		  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] IDENTICAL VALUES\n");}
 		  return ALH_MR_EQUAL;
 		}
 	      else
 		{
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT VALUES\n");}
+		  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] DIFFERENT VALUES\n");}
 		  return  ALH_MR_NOT_EQUAL;
 		}	      
 	    }
@@ -116,13 +116,13 @@ enum alhash_match_result alhash_is_identical(struct alhash_datablock * key,
 	      if ( key->data.ptr == keyB->data.ptr )
 		{
 		  // obvious case, point on very same value of same size.
-		  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] IDENTICAL KEY\n");}
+		  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] IDENTICAL KEY\n");}
 		  return ALH_MR_EQUAL;
 		}
 	      return (memcmp(keyB->data.ptr, key->data.ptr, key->length) == 0) ? ALH_MR_EQUAL : ALH_MR_NOT_EQUAL;
 	    }
 	}
-      if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT SIZE\n");}
+      if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] DIFFERENT SIZE\n");}
       return ALH_MR_NOT_EQUAL;
     }
 
@@ -144,19 +144,19 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 	)
 	{
 	  // NULL or EMTPY BLOCKS NOT VALID values are wrong.
-	  if ( alhash_debug ) {aldebug_printf(NULL,"[DEBUG] NULL values are wrong.\n");}
+	  if ( alhash_debug ) {aldebug_printf(DBGSTREAM,"[DEBUG] NULL values are wrong.\n");}
 	  return ALH_MR_INVALID;
 	}
 
       if ( hash == entry->hash_key )
 	{
 	  // should be the very same key.
-	  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] same hashkey %ul\n", hash);}
+	  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] same hashkey %ul\n", hash);}
 	  return alhash_is_identical(key, &entry->key,alhash_debug);
 	}
       else
 	{
-	  if (alhash_debug) {aldebug_printf(NULL,"[DEBUG] DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
+	  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
 	  return  ALH_MR_NOT_EQUAL;
 	}
     }
@@ -236,13 +236,13 @@ void alhash_context_internal_init(alhash_context * ctx, struct alhash_table * ta
     }
   
   ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
-    {aldebug_printf(NULL,"[DEBUG] alhash init %p autogrow %i \n",table,table->autogrow );}
+    {aldebug_printf(DBGSTREAM,"[DEBUG] alhash init %p autogrow %i \n",table,table->autogrow );}
 
 }
 
 void alhash_release(struct alhash_table * table)
 {
-  {aldebug_printf(NULL,"[DEBUG] alhash release %p autogrow %i \n",table,table->autogrow );}
+  {aldebug_printf(DBGSTREAM,"[DEBUG] alhash release %p autogrow %i \n",table,table->autogrow );}
 
   if ( table->inner != NULL)
     {
@@ -261,7 +261,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
     {
       ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	{
-	  aldebug_printf(NULL,
+	  aldebug_printf(DBGSTREAM,
 			 "[DEBUG] alhash put entry '" ALPASCALSTRFMT "'\n",
 			 ALPASCALSTRARGS(key->length,(char *) key->data.ptr));
 	}
@@ -273,7 +273,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 	    {
 	      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 		{
-		  aldebug_printf(NULL,
+		  aldebug_printf(DBGSTREAM,
 				 "[DEBUG] alhash %p grow from %i to %i .\n",
 				 table, table->bucket_size, table->bucket_size * 2);
 		}
@@ -326,7 +326,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
 		 );
 	  if ( guard <= 0 )
 	    {
-	      aldebug_printf(NULL,"[FATAL] alhash guard reached hashtable full %p size %i autogrow %i\n",table, table->bucket_size, table->autogrow);
+	      aldebug_printf(DBGSTREAM,"[FATAL] alhash guard reached hashtable full %p size %i autogrow %i\n",table, table->bucket_size, table->autogrow);
 	    }
 
 	}
@@ -340,7 +340,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
   if (( table != NULL ) && ( key != NULL ))
     {
       ALDEBUG_IF_DEBUG(table->context,alhash_context,debug) {
-	aldebug_printf(NULL,
+	aldebug_printf(DBGSTREAM,
 		       "[DEBUG] alhash get entry '" ALPASCALSTRFMT "'\n",
 		       ALPASCALSTRARGS(key->length,(char *) key->data.ptr));
       }
@@ -380,7 +380,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhas
 		  // if empty valid = ALH_MR_NOT_EQUAL
 		  if ( valid == ALH_MR_INVALID )
 		    {		      
-		      aldebug_printf(NULL,
+		      aldebug_printf(DBGSTREAM,
 				     "alhash_get entry '" ALPASCALSTRFMT "' failed bucket index %i\n",
 				     ALPASCALSTRARGS(key->length,(char *) key->data.ptr),
 				     index);
@@ -494,7 +494,7 @@ int alhash_reinit(struct alhash_table * table, int length)
     {
       ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	{
-	  aldebug_printf(NULL,"[DEBUG] REINIT length of hash table to %i current usage %i used %i\n", length, alhash_get_usage(table), alhash_get_used(table));
+	  aldebug_printf(DBGSTREAM,"[DEBUG] REINIT length of hash table to %i current usage %i used %i\n", length, alhash_get_usage(table), alhash_get_used(table));
 	}
 
       if ( table->used <= length )
@@ -517,14 +517,14 @@ int alhash_reinit(struct alhash_table * table, int length)
 	  size =  alhash_get_size(table);
 	  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	    {
-	      aldebug_printf(NULL,"[DEBUG] REINITIALIZED length of hash table to %i new usage %i used %i \n", length, alhash_get_usage(table), alhash_get_used(table));
+	      aldebug_printf(DBGSTREAM,"[DEBUG] REINITIALIZED length of hash table to %i new usage %i used %i \n", length, alhash_get_usage(table), alhash_get_used(table));
 	    }	  
       }
       else
 	{
 	  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
 	    {
-	    aldebug_printf(NULL,"[DEBUG] alhash length %i requested for reinit too small < used %i \n",length, table->used);
+	    aldebug_printf(DBGSTREAM,"[DEBUG] alhash length %i requested for reinit too small < used %i \n",length, table->used);
 	  }
       }
     }
@@ -585,7 +585,7 @@ int alhash_walk_callback_collision(struct alhash_entry * entry, void * data, int
     {
       if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
 	{
-	  aldebug_printf(NULL,
+	  aldebug_printf(DBGSTREAM,
 			 "(%i)'" ALPASCALSTRFMT "',",
 			 entry->key.type,
 			 ALPASCALSTRARGS(entry->key.length, (char *) entry->key.data.ptr));
@@ -600,8 +600,8 @@ void alhash_dump_entry_as_string(struct alhash_entry * entry)
     {
       if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
 	{
-	  aldebug_printf(NULL,"dump entry\n");
-	  aldebug_printf(NULL,
+	  aldebug_printf(DBGSTREAM,"dump entry\n");
+	  aldebug_printf(DBGSTREAM,
 			 "%p (%i)'" ALPASCALSTRFMT "' = (%i)'" ALPASCALSTRFMT "' (hash=%lx) (collisions=",
 			 entry, entry->key.type,
 			 ALPASCALSTRARGS(entry->key.length, (char *) entry->key.data.ptr),

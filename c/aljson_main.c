@@ -24,19 +24,19 @@ static int main_debug=0;
 
 void usage()
 {
-  aldebug_printf(NULL,"Output : dump parsed json to standard output.\n");
-  aldebug_printf(NULL,"-d debug\n");
-  aldebug_printf(NULL,"-m non recursive\n");
-  // aldebug_printf(NULL,"-p path\n");
-  aldebug_printf(NULL,"path=<path>\n");
-  aldebug_printf(NULL,"-c check only (no print)\n");
-  aldebug_printf(NULL,"-b bare : no indent");
-  aldebug_printf(NULL,"-- to separate options from arguments\n");  
-  aldebug_printf(NULL,"First argument : filename to open in read only mode to parse in json.\n");
-  aldebug_printf(NULL,"Second argument : filename to open in read only mode to parse in json for template.\n");
-  aldebug_printf(NULL,"                  template is used for json unification ie extratcing fields from a template pattern\n");
+  aldebug_printf(DBGSTREAM,"Output : dump parsed json to standard output.\n");
+  aldebug_printf(DBGSTREAM,"-d debug\n");
+  aldebug_printf(DBGSTREAM,"-m non recursive\n");
+  // aldebug_printf(DBGSTREAM,"-p path\n");
+  aldebug_printf(DBGSTREAM,"path=<path>\n");
+  aldebug_printf(DBGSTREAM,"-c check only (no print)\n");
+  aldebug_printf(DBGSTREAM,"-b bare : no indent");
+  aldebug_printf(DBGSTREAM,"-- to separate options from arguments\n");  
+  aldebug_printf(DBGSTREAM,"First argument : filename to open in read only mode to parse in json.\n");
+  aldebug_printf(DBGSTREAM,"Second argument : filename to open in read only mode to parse in json for template.\n");
+  aldebug_printf(DBGSTREAM,"                  template is used for json unification ie extratcing fields from a template pattern\n");
 
-  aldebug_printf(NULL,"\naljson_main version %s\n",aljson_main_version);
+  aldebug_printf(DBGSTREAM,"\naljson_main version %s\n",aljson_main_version);
 }
 
 int main(int argc, char ** argv)
@@ -119,7 +119,7 @@ int main(int argc, char ** argv)
 
       if ( debug > 0)
 	{
-	  aldebug_printf(NULL,"parsing json filename : %s\n", json_filename);
+	  aldebug_printf(DBGSTREAM,"parsing json filename : %s\n", json_filename);
 	}
       data.last=0;
       data.flags=0;
@@ -138,7 +138,7 @@ int main(int argc, char ** argv)
 	    }
 	  else
 	    {
-	      aldebug_printf(NULL,"parsing complete\n");
+	      aldebug_printf(DBGSTREAM,"parsing complete\n");
 	    }
 	    
 	  if ( json_path != NULL )
@@ -150,14 +150,14 @@ int main(int argc, char ** argv)
 		}
 	      else
 		{
-		  aldebug_printf(NULL," NOT FOUND.");
+		  aldebug_printf(DBGSTREAM," NOT FOUND.");
 		}
 	    }
 	  if ( json_template != NULL )
 	    {
 	      if ( debug > 0 )
 		{
-		  aldebug_printf(NULL,"parsing json template : %s\n", json_template);
+		  aldebug_printf(DBGSTREAM,"parsing json template : %s\n", json_template);
 		}
 	      template_data.last=0;
 	      template_data.flags=0;
@@ -170,15 +170,15 @@ int main(int argc, char ** argv)
 		  template_root=parse_level(&json_template_context,&template_data,template_root);
 		  fclose(template_file);
 		  aljson_output(&json_template_context,template_root,&print_template_context);
-		  aldebug_printf(NULL,"\n");
+		  aldebug_printf(DBGSTREAM,"\n");
 		  if ( aljson_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
 		    {
-		      aldebug_printf(NULL,"\ntemplate '%s' and '%s' json match\n", json_template, json_filename);
+		      aldebug_printf(DBGSTREAM,"\ntemplate '%s' and '%s' json match\n", json_template, json_filename);
 		      exit(0);
 		    }
 		  else
 		    {
-		      aldebug_printf(NULL,"\ntemplate '%s' and '%s' json DOES NOT match\n", json_template, json_filename);
+		      aldebug_printf(DBGSTREAM,"\ntemplate '%s' and '%s' json DOES NOT match\n", json_template, json_filename);
 		      exit(1);
 		    }
 		}

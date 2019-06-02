@@ -11,13 +11,13 @@ void alcryptohash_tool_dump_result(struct alsha2_internal * shax, aldatablock * 
 {
   if ( result == NULL)
     {
-      aldebug_printf(NULL,"[FATAL] NULL shax \n");
+      aldebug_printf(DBGSTREAM,"[FATAL] NULL shax \n");
     }
   else
     {
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
 	{
-	  aldebug_printf(NULL,"[INFO] SHAX result \n");
+	  aldebug_printf(DBGSTREAM,"[INFO] SHAX result \n");
 	  aldatablock_dump(result);
 	}
       unsigned int * h = result->data.uintptr;
@@ -41,7 +41,7 @@ void alcryptohash_tool_callback(aldatablock * block, void * data)
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
 	{
-	  aldebug_printf(NULL,"[INFO] ADD block size %i \n", block->length);
+	  aldebug_printf(DBGSTREAM,"[INFO] ADD block size %i \n", block->length);
 	}
       alsha2x_add_block(shax,block);
     }
@@ -54,7 +54,7 @@ void alcryptohash_tool_finalize (aldatablock * block, void * data)
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
 	{
-	  aldebug_printf(NULL,"[INFO] FINAL block size %i \n", block->length);
+	  aldebug_printf(DBGSTREAM,"[INFO] FINAL block size %i \n", block->length);
 	}
       if ( block->length > 0)
 	{

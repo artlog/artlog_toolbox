@@ -4,6 +4,7 @@
 #include <string.h>
 #include <limits.h>
 #include "aldebug_output.h"
+#include "aloutput.h"
 
 // somed defines to ease RFC -> C code conversion
 #define OR |
@@ -97,8 +98,6 @@ void alshax_internal_init(struct alsha2_internal * intern, unsigned int sha_H[8]
   d.length = sizeof(intern->H);
   d.data.ptr = intern->H;
   d.type = ALTYPE_OPAQUE; 
-  // aldatablock_dump(&d);
-
 }
 
 void alsha224_init(struct alsha2_internal * intern )
@@ -124,7 +123,7 @@ void alsha2x_init(struct alsha2_internal * intern, enum alsha2_algorithm algorit
       alsha256_init(intern);
       break;
     default:      
-      aldebug_printf(NULL,"[FATAL] sha2 algorithm %i not supported", algorithm);
+      aldebug_printf(DBGSTREAM,"[FATAL] sha2 algorithm %i not supported", algorithm);
       intern->algorithm=algorithm;
       break;
     }
@@ -140,7 +139,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, aldatablock * last_b
 {
   if ( intern == NULL )
     {
-      aldebug_printf(NULL,"[ERROR] alsha2_pad_to_512bit NULL intern\n");
+      aldebug_printf(DBGSTREAM,"[ERROR] alsha2_pad_to_512bit NULL intern\n");
       return;
     }
 
@@ -151,7 +150,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, aldatablock * last_b
 
   ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
     {
-      aldebug_printf(NULL,"padding cumulated length %lu\n", intern->cumulated_length );
+      aldebug_printf(DBGSTREAM,"padding cumulated length %lu\n", intern->cumulated_length );
     }
 
   
@@ -165,7 +164,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, aldatablock * last_b
 	{
 	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
 	    {
-	      aldebug_printf(NULL,"last block zeroed at %i length %i\n", L / CHAR_BIT , ((512 - L) / CHAR_BIT) );
+	      aldebug_printf(DBGSTREAM,"last block zeroed at %i length %i\n", L / CHAR_BIT , ((512 - L) / CHAR_BIT) );
 	    }
 	  aldatablock_bzero(output,L / CHAR_BIT, (512 - L) / CHAR_BIT);
 	}
@@ -200,15 +199,16 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, aldatablock * last_b
 	  intern->state = AL_SHA2_PADDED;
 	}
       else {
-	aldebug_printf(NULL,"sha2x padding called in wrong state %i", intern->state);
+	aldebug_printf(DBGSTREAM,"sha2x padding called in wrong state %i", intern->state);
       }
 
     }
 
   ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
     {
-      aldebug_printf(NULL,"last block padded state %i length %i\n", intern->state, intern->cumulated_length);
-      aldatablock_dump(output);
+      aldebug_printf(DBGSTREAM,"last block padded state %i length %i\n", intern->state, intern->cumulated_length);
+      // fixme
+      aloutput_bytes_as_hex(NULL,output,0,8);
     }
 
 }
@@ -224,8 +224,9 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, aldatablock
 
   ALDEBUG_IF_DEBUG(shainternal,alsha2x,debug)
     {
-      aldebug_printf(NULL,"alhash turn on state %i offset %i\n", shainternal->state, offset);
-      aldatablock_dump(input);
+      aldebug_printf(DBGSTREAM,"alhash turn on state %i offset %i\n", shainternal->state, offset);
+      // fixme
+      aloutput_bytes_as_hex(NULL,input,0,8);
     }
 
   memcpy(H,shainternal->H, sizeof(H));
@@ -242,7 +243,7 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, aldatablock
       W[t]=aldatablock_get_uint32be(input, offset + (t*sizeof(int)));
       ALDEBUG_IF_DEBUG(shainternal,alsha2x,debug)
 	{
-	  aldebug_printf(NULL,"alhash W[%i]=%x\n", t, W[t]);
+	  aldebug_printf(DBGSTREAM,"alhash W[%i]=%x\n", t, W[t]);
 	}
     }
   for (t = 16; t < 64; t++)
@@ -350,11 +351,11 @@ int alsha2x_add_block( struct alsha2_internal * intern, aldatablock * input)
 	    {
 	      ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
 		{
-		  aldebug_printf(NULL, "input was not flushed, remains incomplete block of length %i\n",  intern->input.length );
+		  aldebug_printf(DBGSTREAM, "input was not flushed, remains incomplete block of length %i\n",  intern->input.length );
 		}
 	      if ( intern->input.data.charptr == NULL )
 		{
-		  aldebug_printf(NULL,"[FATAL] NULL intern buffer");
+		  aldebug_printf(DBGSTREAM,"[FATAL] NULL intern buffer");
 		}
 	    
 	      missing = blocksizebyte - intern->input.length;
@@ -380,7 +381,7 @@ int alsha2x_add_block( struct alsha2_internal * intern, aldatablock * input)
 		}	  
 	      if ( intern->input.length != blocksizebyte )
 		{
-		  aldebug_printf(NULL,"[FATAL] reconstructed block of invalid size %i \n", intern->input.length);	      
+		  aldebug_printf(DBGSTREAM,"[FATAL] reconstructed block of invalid size %i \n", intern->input.length);	      
 		}
 	      // compute from internal reconstructed block
 	      alsha224_turn(intern, 0, &intern->input);
@@ -433,7 +434,7 @@ aldatablock * alsha2x_final(struct alsha2_internal * intern)
       if ( intern->input.length >=  blocksizebyte )
 	{
 	  // internal input length should be < blocksizebyte due to add block behavior.
-	  aldebug_printf(NULL,"[FATAL] input buffer at final of length %i >= blocksize %i\n", intern->input.length, blocksizebyte);
+	  aldebug_printf(DBGSTREAM,"[FATAL] input buffer at final of length %i >= blocksize %i\n", intern->input.length, blocksizebyte);
 	}
       
       // remaining incomplete buffer at end.
@@ -441,11 +442,11 @@ aldatablock * alsha2x_final(struct alsha2_internal * intern)
 	{
 	  ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
 	    {
-	      aldebug_printf(NULL,"[WARNING] non empty input buffer at final of length %i\n", intern->input.length);
+	      aldebug_printf(DBGSTREAM,"[WARNING] non empty input buffer at final of length %i\n", intern->input.length);
 	    }
 	  if ( intern->input.data.ptr !=  intern->inputcopy )
 	    {
-	      aldebug_printf(NULL,"[FATAL] non empty input buffer at final of length %i  using an external data buffer\n", intern->input.length);
+	      aldebug_printf(DBGSTREAM,"[FATAL] non empty input buffer at final of length %i  using an external data buffer\n", intern->input.length);
 	    }	  
 	  // expand it to full block, will be padded.
 	  intern->input.length = blocksizebyte;
@@ -465,7 +466,7 @@ aldatablock * alsha2x_final(struct alsha2_internal * intern)
     {
       if ( intern->input.length != blocksizebyte )
 	{
-	  aldebug_printf(NULL,"[ERROR] unexpected non empty input buffer of length %i at second padding final block\n", intern->input.length);
+	  aldebug_printf(DBGSTREAM,"[ERROR] unexpected non empty input buffer of length %i at second padding final block\n", intern->input.length);
 	}
       else
 	{
@@ -483,7 +484,7 @@ aldatablock * alsha2x_final(struct alsha2_internal * intern)
     }
   else
     {
-      aldebug_printf(NULL,"intern state wrong after padding %i\n", intern->state);
+      aldebug_printf(DBGSTREAM,"intern state wrong after padding %i\n", intern->state);
     }
    
 

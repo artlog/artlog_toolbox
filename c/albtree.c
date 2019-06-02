@@ -25,7 +25,7 @@ void freealbtreeprocess(void * data, void * datacontext, struct albtree * btree)
 	}
       btree->right = NULL;
       btree->left = NULL;
-      aldebug_printf(NULL,"[DEBUG] free btree %p\n", btree);
+      aldebug_printf(DBGSTREAM,"[DEBUG] free btree %p\n", btree);
       if ( btree->clean != NULL )
 	{
 	  (*btree->clean)( (void *) btree);

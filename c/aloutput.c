@@ -67,7 +67,7 @@ void aloutputstream_writeint32_fd(struct aloutputstream * stream, int word, int 
 #endif
   if ( r != bytes)
     {
-      aldebug_printf(NULL,"[ERROR] %s %u wrote %i\n","error when writing uint32 ", word, r);
+      aldebug_printf(DBGSTREAM,"[ERROR] %s %u wrote %i\n","error when writing uint32 ", word, r);
     }
 }
 
@@ -139,7 +139,7 @@ void aloutputstream_flush(struct aloutputstream * stream, int word, int bits)
       if ( bits > 0 )
 	{
 	  int bytes = ((bits-1) / CHAR_BIT) + 1;
-	  aldebug_printf(NULL,"last pad to byte %i\n", bytes);      
+	  aldebug_printf(DBGSTREAM,"last pad to byte %i\n", bytes);      
 	  if ( aloutputstream_is_file(stream) )
 	    {
 	      aloutputstream_writeint32_fd(stream,word,stream->fd, bytes);
@@ -252,7 +252,7 @@ void aloutput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * databl
   int last = len % group;
   if ( last != 0 )
     {
-      aldebug_printf(NULL,"using a length '%i' that is not a mutliple of group '%i'",len, group);
+      aldebug_printf(DBGSTREAM,"using a length '%i' that is not a mutliple of group '%i'",len, group);
     }
   */
   

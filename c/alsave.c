@@ -29,7 +29,7 @@ int alsave_file_exists(char * template)
       }
       else if ( errno == EINVAL )
 	{
-	  aldebug_printf(NULL,"weird invalid argument, contact developper (in function %s:%i)\n",__func__,__LINE__);
+	  aldebug_printf(DBGSTREAM,"weird invalid argument, contact developper (in function %s:%i)\n",__func__,__LINE__);
 	  return -2;
 	}
       else
@@ -203,7 +203,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 		  if ( renameat(dir_fd, oldpath,
 				dir_fd, newpath) != 0 )
 		    {
-		      aldebug_printf(NULL,"error while renaming %s->%s  [%i] %s index min=%i\n",oldpath, newpath, errno, strerror(errno), index_min);
+		      aldebug_printf(DBGSTREAM,"error while renaming %s->%s  [%i] %s index min=%i\n",oldpath, newpath, errno, strerror(errno), index_min);
 		      break;
 		    }
 		}
@@ -221,7 +221,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	  if ( renameat(dir_fd, oldpath,
 			dir_fd, newpath) != 0 )
 	    {
-	      aldebug_printf(NULL,"error while renaming %s->%s  [%i] %s\n",oldpath, newpath, errno, strerror(errno));
+	      aldebug_printf(DBGSTREAM,"error while renaming %s->%s  [%i] %s\n",oldpath, newpath, errno, strerror(errno));
 	    }
 
 	}
@@ -237,7 +237,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
     }
   else
     {
-      aldebug_printf(NULL,"can't open current dir ./ [%i] \n", errno);
+      aldebug_printf(DBGSTREAM,"can't open current dir ./ [%i] \n", errno);
       return -1;
     }
 }
