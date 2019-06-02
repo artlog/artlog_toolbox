@@ -128,8 +128,8 @@ int aldatablock_write_int32be(aldatablock * data, int offset, int word);
 
 int aldatablock_write_byte(aldatablock * data, int offset, unsigned char value);
 
-// deprecated, prefer aloutput_bytes_as_hex(stream,block,1,8)
-void aldatablock_dump(aldatablock * block );
+// FULLY deprecated use aloutput_bytes_as_hex(stream,block,1,8)
+// void aldatablock_dump(aldatablock * block );
 
 void aldatablock_setcstring(aldatablock * block,char * cstring);
 

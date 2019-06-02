@@ -4,6 +4,8 @@
 #include <assert.h>
 #include "aldebug_output.h"
 
+//TODO get rid of fprinf and use aloutput
+
 FILE * aljson_getoutfile(struct print_ctx * print_ctx)
 {
   return (FILE *) print_ctx->outfile;

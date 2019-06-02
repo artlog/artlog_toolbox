@@ -96,8 +96,8 @@ testjson:$(BUILD)/json $(TMPTESTDIR)
 	$< -- $(TEMPLATE)/test.json >$(TMPTESTDIR)/parse1.json 2>$(TMPTESTDIR)/$@.parse1.json.out.2
 	$< -- $(TEMPLATE)/parse1.json >$(TMPTESTDIR)/parse2.json 2>$(TMPTESTDIR)/$@.parse2.json.out.2
 	$< -- $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/parse3.json 2>$(TMPTESTDIR)/$@.parse3.json.out.2
-	$< -- $(TEMPLATE)/test.json $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/$@.test.refnawak.json.out 2>$(TMPTESTDIR)/$@.refnawak.json.out.2
-	$< -- $(TEMPLATE)/refnawak.json $(TEMPLATE)/template.json -debug 2>$(TMPTESTDIR)/$@.parse1.json.out.12 1>&2
+	$< template=$(TEMPLATE)/refnawak.json -- $(TEMPLATE)/test.json  >$(TMPTESTDIR)/$@.test.refnawak.json.out 2>$(TMPTESTDIR)/$@.refnawak.json.out.2
+	$< template=$(TEMPLATE)/template.json -- $(TEMPLATE)/refnawak.json -debug 2>$(TMPTESTDIR)/$@.parse1.json.out.12 1>&2
 	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse2.json && echo "parse2.json [OK]"
 	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse3.json && echo "parse3.json [OK]"
 	$< -- $(TEMPLATE)/test2.json  >$(TMPTESTDIR)/test2.json 2>$(TMPTESTDIR)/$@.test2.json.out.2

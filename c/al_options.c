@@ -15,6 +15,9 @@ const int MAXOPTIONS=1024;
 
 #define FINAL_NUL '\0'
 
+// NO debugging, set it do DBGSTREAM to get debug
+#define DBGOPTIONSTREAM NULL
+
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 
 int al_options_get_duplicates(struct al_options * options, struct alhash_datablock * key)
@@ -45,19 +48,19 @@ struct alhash_entry * al_option_copy_put(struct al_options * options,
   struct alhash_entry *entry =  alhash_get_entry(&options->context.dict, key);
   if (entry == NULL)
     {
-      aldebug_printf(DBGSTREAM,"new key length %i "ALPASCALSTRFMT"\n",key->length,ALPASCALSTRARGS(key->length,key->data.charptr));
+      aldebug_printf( DBGOPTIONSTREAM,"new key length %i "ALPASCALSTRFMT"\n",key->length,ALPASCALSTRARGS(key->length,key->data.charptr));
       al_option_copy_str(options,key);
       al_option_copy_str(options,value);      
       entry = alhash_put(&options->context.dict, key, value);
       if (entry == NULL)
 	{
-	  aldebug_printf(DBGSTREAM, "[FATAL] FAIL to insert '%s:%s' into options\n", key->data.charptr,value->data.charptr);
+	  aldebug_printf( DBGOPTIONSTREAM, "[FATAL] FAIL to insert '%s:%s' into options\n", key->data.charptr,value->data.charptr);
 	}
       else
 	{
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	      aldebug_printf(DBGSTREAM,"[DEBUG] entry '%s'='%s'\n", entry->key.data.charptr, entry->value.data.charptr);
+	      aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] entry '%s'='%s'\n", entry->key.data.charptr, entry->value.data.charptr);
 	    }
 	}
     }
@@ -75,7 +78,7 @@ struct alhash_entry * al_option_copy_put(struct al_options * options,
 	{	
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	      aldebug_printf(DBGSTREAM,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",key->data.charptr,value->data.charptr);
+	      aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",key->data.charptr,value->data.charptr);
 	    }
 	}
     }
@@ -111,10 +114,10 @@ void al_option_parse_multivalued(struct al_options * options,
   const char * ivalue = valuebloc->data.constcharptr;
   int valuelength = valuebloc->length;
 
-  ALDEBUG_IF_DEBUG(options, al_options, debug)  aldebug_printf(DBGSTREAM,"[DEBUG] parse multivalued \n");
+  ALDEBUG_IF_DEBUG(options, al_options, debug)  aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] parse multivalued \n");
   if (( ivalue != NULL) && (ivalue[0] == '[' ) )
     {
-      ALDEBUG_IF_DEBUG(options, al_options, debug) aldebug_printf(DBGSTREAM,"[DEBUG] '[' match \n");
+      ALDEBUG_IF_DEBUG(options, al_options, debug) aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] '[' match \n");
       char arraykey[ALOPTION_MAX_CHAR_BUFFER];
       // mutlivalued case ivalue[0] assumed to be '['
       int charindex = 1;
@@ -208,13 +211,13 @@ void al_option_parse_multivalued(struct al_options * options,
 	    entry = alhash_put (&options->context.dict, &key, &value);
 	    if (entry == NULL)
 	      {
-		aldebug_printf(DBGSTREAM, "[FATAL] FAIL to insert '%s:%i' into options\n", key.data.charptr,index);
+		aldebug_printf( DBGOPTIONSTREAM, "[FATAL] FAIL to insert '%s:%i' into options\n", key.data.charptr,index);
 	      }
 	    else
 	      {
 		ALDEBUG_IF_DEBUG(options, al_options, debug)
 		  {
-		    aldebug_printf(DBGSTREAM,"[DEBUG] entry '%s'='i\n", entry->key.data.charptr, index);
+		    aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] entry '%s'='i\n", entry->key.data.charptr, index);
 		  }
 	      }
 	  }
@@ -223,7 +226,7 @@ void al_option_parse_multivalued(struct al_options * options,
     }
   else
     {
-      aldebug_printf(DBGSTREAM,"[DEBUG] non multivalue \n");
+      aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] non multivalue \n");
 
       al_option_copy_put(options,
 			 keybloc,
@@ -292,7 +295,7 @@ void al_options_parse_key_value(struct al_options * options,const char * arg)
    {
      ALDEBUG_IF_DEBUG(options, al_options, debug)
        {
-	 aldebug_printf(DBGSTREAM,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
+	 aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
        }
 
      // support key=[value0,value1,...] => "key[0]", "key[1]" ..., "key#" = 2     
@@ -304,7 +307,7 @@ void al_options_parse_key_value(struct al_options * options,const char * arg)
      // was sscanf(arg,"%m[^=]",&key);
      ALDEBUG_IF_DEBUG(options, al_options, debug)
        {
-	 aldebug_printf(DBGSTREAM,"[DEBUG] option recognized : '--%s' ( as %s=true) \n",key,key);
+	 aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] option recognized : '--%s' ( as %s=true) \n",key,key);
        }
      al_option_add(options,key,"true");
    }
@@ -401,7 +404,7 @@ struct alhash_datablock * al_option_get(struct al_options * options,const char *
     {
 	  ALDEBUG_IF_DEBUG(options, al_options, debug)
 	    {
-	      aldebug_printf(DBGSTREAM,"[DEBUG] option %s, NOT FOUND\n",ikey);
+	      aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] option %s, NOT FOUND\n",ikey);
 	    }
       return NULL;
     }

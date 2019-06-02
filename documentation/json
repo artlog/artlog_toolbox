@@ -14,7 +14,7 @@ aljson_main version 0.1
 __________________________________________________________________
 
 
-build/json template/list.json 
+build/json -- template/list.json 
 [
   "a",
   "b",
@@ -28,3 +28,75 @@ build/json template/list.json
 
 check : checks file is a uses a valid json syntax.
 
+_________
+JSON path
+_________
+
+
+=> to extract a value from a json hierarchy by specifying a path to value.
+
+../build/json arg=[../template/parse1.json] 2>/dev/null
+{
+  "menu":{
+    "id":"file",
+    "value":"File",
+    "popup":{
+      "menuitem":[
+        {
+          "value":"New",
+          "onclick":"CreateNewDoc()"
+        },
+        {
+          "value":"Open",
+          "onclick":"OpenDoc()"
+        },
+        {
+          "value":"Close",
+          "onclick":"CloseDoc()"
+        }
+      ]
+    }
+  }
+}
+
+../build/json json_path=menu.value arg=[../template/parse1.json] 2>/dev/null
+"File"
+
+../build/json json_path=menu.popup.menuitem[1] arg=[../template/parse1.json] 2>/dev/null
+{
+  "value":"Open",
+  "onclick":"OpenDoc()"
+}
+
+../build/json json_path=menu.popup.menuitem[1].onclick arg=[../template/parse1.json] 2>/dev/null
+
+
+../build/json json_path= arg=[../template/parse1.json] 2>/dev/null
+
+_____________
+
+JSON template
+_____________
+
+
+unify
+
+cat template/template.json
+{
+    "menu":
+    {
+        "id": "file",
+        "value": "File",
+        "popup":
+        {
+            "menuitem":
+	    ?menu?
+        }
+    }
+}
+
+
+?menu? is a variable that will get corresponding content from json.
+
+build/json -c template=template/template.json -- template/refnawak.json 2>/dev/null
+.menu.popup.menuitem.?menu?=[{"value":"New","onclick":"CreateNewDoc()"},{"value":"Open","onclick":"OpenDoc()"},{"value":"Close","onclick":"CloseDoc()"}]

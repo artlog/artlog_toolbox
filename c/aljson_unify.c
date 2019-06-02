@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include "aldebug_output.h"
+
+
+// TODO mix of json_dump and printf... => what do we expect ?
+
+#define DBGALJSONUNIFY DBGSTREAM
 
 int json_unify_string(struct json_parser_ctx * ctx, struct json_object * object,
 		      struct json_parser_ctx * other_ctx, struct json_object * other_object,
@@ -14,7 +20,7 @@ int json_unify_string(struct json_parser_ctx * ctx, struct json_object * object,
       struct json_string * string = &object->string;
       if ( strcmp(string->internal.data.ptr, other_object->string.internal.data.ptr) == 0 )
 	{
-	  printf("%c" ALPASCALSTRFMT "%c",
+	  aldebug_printf(DBGALJSONUNIFY,"%c" ALPASCALSTRFMT "%c",
 		 object->type,
 		 ALPASCALSTRARGS(string->internal.length,(char *)string->internal.data.ptr),
 		 object->type);
@@ -27,7 +33,7 @@ int json_unify_string(struct json_parser_ctx * ctx, struct json_object * object,
     }
   else
     {
-      printf("'0");
+      aldebug_printf(DBGALJSONUNIFY,"'0");
       return 0;
     }  
 }
@@ -42,7 +48,7 @@ int json_unify_list(struct json_parser_ctx * ctx, struct json_object * object,
     {
       return 0;
     }
-  printf("%c",object->type);
+  aldebug_printf(DBGALJSONUNIFY,"%c",object->type);
   aljson_dump_enter_indent( print_ctx);
   if (object->list.nitems > 0)
     {
@@ -52,7 +58,7 @@ int json_unify_list(struct json_parser_ctx * ctx, struct json_object * object,
 			     print_ctx);
       for(i=1;(ok == 1) && (i< object->list.nitems);i++)
 	{
-	  printf(",");
+	  aldebug_printf(DBGALJSONUNIFY,",");
 	  aljson_dump_indent(print_ctx);
 	  ok= aljson_unify_object(ctx,object->list.value[i],
 				other_ctx,other_object->list.value[i],
@@ -65,7 +71,7 @@ int json_unify_list(struct json_parser_ctx * ctx, struct json_object * object,
     }
   aljson_dump_exit_indent( print_ctx);
   aljson_dump_indent(print_ctx);
-  printf("]");
+  aldebug_printf(DBGALJSONUNIFY,"]");
   return ok;
 }
 
@@ -76,7 +82,7 @@ int json_unify_pair(struct json_parser_ctx * ctx, struct json_pair * pair,
   int ok =  aljson_unify_object(ctx,pair->key,
 			      other_ctx, other_pair->key,
 			      print_ctx);
-  printf(":");
+  aldebug_printf(DBGALJSONUNIFY,":");
   if ( ok == 1 )
     {
       ok = aljson_unify_object(ctx,pair->value,
@@ -99,7 +105,7 @@ int json_unify_pair_object(struct json_parser_ctx * ctx, struct json_object * ob
     }
   else
     {
-      printf(":0");
+      aldebug_printf(DBGALJSONUNIFY,":0");
       return 0;
     }
 
@@ -117,7 +123,7 @@ int json_unify_dict(
     {
       return 0;
     }
-  printf("%c",object->type);
+  aldebug_printf(DBGALJSONUNIFY,"%c",object->type);
   aljson_dump_enter_indent(print_ctx);
   if (object->dict.nitems > 0)
     {
@@ -127,7 +133,7 @@ int json_unify_dict(
 			   print_ctx);
       for(i=1;(ok == 1) && ( i< object->dict.nitems);i++)
 	{
-	  printf(",");
+	  aldebug_printf(DBGALJSONUNIFY,",");
 	  aljson_dump_indent(print_ctx);
 	  ok = json_unify_pair(ctx,object->dict.items[i],
 			       other_ctx, other_object->dict.items[i],
@@ -140,7 +146,7 @@ int json_unify_dict(
     }    
   aljson_dump_exit_indent( print_ctx);
   aljson_dump_indent(print_ctx);
-  printf("}");
+  aldebug_printf(DBGALJSONUNIFY,"}");
 
   return ok;
 }
@@ -214,7 +220,7 @@ int aljson_unify_object(
       else
 	{
 	 
-	  // printf("%p[%c]",object,object->type);
+	  // aldebug_printf(DBGALJSONUNIFY,"%p[%c]",object,object->type);
 	  switch(object->type)
 	    {
 	    case 'G':
@@ -243,16 +249,16 @@ int aljson_unify_object(
 					    print_ctx);
 	      break;
 	    case ',':
-	      printf("#");
+	      aldebug_printf(DBGALJSONUNIFY,"#");
 	      break;
 	    default:
-	      printf("ERROR unify type %c %p",object->type, print_ctx);
+	      aldebug_printf(DBGALJSONUNIFY,"ERROR unify type %c %p",object->type, print_ctx);
 	    }
 	}
     }
   else
     {
-      printf(" NULL ");
+      aldebug_printf(DBGALJSONUNIFY," NULL ");
       return 0;
     }
   

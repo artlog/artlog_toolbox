@@ -12,7 +12,7 @@
 #include "al_options.h"
 #include "al_options_output.h"
 
-const char * aljson_main_version="0.1";
+const char * aljson_main_version="0.2";
 
 /**
 a complicated json stream ( one char ahead ) parser 
@@ -27,14 +27,13 @@ void usage()
   aldebug_printf(DBGSTREAM,"Output : dump parsed json to standard output.\n");
   aldebug_printf(DBGSTREAM,"-d debug\n");
   aldebug_printf(DBGSTREAM,"-m non recursive\n");
-  // aldebug_printf(DBGSTREAM,"-p path\n");
-  aldebug_printf(DBGSTREAM,"path=<path>\n");
   aldebug_printf(DBGSTREAM,"-c check only (no print)\n");
   aldebug_printf(DBGSTREAM,"-b bare : no indent");
+  aldebug_printf(DBGSTREAM,"json_path=<path>\n");
+  aldebug_printf(DBGSTREAM,"template= filename to open in read only mode to parse in json for template.\n");
+  aldebug_printf(DBGSTREAM,"          template is used for json unification ie extracting fields from a template pattern\n");
   aldebug_printf(DBGSTREAM,"-- to separate options from arguments\n");  
   aldebug_printf(DBGSTREAM,"First argument : filename to open in read only mode to parse in json.\n");
-  aldebug_printf(DBGSTREAM,"Second argument : filename to open in read only mode to parse in json for template.\n");
-  aldebug_printf(DBGSTREAM,"                  template is used for json unification ie extratcing fields from a template pattern\n");
 
   aldebug_printf(DBGSTREAM,"\naljson_main version %s\n",aljson_main_version);
 }
@@ -45,7 +44,6 @@ int main(int argc, char ** argv)
   char * json_template = NULL;
   char * json_path = NULL;
   int debug = 0;
-  int path = 0;
   int checkonly = 0;
 
   FILE * data_file;
@@ -80,7 +78,6 @@ int main(int argc, char ** argv)
 
   debug = (al_option_get(options,"d") == NULL) ? 0 : 1;
   checkonly = (al_option_get(options,"c") == NULL) ? 0 : 1;
-  path = (al_option_get(options,"p") == NULL) ? 0 : 1;
   
   struct alhash_datablock * json_path_value = al_option_get(options,"json_path");
   if ( json_path_value != NULL )
@@ -95,16 +92,25 @@ int main(int argc, char ** argv)
       print_context.indent = 0;
     }
 
+
+  struct alhash_datablock * json_template_value = al_option_get(options,"template");
+  if ( json_template_value != NULL )
+    {
+      json_template = json_template_value->data.charptr;
+    }
+
   if ( al_option_getargsnumber(options) > 0 )
     {
       json_filename = al_option_getarg(options,0);
-      json_template = al_option_getarg(options,1);
     }
   
   struct aloutputstream output;
   aloutputstream_fd_init(&output,fileno(stderr));
-  
-  al_option_dump_output(options,&output);
+
+  if ( debug > 0 )
+    {
+      al_option_dump_output(options,&output);
+    }
 			
   json_set_debug(debug);
   json_ctx_set_debug(&json_tokenizer,debug);
@@ -134,14 +140,6 @@ int main(int argc, char ** argv)
 	  // where the parsing actualy take place
 	  root=parse_level(&json_context,&data,root);
 	  fclose(data_file);
-	  if ( checkonly == 0 )
-	    {
-	      aljson_output(&json_context,root,&print_context);
-	    }
-	  else
-	    {
-	      aldebug_printf(DBGSTREAM,"parsing complete\n");
-	    }
 	    
 	  if ( json_path != NULL )
 	    {
@@ -155,6 +153,17 @@ int main(int argc, char ** argv)
 		  aldebug_printf(DBGSTREAM," NOT FOUND.");
 		}
 	    }
+	  else {
+	    if ( checkonly == 0 )
+	      {
+		aljson_output(&json_context,root,&print_context);
+	      }
+	    else
+	      {
+		aldebug_printf(DBGSTREAM,"parsing complete\n");
+	      }
+	  }
+	    
 	  if ( json_template != NULL )
 	    {
 	      if ( debug > 0 )
@@ -169,9 +178,12 @@ int main(int argc, char ** argv)
 		  struct json_object * template_root=NULL;
 		  alinputstream_init(&template_inputstream,fileno(template_file));
 		  template_data.inputstream=&inputstream;
-		  template_root=parse_level(&json_template_context,&template_data,template_root);
+		  template_root=parse_level(&json_template_context,&template_data,template_root);		  
 		  fclose(template_file);
-		  aljson_output(&json_template_context,template_root,&print_template_context);
+		  if ( debug > 0 )
+		    {
+		      aljson_output(&json_template_context,template_root,&print_template_context);
+		    }
 		  aldebug_printf(DBGSTREAM,"\n");
 		  if ( aljson_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )
 		    {

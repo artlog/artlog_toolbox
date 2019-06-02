@@ -287,7 +287,10 @@ void alstrings_ringbuffer_init_autogrow(alstrings_ringbuffer_pointer * ringbuffe
     {
       struct token_char_buffer * allocated = al_token_char_buffer_alloc(buckets);
       al_token_char_buffer_init_internal(allocated,firstbucketlength);
-      aldebug_printf(DBGSTREAM,"[DEBUG] allocated %p\n", allocated);
+      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
+	{
+	  aldebug_printf(DBGSTREAM,"[DEBUG] allocated %p\n", allocated);
+	}
       *ringbufferp = allocated;
      }
 }
@@ -416,31 +419,11 @@ unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
     }
   else
     {
-      aldebug_printf(DBGSTREAM,"get int out of bound %i/%i\n", offset,data->length);
+      aldebug_printf(DBGSTREAM,"|ERROR] get int out of bound %i/%i\n", offset,data->length);
     }
   return result;  
 }
   
-// deprecated, prefer aloutput_bytes_as_hex(stream,block,1,8)
-void aldatablock_dump( aldatablock * block )
-{
-  if ( block != NULL )
-    {
-      if ( block->data.ptr != NULL )
-	{
-	  for (int i=0; i < block->length / sizeof(int); i ++)
-	    {
-	      aldebug_printf(DBGSTREAM,"%08x ", block->data.uintptr[i]);
-	    }
-	  aldebug_printf(DBGSTREAM,"\n");
-	}
-      else
-	{
-	  aldebug_printf(DBGSTREAM,"NULL datablock ptr in %p\n", block);
-	}
-    }
-}
-
 void aldatablock_setcstring(aldatablock * block,char * cstring)
 {
   block->data.charptr = cstring;
