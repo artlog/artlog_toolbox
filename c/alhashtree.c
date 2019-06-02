@@ -6,6 +6,7 @@
 #include "altodo.h"
 #include "alcryptohash.h"
 #include "aldebug_output.h"
+#include "aloutput_file.h"
 
 aldatablock emptyhash;
 
@@ -105,10 +106,102 @@ void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreen
   
 }
 
+void  alhashtree_to_dot(struct aloutputstream * output, struct alhashtreenode * treenode)
+{
+  struct albtree * btreenode = &treenode->btree;
+
+  aloutputstream_printf_1k(output,"node%p [label=<",btreenode);
+  if ( btreenode->data != NULL )
+    {
+      aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"20\">%s</FONT><BR/>",(char *) btreenode->data);
+    }
+  
+  if ( treenode->hash.length > 0 )
+    {
+      aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"16\">hash=");
+      aloutput_bytes_as_hex(output, &treenode->hash, 0, 8);
+      aloutputstream_printf_1k(output,"</FONT>",btreenode,btreenode);
+    }
+
+  aloutputstream_printf_1k(output,">]",btreenode,btreenode);
+  
+      
+  if ( btreenode->left != NULL )
+    {
+      if ( btreenode->right != NULL )
+	{
+	  aloutputstream_printf_1k(output,
+				   "node%p -> node%p [color=blue];\n"
+				   "node%p -> node%p [color=red];\n",
+				   btreenode,
+				   btreenode->left,
+				   btreenode,
+				   btreenode->right);
+	}
+      else
+	{
+	  aloutputstream_printf_1k(output,
+				   "node%p -> node%p [color=blue];\n",
+				   btreenode,
+				   btreenode->left);
+	}
+    }
+  else
+    {
+      if ( btreenode->right != NULL )
+	{
+	  aloutputstream_printf_1k(output,
+				   "node%p -> node%p [color=red];\n",
+				   btreenode,
+				   btreenode->right);
+	}
+    }
+  
+}
+
+
 void alhashtree_clean(struct alhashtreenode * treenode)
 {
   aldebug_printf(NULL,"[DEBUG] alhashtree_clean %p\n",treenode);
   free(treenode);
+}
+
+
+void alhashtree_snapshot_process(void * data, void * contextdata, struct albtree * btree)  
+{
+  struct alhashtree_snapshot * snapshot = (struct alhashtree_snapshot *) contextdata;
+  struct aloutputstream * dotoutput = &snapshot->output;
+  struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
+  alhashtree_dump_treenode(NULL,treenode);
+  if ( dotoutput != NULL )
+    {
+      alhashtree_to_dot(dotoutput,treenode);
+    }
+}
+
+void alhashtree_snapshot_init(struct alhashtree_snapshot * snapshot,const char * filename)
+{
+  aloutput_file_open_init(&snapshot->output,filename);
+  snapshot->id=0;
+}
+
+void alhashtree_snapshot_close(struct alhashtree_snapshot * snapshot)
+{
+  aloutputstream_close(&snapshot->output);
+  
+}
+void alhashtree_snapshot_to_dot(struct alhashtree_snapshot * snapshot,struct alhashtreenode * root)
+{
+  struct aloutputstream * dotoutput = &snapshot->output;
+  int snapid = snapshot->id;
+  
+  aloutputstream_printf_1k(dotoutput,"digraph root%p_%i {\n", &root->btree,snapid);
+  
+  albtree_walk(&root->btree, ALBTREE_WP_SLR,  alhashtree_snapshot_process, snapshot, 10);
+  aloutputstream_printf_1k(dotoutput,"}\n", &root->btree);
+
+  snapshot->id=snapid+1;  
+
 }
 
 void alsha256hashfunc(
@@ -173,6 +266,35 @@ void alhashtree_fatal()
   // should stop here
   aldebug_printf(NULL,"[FATAL] exiting program on fatal error\n");
 }
+
+void alhashtree_set_left( struct alhashtreenode * treenode,
+			   struct alhashtreenode * left)
+{
+  if ( left != NULL )
+    {
+      albtree_set_left(&treenode->btree,&left->btree);
+      left->parent = treenode;
+    }
+  else
+    {
+      albtree_set_left(&treenode->btree,NULL);
+    }
+}
+
+void alhashtree_set_right( struct alhashtreenode * treenode,
+			   struct alhashtreenode * right)
+{
+  if ( right != NULL )
+    {
+      albtree_set_right(&treenode->btree,&right->btree);
+      right->parent = treenode;
+    }
+  else
+    {
+      albtree_set_right(&treenode->btree,NULL);
+    }
+}
+
 
 void alhashtree_specific_init(
 			     struct alhashtreenode * treenode,
@@ -319,71 +441,62 @@ int alhashtree_recompute_upto_root(struct alhashtreenode *intree)
 
 // WARNING set *newroot with computed root from parent links and with new root if created
 // assuming intree is already rightmost deeper leaf.
+// will return a new rightmost element
 struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree, struct alhashtreenode ** newroot)
 {
-  int depth = alhashtree_depth_to_root(intree, newroot);
-  struct alhashtreenode * previous_root = (*newroot);
-  struct alhashtreenode * root = previous_root;
-  struct alhashtreenode * right = NULL;
+  struct albtree * previous_root = NULL;
+  struct alhashtreenode * root = NULL;
   struct alhashtreenode * added = NULL;
   struct alhashtreenode * parent = NULL;
 
   parent = intree->parent;
-  if ( parent != NULL )
-    {      
-      right=(struct alhashtreenode *) albtree_get_right(&parent->btree);
-    }
-  else
-    {
-      right=NULL;
-    }
-
-  if ( right == intree )
-    {
+  
       aldebug_printf(NULL,"create a new right -child or parent- for %p\n", intree);
-      right = alhashtree_allocate();
-      alhashtree_init(right,intree->context, NULL, NULL);
-      added=right;
-    }
-  else if (right == NULL)
-    {
-      aldebug_printf(NULL,"create a new right child for %p\n", intree);
-      right = alhashtree_allocate();
-      alhashtree_init(right,intree->context, NULL, NULL);
-      if ( parent != NULL )
-	{
-	  albtree_set_right(&parent->btree,&right->btree);
-	  right->parent=parent;
-	  return right;
-	}
-      added = right;
-    }
-  else
-    {
-      aldebug_printf(NULL,"[FATAL] unexpected case, disrespecting calling assertion that element is rightmost leaf");
-      return right;
-    }
 
-  root = alhashtree_allocate();  
-  alhashtree_init(root,intree->context, &previous_root->btree,&right->btree);
-  aldebug_printf(NULL,"create a new root %p with previous root %p at left for depth %i right %p\n",root,previous_root, depth, right);
+      {
+	struct alhashtreenode * freeparent = parent;	
+      	struct alhashtreenode * left = NULL;
+	// one level deeper than left ( when not the same ).
+	struct albtree * deeperleft = NULL;
 
-  parent=right;
+	// create deepest
+	added = alhashtree_allocate();
+	alhashtree_init(added,intree->context, NULL, NULL);
+	left=added;
+	deeperleft = &left->btree;
+	    
+	// create left children from ground on top of previous deeperleft
+	// should find a free entry at right in parent hierarchy
+	while ( freeparent != NULL )
+	  {
+	    // freeparent found
+	    if ( albtree_get_right(&freeparent->btree) == NULL )
+	      {
+		// attach left only tree on right of free parent.
+		alhashtree_set_right(freeparent,left);
 
-  // culprit code causes heap corruption
-  for (int i=0;i<depth;i++)
-    {
-      // add_left children.
-      added = (struct alhashtreenode *) albtree_insert_left(&parent->btree, NULL);
-      aldebug_printf(NULL,"[DEBUG] add left child %i/%i %p parent %p\n", i, depth, added, parent);
-      alhashtree_specific_init(added, intree->context, NULL, NULL, parent);
-      parent=added;
-    }
+		(*newroot) = (struct alhashtreenode *) previous_root;
+		// no root involved.
+		return added;
+	      }
 
+	    left = alhashtree_allocate();
+	    alhashtree_init(left,intree->context, deeperleft, NULL);
+	    deeperleft = &left->btree;
 
-  (*newroot) = root;
+	    previous_root=&freeparent->btree;
+	    freeparent=freeparent->parent;
+	  }
 
-  return added;
+	// now we are at root level and left only tree is created behind left/deeperlef
+	root = alhashtree_allocate();  
+	alhashtree_init(root,intree->context, previous_root,deeperleft);
+	
+	(*newroot) = root;
+      
+	return added;
+
+      }
 }
 
 // assuming intree is already rightmost deeper leaf.
@@ -398,13 +511,13 @@ struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, alda
   if (intree != NULL )
     {
       if ( intree->hash.length == 0 )
-	{
+	{	  
 	  added=intree;
 	}
       else
 	{
 	  struct alhashtreenode * root;
-	  root = NULL; // to check
+	  // root = NULL; // out only, don't care its value
 	  added = alhashtree_create_sibling(intree, &root);
 	}
       

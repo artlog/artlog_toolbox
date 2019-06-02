@@ -47,6 +47,10 @@ struct alhashtreenode {
   struct alallocation_ctx * context;
 };
 
+struct alhashtree_snapshot {
+  int id;
+  struct aloutputstream output;
+};
 
 // compute empty sha256 hash globally.
 void alhashtree_global_init_sha256(struct alallocation_ctx * context);
@@ -76,4 +80,14 @@ int alhashtree_depth_to_root(struct alhashtreenode *intree, struct alhashtreenod
 // if output is NULL will use output from alhashtree_glogal_init
 void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreenode * treenode);
 
+void  alhashtree_to_dot(struct aloutputstream * output, struct alhashtreenode * treenode
+			);
+
+void alhashtree_snapshot_init(struct alhashtree_snapshot * snapshot,const char * filename);
+
+void alhashtree_snapshot_to_dot(struct alhashtree_snapshot * snapshot,struct alhashtreenode * root);
+
+void alhashtree_snapshot_close(struct alhashtree_snapshot * snapshot);
+
+  
 #endif // #ifndef __ALHASHTREE_H__
