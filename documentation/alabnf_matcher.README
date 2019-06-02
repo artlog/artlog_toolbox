@@ -1,0 +1,121 @@
+_____________
+
+alabnf_matcher
+______________
+
+
+ABNF https://fr.wikipedia.org/wiki/Augmented_Backus-Naur_Form
+
+__________________________________________________________________________________________________________________________
+
+20th may 2019 current status
+____________________________
+
+
+Whole project was triggered by requirement to parse url for json-ld.
+
+See 839bed1b436f941f5d5a7994fce274cd950507f3
+
+    iri syntax is in abnf
+    
+    - north face try , initiate a tentative to prepare a abnf parser
+    to have a later a abnf generator ...
+
+It was abstracted to generate a c parser for abnf provided syntax, but does not work.
+
+
+plhardy@pavilionartlogiciel:~/artisanlogiciel/code/artlog_toolbox/c$ ./alabnf_matcher ../abnf/rfc3986_part.abnf ../abnf/rfc5234_core.abnf
+
+(...)
+[FATAL] TOO MANY STEPS (NULL char) state ('0x563ea3664520' type 16 initial type 6 current 0x563ea3666960 current_type 6 index 0)  in alabnf_matcher.c alabnf_matcher_resolve_state_node 835
+
+__________________________________________________________________________________________________________________________
+
+state
+
+initial node vs current node.
+
+ALABNF_NT_SEQUENCE
+
+initial node keep fact we are in a sequence
+
+next_sequence is used to keep track of this sequence step, current node is node of next_sequence
+when next_sequence == initial node sequence => start
+when next_sequence is NULL => end of sequence.
+
+current node will move from first node to last node of chained sequence.
+when current node is consumed it is set to NULL.
+
+initial == current
+next_sequence = sequence(initial)
+current = next_sequence.node
+
+==> call with current != initial
+==> means current is current ... don't care it is part of a sequence.
+special case if current is SEQ => need to push a new state.
+current node is set to NULL, meaning we have to use next_sequence to progress.
+
+
+
+
+___________________________
+
+
+ALABNF_NT_ALT
+
+==> each new alternative should capture current state input stream to be able to fallback...
+
+
+problem when ALT is within a SEQUENCE
+
+___________________________
+
+==> it is up to alabnf_match to do next state or to alabnf_match_character ?
+
+
+_______________________
+
+
+./alabnf infile=abfnhex2.test
+file to parse 'abfnhex2.test'
+[DEBUG] rematch 0x557c1f66965a 6e 'n' at (line,column) (0,1)
+[DEBUG] CLOSE 0x557c1f66c1a2 20 '?' at (line,column) (0,5)
+name[DEBUG] close name string 0x557c1fe378c0
+[DEBUG] stack_rule_ref ('46','.') at 0:5  in alabnf.c alabnf_stack_rule_ref 1758
+[DEBUG] string_ruledef ('32',' ') at 0:7  in alabnf.c alabnf_start_string_ruledef 1597
+[DEBUG] string_ruledef ('37','%') at 0:8  in alabnf.c alabnf_start_string_ruledef 1597
+[DEBUG] typed_string ('120','x') at 0:9  in alabnf.c alabnf_start_typed_string 1044
+
+16 0x10 '.'
+
+171 0xab '.'
+
+18 0x12 '.'
+
+170 0xaa '.'
+LF
+[DEBUG] CLOSE 0x557c1f66c0f4 a '?' at (line,column) (1,0)
+��[DEBUG] close string token 0x557c1fe37c80 in alabnf.c alabnf_close_string 1867
+[DEBUG] rematch 0x557c1f66b2f9 a '?' at (line,column) (1,0)
+[DEBUG] string_ruledef ('10','.') at 1:0  in alabnf.c alabnf_start_string_ruledef 1597
+[INFO] parsing a rule in stack of 2 tokens .
+add node type 7 in rule sequence
+[DEBUG] in alabnf.c alabnf_collect_node_sequence 1160
+[DEBUG] new node type 7 in alabnf.c:alabnf_collect_node_sequence:1216
+[INFO] in alabnf.c:alabnf_close_rule:1522
+
+name= %x10.ffffffab.12.ffffffaa
+[DEBUG] alhash release 0x7fff12db14e0 autogrow 200 
+[TODO]
+
+
+
+
+__________________________________________________
+
+
+status :
+
+what can it parse, where does it fails ?
+
+why is there a alabnf - albnf_test.c) and alabanf_matcher ?

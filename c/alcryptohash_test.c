@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "aldebug_output.h"
+#include "aloutput.h"
 
 void usage()
 {
@@ -25,8 +26,8 @@ void alshash_callback (aldatablock * block, void * data)
     {
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
-	{
-	  aldatablock_dump(block);
+	{	  
+	  aloutput_bytes_as_hex(&aldebug_default.output,block,0,8);
 	}
       alcryptohash_tool_callback(block, data);
     }
@@ -39,7 +40,7 @@ void alshash_finalize (aldatablock * block, void * data)
       struct alsha2_internal * shax = (struct alsha2_internal *) data;
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
 	{
-	  aldatablock_dump(block);
+	  aloutput_bytes_as_hex(&aldebug_default.output,block,0,8);
 	}
       ;
       alcryptohash_tool_finalize(block,data);
@@ -80,6 +81,8 @@ void test_base64(char * text)
 
 int main(int argc, char ** argv)
 {
+  aldebug_start(NULL);
+  
   if ( argc > 1 )
     {
       char * filename = argv[1];
@@ -139,4 +142,6 @@ int main(int argc, char ** argv)
     {
       usage();
     }
+
+  aldebug_end();
 }

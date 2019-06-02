@@ -14,13 +14,13 @@
 void
 usage()
 {
-  printf("\nUSAGE:\n");
-  printf("work in progress: first goal is to generate json stub from c struct definition see json_to_c_stub.c\n");
+  aldebug_printf(DBGSTREAM,"\nUSAGE:\n");
+  aldebug_printf(DBGSTREAM,"work in progress: first goal is to generate json stub from c struct definition see json_to_c_stub.c\n");
 
-  printf("ex:./c_parser infile=./input_for_c_parser.h outform=aljson_stub\n");
+  aldebug_printf(DBGSTREAM,"ex:./c_parser infile=./input_for_c_parser.h outform=aljson_stub\n");
 
-  printf("more advanced goal is to be a c parser ... \n");
-  printf("ex:./c_parser debug=true infile=./c_parser.c\n");
+  aldebug_printf(DBGSTREAM,"more advanced goal is to be a c parser ... \n");
+  aldebug_printf(DBGSTREAM,"ex:./c_parser debug=true infile=./c_parser.c\n");
 
 }
 
@@ -45,10 +45,10 @@ c_show_info (struct c_parser_ctx *parser, char *category, char *info)
       struct json_pos_info *pos = &parser->tokenizer->pos_info;
       if (c_parser_is_debug (parser))
 	{
-	  printf
-	    ("// [%s] %s token %i c_token %i, state %i at nested:%i count:%i LC=(%i,%i)\n",
-	     category, info, parser->last_token, parser->last_word, parser->state,
-	     parser->nested, parser->token_count, pos->line, pos->column);
+	  aldebug_printf(DBGSTREAM,
+			 "// [%s] %s token %i c_token %i, state %i at nested:%i count:%i LC=(%i,%i)\n",
+			 category, info, parser->last_token, parser->last_word, parser->state,
+			 parser->nested, parser->token_count, pos->line, pos->column);
 	}
     }
 }
@@ -79,7 +79,7 @@ void
 reset_tokenizer_buffer (struct json_ctx *tokenizer)
 {
   // reset when word is parsed and recognized as either a reserved word or stored in variable dict with cut_string.
-  // printf("//reset token buffer\n");
+  // aldebug_printf(DBGSTREAM,"//reset token buffer\n");
   tokenizer->token_buf.bufpos = 0;
 }
 
@@ -151,7 +151,7 @@ alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int leng
     }
   else
     {
-      // aldebug_printf(DBGSTREAM,"SAME TOKEN SEEN\n");
+      aldebug_printf(DBGSTREAM,"SAME TOKEN SEEN\n");
     }
 
   return entry;
@@ -205,7 +205,15 @@ char c_getbackslash(char c)
     }
   else
     {
-      return c_backslash[c];
+      if ( c < sizeof(c_backslash) )
+	{
+	  return c_backslash[c];
+	}
+      else
+	{
+	  aldebug_printf(DBGSTREAM,"[FATAL] internal error unexpected chararter to blackslash %i\n",c);
+	  return '^';
+	}
     }
 }
 /* from internal c string display a formated string
@@ -227,12 +235,12 @@ c_cut_c_string (struct c_parser_ctx *parser, char stop)
   if (length == 0)
     {
       assert(length!=0);
-      printf ("[FATAL] corrupted parser empty char buffer\n");
+      aldebug_printf(DBGSTREAM,"[FATAL] corrupted parser empty char buffer\n");
       return NULL;
     }
   if (length < 0)
     {
-      fprintf (stderr,
+      aldebug_printf(DBGSTREAM,
 	       "[FATAL] corrupted parser token char buffer length %i <=0\n",
 	       length);
       return NULL;
@@ -249,7 +257,7 @@ c_cut_c_string (struct c_parser_ctx *parser, char stop)
 	  printf("\\%c", c_getbackslash(c));
 	}
     }
-  reset_tokenizer_buffer (tokenizer);
+  reset_tokenizer_buffer(tokenizer);
   return NULL;
 }
 
@@ -934,13 +942,13 @@ c_parse_left_type (struct c_parser_ctx *parser,
 			token = c_parse_variable (parser, token);
 			if (c_parser_is_debug (parser))
 			  {
-			    printf ("// struct and enum types are named.\n");
+			    aldebug_printf(DBGSTREAM,"// struct and enum types are named.\n");
 			  }
 			if (token != NULL)
 			  {
 			    if (c_parser_is_debug (parser))
 			      {
-				printf ("// non varname %i \n", token->token);
+				aldebug_printf(DBGSTREAM,"// non varname %i \n", token->token);
 			      }
 			    return token;
 			  }
@@ -1399,13 +1407,13 @@ c_parse_call_definition_parameters (struct c_parser_ctx *parser)
 	    {
 	      if (c_parser_is_debug(parser))
 		{
-		  printf ("// def param %i end token %i A\n", i, token->token);
+		  aldebug_printf(DBGSTREAM,"// def param %i end token %i A\n", i, token->token);
 		}
 	      return token;
 	    }
 	  if (c_parser_is_debug(parser))
 	    {
-	      printf ("// def param %i\n", i);
+	      aldebug_printf(DBGSTREAM,"// def param %i\n", i);
 	    }
 	  ++i;
 	  c_print_json_token (parser, token);
@@ -1462,7 +1470,7 @@ c_parse_call_parameters (struct c_parser_ctx *parser, struct al_token *token)
 	  parser->state = C_STATE_START_ID;
 	  if (c_parser_is_debug (parser))
 	    {
-	      printf ("// call param %i\n", i);
+	      aldebug_printf(DBGSTREAM,"// call param %i\n", i);
 	    }
 	  ++i;
 	  c_print_json_token (parser, token);
@@ -2163,7 +2171,7 @@ c_parse_block (struct c_parser_ctx *parser, struct al_token *token,
 	    }
 	  if (c_parser_is_debug (parser))
 	    {
-	      printf ("// block state %i line %i", state, line);
+	      aldebug_printf(DBGSTREAM,"// block state %i line %i", state, line);
 	    }
 	  c_show_info (parser, "INFO", "block line");
 	  if (state == C_STATE_SWITCH_ID)
@@ -3391,6 +3399,8 @@ main (int argc, char **argv)
   struct alinputstream * inputstream = NULL;
   FILE *file = NULL;
 
+  aldebug_start(NULL);
+  
   struct al_options * options = al_options_create(argc,argv);
 
   // don't set debug to options
@@ -3458,12 +3468,12 @@ main (int argc, char **argv)
 					C_STATE_START_ID);
 	  if (token != NULL)
 	    {
-	      printf ("// non NULL token at toplevel parsing\n");
+	      aldebug_printf(DBGSTREAM,"// non NULL token at toplevel parsing\n");
 	      break;
 	    }
 	  if (parser.token_count == check_token_count)
 	    {
-	      printf ("// risk of parsing loop\n");
+	      aldebug_printf(DBGSTREAM,"// risk of parsing loop\n");
 	      break;
 	    }
 	}
@@ -3534,4 +3544,6 @@ main (int argc, char **argv)
     {
       usage ();
     }
+
+  aldebug_end();
 }

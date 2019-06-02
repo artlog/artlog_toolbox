@@ -144,7 +144,7 @@ int main(int argc, char ** argv)
 	    }
 	}
 
-      aldatablock_dump(&out);
+      aloutput_bytes_as_hex(&aldebug_default.output,&out,0,8);
     }
 
   // test hash on little endian system
@@ -154,7 +154,7 @@ int main(int argc, char ** argv)
     block.data.uintptr=(unsigned int *) &hashtest1[0];      
     alsalsa20_addblock(&salsa,&block);
     alsalsa20_toblock(&salsa,&out);
-    aldatablock_dump(&out);
+    aloutput_bytes_as_hex(&aldebug_default.output,&out,0,8);
 
     if ( memcmp( hashtest1_result, out.data.ucharptr, out.length) != 0 )
       {
@@ -174,7 +174,7 @@ int main(int argc, char ** argv)
     if ( memcmp( expand32test1_result, out.data.ucharptr, out.length) != 0 )
       {
   aldebug_printf(DBGSTREAM,"[FATAL] mismatch between expected salsa20 hashed value and computed\n");
-  aldatablock_dump(&out);
+  aloutput_bytes_as_hex(&aldebug_default.output,&out,0,8);
   for (int i =0; i < out.length; i++)
     {
 	unsigned int a = (unsigned int) out.data.ucharptr[i];

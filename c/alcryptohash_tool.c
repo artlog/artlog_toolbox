@@ -18,7 +18,7 @@ void alcryptohash_tool_dump_result(struct alsha2_internal * shax, aldatablock * 
       ALDEBUG_IF_DEBUG(shax, alsha2x, debug)
 	{
 	  aldebug_printf(DBGSTREAM,"[INFO] SHAX result \n");
-	  aldatablock_dump(result);
+	  aloutput_bytes_as_hex(&aldebug_default.output,result,0,8);
 	}
       unsigned int * h = result->data.uintptr;
       // sha224
