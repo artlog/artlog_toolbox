@@ -23,6 +23,14 @@ void aldebug_end()
   aloutputstream_close(&aldebug_default.output);
 }
 
+struct aloutputstream * aldebug_get_output(struct aldebugconfig * debugconfig)
+{
+  if ( debugconfig != NULL )
+    {
+      return &debugconfig->output;
+    }
+  return NULL;
+}
 
 void aldebug_printf(struct aldebugconfig * debugconfig, const char *format, ...)
 {

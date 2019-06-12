@@ -17,4 +17,6 @@ void aldebug_end();
 
 void aldebug_printf(struct aldebugconfig * debugconfig, const char *format, ...);
 
+struct aloutputstream * aldebug_get_output(struct aldebugconfig * debugconfig);
+
 #endif // #ifndef ALDEBUG_OUTPUT_HEADER_

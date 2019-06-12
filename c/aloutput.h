@@ -88,5 +88,7 @@ int aloutputstream_vprintf_1k(struct aloutputstream * stream, const char *format
 // group = 2 short, 4 word, 8 long word ...
 void aloutput_bytes_as_hex(struct aloutputstream * stream,  aldatablock * datablock, int order, int group);
 
+// copy written bytes from localbuffer to stream
+int aloutputstream_memcpy(int written, struct aloutputstream * stream, char * localbuffer);
 
 #endif // #ifndef ALOUTPUT_HEADER_
