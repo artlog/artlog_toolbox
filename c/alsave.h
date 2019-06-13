@@ -19,8 +19,8 @@ int alsave_init_context(struct alsavecontext * context, const char * dir, const 
 
 int alsave_shift_file_name(struct alsavecontext * savecontext);
 
-/** return 0 if file exist and can be open in read mode */
-int alsave_file_exists(char * template);
+/** return EL_EC_OK if file exist and can be open in read mode */
+enum al_global_error_code alsave_file_exists(char * template);
 
 /* set prefix with a nul terminated string */
 int alsave_set_prefix(struct alsavecontext * savecontext, const char * prefix);

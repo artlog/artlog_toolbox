@@ -4,6 +4,7 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "alsave.h"
 #include "aldebug.h"
@@ -18,14 +19,22 @@ int alsave_set_debug(int debug)
   return previous_debug;
 }
 
-int alsave_file_exists(char * template)
+enum al_global_error_code alsave_file_exists(char * template)
 {
+  if( access( template, R_OK ) != -1 ) {
+    // file exists
+    return AL_EC_OK;
+  } else {
+    // file doesn't exist
+    if (alsave_debug > 0) {aldebug_printf(DBGSTREAM,"[DEBUG] file %s does not exists or  can't be read\n", template);}
+    return AL_EC_FALSE;
+  }
+  
+  /*  
   FILE * test=fopen(template,"r");
   if ( test == NULL )
     {
       if (errno == ENOENT) {
-	if (alsave_debug > 0) {aldebug_printf(DBGSTREAM,"[DEBUG] file %s doesn't exist\n", template);}
-	return -1;
       }
       else if ( errno == EINVAL )
 	{
@@ -45,6 +54,7 @@ int alsave_file_exists(char * template)
       return 0;
     }
   return -3;
+  */
 }
 
 int alsave_init_context(struct alsavecontext * context, const char * dir, const char* prefix, const char * extension)
@@ -118,7 +128,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
       {
 	sprintf(fullpath,"%s/%s",savecontext->dir,template);
 	// file exists ?
-	if ( alsave_file_exists(fullpath) == -1)
+	if ( alsave_file_exists(fullpath) == AL_EC_FALSE )
 	  {
 	    // file does not exist : GOOD, free file is found !
 	    freefile=template;
