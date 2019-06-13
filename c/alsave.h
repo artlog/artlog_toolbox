@@ -8,7 +8,7 @@ struct alsavecontext {
   int index_min;
   int index_max;
   int maxsave;
-  char lastfile[256];
+  char lastfile[4608];
 };
 
 /** set with new debug and returns old settings
@@ -22,4 +22,10 @@ int alsave_shift_file_name(struct alsavecontext * savecontext);
 /** return 0 if file exist and can be open in read mode */
 int alsave_file_exists(char * template);
 
+/* set prefix with a nul terminated string */
+int alsave_set_prefix(struct alsavecontext * savecontext, const char * prefix);
+
+/* return full filename constructed from dir prefix index and extension */
+char * alsave_get_fullfilename(struct alsavecontext * savecontext);
+  
 #endif

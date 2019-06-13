@@ -24,7 +24,7 @@ int alsave_file_exists(char * template)
   if ( test == NULL )
     {
       if (errno == ENOENT) {
-	if (alsave_debug > 0) {printf("file %s doesn't exist\n", template);}
+	if (alsave_debug > 0) {aldebug_printf(DBGSTREAM,"[DEBUG] file %s doesn't exist\n", template);}
 	return -1;
       }
       else if ( errno == EINVAL )
@@ -34,13 +34,13 @@ int alsave_file_exists(char * template)
 	}
       else
 	{
-	  printf("File exists but can't be openned errno=%i %s\n",errno,strerror(errno));
+	  aldebug_printf(DBGSTREAM,"[DEBUG] File exists but can't be openned errno=%i %s\n",errno,strerror(errno));
 	  return 1;
 	}
     }
   else
     {
-      if (alsave_debug>0) {printf("file %s already exists\n", template);}
+      if (alsave_debug>0) {aldebug_printf(DBGSTREAM,"[DEBUG] file %s already exists\n", template);}
       fclose(test);
       return 0;
     }
@@ -60,6 +60,21 @@ int alsave_init_context(struct alsavecontext * context, const char * dir, const 
   return 0;
 }
 
+int alsave_set_prefix(struct alsavecontext * savecontext, const char * prefix)
+{
+  strncpy(savecontext->prefix,prefix,sizeof(savecontext->prefix));
+
+  return 0;
+}
+
+
+char * alsave_get_fullfilename(struct alsavecontext * save_context)
+{
+  snprintf(save_context->lastfile,sizeof(save_context->lastfile),"%s/%s.%s",save_context->dir,save_context->prefix,save_context->extension);
+
+  return save_context->lastfile;
+}
+  
 /**
  * every file with a prefix prefix.[0..9]+.extension will be rename with a superior index if room is needed.
  * what about prefix.extension ( ie without 0 between prefix and extension ) ?
@@ -76,13 +91,15 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
   char * prefix = savecontext->prefix;
   char * extension = savecontext->extension;
 
-  printf("search for freefile %s.%s within %s\n", prefix, extension, savecontext->dir);
+  aldebug_printf(DBGSTREAM,"[DEBUG] search for freefile %s.%s within %s\n", prefix, extension, savecontext->dir);
   currentdir = opendir (savecontext->dir);
   if ( currentdir != NULL )
     {
+      // HARDCODED LIMIT
       char template[512];
       char * freefile = NULL;
 
+      // HARDCODED LIMIT
       // don't go over 500 characters for filename, protect template allocation, well above 256 chars of filename.
       if (strlen(prefix)+strlen(extension) > 500)
 	{
@@ -127,10 +144,10 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	      if (sscanf(fileentry->d_name,template,&index) == 1)
 		{
 		  if ( alsave_debug >0 ) {
-		    printf("FOUND index %i in\n",index);
-		    printf("%s %i==",template, index);
+		    aldebug_printf(DBGSTREAM,"[DEBUG] FOUND index %i in\n",index);
+		    aldebug_printf(DBGSTREAM,"[DEBUG] %s %i==",template, index);
 		    printf(template, index);
-		    printf("==%s\n", fileentry->d_name);
+		    aldebug_printf(DBGSTREAM,"[DEBUG] ==%s\n", fileentry->d_name);
 		  }
 		  sprintf(newpath,template,index);
 		  // protect against sscanf early match ( seems to disregards extension )
@@ -139,7 +156,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 		    {
 		      if ( alsave_debug > 0 )
 			{
-			  printf("non matching sscanf selection %s != %s\n", newpath,fileentry->d_name);
+			  aldebug_printf(DBGSTREAM,"[DEBUG] non matching sscanf selection %s != %s\n", newpath,fileentry->d_name);
 			}
 		      continue;
 		    }
@@ -154,7 +171,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 		    }
 		  if ( index > maxsave )
 		    {
-		      printf("index %i > %i should be removed\n",index,maxsave);
+		      aldebug_printf(DBGSTREAM,"[DEBUG] index %i > %i should be removed\n",index,maxsave);
 		    }
 		  count ++;
 		}
@@ -164,11 +181,11 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	    {
 	      if ( count < (index_max-index_min+1) )
 		{
-		  printf("matching files count %i => not all index are used between %i and %i\n", count, index_min, index_max);
+		  aldebug_printf(DBGSTREAM,"[DEBUG] matching files count %i => not all index are used between %i and %i\n", count, index_min, index_max);
 		}
 	      else if ( count > (index_max-index_min+1) )
 		{
-		  printf("matching files count %i => index reused between %i and %i\n", count, index_min, index_max);
+		  aldebug_printf(DBGSTREAM,"[DEBUG] matching files count %i => index reused between %i and %i\n", count, index_min, index_max);
 		}
 	    }
 	  if ( index_min < 2 )
@@ -200,7 +217,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 		{		
 		  sprintf(oldpath,"%s.%i.%s", prefix,i,extension);		
 		  sprintf(newpath,"%s.%i.%s", prefix,i+1,extension);
-		  if (alsave_debug > 0) {printf("rename %s->%s\n", oldpath, newpath);}
+		  if (alsave_debug > 0) {aldebug_printf(DBGSTREAM,"[DEBUG] rename %s->%s\n", oldpath, newpath);}
 		  if ( renameat(dir_fd, oldpath,
 				dir_fd, newpath) != 0 )
 		    {
@@ -211,14 +228,14 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	    }
 	  else
 	    {
-	      printf("index_min %i index_max %i\n",index_min,index_max);
+	      aldebug_printf(DBGSTREAM,"[DEBUG] index_min %i index_max %i\n",index_min,index_max);
 	    }
 
 	  // and finaly move away prefix.extension file.
 	  sprintf(oldpath,"%s.%s", prefix,extension);
 	  freefile = oldpath;
 	  sprintf(newpath,"%s.%i.%s", prefix,1,extension);
-	  if ( alsave_debug > 0 ) { printf("rename %s->%s\n", oldpath, newpath);}
+	  if ( alsave_debug > 0 ) { aldebug_printf(DBGSTREAM,"[DEBUG] rename %s->%s\n", oldpath, newpath);}
 	  if ( renameat(dir_fd, oldpath,
 			dir_fd, newpath) != 0 )
 	    {
@@ -229,7 +246,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 
       if ( freefile != NULL )
 	{
-	  printf("freefile %s\n", freefile);	  
+	  aldebug_printf(DBGSTREAM,"[DEBUG] freefile %s\n", freefile);	  
 	}
 
       closedir (currentdir);
