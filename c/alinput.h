@@ -99,4 +99,12 @@ void alinputstream_align_shared_with_child(struct alinputstream * parent, struct
 
 void alinputstream_close(struct alinputstream * input);
 
+/*
+ within an already allocated block of length get a line of text ( until '\n' or eof )
+ return AL_EC_OK and null terminated string in block if line read can enter in allocated *block
+
+undefined behavior if line is bigger than block, but won't buffer overflow
+*/
+enum al_global_error_code alinputstream_readline(struct alinputstream * stream, aldatablock * block);
+
 #endif

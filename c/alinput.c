@@ -146,6 +146,36 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
     }
 }
 
+enum al_global_error_code alinputstream_readline(struct alinputstream * stream, aldatablock * block)
+{
+  int index = 0;
+  char * buffer = block->data.charptr;
+
+  if ( alinputstream_iseof(stream) )
+    {
+        return AL_EC_FALSE;
+    }
+   
+  while ( index < block->length )
+    {
+      char c = (char) alinputstream_readuchar(stream);
+      if ( alinputstream_iseof(stream) )
+	{
+	  buffer[index]='\0';
+	  return AL_EC_OK;
+	}	  
+      if ( c =='\n' )
+	{
+	  buffer[index]='\0';
+	  return AL_EC_OK;
+	}    
+      buffer[index]=c;
+      index++;
+    }
+  // block too short or eof already hit
+  return AL_EC_FALSE;;
+}
+
 // WARNING not part of api ( but  alinputstream_foreach_block )
 int alinputstream_read_block(struct alinputstream * stream,
 			     aldatablock * block)
