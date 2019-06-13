@@ -57,7 +57,7 @@ int json_set_debug(int debug)
     {
       // should setup aljson_print_ctx_debug.
       aljson_print_ctx_init(&aljson_print_ctx_debug);
-      aljson_print_ctx_debug.outfile=stderr;
+      aljson_print_ctx_debug.outfile=aldebug_get_output(DBGSTREAM);
     }
   return previous;
 }
@@ -1392,7 +1392,7 @@ void aljson_print_printf(struct print_ctx * print_ctx, const char *format, ...)
   va_list args;
   va_start(args, format);
 
-  vfprintf(print_ctx->outfile,format, args);
+  aloutputstream_vprintf_1k(print_ctx->outfile,format, args);
   
   va_end(args);
 }
@@ -1553,7 +1553,7 @@ void aljson_print_ctx_init(struct print_ctx * print_ctx)
   print_ctx.s_indent = NULL;
   */
 
-  print_ctx->outfile=stdout;
+  print_ctx->outfile=aldebug_get_output(DBGSTREAM);
   
   print_ctx->growable_output=aljson_growable_output;
   print_ctx->dict_output=aljson_dict_output;

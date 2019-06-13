@@ -1,14 +1,13 @@
 #include "aljson_dump.h"
 
-#include <stdio.h>
 #include <assert.h>
 #include "aldebug_output.h"
+#include "aloutput.h"
+#include <stdio.h>
 
-//TODO get rid of fprinf and use aloutput
-
-FILE * aljson_getoutfile(struct print_ctx * print_ctx)
+struct aloutputstream * aljson_get_output(struct print_ctx * print_ctx)
 {
-  return (FILE *) print_ctx->outfile;
+  return print_ctx->outfile;
 }
 
 void aljson_dump_enter_indent(struct print_ctx * print_ctx)
@@ -29,14 +28,14 @@ void aljson_dump_exit_indent(struct print_ctx * print_ctx)
 }
 
 void aljson_dump_string(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
-{
-  FILE * outfile=aljson_getoutfile(print_ctx);
+{  
+  struct aloutputstream * output=aljson_get_output(print_ctx);
   if ( object != NULL)
     {
       struct json_string * string = &object->string;
       if ( ( object->type != '$' ) && ( object->type != '0') )
 	{
-	  fprintf(outfile,"%c" ALPASCALSTRFMT "%c",
+	  aloutputstream_printf_1k(output,"%c" ALPASCALSTRFMT "%c",
 		 object->type,
 		 ALPASCALSTRARGS(string->internal.length,(char *) string->internal.data).ptr,
 		 object->type);
@@ -45,13 +44,13 @@ void aljson_dump_string(struct json_parser_ctx * ctx, struct json_object * objec
 	{
 	  // NULL terminated string ?
 	  // todo("implement ALTYPE_STR0 for string->internal.type");
-	  fprintf(outfile,ALPASCALSTRFMT,
+	  aloutputstream_printf_1k(output,ALPASCALSTRFMT,
 		 ALPASCALSTRARGS(string->internal.length,(char *) string->internal.data.ptr));
 	}      
     }
   else
     {
-      fprintf(outfile,"'0");
+      aloutputstream_printf_1k(output,"'0");
     }
 }
 
@@ -59,24 +58,24 @@ void aljson_dump_string_number(struct json_parser_ctx * ctx, struct json_object 
 {
   if ( object != NULL)
     {
-      FILE * outfile=aljson_getoutfile(print_ctx);
+      struct aloutputstream * output=aljson_get_output(print_ctx);
       if ( object->type == '0' )
 	{
 	  float value = json_get_float(object);
-	  fprintf(outfile,"%f",value);
+	  aloutputstream_printf_1k(output,"%f",value);
 	}
       else
 	{
-	  fprintf(outfile,"#ERROR not a number");
+	  aloutputstream_printf_1k(output,"#ERROR not a number");
 	}
     }
 }
 
 void aljson_dump_pair(struct json_parser_ctx * ctx, struct json_pair * pair, struct print_ctx * print_ctx)
 {
-  FILE * outfile=aljson_getoutfile(print_ctx);
+  struct aloutputstream * output=aljson_get_output(print_ctx);
   aljson_dump_object(ctx,pair->key, print_ctx);
-  fprintf(outfile,":");
+  aloutputstream_printf_1k(output,":");
   aljson_dump_object(ctx,pair->value, print_ctx);
 }
 
@@ -84,16 +83,16 @@ void aljson_dump_variable(struct json_parser_ctx * ctx, struct json_variable * v
 {
   if ( variable != NULL )
     {
-      FILE * outfile=aljson_getoutfile(print_ctx);
-      fprintf(outfile,"?");
+      struct aloutputstream * output=aljson_get_output(print_ctx);
+      aloutputstream_printf_1k(output,"?");
       if ( variable->key != NULL )
 	{
 	  aljson_dump_object(ctx,variable->key, print_ctx);
 	}
-      fprintf(outfile,"?");
+      aloutputstream_printf_1k(output,"?");
       if ( variable->bound == 1 )
 	{
-	  fprintf(outfile,"=");
+	  aloutputstream_printf_1k(output,"=");
 	  aljson_dump_object(ctx,variable->value, print_ctx);	  
 	}
     }
@@ -103,8 +102,8 @@ void aljson_dump_indent(struct print_ctx * print_ctx)
 {
   if ( print_ctx && print_ctx->do_indent )
     {
-      FILE * outfile=aljson_getoutfile(print_ctx);
-      fprintf(outfile,"\n");
+      struct aloutputstream * output=aljson_get_output(print_ctx);
+      aloutputstream_printf_1k(output,"\n");
       if ( print_ctx->indent > 0 )
 	{
 	  // commented out because print spaces before string ( ie does not repeat string )
@@ -114,7 +113,7 @@ void aljson_dump_indent(struct print_ctx * print_ctx)
 	    {
 	      while ( i >0 )
 		{	      
-		  fprintf(outfile,"%s",print_ctx->s_indent);
+		  aloutputstream_printf_1k(output,"%s",print_ctx->s_indent);
 		  --i;
 		}
 	    }
@@ -135,35 +134,35 @@ void aljson_dump_pair_object(struct json_parser_ctx * ctx, struct json_object * 
     }
   else
     {
-      FILE * outfile=aljson_getoutfile(print_ctx);
-      fprintf(outfile,":0");
+      struct aloutputstream * output=aljson_get_output(print_ctx);
+      aloutputstream_printf_1k(output,":0");
     }
 }
 
 void aljson_dump_variable_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
 
-  FILE * outfile=aljson_getoutfile(print_ctx);     
+  struct aloutputstream * output=aljson_get_output(print_ctx);     
   if ( object != NULL)
     {
       assert(object->type == '?');
 
       json_print_object_name(ctx,object,print_ctx);
-      fprintf(outfile,".");
+      aloutputstream_printf_1k(output,".");
 
       aljson_dump_variable(ctx,&object->variable, print_ctx);
     }
   else
     {
-      fprintf(outfile,":0");
+      aloutputstream_printf_1k(output,":0");
     }
 }
 
 void aljson_dump_list_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i=0;
-  FILE * outfile=aljson_getoutfile(print_ctx);
-  fprintf(outfile,"%c",object->type);
+  struct aloutputstream * output=aljson_get_output(print_ctx);
+  aloutputstream_printf_1k(output,"%c",object->type);
   aljson_dump_enter_indent( print_ctx);
   if (object->list.nitems > 0)
     {
@@ -171,26 +170,26 @@ void aljson_dump_list_object(struct json_parser_ctx * ctx, struct json_object * 
       aljson_dump_object(ctx,object->list.value[0], print_ctx);
       for(i=1;i< object->list.nitems;i++)
 	{
-	  fprintf(outfile,",");
+	  aloutputstream_printf_1k(output,",");
 	  aljson_dump_indent(print_ctx);
 	  aljson_dump_object(ctx,object->list.value[i], print_ctx);
 	}
     }
   aljson_dump_exit_indent( print_ctx);
   aljson_dump_indent(print_ctx);
-  fprintf(outfile,"]");
+  aloutputstream_printf_1k(output,"]");
 }
 
 void aljson_dump_dict_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   int i;
-  FILE * outfile=aljson_getoutfile(print_ctx);
-  if ( outfile == NULL )
+  struct aloutputstream * output=aljson_get_output(print_ctx);
+  if ( output == NULL )
     {
       return;
     }
   
-  fprintf(outfile,"%c",object->type);
+  aloutputstream_printf_1k(output,"%c",object->type);
   aljson_dump_enter_indent(print_ctx);
   if (object->dict.nitems > 0)
     {
@@ -198,22 +197,22 @@ void aljson_dump_dict_object(struct json_parser_ctx * ctx, struct json_object * 
       aljson_dump_pair(ctx,object->dict.items[0], print_ctx);
       for(i=1;i< object->dict.nitems;i++)
 	{
-	  fprintf(outfile,",");
+	  aloutputstream_printf_1k(output,",");
 	  aljson_dump_indent(print_ctx);
 	  aljson_dump_pair(ctx,object->dict.items[i], print_ctx);
 	}
     }
   aljson_dump_exit_indent( print_ctx);
   aljson_dump_indent(print_ctx);
-  fprintf(outfile,"}");
+  aloutputstream_printf_1k(output,"}");
 }
 
 void aljson_dump_growable(struct json_parser_ctx * ctx, struct json_growable *growable, struct print_ctx * print_ctx)
 {
-  FILE * outfile=aljson_getoutfile(print_ctx);
+  struct aloutputstream * output=aljson_get_output(print_ctx);
   struct json_link * link=NULL;
   link=growable->tail;
-  fprintf(outfile,"|%c",growable->final_type);
+  aloutputstream_printf_1k(output,"|%c",growable->final_type);
   if ( link != NULL)
     {
       aljson_dump_object(ctx, growable->head.value, print_ctx);
@@ -222,7 +221,7 @@ void aljson_dump_growable(struct json_parser_ctx * ctx, struct json_growable *gr
 	  link=growable->head.next;
 	  while (link != NULL)
 	    {
-	      fprintf(outfile,",");
+	      aloutputstream_printf_1k(output,",");
 	      aljson_dump_object(ctx, link->value, print_ctx);
 	      link=link->next;
 	    }
@@ -230,9 +229,9 @@ void aljson_dump_growable(struct json_parser_ctx * ctx, struct json_growable *gr
     }
   else
     {
-      if (growable->size != 0) fprintf(outfile,"#");	
+      if (growable->size != 0) aloutputstream_printf_1k(output,"#");	
     }
-  fprintf(outfile,"%c|",growable->final_type);
+  aloutputstream_printf_1k(output,"%c|",growable->final_type);
 }
 
 void aljson_dump_growable_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
@@ -244,19 +243,19 @@ void aljson_dump_growable_object(struct json_parser_ctx * ctx, struct json_objec
 
 void aljson_dump_constant_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
-  FILE * outfile=aljson_getoutfile(print_ctx);
+  struct aloutputstream * output=aljson_get_output(print_ctx);
   if ( object->constant != NULL )
     {
       switch(object->constant->value)
 	{
 	case JSON_CONSTANT_TRUE:
-	  fprintf(outfile,"true");
+	  aloutputstream_printf_1k(output,"true");
 	  break;
 	case JSON_CONSTANT_FALSE:
-	  fprintf(outfile,"false");
+	  aloutputstream_printf_1k(output,"false");
 	  break;
 	case JSON_CONSTANT_NULL:
-	  fprintf(outfile,"null");
+	  aloutputstream_printf_1k(output,"null");
 	  break;
 	default:
 	  aldebug_printf(DBGSTREAM,"ERROR constant type %c %p",object->type, print_ctx);
@@ -271,10 +270,10 @@ void aljson_dump_constant_object(struct json_parser_ctx * ctx, struct json_objec
 
 void aljson_dump_error_object(struct json_parser_ctx * ctx, struct json_object* object, struct print_ctx * print_ctx)
 {
-  FILE * outfile=aljson_getoutfile(print_ctx);
+  struct aloutputstream * output=aljson_get_output(print_ctx);
   if (( object != NULL) && (object->error.string.internal.data.ptr != NULL ))
     {
-      fprintf(outfile,"syntax error %u (line:%i,column:%i)\n" ALPASCALSTRFMT "\n",
+      aloutputstream_printf_1k(output,"syntax error %u (line:%i,column:%i)\n" ALPASCALSTRFMT "\n",
 	     object->error.erroridx,
 	     object->error.where.line,object->error.where.column,
 	     ALPASCALSTRARGS(object->error.string.internal.length,(char *) object->error.string.internal.data.ptr)
@@ -282,7 +281,7 @@ void aljson_dump_error_object(struct json_parser_ctx * ctx, struct json_object* 
     }
   else
     {
-      fprintf(outfile,"syntax error object is corrupted %p\n", object);
+      aloutputstream_printf_1k(output,"syntax error object is corrupted %p\n", object);
     }
 }
 
@@ -290,7 +289,7 @@ void aljson_dump_error_object(struct json_parser_ctx * ctx, struct json_object* 
 void aljson_dump_object(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
   static int depth = 0;
-  FILE * outfile=aljson_getoutfile(print_ctx);
+  struct aloutputstream * output=aljson_get_output(print_ctx);
   
   ++depth;
 
@@ -327,7 +326,7 @@ void aljson_dump_object(struct json_parser_ctx * ctx, struct json_object * objec
 	  aljson_dump_pair_object(ctx,object, print_ctx);
 	  break;
 	case ',':
-	  fprintf(outfile,"#");
+	  aloutputstream_printf_1k(output,"#");
 	  break;
 	case '?':
 	  aljson_dump_variable_object(ctx,object, print_ctx);

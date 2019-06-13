@@ -1,6 +1,8 @@
 #ifndef ALJSON_PRINT_HEADER__
 #define ALJSON_PRINT_HEADER__
 
+#include "aloutput.h"
+
 struct print_ctx;
 struct json_parser_ctx;
 struct json_object;
@@ -20,8 +22,7 @@ struct print_ctx
   int do_indent; // 0 no indent, >= 1 number of space by indent.
   char * s_indent;
 
-  // todo use outputstream, currently void * will be a FILE *
-  void * outfile;
+  struct aloutputstream * outfile;
 
   aljson_print_callback growable_output;
   aljson_print_callback dict_output;
