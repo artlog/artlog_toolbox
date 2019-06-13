@@ -15,6 +15,12 @@ alinputstream_close(&input);
  */
 enum al_global_error_code  alinput_file_open_init(struct alinputstream * input, const char * filename);
 
+/*
+ char * dir : parent directory name 
+char * filename : filename within directory
+*/
+enum al_global_error_code  alinput_file_dir_filename_open_init(struct alinputstream * input,const char * dir, const char * filename);
+
 // NOPE no FILE in api, don't want a stdio.h dependency
 // #include <stdio.h>
 // void alinput_file_init(struct alinputstream * input, FILE * file);

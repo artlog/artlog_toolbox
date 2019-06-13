@@ -65,6 +65,7 @@ int alinputstream_get_readbits(struct alinputstream * stream);
 // FIXME UGLY
 unsigned char alinputstream_readuchar(struct alinputstream * stream);
 
+// WARNING eat all input
 void alinputstream_foreach_block(
 				 struct alinputstream * stream,
 				 int blocksize,

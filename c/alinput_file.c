@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdio.h>
 
 // friend of alinput.c
 
@@ -37,4 +38,12 @@ enum al_global_error_code  alinput_file_open_init(struct alinputstream * input, 
 	}
     }
   return AL_EC_INVALID_PARAMETER;
+}
+
+enum al_global_error_code  alinput_file_dir_filename_open_init(struct alinputstream * input,const char * dir, const char * filename)
+{  
+  // HARDCODED LIMIT
+  char fullpath[4096];
+  snprintf(fullpath,sizeof(fullpath),"%s/%s",dir,filename);
+  return alinput_file_open_init(input,fullpath);
 }

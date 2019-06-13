@@ -66,6 +66,7 @@ int alsave_init_context(struct alsavecontext * context, const char * dir, const 
  */
 int alsave_shift_file_name(struct alsavecontext * savecontext)
 {
+  // HARDCODED LIMIT
   char fullpath[5000];
   DIR *currentdir;
   struct dirent *fileentry;

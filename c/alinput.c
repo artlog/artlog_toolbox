@@ -146,6 +146,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
     }
 }
 
+// WARNING not part of api ( but  alinputstream_foreach_block )
 int alinputstream_read_block(struct alinputstream * stream,
 			     aldatablock * block)
 {  
@@ -174,7 +175,10 @@ void alinputstream_foreach_block(
 	  (*callback) (&block,data);
 	}
       block.length=read;
-      (*finalize) (&block,data);
+      if ( finalize != NULL )
+	{
+	  (*finalize) (&block,data);
+	}
     }
   
 }

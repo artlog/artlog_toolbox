@@ -21,8 +21,12 @@ enum al_global_error_code {
   //! more precise than invalid input, error is in one parameter
   AL_EC_INVALID_PARAMETER=-3,
   AL_EC_FILE_ERROR=-4,
+  // this should not happen but will...
+  AL_EC_BUG=-5,
   AL_EC_OK=1,
-  AL_EC_FALSE=0
+  AL_EC_FALSE=0,
+  // neither true or false, process should continue to know it
+  AL_EC_CONTINUE=2,
 };
 
 #endif
