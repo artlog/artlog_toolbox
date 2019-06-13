@@ -9,6 +9,8 @@
 #include "al_options.h"
 #include "alcommon.h"
 #include "aldebug_output.h"
+#include "alinput_file.h"
+#include "aloutput_file.h"
 
 
 void
@@ -999,6 +1001,7 @@ c_parser_ctx_allocate_c_struct_info(struct c_parser_ctx *parser)
   struct c_struct_info * allocated = NULL;
   if ( parser != NULL )
     {
+      // HARDCODED LIMIT
       todo("fixme hardcoded 1000 structures");
       int max_alloc = 1000;
       if (
@@ -1025,7 +1028,7 @@ c_parser_ctx_allocate_c_declaration_info_list(struct c_parser_ctx *parser)
 }
 
 // add a new member in struct info, uses parser general allocation table.
-int c_struct_info_add_member(
+enum al_global_error_code c_struct_info_add_member(
 			     struct c_parser_ctx *parser,
 			     struct c_struct_info *struct_info,
 			     struct c_full_type * type,
@@ -1052,6 +1055,7 @@ int c_struct_info_add_member(
 	  else
 	    {
 	      // protect against ... coder - ( linked list corruption / loop ).
+	      // HARDCODED LIMIT
 	      int max = 1000;
 	      struct c_declaration_info_list* next = last;	      
 	      while ( ( next != NULL ) && ( max > 0 ) )
@@ -1067,8 +1071,9 @@ int c_struct_info_add_member(
 	    }
 	}
     }
-  // todo("");  
-  return 0;
+
+  // fixme, oviously missing error cases
+  return AL_EC_OK;
 }
 
 struct al_token *
@@ -3206,7 +3211,7 @@ init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
 
 // read json
 // json -> c 
-void generate_aljson_stub( struct c_parser_ctx * parser)
+void generate_aljson_stub_output( struct c_parser_ctx * parser, struct aloutputstream * genstream)
 {
   for (int i = 0; i< parser->used_structures; i++)
     {
@@ -3219,13 +3224,13 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 
       // generate read side : json_c_xxxx_from_json_auto
       
-      printf("int json_c_" ALPASCALSTRFMT "_from_json_auto(",
+      aloutputstream_printf_1k(genstream,"int json_c_" ALPASCALSTRFMT "_from_json_auto(",
 	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-      printf("struct " ALPASCALSTRFMT " * %s, ",
+      aloutputstream_printf_1k(genstream,"struct " ALPASCALSTRFMT " * %s, ",
 	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr)
 	     ,varname
 	     );
-      printf("struct json_object * json_object)\n{\n");
+      aloutputstream_printf_1k(genstream,"struct json_object * json_object)\n{\n");
       struct c_declaration_info_list * next = parser->structure_array[i].first;
       while ((next != NULL)&&(max>0))
 	{
@@ -3237,13 +3242,13 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 		{
 		case TOKEN_C_INT_ID:
 		case TOKEN_C_LONG_ID:
-		  printf("AL_GET_JSON_INT_WITH_NAME(%s," ALPASCALSTRFMT ",json_object);\n",
+		  aloutputstream_printf_1k(genstream,"AL_GET_JSON_INT_WITH_NAME(%s," ALPASCALSTRFMT ",json_object);\n",
 			 varname,
 			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		  break;
 			      
 		case TOKEN_C_CHAR_ID:
-		  printf("AL_GET_JSON_STRING_WITH_NAME(%s," ALPASCALSTRFMT ",json_object);\n",
+		  aloutputstream_printf_1k(genstream,"AL_GET_JSON_STRING_WITH_NAME(%s," ALPASCALSTRFMT ",json_object);\n",
 			 varname,
 			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		  break;
@@ -3254,14 +3259,14 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 		    {
 		      if ( next->info.full_type.dereference == 0)
 			{				    
-			  printf("AL_GET_JSON_STRUCT(" ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",json_object,1,WITH_NAME);\n",
+			  aloutputstream_printf_1k(genstream,"AL_GET_JSON_STRUCT(" ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",json_object,1,WITH_NAME);\n",
 				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
 				 varname,
 				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 			}
 		      else
 			{
-			  printf("AL_GET_JSON_STRUCT_POINTER(" ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",json_object,1,WITH_NAME);\n",
+			  aloutputstream_printf_1k(genstream,"AL_GET_JSON_STRUCT_POINTER(" ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",json_object,1,WITH_NAME);\n",
 				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
 				 varname,
 				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
@@ -3269,31 +3274,31 @@ void generate_aljson_stub( struct c_parser_ctx * parser)
 		    }
 		  else
 		    {
-		      printf("// unknwon struct name for " ALPASCALSTRFMT " \n",
+		      aloutputstream_printf_1k(genstream,"// unknwon struct name for " ALPASCALSTRFMT " \n",
 			     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		    }
 		  break;
 		default:
-		  printf("// unsupported type %i.\n", next->info.full_type.word_type);
+		  aloutputstream_printf_1k(genstream,"// unsupported type %i.\n", next->info.full_type.word_type);
 		  break;
 		}
 
 	    }
 	  else
 	    {
-	      printf("//.\n");
+	      aloutputstream_printf_1k(genstream,"//.\n");
 	    }
 	  next = next->next;
 	  --max;
 	}
-      printf("return 1;}\n");
+      aloutputstream_printf_1k(genstream,"return 1;}\n");
     }
 
 }
 
 // write
 // c -> json
-void generate_alc2json_stub( struct c_parser_ctx * parser)
+void generate_alc2json_stub_output( struct c_parser_ctx * parser, struct aloutputstream * genstream)
 {
   for (int i = 0; i< parser->used_structures; i++)
     {
@@ -3306,15 +3311,15 @@ void generate_alc2json_stub( struct c_parser_ctx * parser)
 
       // generate write side : json_c_xxxx_to_json_auto
       
-      printf("struct json_object * json_c_" ALPASCALSTRFMT "_to_json_auto(",
+      aloutputstream_printf_1k(genstream,"struct json_object * json_c_" ALPASCALSTRFMT "_to_json_auto(",
 	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-      printf("struct " ALPASCALSTRFMT " * %s, ",
+      aloutputstream_printf_1k(genstream,"struct " ALPASCALSTRFMT " * %s, ",
 	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr)
 	     ,varname
 	     );
-      printf("struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)\n{\n");
-      printf("struct json_object * growable = aljson_new_growable(ctx,'{');\n");
-      printf("ALJSON_ADD_EXPLICT_TYPE(ctx, allocator,\"struct " ALPASCALSTRFMT "\",growable);\n",
+      aloutputstream_printf_1k(genstream,"struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)\n{\n");
+      aloutputstream_printf_1k(genstream,"struct json_object * growable = aljson_new_growable(ctx,'{');\n");
+      aloutputstream_printf_1k(genstream,"ALJSON_ADD_EXPLICT_TYPE(ctx, allocator,\"struct " ALPASCALSTRFMT "\",growable);\n",
 	     ALPASCALSTRARGS(datablock->length,datablock->data.charptr)
 	     );
       struct c_declaration_info_list * next = parser->structure_array[i].first;
@@ -3328,13 +3333,13 @@ void generate_alc2json_stub( struct c_parser_ctx * parser)
 		{
 		case TOKEN_C_INT_ID:
 		case TOKEN_C_LONG_ID:
-		  printf("ALJSON_ADD_INT(ctx,allocator,%s," ALPASCALSTRFMT ",growable);\n",
+		  aloutputstream_printf_1k(genstream,"ALJSON_ADD_INT(ctx,allocator,%s," ALPASCALSTRFMT ",growable);\n",
 			 varname,
 			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		  break;
 			      
 		case TOKEN_C_CHAR_ID:
-		  printf("ALJSON_ADD_STRING(ctx,allocator,%s," ALPASCALSTRFMT ",growable);\n",
+		  aloutputstream_printf_1k(genstream,"ALJSON_ADD_STRING(ctx,allocator,%s," ALPASCALSTRFMT ",growable);\n",
 			 varname,
 			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		  break;
@@ -3345,20 +3350,20 @@ void generate_alc2json_stub( struct c_parser_ctx * parser)
 		    {
 		      if ( next->info.full_type.dereference == 0)
 			{
-			  printf("struct json_object * jobj = json_c_" ALPASCALSTRFMT "_to_json_auto(&%s->" ALPASCALSTRFMT ", ctx,allocator);\n",
+			  aloutputstream_printf_1k(genstream,"struct json_object * jobj = json_c_" ALPASCALSTRFMT "_to_json_auto(&%s->" ALPASCALSTRFMT ", ctx,allocator);\n",
 				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
 				 varname,
 				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr)			 
 				 );
 				 
-			  printf("ALJSON_ADD_JSON_OBJECT(ctx,allocator," ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",jobj,growable);\n",
+			  aloutputstream_printf_1k(genstream,"ALJSON_ADD_JSON_OBJECT(ctx,allocator," ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",jobj,growable);\n",
 				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
 				 varname,
 				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 			}
 		      else
 			{
-			  printf("// TODO ALJSON_ADD_JSON_OBJECT_POINTER(" ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",json_object,1,WITH_NAME);\n",
+			  aloutputstream_printf_1k(genstream,"// TODO ALJSON_ADD_JSON_OBJECT_POINTER(" ALPASCALSTRFMT ",%s," ALPASCALSTRFMT ",json_object,1,WITH_NAME);\n",
 				 ALPASCALSTRARGS(vartype->length,vartype->data.charptr),
 				 varname,
 				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
@@ -3366,38 +3371,38 @@ void generate_alc2json_stub( struct c_parser_ctx * parser)
 		    }
 		  else
 		    {
-		      printf("// unknwon struct name for " ALPASCALSTRFMT " \n",
+		      aloutputstream_printf_1k(genstream,"// unknwon struct name for " ALPASCALSTRFMT " \n",
 			     ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		    }
 		  break;
 		default:
-		  printf("// unsupported type %i.\n", next->info.full_type.word_type);
+		  aloutputstream_printf_1k(genstream,"// unsupported type %i.\n", next->info.full_type.word_type);
 		  break;
 		}
 
 	    }
 	  else
 	    {
-	      printf("//.\n");
+	      aloutputstream_printf_1k(genstream,"//.\n");
 	    }
 	  next = next->next;
 	  --max;
 	}
-      printf("return aljson_concrete(ctx,growable);\n}\n");
+      aloutputstream_printf_1k(genstream,"return aljson_concrete(ctx,growable);\n}\n");
     }
 
 }
 
 
-int
-main (int argc, char **argv)
+int main (int argc, char **argv)
 {
   struct c_parser_ctx parser;
   struct json_import_context_data importer;
   struct json_ctx tokenizer;
   struct alinputstream main_inputstream;
   struct alinputstream * inputstream = NULL;
-  FILE *file = NULL;
+  struct aloutputstream main_outputstream;
+  struct aloutputstream * genstream = NULL;
 
   aldebug_start(NULL);
   
@@ -3422,17 +3427,15 @@ main (int argc, char **argv)
   struct alhash_datablock * infiledata = al_option_get(options,"infile");
   if ( infiledata != NULL )
     {
-      printf("file to parse '" ALPASCALSTRFMT "'\n",
+      aldebug_printf(DBGSTREAM,"[INFO] file to parse '" ALPASCALSTRFMT "'\n",
 	     ALPASCALSTRARGS(infiledata->length,infiledata->data.charptr));
-      file = fopen((char *)infiledata->data.ptr, "r");
-      if ( file == NULL )
+      if ( alinput_file_open_init(&main_inputstream,infiledata->data.charptr) == AL_EC_OK )
 	{
-	  aldebug_printf(DBGSTREAM,"[ERROR] fail to open '%s'\n",infiledata->data.charptr);
+	  inputstream=&main_inputstream;
 	}
       else
 	{
-	  alinputstream_init(&main_inputstream, fileno (file));
-	  inputstream=&main_inputstream;
+	  aldebug_printf(DBGSTREAM,"[ERROR] fail to open '%s'\n",infiledata->data.charptr);
 	}
     }
   else
@@ -3443,11 +3446,32 @@ main (int argc, char **argv)
   struct alhash_datablock * outformdata = al_option_get(options,"outform");
   if (outformdata != NULL)
     {
-      printf("outform '" ALPASCALSTRFMT "'\n",
+      aldebug_printf(DBGSTREAM,"[INFO] outform '" ALPASCALSTRFMT "'\n",
 	     ALPASCALSTRARGS(outformdata->length,outformdata->data.charptr));
-      todo("support outform");
+      todo("support multiple outform type. currently any matches");
     }
 
+  struct alhash_datablock * outfile = al_option_get(options,"outfile");
+  if ( outfile != NULL )
+    {
+      aldebug_printf(DBGSTREAM,"[INFO] outfile '" ALPASCALSTRFMT "'\n",
+		     ALPASCALSTRARGS(outfile->length,outfile->data.charptr));
+      if ( aloutput_file_open_init(&main_outputstream,outfile->data.charptr) == AL_EC_OK )
+	{
+	  genstream=&main_outputstream;
+	}
+      else
+	{
+	  aldebug_printf(DBGSTREAM,"[ERROR] fail to open '%s'\n",outfile->data.charptr);
+	}
+    }
+  
+  if ( genstream == NULL )
+    {
+      aloutputstream_fd_init(&main_outputstream,fileno(stdout));
+      genstream=&main_outputstream;
+    }
+  
   if (inputstream != NULL)
     {
       json_import_context_initialize (&tokenizer);
@@ -3499,11 +3523,11 @@ main (int argc, char **argv)
 	      for (int i = 0; i< parser.used_structures; i++)
 		{
 		  // todo
-		  printf("// structure %i\n" ,i);
+		  aloutputstream_printf_1k(genstream,"// Structure %i\n" ,i);
 		  int max = 1000;
 		  struct alhash_datablock * datablock = (struct alhash_datablock *) parser.structure_array[i].dict_index ;
 		  // thanks to this format ... print non NULL terminated string
-		  printf("{\"" ALPASCALSTRFMT "\":{",
+		  aloutputstream_printf_1k(genstream,"{\"" ALPASCALSTRFMT "\":{",
 			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		  struct c_declaration_info_list * next = parser.structure_array[i].first;
 		  while ((next != NULL)&&(max>0))
@@ -3511,17 +3535,17 @@ main (int argc, char **argv)
 		      datablock = (struct alhash_datablock *) next->info.dict_index;
 		      if ( datablock != NULL )
 			{
-			  printf("\"" ALPASCALSTRFMT "\":0,\n",
+			  aloutputstream_printf_1k(genstream,"\"" ALPASCALSTRFMT "\":0,\n",
 				 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 			}
 		      else
 			{
-			  printf(".\n");
+			  aloutputstream_printf_1k(genstream,".\n");
 			}
 		      next = next->next;
 		      --max;
 		    }
-		  printf("}\n");
+		  aloutputstream_printf_1k(genstream,"}\n");
 		}
 
 	    }
@@ -3529,13 +3553,14 @@ main (int argc, char **argv)
 	  // outform=aljson_stub
 	  if ( parser.used_structures != 0 )
 	    {
-	      generate_aljson_stub(&parser);
-	      generate_alc2json_stub(&parser);
+	      generate_aljson_stub_output(&parser,genstream);
+	      generate_alc2json_stub_output(&parser,genstream);
 	    }
 
 	}
-      fflush (stdout);
+      aloutputstream_close(genstream);
 
+      alinputstream_close(inputstream);
       al_options_release(options);
       options=NULL;
 

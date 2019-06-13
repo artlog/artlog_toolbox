@@ -48,3 +48,50 @@ to use as input for c generation ...
 should it remains an external resource (file) or embedded in storing/restoring c code ?
 ==> internal
 
+______________________________
+
+
+cuurent status :
+
+ ./c_parser infile=./input_for_c_parser.h
+add 'infile'='./input_for_c_parser.h' in options
+file to parse './input_for_c_parser.h'
+struct  test_1{ // type 4 definition. (code line 1899)
+[TODO] fixme hardcoded 1000 structures
+// struct definition 
+int   a // struct member 0
+;
+int   b // struct member 1
+;
+int   c // struct member 2
+;
+char  * d // struct member 3
+;
+} // close struct
+;
+struct  test_2{ // type 4 definition. (code line 1899)
+[TODO] fixme hardcoded 1000 structures
+// struct definition 
+int   a // struct member 0
+;
+struct  test_1 c // struct member 1
+;
+struct  test_1* e // struct member 2
+;
+struct  test_1* f // struct member 3
+;
+} // close struct
+;
+struct  flat_info{ // type 4 definition. (code line 1899)
+[TODO] fixme hardcoded 1000 structures
+// struct definition 
+char  * name // struct member 0
+;
+char  * imafile // struct member 1
+;
+char  * cubemappingfile // struct member 2
+;
+} // close struct
+;
+EOF id reached// non NULL token at toplevel parsing
+[DEBUG] alhash release 0x55a05900d280 autogrow 170 
