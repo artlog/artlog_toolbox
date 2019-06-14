@@ -3,6 +3,7 @@
 
 #include "c_tokenizer.h"
 #include "alhash.h"
+#include "aloutput.h"
 
 enum ALCPARSER_FLAGS {
   ALCPARSER_DEBUG=1,
@@ -145,7 +146,11 @@ struct c_parser_ctx {
 };
 
 
-// return NULL if parsed, else return unrecognized left token
-struct al_token * c_parse_statement(struct c_parser_ctx * parser, struct al_token * token, enum c_parser_state level_state);
+// set parser->state to C_STATE_ERROR if parsing failed.
+// returns token that causes non parsing or NULL if no read ahead was needed.
+struct al_token *
+c_parse_statement (struct c_parser_ctx *parser, struct al_token *token,
+		   enum c_parser_state level_state,
+		   struct aloutputstream * output);
 
 #endif
