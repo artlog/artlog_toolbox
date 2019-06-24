@@ -37,7 +37,9 @@ ALDEBUG_DEFINE_FUNCTIONS(struct alabnf_global_,alabnf,debug);
 
 #define ALABNF_DEBUG_UNEXPECTED_CHAR(c) aldebug_printf(DBGSTREAM,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c>32 ? c : '.',__FILE__,__func__,__LINE__);
 
-#define ALABNF_DEBUG_TEXT_STATE(c,text,state_machine)  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[DEBUG] %s ('%i','%c') at %i:%i  in %s %s %i\n",text,c,c>=32 ? c : '.' ,state_machine->lf_line,state_machine->current_indent,__FILE__,__func__,__LINE__);
+#define ALABNF_DEBUG_TEXT_STATE_ADV(c,text,state_machine,adv)  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[" adv "] %s ('%i','%c') at %i:%i  in %s %s %i\n",text,c,c>=32 ? c : '.' ,state_machine->lf_line,state_machine->current_indent,__FILE__,__func__,__LINE__);
+
+#define ALABNF_DEBUG_TEXT_STATE(c,text,state_machine) ALABNF_DEBUG_TEXT_STATE_ADV(c,text,state_machine,"DEBUG")
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
 void alabnf_string(struct alabnf_sm * state_machine, char c);
@@ -556,7 +558,7 @@ void alabnf_name_string(struct alabnf_sm * state_machine, char c)
 	}
       else
 	{
-	  aldebug_printf(DBGSTREAM,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c,__FILE__,__func__,__LINE__);
+	  ALABNF_DEBUG_UNEXPECTED_CHAR(c)
 	  state_machine->close_method = alabnf_close_name_string_rematch;
 	}
     }
@@ -598,7 +600,7 @@ void alabnf_string(struct alabnf_sm * state_machine, char c)
 	}
       else
 	{
-	  aldebug_printf(DBGSTREAM,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c,__FILE__,__func__,__LINE__);
+	  ALABNF_DEBUG_UNEXPECTED_CHAR(c)
 	  state_machine->close_method = alabnf_close_string_rematch;
 	}
     }
@@ -1425,7 +1427,7 @@ void alabnf_start_string_ruledef(struct alabnf_sm * state_machine, char c)
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case '=':
-      aldebug_printf(DBGSTREAM,"[ERROR] unexpected '=' in alabnf rule definition %s %s %i\n", __FILE__, __func__, __LINE__);
+      ALABNF_DEBUG_UNEXPECTED_CHAR(c)
       state_machine->next_action = ALABNF_PA_CONTINUE;
       break;
     case '"':
@@ -1728,7 +1730,7 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
     }
   else    
     {
-      // UHU error
+      // UHU error      
       aldebug_printf(DBGSTREAM,"[ERROR] unexpected state %i for alabnf_close_name_string\n", state_machine->state );
       state_machine->one_char_method=alabnf_start_string_ruledef;
     }
@@ -1815,6 +1817,7 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 				 state_machine->lf_line,
 				 state_machine->current_indent);
 
+		  // FIXME UGLY EXIT, should stop and return properly.
 		  exit(1);
 		}
 	      

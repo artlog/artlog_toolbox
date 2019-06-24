@@ -119,3 +119,24 @@ status :
 what can it parse, where does it fails ?
 
 why is there a alabnf - albnf_test.c) and alabanf_matcher ?
+
+alabnf.c => read/parse a stream of ABNF syntax and create and struct abnf* internal represention of it
+
+alabnf_test.c is used for alabnf main and does only parse ABNF to validate it is a correct ABNF syntax
+
+alabnf infile=<file to parse>
+
+
+
+alabnf_matcher_test is main for alabnf_matcher
+
+alabnf_matcher <number of > <abnf file>+
+
+list of ABNF syntax to build one parser then apply it on stdin
+
+	  if ( action == ALABNF_PA_REMATCH )
+	    {
+	      aldebug_printf(DBGSTREAM,"[WARNING] two successive rematch %p at (line,column) (%i,%i) \n",
+			     state_machine->one_char_method,
+			     state_machine->lf_line,
+			     state_machine->current_indent);

@@ -5,6 +5,13 @@
 
 #include <stdlib.h>
 
+
+/**
+
+provide a alabnf_match funciton that wil lparse a file according to given (already parsed) ABNF syntax
+
+**/
+
 const void * ALABNF_DEAD_CANARY = (void *) 0xdeadca01;
 
 // to read alternatives ...
@@ -590,8 +597,8 @@ enum alabnf_match alabnf_matcher_unstack_child( struct alabnf_matcher * matcher,
 	}
     }
   else
-    {
-      // FIXME , what to do with state ... should dispose it ? MEMORY LEAK
+    {      
+      aldebug_printf(DBGSTREAM,"[FATAL] FIXME , what to do with state ... should dispose it ? MEMORY LEAK");      
       matcher->current_state = NULL;
       return match;
     }
@@ -641,6 +648,9 @@ alabnf_character * alabnf_matcher_get_next_char(struct alabnf_matcher * matcher,
 		     __FILE__,__func__,__LINE__);
       // never read a OR stream
       // it is used asparent stream reference for stream backtracking.
+
+      // BUT what if it is not a OR stream but an IT or a REf ?
+      
       state->tempchar2.uchar = 0;
       return &state->tempchar2;
     }
@@ -739,6 +749,13 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	{
 	case ALABNF_MATCHER_ST_NODE:
 	  break;
+	case ALABNF_MATCHER_ST_REF:
+	  // why is it a reference and not a node ?
+	  aldebug_printf(DBGSTREAM,"[FATAL] state %p reference type %i unsupported in %s:%s:%i\n",
+			 state,state->type,
+			 __FILE__,__func__,__LINE__);
+	  return ALABNF_MATCH_ERROR;
+	  // unsupported types
 	case ALABNF_MATCHER_ST_OR:
 	case ALABNF_MATCHER_ST_AND:
 	case ALABNF_MATCHER_ST_IT:
