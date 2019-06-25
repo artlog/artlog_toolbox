@@ -28,7 +28,7 @@ within alabnf_close_rule and alabnf_stack_rule_ref.
 
 Question: is forward reference working ?
 
-this is THE question...
+Seems it should.
 
 */
 
@@ -43,7 +43,7 @@ const int ALABNF_MAX_CHARS=100;
 // const value indicating that iterator is infinite
 const int ALABNF_INFINITE_ITERATION=-1;
 
-struct alabnf_global_  alabnf_global = {.debug=0};
+struct alabnf_global_  alabnf_global = {.debug=1};
 
 ALDEBUG_DEFINE_FUNCTIONS(struct alabnf_global_,alabnf,debug);
 
@@ -207,6 +207,8 @@ void alabnf_state_machine_init(struct alabnf_sm *state_machine,   struct alinput
   state_machine->string_type=ALABNF_ST_RULENAME;
   state_machine->stack=alstack_allocate();
   altokenizer_init(&state_machine->tokenizer);
+  // set debug at hash level, debugging bug2
+  alhash_context_set_debug(&state_machine->tokenizer.context,1);
 }
 
 void alabnf_state_machine_release(struct alabnf_sm * state_machine)
@@ -228,7 +230,7 @@ int alabnf_flush_number(struct alabnf_number_sm * state_machine)
 
 void alabnf_add_char(struct alabnf_sm * state_machine, char token, char c)
 {
-  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug)  aldebug_printf(DBGSTREAM,"[DEBUG] add char %c%c",token,c);
+  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[DEBUG] add char %c%c",token,c);
   altokenizer_add_char(&state_machine->tokenizer,token,c);
 
   int pending_chars = altokenizer_get_pending_chars(&state_machine->tokenizer);

@@ -1,6 +1,7 @@
 LINE = WORD SPA WORD
 
+WORD = "word"
+
 SPA = " "
 
-WORD = "word"
 

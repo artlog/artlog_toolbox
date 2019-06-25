@@ -175,6 +175,7 @@ altokenizer_cut_token_string(struct altokenizer *tokenizer)
   return entry;
 }
 
+// disregard token and c, works only on tokenizer
 struct alhash_entry * altokenizer_make_token(struct altokenizer *tokenizer, struct al_token * token, char c)
 {
   // full token was build with add_char

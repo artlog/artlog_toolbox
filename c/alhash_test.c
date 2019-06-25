@@ -11,7 +11,7 @@ to not stress alhash library beside this test
 void usage()
 {
   printf("please provide filepath of file to insert into alhash. format is a file \n");
-  printf("content of file is a list of lines where key is seperated from value with a space or a tabulation\n");
+  printf("content of file is a list of lines where key is separated from value with a space or a tabulation\n");
 }
 
 int main(int argc, char ** argv)

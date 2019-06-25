@@ -53,7 +53,7 @@ enum alhash_match_result aldatablock_is_empty(struct alhash_datablock * key)
 }
 
 /**
-key and keyB contiain values that are identical
+key and keyB contain values that are identical
 one interest is for str0 and substr comparison where one ends with '\0' and the other not.
  */
 enum alhash_match_result alhash_is_identical(struct alhash_datablock * key,
@@ -156,7 +156,7 @@ enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alha
 	}
       else
 	{
-	  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] DIFFERENT KEY %ld!=%ld \n", hash,entry->hash_key);}
+	  if (alhash_debug) {aldebug_printf(DBGSTREAM,"[DEBUG] DIFFERENT hashkey %ld!=%ld \n", hash,entry->hash_key);}
 	  return  ALH_MR_NOT_EQUAL;
 	}
     }
@@ -183,10 +183,15 @@ long alhash_hash_string(void * value, int length)
     {
       hash = hash ^ (  *((int*) (value)) << 12 );
     }
-  else if ( length >= 2  )
+  else if ( length > 2  )
     {
       hash = hash ^ ( ((long) string[1]) << 27 ) ^ ( ((long) string[2]) << 43 );
     }
+  else if ( length > 1  )
+    {
+      hash = hash ^ ( ((long) string[1]) << 11 );
+    }
+
     
     
   return (length > 0) ?
@@ -461,7 +466,7 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 // number of words is used for length of alhash_init, so can be 0 then automatic.
 int alhash_context_init(alhash_context * hash_context, int words, int chars, int autogrow)
 {
-    // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
+  // length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
   bzero(hash_context,sizeof(*hash_context));
   alhash_context_internal_init(hash_context, &hash_context->dict, words, NULL);
   // autogrow
