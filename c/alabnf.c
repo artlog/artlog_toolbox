@@ -414,20 +414,18 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
       number_sm->seen++;
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
-  else
-      if (
-      (( c >= 'a' ) && ( c <= 'f' ))
-      )
+  else if (
+	   (( c >= 'a' ) && ( c <= 'f' ))
+	   )
     {
       state_machine->string_type=ALABNF_ST_HEX;
       number_sm->cumulated = number_sm->cumulated << 4 | (0xa+c-'a');
       number_sm->seen++;
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
-    else
-      if (
-	(( c >= 'A' ) && ( c <= 'F' ))
-      )
+  else if (
+	   (( c >= 'A' ) && ( c <= 'F' ))
+	   )
     {
       //
       state_machine->string_type=ALABNF_ST_HEX;
@@ -435,36 +433,42 @@ void alabnf_hexadecimal_string(struct alabnf_sm * state_machine, char c)
       number_sm->seen++;
       state_machine->next_action = ALABNF_PA_CONTINUE;
     }
-      else	
+  else	
+    {
+      if ( c == '.' )
 	{
-	if ( c == '.' )
-	  {
-	    // concatenation
-	    number_sm->state=ALABNF_NSM_START;
-	    state_machine->next_action = ALABNF_PA_CONTINUE;
-	    return;
+	  // concatenation
+	  number_sm->state=ALABNF_NSM_START;
+	  state_machine->next_action = ALABNF_PA_CONTINUE;
+	  return;
+	}
+      else if ( c == '-' )
+	{
+	  if ( number_sm->seen > 0 )
+	    {
+	      // this case 
+	      // CHAR = %x1-7f
+	      // range is seen while only one hex number is given.
+	      alabnf_flush_number_to_char(state_machine);
+	    }
+	  // range
+	  number_sm->state=ALABNF_NSM_MIN_SET;
+	  state_machine->next_action = ALABNF_PA_CONTINUE;
+	  return;
 	  }
-	else
-	if ( c == '-' )
-	  {
-	    // range
-	    number_sm->state=ALABNF_NSM_MIN_SET;
-	    state_machine->next_action = ALABNF_PA_CONTINUE;
-	    return;
-	  }
-	else
-	  {
-	    // end of parsing for hexadecimal string / range.
-	    if ( number_sm->state==ALABNF_NSM_MAX_SET )
-	      {
-		state_machine->string_type=ALABNF_ST_RANGE;		
-	      }
-	    state_machine->close_method = alabnf_close_string_rematch;
-	    state_machine->next_action = ALABNF_PA_CLOSE;
-	    return;
-	  }
-      }
-
+      else
+	{
+	  // end of parsing for hexadecimal string / range.
+	  if ( number_sm->state==ALABNF_NSM_MAX_SET )
+	    {
+	      state_machine->string_type=ALABNF_ST_RANGE;		
+	    }
+	  state_machine->close_method = alabnf_close_string_rematch;
+	  state_machine->next_action = ALABNF_PA_CLOSE;
+	  return;
+	}
+    }
+  
   if (number_sm->seen > 1)
     {
       if ( number_sm->state==ALABNF_NSM_MIN_SET )

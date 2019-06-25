@@ -74,11 +74,7 @@ void alabnf_dump_iterator(struct aloutputstream * output,struct alabnf_iterator 
 void alabnf_dump_hex_string(struct aloutputstream * output,aldatablock * string )
 {
   aloutputstream_printf_1k(output,"%%x");
-  for (int i=0; i< string->length-1; i++)
-    {
-      aloutputstream_printf_1k(output,"%hhx.",string->data.charptr[i]);
-    }
-  aloutputstream_printf_1k(output,"%hhx",string->data.charptr[string->length-1]);
+  aloutput_bytes_as_hex(output,string,0,1);
 }
 
 void alabnf_dump_nameblock(struct aloutputstream * output,struct alhash_datablock * datablock)

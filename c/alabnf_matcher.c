@@ -366,22 +366,29 @@ alabnf_matcher_specialize(struct alabnf_matcher_state * state)
     {
       ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"specialize",state);
       struct alabnf_node * node = state->initial_node;
-      switch( node-> type )
+      if ( node != NULL )
 	{
-	case ALABNF_NT_ALT:
-	  state=alabnf_matcher_specialize_alternative(state,node);
-	  break;
-	case ALABNF_NT_SEQUENCE:
-	  state=alabnf_matcher_specialize_sequence(state,node);
-	  break;
-	case ALABNF_NT_ITERATOR:
-	  state=alabnf_matcher_specialize_iterator(state,node);
-	  break;
-	case ALABNF_NT_RULE_REF:
-	  state=alabnf_matcher_specialize_reference(state,node);
-	  break;
-	default:
-	  state->type = ALABNF_MATCHER_ST_NODE;
+	  switch( node-> type )
+	    {
+	    case ALABNF_NT_ALT:
+	      state=alabnf_matcher_specialize_alternative(state,node);
+	      break;
+	    case ALABNF_NT_SEQUENCE:
+	      state=alabnf_matcher_specialize_sequence(state,node);
+	      break;
+	    case ALABNF_NT_ITERATOR:
+	      state=alabnf_matcher_specialize_iterator(state,node);
+	      break;
+	    case ALABNF_NT_RULE_REF:
+	      state=alabnf_matcher_specialize_reference(state,node);
+	      break;
+	    default:
+	      state->type = ALABNF_MATCHER_ST_NODE;
+	    }
+	}
+      else
+	{
+	  ALABNF_MATCHER_FATAL_TEXT_STATE(NULL,"unset state without initial node",state);
 	}
     }
   ALABNF_MATCHER_DEBUG_TEXT_STATE(NULL,"specialized",state);
