@@ -236,9 +236,8 @@ alabnf_matcher_process_next_alternative(
 
     if ( state->type != ALABNF_MATCHER_ST_OR )
       {
-	aldebug_printf(DBGSTREAM,"[FATAL] state %p non ALABNF_MATCHER_ST_OR  in %s:%s:%i\n",
-		       state,
-		       __FILE__,__func__,__LINE__);
+	ALABNF_MATCHER_FATAL_TEXT_STATE(NULL,"state %p non ALABNF_MATCHER_ST_OR",state);
+
 	return NULL;
       }
 
@@ -271,9 +270,7 @@ alabnf_matcher_process_next_sequence(
 
     if ( state->type != ALABNF_MATCHER_ST_AND )
       {
-	aldebug_printf(DBGSTREAM,"[FATAL] state %p non ALABNF_MATCHER_ST_AND  in %s:%s:%i\n",
-		       state,
-		       __FILE__,__func__,__LINE__);
+	ALABNF_MATCHER_FATAL_TEXT_STATE(NULL,"state %p non ALABNF_MATCHER_ST_AND",state);
 	return NULL;
       }
 
@@ -291,7 +288,7 @@ alabnf_matcher_process_next_sequence(
       }
     else
       {
-	aldebug_printf(DBGSTREAM,"[FATAL] null node within sequence in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+	ALABNF_MATCHER_FATAL_TEXT_STATE(NULL,"null node within sequence",state);
       }
     return NULL;
   }
@@ -351,15 +348,17 @@ alabnf_matcher_specialize_reference(struct alabnf_matcher_state * state,
     }
   else
     {
-      aldebug_printf(DBGSTREAM,"[WARNING] unresolved rule_ref in %s:%s:%i\n",__FILE__,__func__,__LINE__);
+      aldebug_printf(DBGSTREAM,"[FATAL] unresolved rule_ref in %s:%s:%i\n",__FILE__,__func__,__LINE__);
       // WHAT TO DO HERE ?? skip ??
+      // Looks like it is a FATAL error, all references should be resolved.
       aldatablock * datablock = &rule_ref->keyblock;
       aldebug_printf(DBGSTREAM,"rulename="ALPASCALSTRFMT"\n",ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
-      return state;
+      return NULL;
     }
 
 }
 
+// if specialize fails can return NULL
 struct alabnf_matcher_state *
 alabnf_matcher_specialize(struct alabnf_matcher_state * state)
 {
@@ -673,9 +672,7 @@ alabnf_character * alabnf_matcher_get_next_char(struct alabnf_matcher * matcher,
 	}
       else
 	{
-	  aldebug_printf(DBGSTREAM,"[FATAL] NULL stream for state %p in %s:%s:%i\n",
-			 state,
-			 __FILE__,__func__,__LINE__);
+	  ALABNF_MATCHER_FATAL_TEXT_STATE(NULL,"null node within sequence",state);
 	  exit(1);
 	}
     }
@@ -751,18 +748,15 @@ enum alabnf_match alabnf_match_character(struct alabnf_matcher * matcher,
 	  break;
 	case ALABNF_MATCHER_ST_REF:
 	  // why is it a reference and not a node ?
-	  aldebug_printf(DBGSTREAM,"[FATAL] state %p reference type %i unsupported in %s:%s:%i\n",
-			 state,state->type,
-			 __FILE__,__func__,__LINE__);
+	  // Is it normal or not ?
+	  ALABNF_MATCHER_FATAL_TEXT_STATE(next_char,"reference type unsupported",state);
 	  return ALABNF_MATCH_ERROR;
 	  // unsupported types
 	case ALABNF_MATCHER_ST_OR:
 	case ALABNF_MATCHER_ST_AND:
 	case ALABNF_MATCHER_ST_IT:
 	default:
-	  aldebug_printf(DBGSTREAM,"[FATAL] state %p type %i unsupported in %s:%s:%i\n",
-			 state,state->type,
-			 __FILE__,__func__,__LINE__);
+	  ALABNF_MATCHER_FATAL_TEXT_STATE(next_char,"type unsupported",state);
 	  return ALABNF_MATCH_ERROR;
 	}
 

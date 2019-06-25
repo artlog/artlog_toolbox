@@ -1,0 +1,21 @@
+ALPHA= %x41.5a/%x61.7a
+
+BIT= "0"/"1"
+
+CHAR= %x1.7f
+
+CR= %xd
+
+CRLF= (CR LF)
+
+CTL= %x0.1f/%x7f
+
+DIGIT= %x30.39
+
+DQUOTE= %x22
+
+HEXDIG= DIGIT/"A"/"B"/"C"/"D"/"E"/"F"
+
+HTAB= %x9
+
+LF= %xa

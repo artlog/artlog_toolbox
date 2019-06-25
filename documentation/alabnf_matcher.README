@@ -140,3 +140,25 @@ list of ABNF syntax to build one parser then apply it on stdin
 			     state_machine->one_char_method,
 			     state_machine->lf_line,
 			     state_machine->current_indent);
+
+____________________________________________________________________________
+
+
+multiple rules with references :
+
+case unresolved :
+
+build/alabnf infile=abnf/testrefko.abnf 
+file to parse 'abnf/testref.abnf'
+LINE = (!!!)WORD
+
+case resolved :
+
+build/alabnf infile=abnf/testref.abnf 
+file to parse 'abnf/testref.abnf'
+LINE = WORD
+
+
+build/alabnf_matcher 500 abnf/testref.abnf
+word word
+^^^^^^SUCCESS

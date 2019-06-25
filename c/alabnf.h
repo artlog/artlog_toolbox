@@ -186,5 +186,6 @@ void alabnf_state_machine_release(struct alabnf_sm * state_machine);
 
 struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine);
 
+enum al_global_error_code alabnf_rule_ref_is_resolved(struct alabnf_rule_ref * rule_ref);
 
 #endif

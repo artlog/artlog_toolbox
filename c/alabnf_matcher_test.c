@@ -3,6 +3,7 @@
 #include "aldebug.h"
 #include <stdlib.h>
 #include "aldebug_output.h"
+#include "alabnf_dump.h"
 
 int main(int argc, char * argv[])
 {
@@ -28,6 +29,13 @@ int main(int argc, char * argv[])
 
       if ( alabnf != NULL )
 	{
+	  // dump it
+	  {
+	    struct aloutputstream output;
+	    aloutputstream_fd_init(&output, fileno(stdout));
+	    alabnf_dump_rule(&output,&alabnf->root_rule);
+	  }
+	  
 	  aldebug_printf(DBGSTREAM,"[INFO] parsed abnf %p\n", alabnf);
 	  
 	  alinputstream_init(&input,fileno(file));

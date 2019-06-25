@@ -1,0 +1,6 @@
+LINE = WORD SP WORD
+
+WORD = "word"
+
+SP = " "
+

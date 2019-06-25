@@ -143,8 +143,17 @@ void alabnf_dump_string(struct aloutputstream * output, struct alabnf_string * s
 }
 
 void alabnf_dump_rule_ref(struct aloutputstream * output,struct alabnf_rule_ref * rule_ref)
-{  
+{
+
+  // Should check if resolved.
+  if ( alabnf_rule_ref_is_resolved(rule_ref) != AL_EC_OK )
+    {
+      aloutputstream_printf_1k(output,"(!!!)");
+    }
+
   struct alhash_datablock * datablock = &rule_ref->keyblock;
+
+  
   alabnf_dump_nameblock(output,datablock);
 }
 

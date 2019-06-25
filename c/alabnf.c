@@ -5,7 +5,7 @@
 #include <string.h>
 #include "aldebug_output.h"
 
-/* code created by a human brain */
+/* code created by a human brain (at least dev believes he is human) */
 
 /*
       NOTE:     ABNF strings are case-insensitive and
@@ -20,6 +20,18 @@ This code intent :
 read/parse a stream of ABNF syntax and create and struct abnf* internal represenation of it
 
 */
+
+/*
+Question : how a rule resolve reference to other rules ?
+
+within alabnf_close_rule and alabnf_stack_rule_ref.
+
+Question: is forward reference working ?
+
+this is THE question...
+
+*/
+
 
 // maximum iteration of state machine for parsing (protection against infinite loop )
 // in relative size of read characters
@@ -37,9 +49,9 @@ ALDEBUG_DEFINE_FUNCTIONS(struct alabnf_global_,alabnf,debug);
 
 #define ALABNF_DEBUG_UNEXPECTED_CHAR(c) aldebug_printf(DBGSTREAM,"[ERROR] unexpected '%i' '%c' in %s %s %i\n",c,c>32 ? c : '.',__FILE__,__func__,__LINE__);
 
-#define ALABNF_DEBUG_TEXT_STATE_ADV(c,text,state_machine,adv)  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[" adv "] %s ('%i','%c') at %i:%i  in %s %s %i\n",text,c,c>=32 ? c : '.' ,state_machine->lf_line,state_machine->current_indent,__FILE__,__func__,__LINE__);
+#define ALABNF_DEBUG_TEXT_STATE_ADV(c,text,state_machine,adv)  aldebug_printf(DBGSTREAM,"[" adv "] %s ('%i','%c') in rule %i at L%iC%i  in %s %s %i\n",text,c,c>=32 ? c : '.' ,state_machine->rule_number,state_machine->lf_line,state_machine->current_indent,__FILE__,__func__,__LINE__);
 
-#define ALABNF_DEBUG_TEXT_STATE(c,text,state_machine) ALABNF_DEBUG_TEXT_STATE_ADV(c,text,state_machine,"DEBUG")
+#define ALABNF_DEBUG_TEXT_STATE(c,text,state_machine) ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) ALABNF_DEBUG_TEXT_STATE_ADV(c,text,state_machine,"DEBUG")
 
 void alabnf_start_string(struct alabnf_sm * state_machine, char c);
 void alabnf_string(struct alabnf_sm * state_machine, char c);
@@ -133,7 +145,7 @@ struct alabnf_node * alabnf_create_alternative_node(struct alabnf * alabnf,
     return alternative_node;
 }
 
-struct alabnf_node * alabnf_get_abnf_token(struct alhash_entry * entry)
+struct alabnf_node * alabnf_get_abnf_node(struct alhash_entry * entry)
 {
   if ( entry->key.data.ptr == entry->value.data.ptr )
     {
@@ -233,10 +245,10 @@ void alabnf_handle_lf(struct alabnf_sm * state_machine)
   ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[INFO] LF\n");
   state_machine->lf_line ++;
   
-  // tentative to handle mutliple files parsing, reset rule if mutliple empty lines...
+  // tentative to handle multiple files parsing, reset rule if multiple empty lines...
   if ( (state_machine->current_indent == 0 ) && (  state_machine->linebreak > 1 ) )
     {
-      aldebug_printf(DBGSTREAM,"[DEBUG] empty lines %i\n", state_machine->lf_line); 
+      ALABNF_DEBUG_TEXT_STATE_ADV('\n',"empty lines", state_machine,"WARNING");
       state_machine->linebreak = 0;
     }
   else
@@ -280,7 +292,7 @@ void alabnf_comment(struct alabnf_sm * state_machine, char c)
     {
       if ( state_machine->state == ALABNF_STATE_RULENAME )
 	{
-	  aldebug_printf(DBGSTREAM,"[ERROR] comment within rule name at %i:%i in %s %s %i\n",
+	  aldebug_printf(DBGSTREAM,"[ERROR] comment within rule name at L%iC%i in %s %s %i\n",
 			 state_machine->lf_line,state_machine->current_indent,
 			 __FILE__,__func__,__LINE__);
 
@@ -485,7 +497,7 @@ void alabnf_string_suffix_intern(struct alabnf_sm * state_machine, char c)
 	}
       else
 	{
-	  aldebug_printf(DBGSTREAM,"[WARNING] '%i' '%c' in alabnf rule definition %s %s %i\n",c,c >=32 ? c : '.',__FILE__,__func__,__LINE__);	  
+	  ALABNF_DEBUG_TEXT_STATE_ADV(c,"Expected closing word",state_machine,"WARNING");
 	  state_machine->close_method = alabnf_close_name_string_rematch;
 	}
       state_machine->next_action = ALABNF_PA_CLOSE;
@@ -581,7 +593,7 @@ void alabnf_string_suffix(struct alabnf_sm * state_machine, char c)
 	}
       else
 	{
-	  ALABNF_DEBUG_UNEXPECTED_CHAR(c)
+	  ALABNF_DEBUG_TEXT_STATE_ADV(c,"Expected closing word",state_machine,"WARNING")
 	  state_machine->close_method = alabnf_close_string_rematch;
 	}
     }
@@ -1294,6 +1306,7 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 
   // should create rule = sequence of nodes
   struct alstackelement * element=NULL;
+  // collector will be updated during loop, starting with NULL.
   struct alabnf_node * collector = NULL;
   
   ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[INFO] parsing a rule in stack of %i tokens .\n",  entries );
@@ -1328,13 +1341,14 @@ void alabnf_close_rule(struct alabnf_sm * state_machine)
 	      if (node->type == ALABNF_NT_RULE_REF )
 		{
 		  struct alabnf_rule_ref * rule_ref = &node->content.rule_ref;
-		  if ( rule_ref->resolved != NULL )
+		  if ( alabnf_rule_ref_is_resolved(rule_ref) == AL_EC_OK )
 		    {
 		      aldebug_printf(DBGSTREAM,"[ERROR] redefinition of rule rule_ref in %s:%s:%i\n", __FILE__, __func__,__LINE__ );
 		      // could create automagically an alternative... ALABNF_NT_ALT with rule_ref->resolved and collector
 		    }
 		  else
 		    {
+		      // Where resolution is done.
 		      rule_ref->resolved=collector;
 		    }
 		}
@@ -1575,7 +1589,7 @@ void alabnf_expect_equal(struct alabnf_sm * state_machine, char c)
 
 void alabnf_stack_rule_ref(struct alabnf_sm * state_machine, struct alhash_entry * mytoken)
 {
-  struct alabnf_node * node = alabnf_get_abnf_token(mytoken);
+  struct alabnf_node * node = alabnf_get_abnf_node(mytoken);
 
   ALABNF_DEBUG_TEXT_STATE('.',"stack_rule_ref",state_machine);
   
@@ -1618,10 +1632,12 @@ void alabnf_stack_rule_ref(struct alabnf_sm * state_machine, struct alhash_entry
       if ( node->type == ALABNF_NT_RULE_REF )
 	{
 	  rule_ref = &node->content.rule_ref;
-	  if ( rule_ref->resolved == NULL )
+	  if ( alabnf_rule_ref_is_resolved(rule_ref) == AL_EC_FALSE )
 	    {
 	      // well.. unresolved...
+	      // this means it requires to be resolved later on.
 	    }
+	  // what if already resolved ?
 	}
       else
 	{
@@ -1730,8 +1746,7 @@ void alabnf_close_name_string(struct alabnf_sm * state_machine, char c)
     }
   else    
     {
-      // UHU error      
-      aldebug_printf(DBGSTREAM,"[ERROR] unexpected state %i for alabnf_close_name_string\n", state_machine->state );
+      ALABNF_DEBUG_TEXT_STATE_ADV(c,"unexpected state",state_machine,"ERROR");
       state_machine->one_char_method=alabnf_start_string_ruledef;
     }
   struct al_token token;
@@ -1804,14 +1819,14 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 	{
 	  if ( action == ALABNF_PA_REMATCH )
 	    {
-	      aldebug_printf(DBGSTREAM,"[WARNING] two successive rematch %p at (line,column) (%i,%i) \n",
+	      aldebug_printf(DBGSTREAM,"[WARNING] two successive rematch %p at L%iC%i \n",
 			     state_machine->one_char_method,
 			     state_machine->lf_line,
 			     state_machine->current_indent);
 
 	      if ( state_machine->characters * ALABNF_MAX_INTERNAL_REMATCH_TIMES < state_machine->state_loop )
 		{
-		  aldebug_printf(DBGSTREAM,"[FATAL] states loop %i too big compared to stream parsed char %i at  (line,column) (%i,%i)\n",
+		  aldebug_printf(DBGSTREAM,"[FATAL] states loop %i too big compared to stream parsed char %i at  L%iC%i\n",
 				 state_machine->state_loop,
 				 state_machine->characters,
 				 state_machine->lf_line,
@@ -1825,13 +1840,13 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 	  char r = state_machine->rematch;
 	  if ( c != r )
 	    {
-	      aldebug_printf(DBGSTREAM,"[FATAL] rematch diff %i != %i at (line,column) (%i,%i)\n",
+	      aldebug_printf(DBGSTREAM,"[FATAL] rematch diff %i != %i at L%iC%i\n",
 			     c,r,
 			     state_machine->lf_line,
 			     state_machine->current_indent);
 	      exit(1);
 	    }	    
-	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[DEBUG] rematch %p %x '%c' at (line,column) (%i,%i)\n",
+	  ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[DEBUG] rematch %p %x '%c' at L%iC%i\n",
 			 state_machine->one_char_method,
 			 c,c>32 ? c:'?',
 			 state_machine->lf_line,
@@ -1883,7 +1898,7 @@ void alabnf_state_machine_run(struct alabnf_sm * state_machine)
 		  if ( c != 0 )
 		    {
 		      alabnf_close_method close_method = state_machine->close_method;
-		      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[DEBUG] CLOSE %p %x '%c' at (line,column) (%i,%i)\n",
+		      ALDEBUG_IF_DEBUG(&alabnf_global,alabnf,debug) aldebug_printf(DBGSTREAM,"[DEBUG] CLOSE %p %x '%c' at L%iC%i\n",
 				     close_method,
 				     c,c>32 ? c:'?',
 				     state_machine->lf_line,
@@ -1928,4 +1943,9 @@ struct alabnf * alabnf_state_machine_generated(struct alabnf_sm *state_machine)
     }
 
   return alabnf;
+}
+
+enum al_global_error_code alabnf_rule_ref_is_resolved(struct alabnf_rule_ref * rule_ref)
+{
+  return  ( rule_ref->resolved != NULL ) ? AL_EC_OK : AL_EC_FALSE;
 }
