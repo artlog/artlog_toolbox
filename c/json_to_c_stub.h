@@ -1,8 +1,9 @@
-#ifndef  _JSON_TO_C_STUB_H_
-#define  _JSON_TO_C_STUB_H_
+#ifndef  JSON_TO_C_STUB_H_
+#define  JSON_TO_C_STUB_H_
+
+// TODO rename to aljson_to_c_stub.h
 
 #include "aljson.h"
-
 
 /**
 
@@ -140,10 +141,10 @@ struct json_object * json_c_add_int_member
 // capture char value content.
 struct json_object * json_c_add_string_member
        ( const char * name,
-	 char * value,
+	 const char * value,
 	 struct json_parser_ctx * ctx,
 	 alstrings_ringbuffer_pointer * allocator );
 
 struct json_object * json_to_c_stub_get_ref( struct json_object * json_ref, struct json_object * json_root);
 
-#endif
+#endif // JSON_TO_C_STUB

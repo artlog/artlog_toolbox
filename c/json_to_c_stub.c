@@ -1,10 +1,13 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
+// TODO rename to aljson_to_c_stub.h
 #include "json_to_c_stub.h"
 #include "altodo.h"
 #include "albase.h"
 #include "aldebug_output.h"
+#include "aljson_encoder.h"
+
+// TODO rename to aljson_to_c_stub.c
 
 // part of generic tools.
 
@@ -18,7 +21,7 @@ struct json_object * json_c_add_json_object_member(const char * name, struct jso
   data.length = strlen(data.data.ptr);
   data.data.ptr = al_copy_block(allocator, &data);
 
-  printf("key:" ALPASCALSTRFMT " %i\n",
+  aldebug_printf(DBGSTREAM,"[DEBUG] add key:" ALPASCALSTRFMT " %i\n",
 	 ALPASCALSTRARGS(data.length,(char *) data.data.ptr),
 	 data.length);
   // create json pair with name of field
@@ -35,37 +38,16 @@ struct json_object * json_c_add_json_object_member(const char * name, struct jso
 // json_object pair type.
 struct json_object * json_c_add_int_member(const char * name, int value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
-  struct alhash_datablock data;
-
-  // convert int to json int char representation
-  aljson_build_string_from_int(value, 10, allocator, &data);
-  data.type=ALTYPE_OPAQUE;
-  struct json_object * object = aljson_new_json_object('0', allocator, &data);
-
-  return json_c_add_json_object_member(name, object, ctx, allocator);
+  struct json_object * int_object =  aljson_encoder_int(value, ctx, allocator);
+  return json_c_add_json_object_member(name, int_object, ctx, allocator);
 }
+
 
 // json_object pair type.
 // capture char value content.
-struct json_object * json_c_add_string_member(const char * name, char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
+struct json_object * json_c_add_string_member(const char * name, const char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
-  struct alhash_datablock data;
-  
-  data.type=ALTYPE_OPAQUE;
-  data.data.ptr=value;
-  if ( value != NULL )
-    {
-      data.length = strlen(data.data.ptr);
-    }
-  else
-    {
-      data.length = 1;
-    }
-  printf("string:" ALPASCALSTRFMT " %i\n",
-	 ALPASCALSTRARGS(data.length,(char *) data.data.ptr),
-	 data.length);
-  data.data.ptr = al_copy_block(allocator,&data);
-  struct json_object * object = aljson_new_json_object('"', allocator, &data);
+  struct json_object * object = aljson_encoder_string(name, ctx, allocator);
 
   return json_c_add_json_object_member(name, object, ctx, allocator);
 }
