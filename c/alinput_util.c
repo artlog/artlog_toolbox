@@ -32,8 +32,10 @@ struct alinputstream * alinput_util_build_chain_stream_from_filenames(int filena
 }
 
 
+// NYI
 int  alinput_util_destroy_chain_stream(struct alinputstream * head)
 {
   // TODO implement method to dispose all after use ...
+  aldebug_printf(DBGSTREAM,"[WANRING] NYI outputstream %p WON'T be released\n", head);
   return 0;
 }

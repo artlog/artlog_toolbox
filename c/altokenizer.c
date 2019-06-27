@@ -7,11 +7,13 @@
 
 char altokenizer_get_next_char_default (struct altokenizer *ctx, void *data)
 {
+  aldebug_printf(DBGSTREAM,"[WARNING] default %s  does nothing ctx %p, data %p\n",__func__, ctx, data);
   return 0;
 }
 
 void altokenizer_set_pushback_char_default (struct altokenizer *ctx, void *data, char pushback)
 {
+  aldebug_printf(DBGSTREAM,"[WARNING] default %s(ctx %p, data %p, pushback '%c') does NOTHING\n",__func__, ctx, data, pushback);
   return;
 }
 
@@ -20,6 +22,7 @@ void altokenizer_set_pushback_char_default (struct altokenizer *ctx, void *data,
 // DISREGARD token
 int altokenizer_add_token_char_default (struct altokenizer *tokenizer, char token, char c)
 {
+  aldebug_printf(DBGSTREAM,"[DEBUG] %s ( tokenizer %p, char token '%c', char c '%c')\n",__func__, tokenizer, token, c);
   return altoken_char_buffer_add_char(&tokenizer->token_buf, c);
 }
 
@@ -178,6 +181,7 @@ altokenizer_cut_token_string(struct altokenizer *tokenizer)
 // disregard token and c, works only on tokenizer
 struct alhash_entry * altokenizer_make_token(struct altokenizer *tokenizer, struct al_token * token, char c)
 {
+  aldebug_printf(DBGSTREAM,"[DEBUG] %s ( tokenizer %p, char token '%c', char c '%c')\n",__func__, tokenizer, token, c);
   // full token was build with add_char
    return altokenizer_cut_token_string(tokenizer);
 }
