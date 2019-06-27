@@ -263,6 +263,7 @@ void alabnf_handle_lf(struct alabnf_sm * state_machine)
 
 void alabnf_handle_space(struct alabnf_sm * state_machine)
 {
+  ALABNF_DEBUG_TEXT_STATE(' ',"",state_machine);
 }
 
 // cumulated number is converted to char and reset.
@@ -644,16 +645,24 @@ void albnf_stack_sequence(struct alabnf_sm * state_machine)
   // HACK REUSE iterator value
   alabnf_add_char(state_machine,'^',(char) state_machine->iterator_index);  
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,'(');
+  if ( mytoken != NULL )
+    {
 
-  struct alabnf_node * sequence_node = alabnf_create_sequence_node(alabnf, NULL,NULL);
-  alstack_push_ref(stack,sequence_node);
+      struct alabnf_node * sequence_node = alabnf_create_sequence_node(alabnf, NULL,NULL);
+      alstack_push_ref(stack,sequence_node);
   
-  state_machine->iterator_index ++;
+      state_machine->iterator_index ++;
+    }
+  else
+    {
+       ALABNF_DEBUG_TEXT_STATE('.',"[FATAL] null token",state_machine);
+    }    
 
 }
   
 void alabnf_group_start(struct alabnf_sm * state_machine, char c)
 {
+  ALABNF_DEBUG_TEXT_STATE(c,"",state_machine);
   albnf_stack_sequence(state_machine);
 }
 
@@ -675,10 +684,18 @@ void alabnf_stack_iterator(struct alabnf_sm * state_machine,int min, int max)
   alabnf_add_char(state_machine,'^',(char) state_machine->iterator_index);  
   struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,'^');
 
-  struct alabnf_node * iterator_node = alabnf_create_iterator_node(alabnf,min,max,NULL);
-  alstack_push_ref(stack,iterator_node);
+  if ( mytoken != NULL )
+    {
+
+      struct alabnf_node * iterator_node = alabnf_create_iterator_node(alabnf,min,max,NULL);
+      alstack_push_ref(stack,iterator_node);
  
-  state_machine->iterator_index ++;
+      state_machine->iterator_index ++;
+    }
+  else
+    {
+      ALABNF_DEBUG_TEXT_STATE('.',"[FATAL] null token",state_machine);
+    }
 }
 
 void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
@@ -708,11 +725,21 @@ void alabnf_alternative_start(struct alabnf_sm * state_machine, char c)
 	  //HACK to overcome  altokenizer_dict_add_string: Assertion `length!=0' failed
 	  alabnf_add_char(state_machine,'/',(char) state_machine->iterator_index);  
 	  struct alhash_entry * mytoken = altokenizer_make_token(&state_machine->tokenizer,&token,'/');
+	  
+	  if ( mytoken != NULL )
+	    {
 
-	  struct alabnf_node * iterator_node = alabnf_create_alternative_node(alabnf,node,NULL);
-	  alstack_push_ref(stack,iterator_node);
 
-	  state_machine->iterator_index ++;
+	      struct alabnf_node * iterator_node = alabnf_create_alternative_node(alabnf,node,NULL);
+	      alstack_push_ref(stack,iterator_node);
+
+	      state_machine->iterator_index ++;
+	    }
+	    else
+	      {
+		ALABNF_DEBUG_TEXT_STATE(c,"[FATAL] null token",state_machine);
+	      }
+	  
 	}
     }
   else
@@ -1182,6 +1209,9 @@ void alabnf_close_iterator(struct alabnf_sm * state_machine, char c)
 // stack full iterator with content as sequence
 void alabnf_close_sequence(struct alabnf_sm * state_machine, char c)
 {
+
+  ALABNF_DEBUG_TEXT_STATE(c,"",state_machine);
+  
   struct alabnf * alabnf   = alabnf_state_machine_generated(state_machine);
   struct alstack * stack = state_machine->stack;
   
@@ -1274,6 +1304,7 @@ void alabnf_close_group(struct alabnf_sm * state_machine, char c)
 
 void alabnf_close_optional(struct alabnf_sm * state_machine, char c)
 {
+  ALABNF_DEBUG_TEXT_STATE(c,"",state_machine);
   alabnf_close_iterator(state_machine,c);
 }
 
@@ -1296,6 +1327,7 @@ void alabnf_close_any(struct alabnf_sm * state_machine, char c)
 
 void alabnf_optional_start(struct alabnf_sm * state_machine, char c)
 {
+  ALABNF_DEBUG_TEXT_STATE(c,"",state_machine);
   // stack iterator 0,1 start
   alabnf_stack_iterator(state_machine,0,1);
 }
