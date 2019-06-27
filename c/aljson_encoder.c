@@ -18,7 +18,7 @@ struct json_object * aljson_encoder_int(int value, struct json_parser_ctx * ctx,
 }
 
 
-struct json_object * aljson_encoder_string(const char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
+struct json_object * aljson_encoder_pascal_string(int length, const char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
   struct alhash_datablock data;
   
@@ -26,17 +26,32 @@ struct json_object * aljson_encoder_string(const char * value, struct json_parse
   data.data.constcharptr=value;
   if ( value != NULL )
     {
-      data.length = strlen(data.data.ptr);
+      data.length = length;
     }
   else
     {
       data.length = 1;
     }
   aldebug_printf(DBGSTREAM,"[DEBUG] add string:" ALPASCALSTRFMT " %i\n",
-	 ALPASCALSTRARGS(data.length,(char *) data.data.ptr),
+	 ALPASCALSTRARGS(data.length,data.data.charptr),
 	 data.length);
   data.data.ptr = al_copy_block(allocator,&data);
   struct json_object * object = aljson_new_json_object('"', allocator, &data);
 
   return object;
+}
+
+struct json_object * aljson_encoder_string(const char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
+{
+  int length = 0;
+  if ( value != NULL )
+    {
+      length = strlen(value);
+    }
+  else
+    {
+      length = 1;
+    }
+
+  return aljson_encoder_pascal_string(length,value, ctx, allocator);
 }
