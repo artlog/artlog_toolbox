@@ -1,6 +1,6 @@
 BUILD=../build
 
-BINARIES=c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alabnf alabnf_matcher alpadfile hashtree salsa20 alimp
+BINARIES=c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alpadfile hashtree salsa20 alimp
 BUILT_BINARIES=$(addprefix $(BUILD)/,$(BINARIES))
 
 all: $(BUILT_BINARIES)
@@ -32,12 +32,6 @@ $(BUILD)/hashtree: alhashtree.c alhashtree_test.c alcryptohash.c
 
 $(BUILD)/aljson_ld: aljson_ld.c aljson_ld_test.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -laldev -lalhash  -lalstack -lalcommon -Wl,-Bdynamic
-
-$(BUILD)/alabnf: alabnf.c alabnf_util.c alabnf_test.c altoken.c altokenizer.c alinput_util.c alabnf_dump.c
-	gcc -Wall -Wextra -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -laljson -lalhash  -lalstack -lalcommon -laldev -Wl,-Bdynamic
-
-$(BUILD)/alabnf_matcher: alabnf.c alabnf_util.c alabnf_matcher.c alabnf_matcher_test.c altoken.c altokenizer.c alinput_util.c alabnf_dump.c
-	gcc -Wall -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laldev -laljson -lalhash  -lalstack -lalcommon  -Wl,-Bdynamic
 
 $(BUILD)/alimp: 	alimp.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
