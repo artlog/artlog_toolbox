@@ -30,6 +30,7 @@ struct json_object * aljson_encoder_pascal_string(int length, const char * value
     }
   else
     {
+      // not that good ERRORPRONE
       data.length = 1;
     }
   aldebug_printf(DBGSTREAM,"[DEBUG] add string:" ALPASCALSTRFMT " %i\n",
@@ -50,6 +51,7 @@ struct json_object * aljson_encoder_string(const char * value, struct json_parse
     }
   else
     {
+      // not that good ERRORPRONE and done twice and useless.
       length = 1;
     }
 

@@ -27,6 +27,7 @@ void alinputstream_setdatablock(struct alinputstream * stream, aldatablock * blo
 {
   memcpy(&stream->input, block, sizeof(stream->input));
   stream->offset=offset;
+  // is there any setting to set or check for alinputstream_type ?
 }
 
 void alinputstream_seteof(struct alinputstream * stream)
@@ -37,6 +38,80 @@ void alinputstream_seteof(struct alinputstream * stream)
 int alinputstream_iseof(struct alinputstream * stream)
 {
   return (stream->eof == 1);
+}
+
+
+enum al_global_error_code  alinputstream_fd_read_datablock(struct alinputstream * stream, aldatablock * block, int offset, int length)
+{
+
+  char * outbuf = block->data.charptr;
+  size_t total = 0;
+  size_t r = 0;
+
+  if ( offset + length <= block->length )
+    {       
+      // handle case where bytes are read in multiple chunks (often network issues)
+      while (total < length)
+	{
+	  r = read(stream->fd, &outbuf[offset + total], length - total);
+	  if ( r > 0 )
+	    {
+	      total = total + r;
+	    }
+	  else
+	    {
+	      stream->bits = total * CHAR_BIT;
+	      alinputstream_seteof(stream);
+	      return AL_EC_EOF;
+	    }
+	}
+    }
+  else
+    {
+      return AL_EC_OOB;
+    }
+
+  return AL_EC_OK;
+}
+
+enum al_global_error_code alinputstream_read_block_at(struct alinputstream * stream, aldatablock * block, int offset, int length)
+{
+  if ( stream->input.data.ptr != NULL )
+    {
+      // NYI commented code copied from alinputstream_readuint32 but not fully adapted
+      /*
+      unsigned int res = 0;
+      if (  stream->input.length >= stream->offset + length )
+	{
+	  res = aldatablock_get_uint32be(&stream->input, stream->offset);
+	  stream->offset += length;
+	}
+      else
+	{
+	  int remain = stream->input.length - stream->offset;
+	  if ( remain > 0 )
+	    {
+
+	      int d =0;
+	      for (d=0; d<remain;d++)
+		{
+		  res = ( res * 256 ) + stream->input.data.ucharptr[d];
+		}
+//	      for (d<4;d++)
+//		{
+//		  res *= 256;		  
+//		}
+	      stream->bits = remain * CHAR_BIT;
+	    }
+	  alinputstream_seteof(stream);
+	}
+      */
+      return AL_EC_NYI;
+    }
+  else
+    {
+      return alinputstream_fd_read_datablock(stream,block,offset,length);
+    }
 }
 
 unsigned int alinputstream_readuint32(struct alinputstream * stream)

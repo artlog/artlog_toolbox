@@ -107,4 +107,6 @@ undefined behavior if line is bigger than block, but won't buffer overflow
 */
 enum al_global_error_code alinputstream_readline(struct alinputstream * stream, aldatablock * block);
 
+enum al_global_error_code alinputstream_read_block_at(struct alinputstream * stream, aldatablock * block, int offset, int length);
+
 #endif
