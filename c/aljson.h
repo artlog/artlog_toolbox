@@ -23,7 +23,7 @@ struct json_level
 
 struct json_parser_ctx
 {
-  struct alparser_ctx alparser;
+  alhash_context alparser;
   
   struct json_level parenthesis; // parenthesis '(' ')' 
   struct json_level braket; // brakets '[' ']' 
@@ -82,7 +82,7 @@ struct json_pair {
 /** dict and provide a hash access **/
 struct json_dict {
   // contains hashtable dict, localcontext.dict.context can be NULL if unset
-  struct alparser_ctx localcontext;
+  alhash_context localcontext;
   int nitems;
   struct json_pair * items[];
 };

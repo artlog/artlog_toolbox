@@ -36,10 +36,10 @@ struct alhash_bucket {
   struct alhash_entry entries[ALHASH_BUCKET_SIZE];
 };
 
-struct alparser_ctx;
+struct alhash_ctx_;
 
 struct alhash_table {
-  struct alparser_ctx * context;
+  struct alhash_ctx_ * context;
   int bucket_size; // number of possible entries in this table
   int used; // number of entries in  use
   int autogrow; // 0 don't grow automatically, else grow if alhash_get_free < autogrow.
@@ -48,8 +48,8 @@ struct alhash_table {
 };
 
 // allocation of words, dict
-// prefer alhash_context from confusing struct alparser_ctx.
-typedef struct alparser_ctx {
+// prefer alhash_context from struct alhash_ctx_.
+typedef struct alhash_ctx_ {
   ALDEBUG_DEFINE_FLAG(debug)
   struct alallocation_ctx allocator;
   struct alhash_table dict;
@@ -93,7 +93,7 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 // release whole table glue ( ie does not free data content )
 void alhash_release(struct alhash_table * table);
 
-/* int alparser_init(  struct alparser_ctx * alparser, int words, int chars);
+/* int alparser_init(  struct alhash_ctx_ * alparser, int words, int chars);
 alparser_init is FULLY DEPRECATED
 use alhash_context_init(alparser,words,autogrowth) instead
 ex alhash_context_init(alparser,words,chars,200)

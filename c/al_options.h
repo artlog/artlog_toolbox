@@ -17,7 +17,7 @@ TODO => provide it through a json value will allow list and persitency.
 
 struct al_options {
   ALDEBUG_DEFINE_FLAG(debug);
-  struct alparser_ctx context;
+  alhash_context context;
   // keys arg[<index>] ex 'arg[3]' is fourth parsed arg
   int argsnumber;
 };

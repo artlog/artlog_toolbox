@@ -122,7 +122,7 @@ struct c_enum_info {
 struct c_parser_ctx {
 
   struct json_ctx* tokenizer;
-  struct alparser_ctx alparser;
+  alhash_context alparser;
   
   enum c_parser_state state;
 

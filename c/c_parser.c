@@ -88,7 +88,7 @@ reset_tokenizer_buffer (struct json_ctx *tokenizer)
 /* return an entry pointer in global dict_index table
  */
 struct alhash_entry *
-alparser_dict_add_string (struct alparser_ctx *alparser, char * buffer, int length)
+alparser_dict_add_string (alhash_context * alparser, char * buffer, int length)
 {
 
   if (buffer == NULL)
@@ -175,7 +175,7 @@ c_cut_token_string (struct c_parser_ctx *parser)
   char *buffer = tb->buf;
   int length = tb->bufpos;
 
-  struct alparser_ctx *alparser = &parser->alparser;
+  alhash_context *alparser = &parser->alparser;
 
   struct alhash_entry *entry = alparser_dict_add_string(alparser, buffer, length);
     
@@ -3243,7 +3243,7 @@ init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
   parser->last_type = -1;
   parser->last_word = -1;
 
-  struct alparser_ctx * alparser = &parser->alparser;
+  alhash_context * alparser = &parser->alparser;
   // hashtable bucket will autogrow due to length 0
   // word buffer will autogrow due to al_copy_block usage
   // HARDCODED 1024 and 200/256 autogrow

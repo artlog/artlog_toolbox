@@ -13,6 +13,12 @@ void alabnf_normalize_name(char * in, char ** out)
   *out=in;
 }
 
+void usage()
+{
+  aldebug_printf(DBGSTREAM,"usage\n");
+  aldebug_printf(DBGSTREAM,"infile=<abnf input file>");
+}
+
 int main(int argc, char ** argv)
 {
 
@@ -40,6 +46,7 @@ int main(int argc, char ** argv)
     }
   else
     {
+      usage();
       aldebug_printf(DBGSTREAM,"[ERROR] missing argument infile= file to parse.");
     }
     
