@@ -25,11 +25,16 @@ void alcbor_parsing_context_init(alcbor_pc * context, struct alinputstream * inp
   context->header_byte = 0;
   context->value_length = 0;
   context->fet = ALCBOR_FET_NOT_SET;
+  context->depth = 0;
+
+  // HARDCODED maxdepth
+  context->maxdepth = 1024;
+  
   // build json output
   {
     struct json_parser_ctx * json_ctx = &context->output.json_ctx;
     alhash_context * hash_context =  &json_ctx->alparser;
-    // WARNING HARDCODED alhash_context_init(hash_context, words, chars, autogrow %/255);
+    // WARNING HARDCODED 100 words 1024 chars alhash_context_init(hash_context, words, chars, autogrow %/255);
     alhash_context_init(hash_context, 100, 1024, 200);
     // borrow allocator from hash table ( is it correct ? )
     context->output.allocator = &hash_context->allocator.ringbuffer;
@@ -305,8 +310,27 @@ enum al_global_error_code alcbor_parse_from_header_byte(alcbor_pc * context)
   return AL_EC_OK;
 }
 
+// should not go deeper than maxdepth
+enum al_global_error_code alcbor_inc_depth(alcbor_pc * context)
+{
+  if ( context->depth < context->maxdepth )
+    {
+      context->depth ++;
+      return AL_EC_OK;
+    }
+  else
+    {
+      aldebug_printf(DBGSTREAM,"[WARNING] max depth reached %i > %i %s %s L%i\n",context->depth, context->maxdepth,__FILE__,__func__,__LINE__);
+      return AL_EC_FALSE;
+    }
+}
 
-// STACK based recursive ( ie subject to stack overflow ).
+void  alcbor_dec_depth(alcbor_pc * context)
+{
+  context->depth --;
+}
+
+// STACK based recursive protected by alcbor_inc_depth
 void alcbor_decode_mt_4_array(alcbor_pc * context)
 {
 
@@ -325,23 +349,30 @@ void alcbor_decode_mt_4_array(alcbor_pc * context)
   // create a growable for an array.
   struct json_object * parent =  aljson_new_growable(json_ctx,'[');
   root = output->root;
-  
-  // length 0 is acceptable this is empty array
-  for (int index = 0 ; index < length ; index ++ )
+
+  if ( alcbor_inc_depth(context) == AL_EC_OK )
     {
-      alcbor_parse_from_header_byte(context);
-      if ( parent != NULL )
+  
+      // length 0 is acceptable this is empty array
+      for (int index = 0 ; index < length ; index ++ )
 	{
-	  struct json_growable * growable = &parent->growable;
-      
-	  struct json_object * last = output->last;
-	  if (last != NULL )
+	  alcbor_parse_from_header_byte(context);
+	  if ( parent != NULL )
 	    {
-	      // add it into parent
-	      aljson_add_to_growable(json_ctx,growable,last);
+	      struct json_growable * growable = &parent->growable;
+      
+	      struct json_object * last = output->last;
+	      if (last != NULL )
+		{
+		  // add it into parent
+		  aljson_add_to_growable(json_ctx,growable,last);
+		}
 	    }
 	}
+
+      alcbor_dec_depth(context);
     }
+  
   struct json_object * object = aljson_concrete(json_ctx,parent);
   alcbor_add_json_intern(output,object);
   // due to root updated only by alcbor_add_json_intern and aljson_concrete creating a new element, it is mandatory to fix it.

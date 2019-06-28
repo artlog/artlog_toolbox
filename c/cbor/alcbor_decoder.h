@@ -17,6 +17,8 @@ struct alcbor_json_output {
 
   
 typedef struct alcbor_parsing_context {
+  int depth;
+  int maxdepth;
   struct alinputstream * input;
   alcbor_fet fet;
   aldatablock block;
