@@ -27,3 +27,18 @@ make tests
 
 => json test , used for pretty printing json content.
 can compare two json files ( with limitations, and key order matter ).
+
+_______________
+
+HOW TO create a new project using current toolbox as tool scripts ?
+
+
+./createproject.sh <project_name> c
+
+or
+
+./createproject.sh <project_name> java
+
+given type of project create a project in parent directory named after project name
+
+________________
