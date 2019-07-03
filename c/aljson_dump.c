@@ -4,6 +4,7 @@
 #include "aldebug_output.h"
 #include "aloutput.h"
 #include <stdio.h>
+#include <math.h>
 
 struct aloutputstream * aljson_get_output(struct print_ctx * print_ctx)
 {
@@ -61,8 +62,15 @@ void aljson_dump_string_number(struct json_parser_ctx * ctx, struct json_object 
       struct aloutputstream * output=aljson_get_output(print_ctx);
       if ( object->type == '0' )
 	{
-	  float value = json_get_float(object);
-	  aloutputstream_printf_1k(output,"%f",value);
+	  float f = json_get_float(object);
+	  if ( ceilf(f) == f )
+	    {
+	      aloutputstream_printf_1k(output,"%.0f",f);
+	    }
+	  else
+	    {
+	      aloutputstream_printf_1k(output,"%.6f",f);
+	    }
 	}
       else
 	{

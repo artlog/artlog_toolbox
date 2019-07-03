@@ -546,7 +546,7 @@ int alstrings_compare_str0_substr(struct alhash_datablock * str0, struct alhash_
 }
 
 
-static int char_to_int(char a)
+static int hexchar_to_int(char a)
 {
   int x = (a > '9') ? 10 + a - 'a'  : a - '0';
   return x;
@@ -556,6 +556,6 @@ static int char_to_int(char a)
 unsigned char alstrings_hex_to_byte(char a, char b)
 {
 
-  unsigned char byte = (unsigned char) ( 16 * char_to_int(a) + char_to_int(b) ) ;
+  unsigned char byte = (unsigned char) ( 16 * hexchar_to_int(a) + hexchar_to_int(b) ) ;
   return byte;
 }
