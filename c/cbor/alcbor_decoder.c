@@ -284,6 +284,27 @@ else
 // forward definition
 void alcbor_decode_mt_4_array(alcbor_pc * context);
 
+
+/*
+   Major type 5:  a map of pairs of data items.  Maps are also called
+      tables, dictionaries, hashes, or objects (in JSON).  A map is
+      comprised of pairs of data items, each pair consisting of a key
+      that is immediately followed by a value.  The map's length follows
+      the rules for byte strings (major type 2), except that the length
+      denotes the number of pairs, not the length in bytes that the map
+      takes up.  For example, a map that contains 9 pairs would have an
+      initial byte of 0b101_01001 (major type of 5, additional
+      information of 9 for the number of pairs) followed by the 18
+      remaining items.  The first item is the first key, the second item
+      is the first value, the third item is the second key, and so on.
+      A map that has duplicate keys may be well-formed, but it is not
+      valid, and thus it causes indeterminate decoding; see also
+      Section 3.7.
+*/
+
+// forward definition
+void alcbor_decode_mt_5_map(alcbor_pc * context);
+
 enum al_global_error_code alcbor_parse_from_header_byte(alcbor_pc * context)
 {
   // should play with substream...
@@ -305,6 +326,8 @@ enum al_global_error_code alcbor_parse_from_header_byte(alcbor_pc * context)
     case ALCBOR_MT4_ARRAY:
       alcbor_decode_mt_4_array(context);
       break;
+    case ALCBOR_MT5_MAP  :
+      alcbor_decode_mt_5_map(context);
     default:
       alcbor_decode_not_yet_implemented(context, "early dev, might last longer than expected.");
       return AL_EC_NYI;
@@ -355,14 +378,15 @@ void alcbor_decode_mt_4_array(alcbor_pc * context)
 
   if ( alcbor_inc_depth(context) == AL_EC_OK )
     {
-  
-      // length 0 is acceptable this is empty array
-      for (int index = 0 ; index < length ; index ++ )
+
+      if ( parent != NULL )
 	{
-	  alcbor_parse_from_header_byte(context);
-	  if ( parent != NULL )
+	  struct json_growable * growable = &parent->growable;
+
+	  // length 0 is acceptable this is empty array
+	  for (int index = 0 ; index < length ; index ++ )
 	    {
-	      struct json_growable * growable = &parent->growable;
+	      alcbor_parse_from_header_byte(context);
       
 	      struct json_object * last = output->last;
 	      if (last != NULL )
@@ -373,6 +397,72 @@ void alcbor_decode_mt_4_array(alcbor_pc * context)
 	    }
 	}
 
+      alcbor_dec_depth(context);
+    }
+  
+  struct json_object * object = aljson_concrete(json_ctx,parent);
+  alcbor_add_json_intern(output,object);
+  // due to root updated only by alcbor_add_json_intern and aljson_concrete creating a new element, it is mandatory to fix it.
+  if ( root == NULL )
+    {
+      output->root = object;
+    }
+
+}
+
+// STACK based recursive protected by alcbor_inc_depth
+void alcbor_decode_mt_5_map(alcbor_pc * context)
+{
+
+  alcbor_decode_mt_generic(context);
+  // alcbor_decode_uint(context);
+
+  int length = context->value_length;
+
+  aldebug_printf(DBGSTREAM,"[DEBUG] map length %i %s %s L%i\n",length,__FILE__,__func__,__LINE__);
+
+  struct alcbor_json_output * output = &context->output;
+  struct json_parser_ctx * json_ctx = &output->json_ctx;
+
+  struct json_object * root = NULL;
+  
+  // create a growable for a map.
+  struct json_object * parent =  aljson_new_growable(json_ctx,'{');
+  root = output->root;
+
+  if ( alcbor_inc_depth(context) == AL_EC_OK )
+    {
+      if ( parent != NULL )
+	{
+	  struct json_growable * growable = &parent->growable;
+	  // length 0 is acceptable this is empty map
+	  for (int index = 0 ; index < length ; index ++ )
+	    {	      
+	      // pair
+	      struct json_object * key = NULL;
+	      struct json_object * value = NULL;
+	      {
+		alcbor_parse_from_header_byte(context);
+		key = output->last;
+		if ( key  != NULL )
+		  {
+		    alcbor_parse_from_header_byte(context);
+		    value = output->last;
+		    
+		  }             		    
+	      }
+	      if ( ( key != NULL ) && ( value != NULL ) )
+		{
+		  // create a pair and  add it into parent
+		  struct json_object * pair = aljson_new_pair_key(json_ctx , key);
+		  if (( pair != NULL ) && (key != NULL ))
+		    {
+		      pair->pair.value=value;
+		    }
+		  aljson_add_to_growable(json_ctx,growable,key);
+		}
+	    }
+	}
       alcbor_dec_depth(context);
     }
   
