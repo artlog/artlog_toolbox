@@ -8,12 +8,28 @@
 
 #include <stddef.h>
 
+int char_to_int(char a)
+{
+  int x = (a > '9') ? 10 + a - 'a'  : a - '0';
+  return x;
+}
+
+// to move to input
+unsigned char hex_to_byte(char a, char b)
+{
+
+  unsigned char byte = (unsigned char) ( 16 * char_to_int(a) + char_to_int(b) ) ;
+  return byte;
+}
+
+
 void usage()
 {
   aldebug_printf(DBGSTREAM,"Not yet implemented\n");
   aldebug_printf(DBGSTREAM,"https://tools.ietf.org/html/rfc7049\n");
   aldebug_printf(DBGSTREAM,"https://en.wikipedia.org/wiki/CBOR\n");
 
+  aldebug_printf(DBGSTREAM,"hexstring=<hex string> to be converted to raw bytes ( version 0)");
   aldebug_printf(DBGSTREAM,"infile=<cbor input file>\n");
   aldebug_printf(DBGSTREAM,"outfile=<json output file to be created>\n");
 }
@@ -26,8 +42,29 @@ int main(int argc, char ** argv )
 
   struct al_options * options = al_options_create(argc,argv);
   struct alhash_datablock * infiledata = al_option_get(options,"infile");
+  struct alhash_datablock * hexstring = al_option_get(options,"hexstring");
   struct alhash_datablock * outfiledata = al_option_get(options,"outfile");
- 
+
+  if ( hexstring != NULL )
+    {
+      if ( outfiledata != NULL )
+	{
+	  struct aloutputstream output;
+	  if ( aloutput_file_open_init(&output, outfiledata->data.charptr) == AL_EC_OK )
+	    {
+	      for (int i =0; i < hexstring->length - 2 ; i+=2 )
+		{
+		  char a = hexstring->data.charptr[i];
+		  char b = hexstring->data.charptr[i+1];
+		  unsigned char byte = hex_to_byte(a,b);
+		  // aldebug_printf(DBGSTREAM,"%c%c=%x,",a,b,byte);
+		  aloutputstream_write_byte(&output,byte);
+		}
+	      aloutputstream_close(&output);
+	    }
+	}
+    }
+  else
   if ( infiledata != NULL )
     {
       alcbor_pc cbor_context;
