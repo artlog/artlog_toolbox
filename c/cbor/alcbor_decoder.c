@@ -332,6 +332,7 @@ enum al_global_error_code alcbor_parse_from_header_byte(alcbor_pc * context)
       break;
     case ALCBOR_MT5_MAP  :
       alcbor_decode_mt_5_map(context);
+      break;
     default:
       alcbor_decode_not_yet_implemented(context, "early dev, might last longer than expected.");
       return AL_EC_NYI;
@@ -452,18 +453,17 @@ void alcbor_decode_mt_5_map(alcbor_pc * context)
 		  {
 		    alcbor_parse_from_header_byte(context);
 		    value = output->last;
-		    
 		  }             		    
 	      }
 	      if ( ( key != NULL ) && ( value != NULL ) )
 		{
 		  // create a pair and  add it into parent
 		  struct json_object * pair = aljson_new_pair_key(json_ctx , key);
-		  if (( pair != NULL ) && (key != NULL ))
+		  if ( pair != NULL )
 		    {
 		      pair->pair.value=value;
 		    }
-		  aljson_add_to_growable(json_ctx,growable,key);
+		  aljson_add_to_growable(json_ctx,growable,pair);
 		}
 	    }
 	}
