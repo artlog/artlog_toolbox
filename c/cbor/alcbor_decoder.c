@@ -47,19 +47,14 @@ void alcbor_parsing_context_init(alcbor_pc * context, struct alinputstream * inp
 
 void alcbor_parsing_context_release(alcbor_pc * context)
 {
-  // TODO.
-  alcbor_decode_not_yet_implemented(context, "NO RELEASE YET");
-}
+  // To check if enough
+  struct json_parser_ctx * json_ctx = &context->output.json_ctx;
+  alhash_context * hash_context =  &json_ctx->alparser;
+  alhash_context_release(hash_context);
+  bzero(json_ctx,sizeof(*json_ctx));
 
-
-void alcbor_feed_block(aldatablock * block, void * data)
-{
-  // 
-}
-
-void alcbor_finalize_block(aldatablock * block, void * data)
-{
-  //
+  // buggy if allocator was set to something different than &hash_context->allocator.ringbuffer;
+  context->output.allocator=NULL;
 }
 
 void alcbor_decode_invalid(alcbor_pc * context, const char * text)

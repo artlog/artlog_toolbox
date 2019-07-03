@@ -8,28 +8,13 @@
 
 #include <stddef.h>
 
-int char_to_int(char a)
-{
-  int x = (a > '9') ? 10 + a - 'a'  : a - '0';
-  return x;
-}
-
-// to move to input
-unsigned char hex_to_byte(char a, char b)
-{
-
-  unsigned char byte = (unsigned char) ( 16 * char_to_int(a) + char_to_int(b) ) ;
-  return byte;
-}
-
-
 void usage()
 {
-  aldebug_printf(DBGSTREAM,"Not yet implemented\n");
+  aldebug_printf(DBGSTREAM,"Not fully implemented\n");
   aldebug_printf(DBGSTREAM,"https://tools.ietf.org/html/rfc7049\n");
   aldebug_printf(DBGSTREAM,"https://en.wikipedia.org/wiki/CBOR\n");
 
-  aldebug_printf(DBGSTREAM,"hexstring=<hex string> to be converted to raw bytes ( version 0)");
+  aldebug_printf(DBGSTREAM,"hexstring=<hex string> to be converted to raw bytes in outfile ( in this case cbor)");
   aldebug_printf(DBGSTREAM,"infile=<cbor input file>\n");
   aldebug_printf(DBGSTREAM,"outfile=<json output file to be created>\n");
 }
@@ -56,7 +41,7 @@ int main(int argc, char ** argv )
 		{
 		  char a = hexstring->data.charptr[i];
 		  char b = hexstring->data.charptr[i+1];
-		  unsigned char byte = hex_to_byte(a,b);
+		  unsigned char byte = alstrings_hex_to_byte(a,b);
 		  // aldebug_printf(DBGSTREAM,"%c%c=%x,",a,b,byte);
 		  aloutputstream_write_byte(&output,byte);
 		}

@@ -14,7 +14,6 @@ struct alcbor_json_output {
   struct json_object * parent;
   struct json_object * last;
 };
-
   
 typedef struct alcbor_parsing_context {
   int depth;
@@ -28,8 +27,6 @@ typedef struct alcbor_parsing_context {
   struct alcbor_json_output output;
 } alcbor_pc;
 
-#endif // ALCBOR_DECODER__
-
 void alcbor_parsing_context_init(alcbor_pc * context, struct alinputstream * input, struct aloutputstream * output);
 
 void alcbor_parsing_context_release(alcbor_pc * context);
@@ -41,3 +38,4 @@ struct json_object * alcbor_get_json_root(alcbor_pc * context);
 
 struct json_parser_ctx * alcbor_get_json_context(alcbor_pc * context);
 
+#endif // ALCBOR_DECODER__

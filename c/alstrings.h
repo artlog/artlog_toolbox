@@ -153,4 +153,10 @@ char * alstrings_copy_str_block(alstrings_ringbuffer_pointer * ringbufferp, alda
 /** return 0 if both a equal, else return something different than 0, not yet relevant for ordering*/
 int alstrings_compare_str0_substr(struct alhash_datablock * str0, struct alhash_datablock * substr);
 
+/**
+a is first char and b second
+given a='f' and b='1' returns 0xf1 
+**/
+unsigned char alstrings_hex_to_byte(char a, char b);
+
 #endif
