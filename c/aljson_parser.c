@@ -99,9 +99,12 @@ int add_char(struct json_ctx * ctx, char token, char c)
 
 void debug_tag(struct json_ctx *ctx,char c)
 {
-  ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+  if (ctx != NULL )
     {
-      aldebug_printf(DBGSTREAM,"%c",c);
+      ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+	{
+	  aldebug_printf(DBGSTREAM,"%c",c);
+	}
     }
 }
 
