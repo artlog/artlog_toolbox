@@ -5,6 +5,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <strings.h>
 
 /*
 decode a cbor stream
@@ -34,6 +35,8 @@ void alcbor_parsing_context_init(alcbor_pc * context, struct alinputstream * inp
   {
     struct json_parser_ctx * json_ctx = &context->output.json_ctx;
     alhash_context * hash_context =  &json_ctx->alparser;
+    
+    bzero(json_ctx,sizeof(*json_ctx));    
     // WARNING HARDCODED 100 words 1024 chars alhash_context_init(hash_context, words, chars, autogrow %/255);
     alhash_context_init(hash_context, 100, 1024, 200);
     // borrow allocator from hash table ( is it correct ? )

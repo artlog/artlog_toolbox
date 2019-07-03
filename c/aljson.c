@@ -78,6 +78,16 @@ JSON_DEFINE_TOGGLE(variable,'?')
 
 #define ALJSON_PARSER_CTX_DECL_ALLOC(json_parser_ctx, altype, object) struct altype * object=(struct altype *) ALALLOC(json_parser_ctx->alparser.allocator,sizeof(struct altype));
 
+// only if pos is needed for debugging
+// might not be relevant if transcoded from a non json input stream.
+void aljson_set_pos_info(struct json_object * object,  struct json_ctx * ctx)
+{
+  if ( ctx != NULL )
+    {
+      memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
+    }
+}
+
 struct json_object * aljson_new_json_string(struct json_parser_ctx * parser, char objtype, struct alhash_datablock * data)
 {
 
@@ -103,8 +113,11 @@ struct json_object * aljson_new_json_error(struct json_parser_ctx * parser, enum
   if (object != NULL)
     {
       object->type='E';
-      memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
-      memcpy(&object->error.where,&ctx->pos_info,sizeof(object->error.where));      
+      if ( ctx != NULL )
+	{
+	  aljson_set_pos_info(object,ctx);
+	  memcpy(&object->error.where,&ctx->pos_info,sizeof(object->error.where));
+	}
       object->error.erroridx=erroridx;
     }
   else
@@ -214,7 +227,7 @@ struct json_object * aljson_new_growable(struct json_parser_ctx * ctx, char fina
  if (object != NULL)
    {
      object->type='G';
-     memcpy(&object->pos_info,&ctx->tokenizer->pos_info,sizeof(object->pos_info));
+     aljson_set_pos_info(object,ctx->tokenizer);
      object->growable.final_type=final_type;
      object->growable.tail=NULL;
      object->growable.head.value=NULL;
@@ -323,7 +336,7 @@ struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct
   if (object != NULL)
     {
       object->type=':';
-      memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
+      aljson_set_pos_info(object,ctx);
       object->pair.key=key;
       object->pair.value=NULL;
     }
@@ -344,7 +357,7 @@ struct json_object * new_variable(struct json_parser_ctx * parser, struct json_o
       object->type='?';
       object->owner=NULL;
       object->index=0;
-      memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
+      aljson_set_pos_info(object,ctx);
       object->variable.key=key;
       object->variable.value=NULL;
       object->variable.bound=0;
@@ -561,7 +574,7 @@ struct json_object * new_json_constant_object(struct json_parser_ctx * parser, c
       object->type=t;
       object->owner=NULL;
       object->index=0;
-      memcpy(&object->pos_info,&ctx->pos_info,sizeof(object->pos_info));
+      aljson_set_pos_info(object,ctx);
       object->constant = &json_constant_object[constant];
       if ( json_debug > 0 )
 	{
