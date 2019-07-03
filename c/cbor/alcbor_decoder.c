@@ -99,7 +99,7 @@ enum al_global_error_code alcbor_read_bytes(alcbor_pc * context, int length)
 
 void alcbor_add_json_intern(struct alcbor_json_output * output,	struct json_object * object)
 {
-  aldebug_printf(DBGSTREAM,"some json\n");
+  aldebug_printf(DBGSTREAM,"[DEBUG] some json %s %s:%i\n",__FILE__,__func__,__LINE__);
   // TODO
   if ( output->root == NULL )
     {
@@ -305,7 +305,7 @@ enum al_global_error_code alcbor_parse_from_header_byte(alcbor_pc * context)
   // should play with substream...
   alcbor_mt mt = alcbor_decode_major_type(context);
 
-  aldebug_printf(DBGSTREAM,"[DEBUG] mt %i\n",mt);
+  aldebug_printf(DBGSTREAM,"[DEBUG] mt %i %s %s:%i\n", mt, __FILE__,__func__,__LINE__);
   switch ( mt )
     {
     case ALCBOR_MT0_UINT:
@@ -477,10 +477,7 @@ void alcbor_decode_mt_5_map(alcbor_pc * context)
 
 void alcbor_parse(alcbor_pc * context)
 {
-  const char * text = "can only decode uint yet... currently useless.";
-  // TODO
-  alcbor_decode_not_yet_implemented(context, text);
-
+  const char * text = "incomplete coding";
   if ( context->block.data.ptr == NULL )
     {
       // HARDCODED

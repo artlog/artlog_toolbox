@@ -8,13 +8,15 @@
 
 #include <stddef.h>
 
+const char * CBOR_MAIN_VERSION = "0.1";
+
 void usage()
 {
-  aldebug_printf(DBGSTREAM,"Not fully implemented\n");
+  aldebug_printf(DBGSTREAM,"version %s\nconvert cbor to json. Not fully implemented\n", CBOR_MAIN_VERSION);
   aldebug_printf(DBGSTREAM,"https://tools.ietf.org/html/rfc7049\n");
   aldebug_printf(DBGSTREAM,"https://en.wikipedia.org/wiki/CBOR\n");
 
-  aldebug_printf(DBGSTREAM,"hexstring=<hex string> to be converted to raw bytes in outfile ( in this case cbor)");
+  aldebug_printf(DBGSTREAM,"hexstring=<hex string> to be converted to raw bytes in outfile ( in this case cbor)\n");
   aldebug_printf(DBGSTREAM,"infile=<cbor input file>\n");
   aldebug_printf(DBGSTREAM,"outfile=<json output file to be created>\n");
 }
@@ -63,8 +65,6 @@ int main(int argc, char ** argv )
 	    if ( aloutput_file_open_init(&output, outfiledata->data.charptr) == AL_EC_OK )
 	      {
 		alcbor_parsing_context_init(&cbor_context,&input,&output);
-		// now ready to parse ?
-		// TODO
 		alcbor_parse(&cbor_context);
 		struct json_object * root = alcbor_get_json_root(&cbor_context);
 		if ( root != NULL )
