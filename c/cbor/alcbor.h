@@ -16,6 +16,7 @@ typedef enum alcbor_major_type {
 				ALCBOR_MT0_UINT = 0,
 				ALCBOR_MT1_NINT = 1,
 				ALCBOR_MT2_BSTR = 2,
+				ALCBOR_MT3_UTF8 = 3,
 				ALCBOR_MT4_ARRAY = 4,
 				ALCBOR_MT5_MAP = 5,
 } alcbor_mt;

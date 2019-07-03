@@ -323,6 +323,10 @@ enum al_global_error_code alcbor_parse_from_header_byte(alcbor_pc * context)
     case ALCBOR_MT2_BSTR:
       alcbor_decode_mt_2_string(context);
       break;
+    case ALCBOR_MT3_UTF8:
+      // FIXME
+      alcbor_decode_mt_2_string(context);
+      break;
     case ALCBOR_MT4_ARRAY:
       alcbor_decode_mt_4_array(context);
       break;
