@@ -49,7 +49,7 @@ alcbor_fet alcbor_encoder_encode_mt_and_length(alcbor_mt mt, size_t length, stru
     {
       // ALCBOR_FET_TINY ;
       byte_length = 0;
-      aloutputstream_write_byte( output, ( ((unsigned char) ALCBOR_MT2_BSTR) << 5 ) | ((unsigned char) length));
+      aloutputstream_write_byte( output, ( ((unsigned char) mt) << 5 ) | ((unsigned char) length));
       return ALCBOR_FET_TINY ;
     }
   else
@@ -200,6 +200,7 @@ void alcbor_encoder_init(struct alcbor_encoder * encoder, struct aloutputstream 
   callback->constant_object=alcbor_encoder_json_error_object;
   callback->error_object=alcbor_encoder_json_error_object;
 
-  output_context->data=(void *)encoder;
   encoder->output = output;
+  aljson_output_init(output_context,callback,(void *)encoder);
+
 }

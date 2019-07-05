@@ -293,4 +293,7 @@ void aljson_output_init( struct aljson_output_context * output, struct aljson_ou
 {
   memcpy(&output->callback,callback,sizeof(output->callback));
   output->data=data;
+  // HARDCODED depth
+  output->depth=0;
+  output->max_depth=1024;
 }
