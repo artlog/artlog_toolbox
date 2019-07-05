@@ -1,6 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 #include <stdarg.h>
 
@@ -53,7 +51,7 @@ void aljson_json_growable_output(struct json_parser_ctx * ctx, struct json_growa
     }
   else
     {
-      if (growable->size != 0) printf("#");	
+      if (growable->size != 0) aljson_print_printf(print_ctx,"#");
     }
   print_ctx->printf(print_ctx,"%c|",growable->final_type);
 }
@@ -69,15 +67,12 @@ void aljson_growable_output(struct json_parser_ctx * ctx, struct json_object * o
 // limited to print_ctx->max_depth since relying on code stack call.
 void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
 {
-  // FIXME to move within print_ctx.
-  static int depth = 0;
+  ++print_ctx->depth;
 
-  ++depth;
-
-  if (  depth > print_ctx->max_depth )
+  if (  print_ctx->depth > print_ctx->max_depth )
     {
-      printf("... depth > %i ...\n", print_ctx->max_depth);
-      --depth;
+      aldebug_printf(DBGSTREAM,"[ERROR] ... depth > %i ...\n", print_ctx->max_depth);
+      -- print_ctx->depth;
       return;
     }
   
@@ -107,7 +102,7 @@ void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, st
 	  (*print_ctx->pair_output)(ctx,object, print_ctx);
 	  break;
 	case ',':
-	  printf("#");
+	  aljson_print_printf(print_ctx,"#");
 	  break;	  
 	case '?':
 	  (*print_ctx->variable_output)(ctx,object, print_ctx);
@@ -121,15 +116,14 @@ void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, st
 	  (*print_ctx->error_output)(ctx,object, print_ctx);
 	  break;
         default:
-	  printf("ERROR type %c %p",object->type, print_ctx);
+	  aldebug_printf(DBGSTREAM,"ERROR type %c %p",object->type, print_ctx);
 	}
     }
   else
     {
-      printf(" NULL ");
+      aljson_print_printf(print_ctx," NULL ");
     }
-
-  --depth;
+  -- print_ctx->depth;
 }
 
 
@@ -137,6 +131,7 @@ void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, st
 void aljson_print_ctx_init(struct print_ctx * print_ctx)
 {
   // 1024 levels of json MAX
+  print_ctx->depth=0;
   print_ctx->max_depth=1024;
   print_ctx->indent=0;
   print_ctx->do_indent=2; // 0 no indent, >= 1 number of space by indent.
@@ -181,18 +176,19 @@ void aljson_print_object_name(struct json_parser_ctx * ctx, struct json_object *
 	      aljson_print_object_name(ctx,object->owner,print_ctx);
 	      if ( object->type == ':' )
 		{
-		  printf("." ALPASCALSTRFMT,
-			 ALPASCALSTRARGS(object->pair.key->string.internal.length,(char *)object->pair.key->string.internal.data.ptr));
+		  aljson_print_printf(print_ctx,
+				      "." ALPASCALSTRFMT,
+				      ALPASCALSTRARGS(object->pair.key->string.internal.length,(char *)object->pair.key->string.internal.data.ptr));
 		}
 	      else if ( object->owner->type  == '[' )
 		{
-		  printf(".%u", object->index);
+		  aljson_print_printf(print_ctx,".%u", object->index);
 		}
 	    }
 	}
       else
 	{
-	  printf("!");
+	  aljson_print_printf(print_ctx,"!");
 	}
     } 
 }

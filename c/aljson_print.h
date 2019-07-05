@@ -17,6 +17,7 @@ THIS is required to call aljson_print_ctx_init(struct print_ctx * print_ctx) on 
 */
 struct print_ctx
 {
+  int depth;
   int max_depth;
   int indent;
   int do_indent; // 0 no indent, >= 1 number of space by indent.
