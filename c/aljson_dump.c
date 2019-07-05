@@ -155,7 +155,7 @@ void aljson_dump_variable_object(struct json_parser_ctx * ctx, struct json_objec
     {
       assert(object->type == '?');
 
-      json_print_object_name(ctx,object,print_ctx);
+      aljson_print_object_name(ctx,object,print_ctx);
       aloutputstream_printf_1k(output,".");
 
       aljson_dump_variable(ctx,&object->variable, print_ctx);

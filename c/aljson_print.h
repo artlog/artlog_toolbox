@@ -32,6 +32,7 @@ struct print_ctx
   aljson_print_callback error_output;
   aljson_print_callback pair_output;
   aljson_print_callback constant_output;
+  aljson_print_callback variable_output;
 
   aljson_print_printf_callback printf;
 };
@@ -45,7 +46,6 @@ TOOD FIX it to not use struct json_parser_ctx at ALL
 */
 void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
-/** TODO change to aljson_print... */
-void json_print_object_name(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+void aljson_print_object_name(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
 
-#endif
+#endif // ALJSON_PRINT_HEADER__

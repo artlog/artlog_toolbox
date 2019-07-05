@@ -5,7 +5,7 @@ BUILT_BINARIES=$(addprefix $(BUILD)/,$(BINARIES))
 
 all: $(BUILT_BINARIES)
 
-$(BUILD)/c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c aljson.c alstack.c altoken.c aljson_dump.c
+$(BUILD)/c_parser: c_parser.c c_tokenizer.c aljson_parser.c aljson_import_internal.c alstrings.c al_options.c aljson.c alstack.c altoken.c aljson_dump.c aljson_output.c
 	gcc -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalcommon -laldev -lalhash -Wl,-Bdynamic -lm
 
 $(BUILD)/albase: albase.c albase_test.c  alstrings.c aldebug.c aloutput.c
