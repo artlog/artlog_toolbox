@@ -64,13 +64,11 @@ int main(int argc, char ** argv)
   struct json_ctx json_template_tokenizer;
   struct print_ctx print_template_context;
 
-  aljson_init(&json_template_context,&json_template_tokenizer,&print_template_context);
   
+  aljson_init(&json_template_context,&json_template_tokenizer,&print_template_context);
   // no indent
-  print_template_context.do_indent = 0;
-  print_template_context.indent = 0;
-  print_template_context.s_indent = "";
-
+  aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
+  
   struct al_options * options = al_options_create(argc,argv);
 
   // don't set debug to options
@@ -88,8 +86,7 @@ int main(int argc, char ** argv)
   if ( al_option_get(options,"b") != NULL )
     {
       // bare => no indent
-      print_context.do_indent = 0;
-      print_context.indent = 0;
+      aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
     }
 
 
@@ -146,7 +143,7 @@ int main(int argc, char ** argv)
 	      struct json_object * found = aljson_walk_path(json_path, &json_context,root);
 	      if ( found != NULL )
 		{
-		  aljson_output(&json_context,found,&print_context);
+		  aljson_output(found,&print_context);
 		}
 	      else
 		{
@@ -156,7 +153,7 @@ int main(int argc, char ** argv)
 	  else {
 	    if ( checkonly == 0 )
 	      {
-		aljson_output(&json_context,root,&print_context);
+		aljson_output(root,&print_context);
 	      }
 	    else
 	      {
@@ -182,7 +179,7 @@ int main(int argc, char ** argv)
 		  fclose(template_file);
 		  if ( debug > 0 )
 		    {
-		      aljson_output(&json_template_context,template_root,&print_template_context);
+		      aljson_output(template_root,&print_template_context);
 		    }
 		  aldebug_printf(DBGSTREAM,"\n");
 		  if ( aljson_unify_object(&json_context, root, &json_template_context, template_root,&print_template_context) )

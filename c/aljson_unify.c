@@ -166,7 +166,7 @@ int json_unify_variable(
   variable_object->variable.bound=1;
   variable_object->variable.value=object;
 
-  aljson_dump_variable_object(variable_ctx,variable_object,print_ctx);
+  aljson_dump_variable_object(variable_object,print_ctx);
   
   return 1;
 }
@@ -224,7 +224,7 @@ int aljson_unify_object(
 	  switch(object->type)
 	    {
 	    case 'G':
-	      aljson_dump_growable_object(ctx, object, print_ctx);
+	      aljson_dump_growable_object(object, print_ctx);
 	      return 0;
 	      break;
 	    case '{':

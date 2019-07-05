@@ -75,7 +75,7 @@ int main(int argc, char ** argv )
 		    aljson_print_ctx_init(&print_ctx);
 		    print_ctx.outfile=&output;
 		    // should dump it to output
-		    aljson_dump_object( parser_ctx, root, &print_ctx);
+		    aljson_dump_object(root, &print_ctx);
 		  }		    
 		alcbor_parsing_context_release(&cbor_context);
 		aloutputstream_close(&output);

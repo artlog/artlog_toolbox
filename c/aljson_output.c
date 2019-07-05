@@ -30,21 +30,21 @@ void aljson_print_printf(struct print_ctx * print_ctx, const char *format, ...)
   va_end(args);
 }
 
-void aljson_json_growable_output(struct json_parser_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx)
+void aljson_json_growable_output(struct json_growable * growable, struct print_ctx * print_ctx)
 {
   struct json_link * link=NULL;
   link=growable->tail;  
   print_ctx->printf(print_ctx,"|%c",growable->final_type);
   if ( link != NULL)
     {
-      aljson_output(ctx, growable->head.value, print_ctx);
+      aljson_output( growable->head.value, print_ctx);
       if ( link != &growable->head )
 	{
 	  link=growable->head.next;
 	  while (link != NULL)
 	    {
 	      print_ctx->printf(print_ctx,",");
-	      aljson_output(ctx, link->value, print_ctx);
+	      aljson_output( link->value, print_ctx);
 	      link=link->next;
 	    }
 	}
@@ -57,15 +57,15 @@ void aljson_json_growable_output(struct json_parser_ctx * ctx, struct json_growa
 }
 
 
-void aljson_growable_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void aljson_growable_output(struct json_object * object, struct print_ctx * print_ctx)
 {
   assert(object->type == 'G');
   struct json_growable * growable=&object->growable;
-  aljson_json_growable_output(ctx,growable, print_ctx);
+  aljson_json_growable_output(growable, print_ctx);
 }
 
 // limited to print_ctx->max_depth since relying on code stack call.
-void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void aljson_output(struct json_object * object, struct print_ctx * print_ctx)
 {
   ++print_ctx->depth;
 
@@ -78,42 +78,43 @@ void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, st
   
   if (object != NULL)
     {
-      // printf("%p[%c]",object,object->type);
+      // aldebug_printf(DBGSTREAM,"[DEBUG] %p[%c]",object,object->type);
       switch(object->type)
 	{
 	case 'G':
-	  aljson_growable_output(ctx, object, print_ctx);
+	  (*print_ctx->growable_output)( object, print_ctx);
 	  break;
 	case '{':
-	  (*print_ctx->dict_output)(ctx,object, print_ctx);
+	  (*print_ctx->dict_output)(object, print_ctx);
 	  break;
 	case '[':
-	  (*print_ctx->list_output)(ctx,object, print_ctx);
+	  (*print_ctx->list_output)(object, print_ctx);
 	  break;
 	case '"':
 	case '\'':
 	case '$':
-	  (*print_ctx->string_output)(ctx,object, print_ctx);
+	  (*print_ctx->string_output)(object, print_ctx);
 	  break;
 	case '0':
-	  (*print_ctx->number_output)(ctx,object, print_ctx);
+	  (*print_ctx->number_output)(object, print_ctx);
 	  break;
 	case ':':
-	  (*print_ctx->pair_output)(ctx,object, print_ctx);
+	  (*print_ctx->pair_output)(object, print_ctx);
 	  break;
 	case ',':
+	  // WHY ?
 	  aljson_print_printf(print_ctx,"#");
 	  break;	  
 	case '?':
-	  (*print_ctx->variable_output)(ctx,object, print_ctx);
+	  (*print_ctx->variable_output)(object, print_ctx);
 	  break;
 	case 'n':
 	case 't':
 	case 'f':
-	  (*print_ctx->constant_output)(ctx,object, print_ctx);
+	  (*print_ctx->constant_output)(object, print_ctx);
 	  break;
 	case 'E':
-	  (*print_ctx->error_output)(ctx,object, print_ctx);
+	  (*print_ctx->error_output)(object, print_ctx);
 	  break;
         default:
 	  aldebug_printf(DBGSTREAM,"ERROR type %c %p",object->type, print_ctx);
@@ -127,27 +128,48 @@ void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, st
 }
 
 
+void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print_format format)
+{
+  print_ctx->format = format;
+  switch(format)
+    {
+    case ALJSON_PRINT_TABS:
+      {      
+	// tabs
+	print_ctx->do_indent = 1;
+	print_ctx->indent = 0;
+	print_ctx->s_indent = "\t";
+      }
+      break;
+    case ALJSON_PRINT_FLAT:
+      {
+	//flat canonical
+	print_ctx->do_indent = 0;
+	print_ctx->indent = 0;
+	print_ctx->s_indent = NULL;
+      }
+      break;
+    case ALJSON_PRINT_2SPACE:
+      // this is default
+    default:
+      {
+	print_ctx->indent=0;
+	print_ctx->do_indent=2; // 0 no indent, >= 1 number of space by indent.
+	print_ctx->s_indent=" ";
+	print_ctx->format = ALJSON_PRINT_2SPACE;
+      }
+    }
+}
+
 // print_ctx default to aljson_dump callbacks
-void aljson_print_ctx_init(struct print_ctx * print_ctx)
+void aljson_print_ctx_init_format(struct print_ctx * print_ctx, enum aljson_print_format format)
 {
   // 1024 levels of json MAX
   print_ctx->depth=0;
   print_ctx->max_depth=1024;
-  print_ctx->indent=0;
-  print_ctx->do_indent=2; // 0 no indent, >= 1 number of space by indent.
-  print_ctx->s_indent=" ";
 
-    /* tabs
-  print_ctx.do_indent = 1;
-  print_ctx.indent = 0;
-  print_ctx.s_indent = "\t";
-  */
-
-  /* flat canonical
-  print_ctx.do_indent = 0;
-  print_ctx.indent = 0;
-  print_ctx.s_indent = NULL;
-  */
+  aljson_print_ctx_set_format(print_ctx,format);
+  
 
   print_ctx->outfile=aldebug_get_output(DBGSTREAM);
   
@@ -165,7 +187,12 @@ void aljson_print_ctx_init(struct print_ctx * print_ctx)
   print_ctx->printf=aljson_print_printf;
 }
 
-void aljson_print_object_name(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx)
+void aljson_print_ctx_init(struct print_ctx * print_ctx)
+{
+  aljson_print_ctx_init_format(print_ctx, ALJSON_PRINT_2SPACE);
+}
+
+void aljson_print_object_name(struct json_object * object, struct print_ctx * print_ctx)
 {
   if ( object != NULL )
     {
@@ -173,7 +200,7 @@ void aljson_print_object_name(struct json_parser_ctx * ctx, struct json_object *
 	{
 	  if (object->owner != NULL )
 	    {
-	      aljson_print_object_name(ctx,object->owner,print_ctx);
+	      aljson_print_object_name(object->owner,print_ctx);
 	      if ( object->type == ':' )
 		{
 		  aljson_print_printf(print_ctx,

@@ -236,7 +236,7 @@ int main(int argc, char ** argv)
       print_context.s_indent = " ";
 
       print_context.max_depth=4;
-      aljson_output(ctx,json_object,&print_context);
+      aljson_output(json_object,&print_context);
 
       {
 	struct test_2 test2;
@@ -252,7 +252,7 @@ int main(int argc, char ** argv)
 
 	dump_test_2(&test2);
       }
-      aljson_output(ctx,json_object,&print_context);
+      aljson_output(json_object,&print_context);
 
       verify_test_1(json_object_test_1);
       verify_test_2(json_object);

@@ -7,9 +7,15 @@ struct print_ctx;
 struct json_parser_ctx;
 struct json_object;
 
-typedef void (*aljson_print_callback)(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+typedef void (*aljson_print_callback)(struct json_object * object, struct print_ctx * print_ctx);
 
 typedef void (*aljson_print_printf_callback)(struct print_ctx * print_ctx, const char * format, ...);
+
+enum aljson_print_format {
+			  ALJSON_PRINT_TABS,
+			  ALJSON_PRINT_2SPACE,
+			  ALJSON_PRINT_FLAT
+};
 
 /* parameters for pretty printing 
 
@@ -22,7 +28,8 @@ struct print_ctx
   int indent;
   int do_indent; // 0 no indent, >= 1 number of space by indent.
   char * s_indent;
-
+  enum aljson_print_format format;
+  
   struct aloutputstream * outfile;
 
   aljson_print_callback growable_output;
@@ -41,12 +48,12 @@ struct print_ctx
 // REQUIRED before any use of a print_ctx
 void aljson_print_ctx_init(struct print_ctx * print_ctx);
 
-/** dump object == aljson_output
-struct json_parser_ctx * ctx can be NULL ( and in fact we should rely only on print_ctx)
-TOOD FIX it to not use struct json_parser_ctx at ALL
-*/
-void aljson_output(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print_format format);
 
-void aljson_print_object_name(struct json_parser_ctx * ctx, struct json_object * object, struct print_ctx * print_ctx);
+/** dump object == aljson_output
+*/
+void aljson_output(struct json_object * object, struct print_ctx * print_ctx);
+
+void aljson_print_object_name(struct json_object * object, struct print_ctx * print_ctx);
 
 #endif // ALJSON_PRINT_HEADER__
