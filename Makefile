@@ -33,7 +33,7 @@ libinclude: $(LIBINCLUDESABS)
 $(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o  $(BUILD)/include/allist.h
 	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
 
-$(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o $(BUILD)/obj/alstrings.o $(BUILD)/obj/json_to_c_stub.o $(BUILD)/obj/al_options.o $(BUILD)/obj/al_options_output.o $(BUILD)/obj/aljson_dump.o $(BUILD)/obj/aljson_unify.o $(BUILD)/obj/aljson_walk.o $(BUILD)/obj/altoken.o
+$(BUILD)/lib/libaljson.a: $(BUILD)/obj/aljson_parser.o $(BUILD)/obj/aljson.o $(BUILD)/obj/aljson_import_internal.o $(BUILD)/obj/alstrings.o $(BUILD)/obj/json_to_c_stub.o $(BUILD)/obj/al_options.o $(BUILD)/obj/al_options_output.o $(BUILD)/obj/aljson_dump.o $(BUILD)/obj/aljson_unify.o $(BUILD)/obj/aljson_walk.o $(BUILD)/obj/altoken.o $(BUILD)/obj/aljson_encoder.o
 	ar rccs $@ $^
 
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/alsave.o  $(BUILD)/include/alsave.h

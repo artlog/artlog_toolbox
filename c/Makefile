@@ -12,7 +12,7 @@ $(BUILD)/albase: albase.c albase_test.c  alstrings.c aldebug.c aloutput.c
 	gcc -o $@ $^
 
 $(BUILD)/json_to_c_stub_sample: aljson_encoder.c json_to_c_stub.c json_to_c_stub_sample.c albase.c
-	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic -lm
 
 $(BUILD)/cryptohash: alcryptohash_test.c alcryptohash.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alcryptohash_tool.c aloutput.c
 	gcc -g -O0 -o $@ $^
