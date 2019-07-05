@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "aljson_output.h"
 #include "aljson_dump.h"
@@ -128,6 +129,7 @@ void aljson_output(struct json_object * object, struct print_ctx * print_ctx)
 }
 
 
+
 void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print_format format)
 {
   print_ctx->format = format;
@@ -220,3 +222,75 @@ void aljson_print_object_name(struct json_object * object, struct print_ctx * pr
     } 
 }
 
+
+/** generic case for transposition from json to something else **/
+
+// limited to output_context->max_depth since relying on code stack call.
+void aljson_output_with_callback(struct json_object * object, struct aljson_output_context * output_context)
+{
+  ++output_context->depth;
+
+  if (  output_context->depth > output_context->max_depth )
+    {
+      aldebug_printf(DBGSTREAM,"[ERROR] ... depth > %i ...\n", output_context->max_depth);
+      -- output_context->depth;
+      return;
+    }
+  
+  if (object != NULL)
+    {
+      struct aljson_output_callback_context * callback=&output_context->callback;
+      
+      // aldebug_printf(DBGSTREAM,"[DEBUG] %p[%c]",object,object->type);
+      switch(object->type)
+	{
+	case 'G':
+	  (*callback->growable_object)( object, output_context);
+	  break;
+	case '{':
+	  (*callback->dict_object)(object, output_context);
+	  break;
+	case '[':
+	  (*callback->list_object)(object, output_context);
+	  break;
+	case '"':
+	case '\'':
+	case '$':
+	   (*callback->string)(object, output_context);
+	  break;
+	case '0':
+	   (*callback->string_number)(object, output_context);
+	  break;
+	case ':':
+	  (*callback->pair_object)(object, output_context);
+	  break;
+	case ',':
+	  // WHY ?
+	  break;	  
+	case '?':
+	  (*callback->variable_object)(object, output_context);
+	  break;
+	case 'n':
+	case 't':
+	case 'f':
+	  (*callback->constant_object)(object, output_context);
+	  break;
+	case 'E':
+	  (*callback->error_object)(object, output_context);
+	  break;
+        default:
+	  aldebug_printf(DBGSTREAM,"ERROR type %c %p",object->type, output_context);
+	}
+    }
+  else
+    {
+      aldebug_printf(DBGSTREAM,"[ERROR] NULL object");
+    }
+  -- output_context->depth;
+}
+
+void aljson_output_init( struct aljson_output_context * output, struct aljson_output_callback_context * callback, void * data )
+{
+  memcpy(&output->callback,callback,sizeof(output->callback));
+  output->data=data;
+}

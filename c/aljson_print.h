@@ -51,6 +51,8 @@ void aljson_print_ctx_init(struct print_ctx * print_ctx);
 void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print_format format);
 
 /** dump object == aljson_output
+
+TODO to be renamed to aljson_print
 */
 void aljson_output(struct json_object * object, struct print_ctx * print_ctx);
 
