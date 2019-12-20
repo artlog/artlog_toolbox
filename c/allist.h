@@ -79,7 +79,7 @@ struct allistelement {
 };
 
 /*
- a list of members
+ a list of members for a given membership
 */ 
 struct allistof {
   struct allistelement * head; // head of list

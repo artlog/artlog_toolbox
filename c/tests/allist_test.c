@@ -13,7 +13,7 @@
 
 #include "check_test.h"
 #include "../allist.h"
-// direct acces to internal implementation
+// direct acces to internal implementation for indexset_getrelindex
 #include "../allist_internal.h"
 // dump
 #include "../dump.h"
@@ -34,7 +34,7 @@ struct _exec_params {
 struct _prime_context {
   struct _exec_params params;
   // global prime list to be built
-  struct allistof * primelp;  
+  struct allistof * primelp;
   // upper bound of integer set in which we want to extract primes.
   int glob_numbercount;
   struct allistcontext * context;
@@ -58,6 +58,7 @@ struct _prime_context * create_prime_context( int numbercount )
     }
   else
     {
+      fprintf(stderr,"[ERROR] allocation failure within %s:%i",__FILE__,__LINE__);
       exit(1);
     }    
   return prime_contextp;  
@@ -238,32 +239,35 @@ void * test2_add_factor (struct allistof * list, struct allistelement * element,
     }
   if ( factor != NULL)
     {
-      struct allistof * primelist = allistcontext_get_membership(prime_context->context,prime); // get (prime)th element in context.
-      if (primelist == prime_context->primelp)
+      // list of all numbers seen as multiple of this prime at this step.
+      struct allistof * prime_multiples_list = allistcontext_get_membership(prime_context->context,prime);
+      if (prime_multiples_list == prime_context->primelp)
 	{
 	  fprintf(stderr,"[ERROR] factor list is prime list \n");
 	  return NULL;
 	}
-      if ( primelist != NULL )
+      if ( prime_multiples_list != NULL )
 	{
+	  // walking prime in ascending order, so if prime * 2 > element no other prime will be found to divide this factor.
 	  if ( 2 * prime > factor->value )
 	    {
 	      return NULL;
 	    }
+	  // this prime is a factor of this number
 	  if ( factor->value % prime == 0 )
 	    {
-	      if (prime_context->params.test_debug > 1) {fprintf(stderr,"factor %i prime %i count %i list %p\n", factor->value, prime, primelist->count, primelist);}
-	      if ( allistelement_add_in(factor->element, primelist) == NULL )
+	      if (prime_context->params.test_debug > 1) {fprintf(stderr,"factor %i prime %i count %i list %p\n", factor->value, prime, prime_multiples_list->count, prime_multiples_list);}
+	      if ( allistelement_add_in(factor->element, prime_multiples_list) == NULL )
 		{
-		  if (prime_context->params.test_debug) {fprintf(stderr,"can't add %i in prime factor list %i %i count %i\n", factor->value, count, prime, primelist->count);}
-		  dump_list(primelist);
+		  if (prime_context->params.test_debug) {fprintf(stderr,"can't add %i in prime factor list %i %i count %i\n", factor->value, count, prime, prime_multiples_list->count);}
+		  dump_list(prime_multiples_list);
 		  ++factor->error;
 		  return NULL;
 		}
-	      if ( primelist->errors > 0 )
+	      if ( prime_multiples_list->errors > 0 )
 		{
-		  if (prime_context->params.test_debug) {fprintf(stderr,"add %i in prime factor list %i %i count %i has errors %i\n", factor->value, count, prime, primelist->count, primelist->errors);}
-		  factor->error += primelist->errors;
+		  if (prime_context->params.test_debug) {fprintf(stderr,"add %i in prime factor list %i %i count %i has errors %i\n", factor->value, count, prime, prime_multiples_list->count, prime_multiples_list->errors);}
+		  factor->error += prime_multiples_list->errors;
 		  return NULL;
 		}
 	    }
@@ -312,32 +316,36 @@ int test_fill_primelist()
     {
       if ( prime_context->elementp[i]!=NULL)
 	{
-	  // already analyzed
+	  // already analyzed / precomputed
+	  printf("already analyzed / precomputed value %i\n", i);
 	  continue;
 	}
-      prime_context->elementp[i]=allistcontext_new_allistelement(prime_context->context,(void*)((long long)i));
+      // factor_element is a node that will collect all prime factors for this number.
+      struct allistelement * factor_element = allistcontext_new_allistelement(prime_context->context,(void*)((long long)i));
+      prime_context->elementp[i]=factor_element;
       factor.value=i;
-      factor.element=prime_context->elementp[i];
+      factor.element=factor_element;
       step++;
-      if ( prime_context->elementp[i] == NULL )
+      if ( factor_element == NULL )
 	{
 	  return -step;
 	}
+      // try all known primes as factor for this number, will be added in prime factors
       allist_for_each(prime_context->primelp, NULL, test2_add_factor, &factor, 1, 0);
       if ( factor.error > 0)
 	{
 	  return -step;
 	}
       ++step;
-      if (prime_context->elementp[i] != NULL)
+      if (factor_element != NULL)
 	{
-	  if (( i > 1) && (prime_context->elementp[i] != NULL))
+	  if (( i > 1) && (factor_element != NULL))
 	    {	  
-	      // allistelement_get_memberships fails on extended ...
-	      if ( allistelement_get_all_memberships(prime_context->elementp[i]) == 0)
+	      // is no prime where found as of this integer i, it means it is a prime.
+	      if ( allistelement_get_all_memberships(factor_element) == 0)
 		{
 		  // this is a new potential prime.
-		  if ( allistelement_add_in(prime_context->elementp[i], prime_context->primelp) == NULL )
+		  if ( allistelement_add_in(factor_element, prime_context->primelp) == NULL )
 		    {
 		      if (prime_context->params.test_debug) {fprintf(stderr,"can't add new prime  %i in prime list\n", i);}
 		      return -step;
@@ -352,18 +360,18 @@ int test_fill_primelist()
 	    {
 	      struct shrunkinfo shrunkinfo;
 	      struct allistelement * shrunk;
-	      shrunk=allistelement_shrink(prime_context->elementp[i],&shrunkinfo);
+	      shrunk=allistelement_shrink(factor_element,&shrunkinfo);
 	      if ( ( shrunk != NULL)  && ( shrunkinfo.shrunkerrors == 0 ))
 		{
-		  if ( shrunk != prime_context->elementp[i] )
+		  if ( shrunk != factor_element )
 		    {
-		      if ( allistelement_release(prime_context->elementp[i]) == 0 )
+		      if ( allistelement_release(factor_element) == 0 )
 			{
-			  prime_context->elementp[i] = shrunk;
+			  factor_element = shrunk;
 			}
 		      else
 			{
-			  fprintf(stderr,"[ERROR] release failure for %p",prime_context->elementp[i]);
+			  fprintf(stderr,"[ERROR] release failure for %p",factor_element);
 			  return -step;
 			}
 		    }
@@ -374,11 +382,16 @@ int test_fill_primelist()
 		}
 	      else
 		{	      
-		  fprintf(stderr,"[ERROR] shrunk failure for %p\n",prime_context->elementp[i]);
+		  fprintf(stderr,"[ERROR] shrunk failure for %p\n",factor_element);
 		  return -step;
 		}
 	      if (prime_context->params.test_debug>1) {dump_element_full(shrunk);}
 	    }
+	}
+      else
+	{
+	  // how can factor_element be NULL ?
+	  fprintf(stderr,"[ERROR] null list for value %i\n", i);
 	}
 
     }
@@ -388,7 +401,10 @@ int test_fill_primelist()
     {
       return -step;
     }
-  for (int i =1; i<prime_context->context->next_membership; i++)
+
+  // prime_context->context->next_membership == prime_context->glob_numbercount + 1
+  // remark prime_context->context->list[prime_context->glob_numbercount] is list of primes ( not a decomp )
+  for (int i =1; i<prime_context->glob_numbercount; i++)
     {
       step++;
       struct allistof * list = &prime_context->context->list[i];
@@ -397,12 +413,16 @@ int test_fill_primelist()
 	  if ( list->head != NULL)
 	    {
 	      unsigned long long prim = (unsigned long long)  list->head->data;
+	      // quick test, at least there should not be more decomposition primes than number divide by smallest decomp prime.
 	      if ( list->count < ( ( prime_context->glob_numbercount / prim  )))
 		{
-		  if (prime_context->params.test_debug) {fprintf(stderr,"membership[%i] list.count wrong %i %p %p;\n", i , list->count, list, (list->head != NULL) ? list->head->data : NULL );}
+		  if (prime_context->params.test_debug)
+		    {
+		      fprintf(stderr,"membership[%i] list->count wrong prime %lld %p %p;\n( list->count %i  < ( ( prime_context->glob_numbercount / prim  ) %lld )  \n", i , prim, list, (list->head != NULL) ? list->head->data : NULL, list->count, prime_context->glob_numbercount / prim  );
+		    }
 		  dump_list(&prime_context->context->list[i]);
 		  return -step;
-		}	      
+		}
 	    }
 	}
     }
@@ -508,6 +528,9 @@ int main(int argc, char * argv[])
       .shrinkit=0,
       .decomp=0
     };
+
+
+  printf("plays with primes, implementation limited to long long primes.");
   
   if ( argc >= 1 )
     {
