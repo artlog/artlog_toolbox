@@ -101,11 +101,10 @@ int main(int argc, char ** argv)
       json_filename = al_option_getarg(options,0);
     }
   
-  struct aloutputstream output;
-  aloutputstream_fd_init(&output,fileno(stderr));
-
   if ( debug > 0 )
     {
+      struct aloutputstream output;
+      aloutputstream_fd_init(&output,fileno(stderr));
       al_option_dump_output(options,&output);
     }
 			
