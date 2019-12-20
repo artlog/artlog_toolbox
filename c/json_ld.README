@@ -1,0 +1,15 @@
+json-ld implementation on top of aljson
+
+TODO
+
+by example json-ld is used by activity pub
+
+W3C Recommendation 16 January 2014
+
+https://www.w3.org/TR/json-ld/
+
+A JSON-based Serialization for Linked Data
+
+See https://json-ld.org/
+
+samples in  samples/json-ld.json
