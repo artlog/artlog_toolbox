@@ -191,3 +191,8 @@ enum aljson_ld_keyword_index aljson_ld_is_keyword(char * string)
     }
 }
 
+struct aljson_ld_named_graph * aljson_ld_build_from_json(struct aljson_ld_context* context, struct json_object * root)
+{
+  printf("%s:%i NOT YET implemented\n",__FILE__,__LINE__);
+  return NULL;
+}

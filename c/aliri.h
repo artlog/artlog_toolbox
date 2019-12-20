@@ -1,11 +1,20 @@
 #ifndef _ALIRI_HEADER_
 #define _ALIRI_HEADER_
 
+#include "alstrings.h"
+
 // https://www.ietf.org/rfc/rfc3987.txt
 
 struct aliri {
-  void * todo;
+  aldatablock iri_block;
 };
+
+
+/**
+
+TODO Converge with alabnf parsing to autogenerate some of following definitions :
+
+**/
 
 /*
   

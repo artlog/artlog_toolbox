@@ -1,6 +1,7 @@
 #ifndef ALJSON_LD_HEADER_
 #define ALJSON_LD_HEADER_
 
+#include "aljson.h"
 #include "alhash.h"
 #include "aliri.h"
 
@@ -83,5 +84,10 @@ const char * aljson_ld_c_keyword(int index);
 
 // list hardcoded keywords
 void aljson_ld_list_keywords();
+
+// take a json input and build a json ld graph over it
+// level 0 : self contained graph, no IRI references to external.
+struct aljson_ld_named_graph * aljson_ld_build_from_json(struct aljson_ld_context* context, struct json_object * root);
+
 
 #endif // ALJSON_LD_HEADER_

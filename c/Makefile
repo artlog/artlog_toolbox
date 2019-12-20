@@ -31,7 +31,7 @@ $(BUILD)/hashtree: alhashtree.c alhashtree_test.c alcryptohash.c
 
 
 $(BUILD)/aljson_ld: aljson_ld.c aljson_ld_test.c
-	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -laldev -lalhash  -lalstack -lalcommon -Wl,-Bdynamic
+	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -laldev -lalhash  -lalstack -lalcommon -Wl,-Bdynamic -lm
 
 $(BUILD)/alimp: 	alimp.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic

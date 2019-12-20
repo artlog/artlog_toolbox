@@ -42,3 +42,34 @@ or
 given type of project create a project in parent directory named after project name
 
 ________________
+
+
+aljson_ld
+
+cd c/
+make ../build/aljson_ld
+
+
+../build/aljson_ld list_keywords
+../build/aljson_ld get_keyword_index=@id
+
+
+==> current dev is about iri 
+albnf was developped to be able to parse uri using ABNF description of those.
+use alabnf within aliri.c to provide iri parsing
+
+
+
+
+../build/aljson_ld dry_run=/home/plhardy.new/artisanlogiciel/code/artlog_toolbox/samples/ololo.json
+[INFO] json_ld is an extension of aljson for json_ld support
+[WARNING] NOT YET IMPLEMENTED
+usage:
+get key index : get_keyword_index=/keyword/
+list keywords : list_keywords=/keyword/
+dry_run keywords : dry_run
+-----
+json input file=/home/plhardy.new/artisanlogiciel/code/artlog_toolbox/samples/ololo.json
+0x55f78870e7c0
+
+aljson_ld.c:196 NOT YET implemented
