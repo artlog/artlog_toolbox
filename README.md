@@ -30,6 +30,42 @@ can compare two json files ( with limitations, and key order matter ).
 
 _______________
 
+json tool json_path : allow to extract a specific value.
+
+build/json json_path=@id -- samples/json-ld.json 
+"http://dbpedia.org/resource/John_Lennon"
+_______________
+
+json tool template : allow to match a json template
+
+build/json template=template/template.json -- template/test.json
+{"menu":{"id":"file","value":"File","popup":{"menuitem":[{"value":"New","onclick":"CreateNewDoc()"},{"value":"Open","onclick":"OpenDoc()"},{"value":"Close","onclick":"CloseDoc()"}]}}}
+{
+  "menu":{
+    "id":"file",
+    "value":"File",
+    "popup":{
+      "menuitem":.menu.popup.menuitem.?menu?=[
+        {
+          "value":"New",
+          "onclick":"CreateNewDoc()"
+        },
+        {
+          "value":"Open",
+          "onclick":"OpenDoc()"
+        },
+        {
+          "value":"Close",
+          "onclick":"CloseDoc()"
+        }
+      ]
+    }
+  }
+}
+template 'template/template.json' and 'template/test.json' json match
+
+_______________
+
 HOW TO create a new project using current toolbox as tool scripts ?
 
 
@@ -73,3 +109,5 @@ json input file=/home/plhardy.new/artisanlogiciel/code/artlog_toolbox/samples/ol
 0x55f78870e7c0
 
 aljson_ld.c:196 NOT YET implemented
+
+__________________________________________________________
