@@ -9,6 +9,7 @@
 static const char * GET_KEYWORD_INDEXSTR0="get_keyword_index";
 static const char * LIST_KEYWORDSSTR0="list_keywords";
 static const char * DRY_RUNSTR0="dry_run";
+static const char * DEBUGSTR0="debug";
 
 void usage()
 {
@@ -29,6 +30,7 @@ int main(int argc, char ** argv)
   struct alhash_datablock * opt1=al_option_get(options,GET_KEYWORD_INDEXSTR0);
   struct alhash_datablock * opt2=al_option_get(options,LIST_KEYWORDSSTR0);
   struct alhash_datablock * dry_run=al_option_get(options,DRY_RUNSTR0);
+  struct alhash_datablock * debug=al_option_get(options,DEBUGSTR0);
 
   aljson_ld();
   
@@ -70,8 +72,14 @@ int main(int argc, char ** argv)
       //printf("print_ctx outfile %p\n",print_context.outfile);
       // print_context.outfile=&output;
 
-      // crash with json_set_debug(1) due to NULL print_ctx.outfile ... why ?
-      json_set_debug(0);
+      if (debug != NULL)
+	{
+	  json_set_debug(255);
+	}
+      else
+	{
+	  json_set_debug(0);
+	}
 	
       if (dry_run->data.charptr != NULL )
 	{

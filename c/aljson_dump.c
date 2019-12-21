@@ -218,6 +218,12 @@ void aljson_dump_dict_object( struct json_object * object, struct print_ctx * pr
 void aljson_dump_growable( struct json_growable *growable, struct print_ctx * print_ctx)
 {
   struct aloutputstream * output=aljson_get_output(print_ctx);
+  if ( output == NULL )
+    {
+      printf("[ERROR] NULL output for print ctx %p at %s:%i\n",print_ctx,__FILE__,__LINE__);
+      return;
+    }
+
   struct json_link * link=NULL;
   link=growable->tail;
   aloutputstream_printf_1k(output,"|%c",growable->final_type);

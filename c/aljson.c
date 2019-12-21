@@ -52,16 +52,16 @@ int json_set_debug(int debug)
 {
   int previous=json_debug;
   json_debug = debug;
-
   if ( debug != 0 )
     {
+      printf("reached %s:%i\n", __FILE__,__LINE__);
       // should setup aljson_print_ctx_debug.
       aljson_print_ctx_init(&aljson_print_ctx_debug);
       aljson_print_ctx_debug.outfile=aldebug_get_output(DBGSTREAM);
+      printf("aljson_print_ctx_debug %p %p\n",&aljson_print_ctx_debug, aljson_print_ctx_debug.outfile);
     }
   return previous;
 }
-
 
 /**
 a complicated json stream ( one char ahead ) parser 
@@ -285,7 +285,8 @@ void json_release_object(struct json_object * object)
   // free(object);
 }
 
-void aljson_dump_growable(struct json_parser_ctx * ctx, struct json_growable * growable, struct print_ctx * print_ctx);
+// WARNING should match aljson_dump.h
+void aljson_dump_growable(struct json_growable * growable, struct print_ctx * print_ctx);
 
 void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * growable,struct json_object * object)
 {
@@ -295,7 +296,7 @@ void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * 
       if (json_debug > 2)
 	{
 	  printf("before<");
-	  aljson_dump_growable(ctx, growable,&aljson_print_ctx_debug);
+	  aljson_dump_growable(growable,&aljson_print_ctx_debug);
 	}
     }
   if ( growable->tail == NULL)
@@ -322,7 +323,7 @@ void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * 
       printf("\nafter<");
       if ( json_debug > 0 )
 	{
-	  aljson_dump_growable(ctx, growable,&aljson_print_ctx_debug);
+	  aljson_dump_growable(growable,&aljson_print_ctx_debug);
 	  printf("\n>>");
 	}
     }

@@ -13,6 +13,7 @@ void aldebug_start(char * filename)
     }
   else
     {
+      // FIXME disregards filename
       aloutputstream_fd_init(&aldebug_default.output,fileno(stderr));
     }
       
@@ -29,6 +30,7 @@ struct aloutputstream * aldebug_get_output(struct aldebugconfig * debugconfig)
     {
       return &debugconfig->output;
     }
+  printf("[ERROR] debug output is NULL\n");
   return NULL;
 }
 
