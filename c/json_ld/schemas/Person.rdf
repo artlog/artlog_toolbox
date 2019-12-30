@@ -1,0 +1,857 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF
+  xmlns:schema="http://schema.org/"
+  xmlns:owl="http://www.w3.org/2002/07/owl#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+>
+  <rdf:Property rdf:about="http://schema.org/alumniOf">
+    <schema:rangeIncludes rdf:resource="http://schema.org/EducationalOrganization"/>
+    <rdfs:label>alumniOf</rdfs:label>
+    <schema:inverseOf>
+      <rdf:Description rdf:about="http://schema.org/alumni">
+        <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+      </rdf:Description>
+    </schema:inverseOf>
+    <rdfs:comment>An organization that the person is an alumni of.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/homeLocation">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Place"/>
+    <rdfs:subPropertyOf rdf:resource="http://schema.org/location"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/ContactPoint"/>
+    <rdfs:label>homeLocation</rdfs:label>
+    <rdfs:comment>A contact location for a person's residence.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/knowsAbout">
+    <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/1688"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Thing"/>
+    <schema:category>issue-1688</schema:category>
+    <dcterms:source rdf:resource="https://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#TP"/>
+    <schema:isPartOf rdf:resource="http://pending.schema.org"/>
+    <rdfs:comment><![CDATA[Of a <a class="localLink" href="http://schema.org/Person">Person</a>, and less typically of an <a class="localLink" href="http://schema.org/Organization">Organization</a>, to indicate a topic that is known about - suggesting possible expertise but not implying it. We do not distinguish skill levels here, or relate this to educational content, events, objectives or <a class="localLink" href="http://schema.org/JobPosting">JobPosting</a> descriptions.]]></rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <rdfs:label>knowsAbout</rdfs:label>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/callSign">
+    <schema:domainIncludes rdf:resource="http://schema.org/Vehicle"/>
+    <rdfs:label>callSign</rdfs:label>
+    <rdfs:subPropertyOf>
+      <rdf:Property rdf:about="http://schema.org/identifier">
+        <owl:equivalentProperty rdf:resource="http://purl.org/dc/terms/identifier"/>
+        <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+        <rdfs:label>identifier</rdfs:label>
+        <rdfs:comment><![CDATA[The identifier property represents any kind of identifier for any kind of <a class="localLink" href="http://schema.org/Thing">Thing</a>, such as ISBNs, GTIN codes, UUIDs etc. Schema.org provides dedicated properties for representing many of these, either as textual strings or as URL (URI) links. See <a href="/docs/datamodel.html#identifierBg">background notes</a> for more details.]]></rdfs:comment>
+        <schema:rangeIncludes rdf:resource="http://schema.org/PropertyValue"/>
+        <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+      </rdf:Property>
+    </rdfs:subPropertyOf>
+    <schema:isPartOf rdf:resource="http://pending.schema.org"/>
+    <schema:category>issue-2109</schema:category>
+    <rdfs:comment><![CDATA[A <a href="https://en.wikipedia.org/wiki/Call_sign">callsign</a>, as used in broadcasting and radio communications to identify people, radio and TV stations, or vehicles.]]></rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/2109"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/BroadcastService"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/parents">
+    <rdfs:label>parents</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:supersededBy>
+      <rdf:Property rdf:about="http://schema.org/parent">
+        <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+        <rdfs:label>parent</rdfs:label>
+        <rdfs:comment>A parent of this person.</rdfs:comment>
+      </rdf:Property>
+    </schema:supersededBy>
+    <rdfs:comment>A parents of the person.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/colleagues">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>colleagues</rdfs:label>
+    <schema:supersededBy>
+      <rdf:Property rdf:about="http://schema.org/colleague">
+        <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+        <rdfs:comment>A colleague of the person.</rdfs:comment>
+        <rdfs:label>colleague</rdfs:label>
+        <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+      </rdf:Property>
+    </schema:supersededBy>
+    <rdfs:comment>A colleague of the person.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/brand">
+    <schema:domainIncludes rdf:resource="http://schema.org/Product"/>
+    <rdfs:comment>The brand(s) associated with a product or service, or the brand(s) maintained by an organization or business person.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Service"/>
+    <rdfs:label>brand</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Brand"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Organization"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/duns">
+    <rdfs:label>duns</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:comment>The Dun &amp;amp; Bradstreet DUNS number for identifying an organization or business person.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <rdfs:subPropertyOf rdf:resource="http://schema.org/identifier"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/knowsLanguage">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:isPartOf rdf:resource="http://pending.schema.org"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/1688"/>
+    <dcterms:source rdf:resource="https://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#TP"/>
+    <rdfs:comment><![CDATA[Of a <a class="localLink" href="http://schema.org/Person">Person</a>, and less typically of an <a class="localLink" href="http://schema.org/Organization">Organization</a>, to indicate a known language. We do not distinguish skill levels or reading/writing/speaking/signing here. Use language codes from the <a href="http://tools.ietf.org/html/bcp47">IETF BCP 47 standard</a>.]]></rdfs:comment>
+    <rdfs:label>knowsLanguage</rdfs:label>
+    <schema:category>issue-1688</schema:category>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Language"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/additionalType">
+    <rdfs:label>additionalType</rdfs:label>
+    <rdfs:subPropertyOf rdf:resource="http://www.w3.org/1999/02/22-rdf-syntax-ns#type"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+    <rdfs:comment>An additional type for the item, typically used for adding more specific types from external vocabularies in microdata syntax. This is a relationship between something and a class that the thing is in. In RDFa syntax, it is better to use the native RDFa syntax - the 'typeof' attribute - for multiple types. Schema.org tools may have only weaker understanding of extra types, in particular those defined externally.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/gender">
+    <rdfs:label>gender</rdfs:label>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/2341"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/GenderType"/>
+    <rdfs:comment><![CDATA[Gender of something, typically a <a class="localLink" href="http://schema.org/Person">Person</a>, but possibly also fictional characters, animals, etc. While http://schema.org/Male and http://schema.org/Female may be used, text strings are also acceptable for people who do not identify as a binary gender. The <a class="localLink" href="http://schema.org/gender">gender</a> property can also be used in an extended sense to cover e.g. the gender of sports teams. As with the gender of individuals, we do not try to enumerate all possibilities. A mixed-gender <a class="localLink" href="http://schema.org/SportsTeam">SportsTeam</a> can be indicated with a text value of "Mixed".]]></rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/SportsTeam"/>
+    <schema:isPartOf rdf:resource="http://pending.schema.org"/>
+    <schema:category>issue-2341</schema:category>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/worksFor">
+    <rdfs:label>worksFor</rdfs:label>
+    <rdfs:comment>Organizations that the person works for.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/hasPOS">
+    <rdfs:label>hasPOS</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <rdfs:comment>Points-of-Sales operated by the organization or person.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Place"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/address">
+    <rdfs:label>address</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Place"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/GeoShape"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/GeoCoordinates"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/PostalAddress"/>
+    <rdfs:comment>Physical address of the item.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/subjectOf">
+    <rdfs:label>subjectOf</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/CreativeWork"/>
+    <schema:category>issue-1670</schema:category>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/1670"/>
+    <rdfs:comment>A CreativeWork or Event about this Thing.</rdfs:comment>
+    <schema:inverseOf rdf:resource="http://schema.org/about"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Event"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/directors">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/founders">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/seller">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/globalLocationNumber">
+    <schema:domainIncludes rdf:resource="http://schema.org/Place"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <rdfs:subPropertyOf rdf:resource="http://schema.org/identifier"/>
+    <rdfs:comment><![CDATA[The <a href="http://www.gs1.org/gln">Global Location Number</a> (GLN, sometimes also referred to as International Location Number or ILN) of the respective organization, person, or place. The GLN is a 13-digit number used to identify parties and physical locations.]]></rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>globalLocationNumber</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/affiliation">
+    <rdfs:subPropertyOf>
+      <rdf:Property rdf:about="http://schema.org/memberOf">
+        <schema:inverseOf rdf:resource="http://schema.org/member"/>
+        <schema:rangeIncludes rdf:resource="http://schema.org/Organization"/>
+        <rdfs:comment>An Organization (or ProgramMembership) to which this Person or Organization belongs.</rdfs:comment>
+        <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+        <schema:rangeIncludes rdf:resource="http://schema.org/ProgramMembership"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+        <rdfs:label>memberOf</rdfs:label>
+      </rdf:Property>
+    </rdfs:subPropertyOf>
+    <rdfs:label>affiliation</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>An organization that this person is affiliated with. For example, a school/university, a club, or a team.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Organization"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/lender">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/netWorth">
+    <schema:rangeIncludes rdf:resource="http://schema.org/PriceSpecification"/>
+    <rdfs:comment>The total financial value of the person as calculated by subtracting assets from liabilities.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>netWorth</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/MonetaryAmount"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/creator">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/endorsee">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/siblings">
+    <rdfs:label>siblings</rdfs:label>
+    <schema:supersededBy>
+      <rdf:Property rdf:about="http://schema.org/sibling">
+        <rdfs:label>sibling</rdfs:label>
+        <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+        <rdfs:comment>A sibling of the person.</rdfs:comment>
+      </rdf:Property>
+    </schema:supersededBy>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>A sibling of the person.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/funder">
+    <schema:domainIncludes rdf:resource="http://schema.org/Event"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/CreativeWork"/>
+    <rdfs:label>funder</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>A person or organization that supports (sponsors) something through some kind of financial contribution.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/MonetaryGrant"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:subPropertyOf>
+      <rdf:Property rdf:about="http://schema.org/sponsor">
+        <schema:domainIncludes rdf:resource="http://schema.org/Event"/>
+        <rdfs:comment>A person or organization that supports a thing through a pledge, promise, or financial contribution. e.g. a sponsor of a Medical Study or a corporate sponsor of an event.</rdfs:comment>
+        <rdfs:label>sponsor</rdfs:label>
+        <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/CreativeWork"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+        <schema:rangeIncludes rdf:resource="http://schema.org/Organization"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/MedicalStudy"/>
+        <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Grant"/>
+      </rdf:Property>
+    </rdfs:subPropertyOf>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/hasCredential">
+    <schema:rangeIncludes rdf:resource="http://schema.org/EducationalOccupationalCredential"/>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/2289"/>
+    <rdfs:label>hasCredential</rdfs:label>
+    <rdfs:comment>A credential awarded to the Person or Organization.</rdfs:comment>
+    <schema:isPartOf rdf:resource="http://pending.schema.org"/>
+    <schema:category>issue-2289</schema:category>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/opponent">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/familyName">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>familyName</rdfs:label>
+    <rdfs:comment>Family name. In the U.S., the last name of an Person. This can be used along with givenName instead of the name property.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/isicV4">
+    <schema:domainIncludes rdf:resource="http://schema.org/Place"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>isicV4</rdfs:label>
+    <rdfs:comment>The International Standard of Industrial Classification of All Economic Activities (ISIC), Revision 4 code for a particular organization, business person, or place.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/editor">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/alternateName">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <rdfs:label>alternateName</rdfs:label>
+    <rdfs:comment>An alias for the item.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/nationality">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>Nationality of the person.</rdfs:comment>
+    <rdfs:label>nationality</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Country"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/loser">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/deathDate">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>Date of death.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Date"/>
+    <rdfs:label>deathDate</rdfs:label>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/telephone">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Place"/>
+    <rdfs:label>telephone</rdfs:label>
+    <rdfs:comment>The telephone number.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/ContactPoint"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/underName">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/mainEntityOfPage">
+    <rdfs:comment><![CDATA[Indicates a page (or other CreativeWork) for which this thing is the main entity being described. See <a href="/docs/datamodel.html#mainEntityBackground">background notes</a> for details.]]></rdfs:comment>
+    <schema:inverseOf rdf:resource="http://schema.org/mainEntity"/>
+    <rdfs:label>mainEntityOfPage</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/CreativeWork"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/attendee">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/organizer">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/attendees">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/name">
+    <rdfs:label>name</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2000/01/rdf-schema#label"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <rdfs:comment>The name of the item.</rdfs:comment>
+    <owl:equivalentProperty rdf:resource="http://purl.org/dc/terms/title"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/awards">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:supersededBy>
+      <rdf:Property rdf:about="http://schema.org/award">
+        <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+        <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Service"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Product"/>
+        <rdfs:comment>An award won by or for this item.</rdfs:comment>
+        <schema:domainIncludes rdf:resource="http://schema.org/CreativeWork"/>
+        <rdfs:label>award</rdfs:label>
+        <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+      </rdf:Property>
+    </schema:supersededBy>
+    <schema:domainIncludes rdf:resource="http://schema.org/Product"/>
+    <rdfs:label>awards</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:comment>Awards won by or for this item.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/CreativeWork"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/honorificSuffix">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>An honorific suffix preceding a Person's name such as M.D. /PhD/MSCSW.</rdfs:comment>
+    <rdfs:label>honorificSuffix</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/competitor">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/makesOffer">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:comment>A pointer to products or services offered by the organization or person.</rdfs:comment>
+    <schema:inverseOf>
+      <rdf:Description rdf:about="http://schema.org/offeredBy">
+        <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+      </rdf:Description>
+    </schema:inverseOf>
+    <rdfs:label>makesOffer</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Offer"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/instructor">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/owns">
+    <rdfs:label>owns</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/OwnershipInfo"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Product"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <rdfs:comment>Products owned by the organization or person.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/taxID">
+    <rdfs:comment>The Tax / Fiscal ID of the organization or person, e.g. the TIN in the US or the CIF/NIF in Spain.</rdfs:comment>
+    <rdfs:subPropertyOf rdf:resource="http://schema.org/identifier"/>
+    <rdfs:label>taxID</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/toRecipient">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/provider">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/reviewedBy">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/performers">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/vatID">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:label>vatID</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <rdfs:comment>The Value-added Tax ID of the organization or person.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/founder">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/hasOccupation">
+    <schema:category>issue-1698</schema:category>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/1698"/>
+    <rdfs:comment>The Person's occupation. For past professions, use Role for expressing dates.</rdfs:comment>
+    <rdfs:label>hasOccupation</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Occupation"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/image">
+    <rdfs:label>image</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <rdfs:comment><![CDATA[An image of the item. This can be a <a class="localLink" href="http://schema.org/URL">URL</a> or a fully described <a class="localLink" href="http://schema.org/ImageObject">ImageObject</a>.]]></rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/ImageObject"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/deathPlace">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Place"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>The place where the person died.</rdfs:comment>
+    <rdfs:label>deathPlace</rdfs:label>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/employee">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/contactPoints">
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:label>contactPoints</rdfs:label>
+    <schema:supersededBy>
+      <rdf:Property rdf:about="http://schema.org/contactPoint">
+        <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+        <rdfs:label>contactPoint</rdfs:label>
+        <schema:rangeIncludes rdf:resource="http://schema.org/ContactPoint"/>
+        <rdfs:comment>A contact point for a person or organization.</rdfs:comment>
+        <schema:domainIncludes rdf:resource="http://schema.org/HealthInsurancePlan"/>
+        <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+      </rdf:Property>
+    </schema:supersededBy>
+    <schema:rangeIncludes rdf:resource="http://schema.org/ContactPoint"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>A contact point for a person or organization.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/relatedTo">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>relatedTo</rdfs:label>
+    <rdfs:comment>The most generic familial relation.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/publishingPrinciples">
+    <schema:domainIncludes rdf:resource="http://schema.org/CreativeWork"/>
+    <rdfs:label>publishingPrinciples</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/CreativeWork"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment><![CDATA[The publishingPrinciples property indicates (typically via <a class="localLink" href="http://schema.org/URL">URL</a>) a document describing the editorial principles of an <a class="localLink" href="http://schema.org/Organization">Organization</a> (or individual e.g. a <a class="localLink" href="http://schema.org/Person">Person</a> writing a blog) that relate to their activities as a publisher, e.g. ethics or diversity policies. When applied to a <a class="localLink" href="http://schema.org/CreativeWork">CreativeWork</a> (e.g. <a class="localLink" href="http://schema.org/NewsArticle">NewsArticle</a>) the principles are those of the party primarily responsible for the creation of the <a class="localLink" href="http://schema.org/CreativeWork">CreativeWork</a>.<br/><br/>
+
+While such policies are most typically expressed in natural language, sometimes related information (e.g. indicating a <a class="localLink" href="http://schema.org/funder">funder</a>) can be expressed using schema.org terminology.]]></rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/url">
+    <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <rdfs:comment>URL of the item.</rdfs:comment>
+    <rdfs:label>url</rdfs:label>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/publisher">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/faxNumber">
+    <schema:domainIncludes rdf:resource="http://schema.org/ContactPoint"/>
+    <rdfs:comment>The fax number.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:label>faxNumber</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Place"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/weight">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/QuantitativeValue"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Product"/>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <rdfs:comment>The weight of the product or person.</rdfs:comment>
+    <rdfs:label>weight</rdfs:label>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/height">
+    <schema:domainIncludes rdf:resource="http://schema.org/VisualArtwork"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/QuantitativeValue"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/MediaObject"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Distance"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Product"/>
+    <rdfs:label>height</rdfs:label>
+    <rdfs:comment>The height of the item.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/candidate">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/seeks">
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:comment>A pointer to products or services sought by the organization or person (demand).</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Demand"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>seeks</rdfs:label>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/email">
+    <schema:domainIncludes rdf:resource="http://schema.org/ContactPoint"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:comment>Email address.</rdfs:comment>
+    <rdfs:label>email</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/artist">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/jobTitle">
+    <rdfs:comment>The job title of the person (for example, Financial Manager).</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <dcterms:source rdf:resource="https://github.com/schemaorg/schemaorg/issues/2192"/>
+    <schema:category>issue-2192</schema:category>
+    <schema:rangeIncludes rdf:resource="http://schema.org/DefinedTerm"/>
+    <schema:isPartOf rdf:resource="http://pending.schema.org"/>
+    <rdfs:label>jobTitle</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/director">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/children">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>children</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>A child of the person.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/birthDate">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>Date of birth.</rdfs:comment>
+    <rdfs:label>birthDate</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Date"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/customer">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/followee">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/recipient">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/givenName">
+    <rdfs:label>givenName</rdfs:label>
+    <rdfs:comment>Given name. In the U.S., the first name of a Person. This can be used along with familyName instead of the name property.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/publishedBy">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/knows">
+    <rdfs:comment>The most generic bi-directional social/work relation.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>knows</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/readBy">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/additionalName">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>additionalName</rdfs:label>
+    <rdfs:comment>An additional name for a Person, can be used for a middle name.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/honorificPrefix">
+    <rdfs:label>honorificPrefix</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>An honorific prefix preceding a Person's name such as Dr/Mrs/Mr.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/hasOfferCatalog">
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <rdfs:comment>Indicates an OfferCatalog listing for this Organization, Person, or Service.</rdfs:comment>
+    <rdfs:label>hasOfferCatalog</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/OfferCatalog"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Service"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/illustrator">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/potentialAction">
+    <rdfs:comment>Indicates a potential Action, which describes an idealized action in which this thing would play an 'object' role.</rdfs:comment>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <rdfs:label>potentialAction</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Action"/>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/spouse">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>spouse</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>The person's spouse.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/members">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/follows">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>The most generic uni-directional social relation.</rdfs:comment>
+    <rdfs:label>follows</rdfs:label>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/coach">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/sdPublisher">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/workLocation">
+    <schema:rangeIncludes rdf:resource="http://schema.org/ContactPoint"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Place"/>
+    <rdfs:label>workLocation</rdfs:label>
+    <rdfs:subPropertyOf rdf:resource="http://schema.org/location"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>A contact location for a person's place of work.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/bookingAgent">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/Patient">
+    <rdfs:subClassOf rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/lyricist">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/legislationResponsible">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/birthPlace">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>birthPlace</rdfs:label>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Place"/>
+    <rdfs:comment>The place where the person was born.</rdfs:comment>
+  </rdf:Property>
+  <rdf:Property rdf:about="http://schema.org/naics">
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:comment>The North American Industry Classification System (NAICS) code for a particular organization or business person.</rdfs:comment>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_GoodRelationsTerms"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Organization"/>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <rdfs:label>naics</rdfs:label>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/awayTeam">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/bccRecipient">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/actors">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/byArtist">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/colorist">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/sameAs">
+    <rdfs:label>sameAs</rdfs:label>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+    <rdfs:comment>URL of a reference Web page that unambiguously indicates the item's identity. E.g. the URL of the item's Wikipedia page, Wikidata entry, or official website.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/URL"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/participant">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/disambiguatingDescription">
+    <rdfs:subPropertyOf>
+      <rdf:Property rdf:about="http://schema.org/description">
+        <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+        <owl:equivalentProperty rdf:resource="http://purl.org/dc/terms/description"/>
+        <rdfs:label>description</rdfs:label>
+        <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+        <rdfs:comment>A description of the item.</rdfs:comment>
+      </rdf:Property>
+    </rdfs:subPropertyOf>
+    <rdfs:label>disambiguatingDescription</rdfs:label>
+    <rdfs:comment>A sub property of description. A short description of the item used to disambiguate from other, similar items. Information from other properties (in particular, name) may be necessary for the description to be useful for disambiguation.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Text"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Thing"/>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/author">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/buyer">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/character">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/vendor">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Property rdf:about="http://schema.org/performerIn">
+    <rdfs:comment>Event that this person is a performer or participant in.</rdfs:comment>
+    <schema:rangeIncludes rdf:resource="http://schema.org/Event"/>
+    <schema:domainIncludes rdf:resource="http://schema.org/Person"/>
+    <rdfs:label>performerIn</rdfs:label>
+  </rdf:Property>
+  <rdf:Description rdf:about="http://schema.org/borrower">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/merchant">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/creditedTo">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/letterer">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/athlete">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/homeTeam">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/landlord">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/ccRecipient">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/grantee">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/inker">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/translator">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/broker">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/actor">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/acquiredFrom">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/composer">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/producer">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/copyrightHolder">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/agent">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/contributor">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/spokenByCharacter">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/endorsers">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/winner">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/sender">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/accountablePerson">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/penciler">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/musicGroupMember">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/musicBy">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/employees">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/legislationPassedBy">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://schema.org/performer">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+  <rdfs:Class rdf:about="http://schema.org/Person">
+    <rdfs:comment>A person (alive, dead, undead, or fictional).</rdfs:comment>
+    <dcterms:source rdf:resource="http://www.w3.org/wiki/WebSchemas/SchemaDotOrgSources#source_rNews"/>
+    <owl:equivalentClass rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
+    <rdfs:label>Person</rdfs:label>
+    <rdfs:subClassOf rdf:resource="http://schema.org/Thing"/>
+  </rdfs:Class>
+  <rdfs:Class rdf:about="http://schema.org/Thing">
+    <rdfs:label>Thing</rdfs:label>
+    <rdfs:comment>The most generic type of item.</rdfs:comment>
+  </rdfs:Class>
+  <rdf:Description rdf:about="http://schema.org/member">
+    <schema:rangeIncludes rdf:resource="http://schema.org/Person"/>
+  </rdf:Description>
+</rdf:RDF>
