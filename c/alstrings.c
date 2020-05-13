@@ -164,8 +164,8 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
   // ==> that it was not possible to allocate a buffer
   if (  next == buffer )
     {
-      aldebug_printf(DBGSTREAM,"[WARNING] not possible to allocate a buffer. allocate buffer (%p) next (%p) \n", buffer, next);
-      // shouldn't we return NULL ?
+      aldebug_printf(DBGSTREAM,"[FATAL] not possible to allocate a buffer. allocate buffer (%p) next (%p) \n", buffer, next);
+      return NULL;
     }
   
   if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
