@@ -7,6 +7,8 @@
 /* https://en.wikipedia.org/wiki/Base64#Base64_table */
 
 char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+char base64urlchars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+static char complement='=';
 
 // read 6 bits
 char albase64_6bitstochar(unsigned int inbits)
@@ -14,7 +16,16 @@ char albase64_6bitstochar(unsigned int inbits)
   return base64chars[inbits & 0x3f];
 }
 
-char * aleasybase64(char * input, int length)
+// read 6 bits
+char albase64url_6bitstochar(unsigned int inbits)
+{
+  return base64urlchars[inbits & 0x3f];
+}
+
+
+int albase64func_frominput(char (*func_6bistochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output);
+
+char * aleasybase64func(char (*func_6bistochar)(unsigned int),char * input, int length)
 {
   aldatablock block;
 
@@ -32,11 +43,28 @@ char * aleasybase64(char * input, int length)
   outbuffer.type = ALTYPE_STR0;
 
   aloutputstream_init_shared_buffer(&output, &outbuffer, 0);
-  albase64(&block,&output);
+
+  {
+    struct alinputstream inputstream;
+    alinputstream_init(&inputstream,-1);
+    alinputstream_setdatablock(&inputstream, &block,0);
+
+    albase64func_frominput(func_6bistochar,&inputstream, &output);
+  }
 
   // TODO detach output buffer to keep only malloc'ed buffer.
   char * buffer = output.buffer.data.charptr;
   return buffer;
+}
+
+char * aleasybase64(char * input, int length)
+{
+  aleasybase64func(albase64_6bitstochar,input,length);
+}
+
+char * aleasybase64url(char * input, int length)
+{
+  aleasybase64func(albase64url_6bitstochar,input,length);
 }
 
 int aloutputwritechar(struct aloutputstream * output, char c)
@@ -51,9 +79,9 @@ int aloutputwritechar(struct aloutputstream * output, char c)
     }
 }
 
-int albase64_frominput(  struct alinputstream * inputstream, struct aloutputstream * output)
-{
 
+int albase64func_frominput(char (*func_6bistochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output)
+{
   int bits = 0;
   int read = 0;
   char b64char =0;
@@ -76,7 +104,7 @@ int albase64_frominput(  struct alinputstream * inputstream, struct aloutputstre
     if ( read > 0 )
       {
 	bits+=read;
-	b64char = albase64_6bitstochar(block);
+	b64char = (*func_6bistochar)(block);
 	// addchar to output
 	aloutputwritechar(output,b64char);
       }
@@ -87,16 +115,26 @@ int albase64_frominput(  struct alinputstream * inputstream, struct aloutputstre
   // 0,  17..23 => nothing.
   if ( ( pad > 0 ) && ( pad <=  16 ) )
     {
-      // 9..16 => '='
-      aloutputwritechar(output,'=');
+      // 9..16 => complement ('=')
+      aloutputwritechar(output,complement);
       if ( pad <= 8 )
 	{
-	  // 1..8 =>  '=='
-	  aloutputwritechar(output,'=');
+	  // 1..8 =>  complement.complement ('==')
+	  aloutputwritechar(output,complement);
 	}
     }
 
   return 0;
+}
+
+int albase64_frominput(struct alinputstream * inputstream, struct aloutputstream * output)
+{
+  return albase64func_frominput(albase64_6bitstochar,inputstream,output);
+}
+
+int albase64url_frominput(struct alinputstream * inputstream, struct aloutputstream * output)
+{
+  return albase64func_frominput(albase64url_6bitstochar,inputstream,output);
 }
 
 int albase64(aldatablock * input, struct aloutputstream * output)

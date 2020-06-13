@@ -19,7 +19,7 @@ See 839bed1b436f941f5d5a7994fce274cd950507f3
     iri syntax is in abnf
     
     - north face try , initiate a tentative to prepare a abnf parser
-    to have a later a abnf generator ...
+    to have later a abnf generator ...
 
 It was abstracted to generate a c parser for abnf provided syntax, but does not work.
 
@@ -28,6 +28,18 @@ plhardy@pavilionartlogiciel:~/artisanlogiciel/code/artlog_toolbox/c$ ./alabnf_ma
 
 (...)
 [FATAL] TOO MANY STEPS (NULL char) state ('0x563ea3664520' type 16 initial type 6 current 0x563ea3666960 current_type 6 index 0)  in alabnf_matcher.c alabnf_matcher_resolve_state_node 835
+
+[16th My 2020]
+
+
+c/abnf$ make all
+
+../../build/alabnf_matcher 
+[ERROR] expected abnf syntax file as first argument
+
+artlog_toolbox$ build/alabnf_matcher abnf/rfc3986_part.abnf abnf/rfc5234_core.abnf
+(...)
+[FATAL] TOO MANY STEPS (NULL char) state ALPHA('0x55c4ecbc3530' T16 IT6 current 0x55c4ecbc5bf0 current_type 6 index 0)  in alabnf_matcher
 
 __________________________________________________________________________________________________________________________
 

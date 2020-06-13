@@ -17,6 +17,9 @@ $(BUILD)/json_to_c_stub_sample: aljson_encoder.c json_to_c_stub.c json_to_c_stub
 $(BUILD)/cryptohash: alcryptohash_test.c alcryptohash.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alcryptohash_tool.c aloutput.c
 	gcc -g -O0 -o $@ $^
 
+$(BUILD)/base64url: albase64url_main.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c aloutput.c
+	gcc -g -O0 -o $@ $^
+
 $(BUILD)/salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c  aloutput.c
 	gcc -g -O0 -o $@ $^
 
