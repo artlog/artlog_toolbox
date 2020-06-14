@@ -111,3 +111,19 @@ json input file=/home/plhardy.new/artisanlogiciel/code/artlog_toolbox/samples/ol
 aljson_ld.c:196 NOT YET implemented
 
 __________________________________________________________
+
+base64
+
+build/base64
+program <name of file to get base64 url> (<debug>)
+-d decode
+-e encode
+-u use base64url scheme ( ie with -_ instead of +/ ) 
+in=<input filnename>out=<output filename>, use stdout if not se
+
+
+build/base64 -u -e  in=filename out=outfile
+will create a outfile in current directory with base64 url encoded of filename content
+
+build/base64 -u -d in=filename out=outfile
+will create a outfile in current directory with base64 url decoded of filename content

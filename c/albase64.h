@@ -13,6 +13,9 @@ char * aleasybase64(char * input, int length);
 /* encoding using url scheme ( -_ ) */
 char * aleasybase64url(char * input, int length);
 
+int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output);
+
+
 /** from full inputstream datablock create a base64 result allocated within output */
 int albase64_frominput(  struct alinputstream * inputstream, struct aloutputstream * output);
 

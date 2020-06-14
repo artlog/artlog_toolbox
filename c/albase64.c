@@ -41,8 +41,6 @@ char albase64url_6bitstochar(unsigned int inbits)
   return base64urlchars[inbits & 0x3f];
 }
 
-int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output);
-
 char * aleasybase64func(char (*func_6bitstochar)(unsigned int),char * input, int length)
 {
   aldatablock block;
@@ -166,7 +164,7 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
     
   struct bitfieldwriter bfoutput;
   bitfieldwriter_init(&bfoutput);
-  // force 8bits char storage 
+  // force 8bits char storage => buggy 
   // bfoutput.dataSize=8;
   bitfieldwriter_setoutputstream( &bfoutput,output);
     
@@ -207,7 +205,9 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
 	  if ( bitblock == 64 )
 	    {
 	      // complement case
-	      // TODO how to handle complement padding ??
+	      // to check if it is right behavior : reset offset, don't write any remaing bits if any.
+	      bfoutput.bitOffset=0;
+	      read = 0;
 	    }
 	  else
 	    {
