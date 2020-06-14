@@ -116,6 +116,9 @@ void alstrings_ringbuffer_release(alstrings_ringbuffer_pointer * ringbufferp);
 // read an unsigned int that was stored in big endian at offset in datablock
 unsigned int aldatablock_get_uint32be(aldatablock * data, int offset);
 
+// read an unsigned int that was stored in little endian at offset in datablock
+unsigned int aldatablock_get_uint32le(aldatablock * data, int offset);
+
 // =====  use a datablock as output ========
 
 void aldatablock_bzero(aldatablock * data,int offset, int length);

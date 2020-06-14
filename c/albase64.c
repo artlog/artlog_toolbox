@@ -2,13 +2,32 @@
 #include "aldebug.h"
 #include "alinput.h"
 #include "albitfieldreader.h"
+#include "albitfieldwriter.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 /* https://en.wikipedia.org/wiki/Base64#Base64_table */
 
 char base64chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 char base64urlchars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 static char complement='=';
+
+// 65 is an error, 64 is complement.
+// fills up reverse table. charto6bits expcetd to be of length 256
+void setup_charto6bits(char (*func_6bitstochar)(unsigned int), unsigned char *charto6bits)
+{
+  for (int i=0; i< 256; i++)
+    {
+      charto6bits[i]=65;
+    }
+  charto6bits[complement]=64;
+  for (unsigned char i=0; i< 64; i++)
+    {
+      printf("%c",func_6bitstochar(i));
+      charto6bits[func_6bitstochar(i)]=i;
+    }
+}
+      
 
 // read 6 bits
 char albase64_6bitstochar(unsigned int inbits)
@@ -22,10 +41,9 @@ char albase64url_6bitstochar(unsigned int inbits)
   return base64urlchars[inbits & 0x3f];
 }
 
+int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output);
 
-int albase64func_frominput(char (*func_6bistochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output);
-
-char * aleasybase64func(char (*func_6bistochar)(unsigned int),char * input, int length)
+char * aleasybase64func(char (*func_6bitstochar)(unsigned int),char * input, int length)
 {
   aldatablock block;
 
@@ -49,7 +67,7 @@ char * aleasybase64func(char (*func_6bistochar)(unsigned int),char * input, int 
     alinputstream_init(&inputstream,-1);
     alinputstream_setdatablock(&inputstream, &block,0);
 
-    albase64func_frominput(func_6bistochar,&inputstream, &output);
+    albase64func_frominput(func_6bitstochar,&inputstream, &output);
   }
 
   // TODO detach output buffer to keep only malloc'ed buffer.
@@ -80,7 +98,7 @@ int aloutputwritechar(struct aloutputstream * output, char c)
 }
 
 
-int albase64func_frominput(char (*func_6bistochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output)
+int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output)
 {
   int bits = 0;
   int read = 0;
@@ -88,6 +106,8 @@ int albase64func_frominput(char (*func_6bistochar)(unsigned int) , struct alinpu
 
   struct bitfieldreader bfreader;
   fieldreader_init(&bfreader);
+  // char mode
+  fieldreader_setcharmode(&bfreader,8);
   fieldreader_setinput(&bfreader,inputstream);
 
   unsigned int block;
@@ -104,7 +124,7 @@ int albase64func_frominput(char (*func_6bistochar)(unsigned int) , struct alinpu
     if ( read > 0 )
       {
 	bits+=read;
-	b64char = (*func_6bistochar)(block);
+	b64char = (*func_6bitstochar)(block);
 	// addchar to output
 	aloutputwritechar(output,b64char);
       }
@@ -124,6 +144,82 @@ int albase64func_frominput(char (*func_6bistochar)(unsigned int) , struct alinpu
 	}
     }
 
+  return 0;
+}
+
+
+int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output)
+{
+  int bits = 0;
+  int read = 0;
+  unsigned char bitblock =0;
+  unsigned char charto6bits[256];
+
+  // build reverse table for char to 6bits
+  setup_charto6bits(func_6bitstochar,charto6bits);
+
+  /*
+  struct bitfieldreader bfreader;
+  fieldreader_init(&bfreader);
+  fieldreader_setinput(&bfreader,inputstream);
+  */
+    
+  struct bitfieldwriter bfoutput;
+  bitfieldwriter_init(&bfoutput);
+  // force 8bits char storage 
+  // bfoutput.dataSize=8;
+  bitfieldwriter_setoutputstream( &bfoutput,output);
+    
+  unsigned char c;
+  do {
+    c=alinputstream_readuchar(inputstream);
+    if ( c==0)
+      {
+	read = 0;
+      }
+    else
+      {
+	read = 1;
+      }
+    
+    /*
+    block = fieldreader_read( &bfreader, 8);
+    if ( bitfieldreader_is_eof(&bfreader) )
+      {
+	read =  bitfieldreader_get_readbits(&bfreader);
+      }
+    else
+      {
+	read=8;
+      }
+    */
+    if ( read > 0 )
+      {
+	// does it trace ? where ?
+	bitblock = charto6bits[c];
+	aldebug_printf(DBGSTREAM,"%c%i.",c,bitblock);
+	if ( bitblock < 64 )
+	  {
+	    // add 6 bits to output.
+	    bitfieldwriter_write(&bfoutput, (unsigned int) bitblock, 6);
+	  }
+	else
+	  if ( bitblock == 64 )
+	    {
+	      // complement case
+	      // TODO how to handle complement padding ??
+	    }
+	  else
+	    {
+	      // ERROR case
+	      return 1;
+	    }
+      }
+  } while ( read == 1 );
+
+  
+  bitfieldwriter_padtobyte(&bfoutput);
+			   
   return 0;
 }
 

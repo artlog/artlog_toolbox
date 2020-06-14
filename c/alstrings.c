@@ -423,7 +423,33 @@ unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
     }
   return result;  
 }
+
+// read an unsigned int that was stored in little endian at offset in datablock
+unsigned int aldatablock_get_uint32le(aldatablock * data, int offset)
+{
+  // todo check datablock type
+  unsigned int result = 0;
+  if ( data->length >= offset + 4)
+    {
+      unsigned char * intern = (unsigned char *) &result;
+      unsigned char * hack = &data->data.ucharptr[offset];
   
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      memcpy(intern,hack,8);
+#else
+      intern[0]=hack[3];
+      intern[1]=hack[2];
+      intern[2]=hack[1];
+      intern[3]=hack[0];
+#endif
+    }
+  else
+    {
+      aldebug_printf(DBGSTREAM,"|ERROR] get int out of bound %i/%i\n", offset,data->length);
+    }
+  return result;  
+}
+
 void aldatablock_setcstring(aldatablock * block,char * cstring)
 {
   block->data.charptr = cstring;

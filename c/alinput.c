@@ -15,6 +15,7 @@ void alinputstream_init(struct alinputstream * stream, int fd)
   stream->fd=fd;
   stream->input.data.ptr=NULL;
   stream->type = ALINPUTSTREAM_TYPE_FD;
+  stream->block = ALINPUTSTREAM_BLOCK_32BE;
 }
 
 void alinputstream_set_close_callback(struct alinputstream * stream, alinput_callback input_callback, void * data)
@@ -121,7 +122,15 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
       unsigned int res = 0;
       if (  stream->input.length >= stream->offset + 4 )
 	{
-	  res = aldatablock_get_uint32be(&stream->input, stream->offset);
+	  if ( stream->block == ALINPUTSTREAM_BLOCK_32BE )
+	    {
+	      res = aldatablock_get_uint32be(&stream->input, stream->offset);
+	    }
+	  else // ALINPUTSTREAM_BLOCK_32LE
+	    {
+	      // needed when using char stream on intel by example
+	      res = aldatablock_get_uint32le(&stream->input, stream->offset);
+	    }
 	  stream->offset += 4;
 	}
       else
@@ -131,6 +140,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	    {
 
 	      int d =0;
+	      // to check in ALINPUTSTREAM_BLOCK_32LE case
 	      for (d=0; d<remain;d++)
 		{
 		  res = ( res * 256 ) + stream->input.data.ucharptr[d];
@@ -171,6 +181,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	      break;
 	    }
 	}
+       // to check in ALINPUTSTREAM_BLOCK_32LE case
       // reverse big endian => little endian ( internal intel int )
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
       result[0]=v[3];
@@ -201,6 +212,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
 
   if ( read(stream->fd,&result,1) == 1 )
     {
+      stream->bits = 8;
       return result;
     }
   else
@@ -213,7 +225,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
 	}
       else
 	{
-	  // set eof only if ful chain is eof.
+	  // set eof only if full chain is eof.
 	  alinputstream_seteof(stream);
 	  result = 0;
 	}

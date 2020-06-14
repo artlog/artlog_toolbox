@@ -16,6 +16,13 @@ void fieldreader_init(struct bitfieldreader * this)
   this->dataSize=32;
   this->readbits=0;
   this->eof=0;
+  this->read=0;
+  this->bitOffset=0;
+}
+
+void fieldreader_setcharmode(struct bitfieldreader * this,unsigned int charbitsize)
+{
+  this->dataSize = charbitsize;
 }
 
 void fieldreader_free(struct bitfieldreader * this)
@@ -25,7 +32,16 @@ void fieldreader_free(struct bitfieldreader * this)
 
 unsigned int fieldreader_nextword(struct bitfieldreader * this)
 {
-  unsigned int field  = alinputstream_readuint32(this->stream);
+  unsigned int field = 0;
+  if ( this->dataSize == 8 )
+    {
+      // assume char mode
+      field = (unsigned int) alinputstream_readuchar(this->stream);
+    }
+  else
+    {
+      field = alinputstream_readuint32(this->stream);
+    }
   if ( this->stream->eof == 1 )
     {
       int bits = alinputstream_get_readbits(this->stream);

@@ -26,8 +26,8 @@ void bitfieldwriter_init(struct bitfieldwriter * this);
 
 void bitfieldwriter_setoutputstream( struct bitfieldwriter * this, struct aloutputstream * outputstream);
 
-/** write a value of bitsize in big endian */
-void bitfieldwriter_write( struct bitfieldwriter * this, int value, int bitsize);
+/** write a value of bitsize in big endian that is aligned on right in least significant part*/
+void bitfieldwriter_write( struct bitfieldwriter * this, unsigned int value, int bitsize);
 
 /*
   write/flush all current datas if any

@@ -12,6 +12,12 @@ enum alinputstream_type {
   ALINPUTSTREAM_TYPE_SHARED_CHILD,
 };
 
+enum alinputstream_block {
+  ALINPUTSTREAM_BLOCK_32BE,
+  ALINPUTSTREAM_BLOCK_32LE,
+};
+  
+
 struct alinputstream_share_child {
   // when forked
   struct alinputstream * parent;
@@ -27,6 +33,7 @@ typedef int (*alinput_callback) (struct alinputstream * input);
 struct alinputstream {
   ALDEBUG_DEFINE_FLAG(debug)
   enum alinputstream_type type;
+  enum alinputstream_block block;
   int fd;
   int eof;
   int bits; // last bits read during last operation ( with eof )

@@ -42,7 +42,10 @@ void bitfieldwriter_init(struct bitfieldwriter * this)
 
 /** write at current offset
 assume never write more than needed bits to complete a word 
-assume meaningfull bits are aligned at right in least significant part */
+assume meaningfull bits are aligned at right in least significant part 
+
+will cumulate bits from left in most significant part.
+*/
 void bitfieldwriter_internal_write(struct bitfieldwriter * this, unsigned int field, int bits)
 {
   if ( bits == this->dataSize )
@@ -50,21 +53,30 @@ void bitfieldwriter_internal_write(struct bitfieldwriter * this, unsigned int fi
       // special case to keep sign
       this->nextWord = field; 
       this->bitOffset = 0;
+      // a new word is needed
+      bitfieldwriter_newword(this);
     }
   else
     {
-      field = field & ( 0xFFFFFFFF >> ( this->dataSize - bits));
+      // seems sign bit might be lost here... to check
+      // field = field & ( 0x7FFFFFFF >> ( this->dataSize - bits - 1 ));
       this->nextWord = this->nextWord | ( field << ( this->dataSize - bits - this->bitOffset));
-      this->bitOffset = (this-> bitOffset + bits ) % this->dataSize; 
+      unsigned int newOffset  = this->bitOffset + bits; 
+      if ( newOffset >= this->dataSize )
+	{
+	  bitfieldwriter_newword(this);
+	}
+      else
+	{
+	  this->bitOffset = newOffset;
+	}
     }       
-  // a new word is needed
-  if ( this->bitOffset == 0 )
-    {
-      bitfieldwriter_newword(this);
-    }
+
 }
 
-void bitfieldwriter_write(struct bitfieldwriter * this, int field, int bits)
+
+// assume meaningfull bits are aligned at right in least significant part 
+void bitfieldwriter_write(struct bitfieldwriter * this, unsigned int field, int bits)
 {
   if ( this->dataSize >  bits_per_int )
     {
@@ -85,7 +97,7 @@ void bitfieldwriter_write(struct bitfieldwriter * this, int field, int bits)
     int remainingbits = bits - bitstofill;
     
     // most significant bits first, suppress least significant bits
-    bitfieldwriter_internal_write( this, field >> remainingbits, bitstofill);
+    bitfieldwriter_internal_write( this, ((field & 0x7FFFFFF) >> remainingbits) , bitstofill);
 
     // no need of newWord() previous write already done it
 
