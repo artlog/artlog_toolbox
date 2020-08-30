@@ -117,15 +117,7 @@ int main(int argc, char ** argv)
 	      aldatablock * result = alcryptohash_tool_from_input(&sha2x, &input, readblocksize);
 	      dump_result(&sha2x,result);
 				      
-	      fclose(f);
-
-	      /*
-	      f = fopen(filename,"r");
-	      alinputstream_init(&input, fileno(f));
-	      albase64_frominput(&input,NULL);	      
-	      fclose(f);
-	      */
-	      
+	      fclose(f);	      
 	    }
 	  else
 	    {

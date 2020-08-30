@@ -361,6 +361,29 @@ void aldatablock_bzero(aldatablock * data,int offset, int length)
   }
 }
 
+void aldatablock_fill_uchar(aldatablock * data,int offset, int length, unsigned char fill)
+{
+  if ( fill == 0 )
+    {
+      aldatablock_bzero(data,offset,length);
+    }
+  else
+    {
+      // todo check datablock type
+      if ( ( offset >=0 ) && ( data->length >= offset + length ) )
+	{
+	  unsigned char * uchar_data = data->data.ucharptr;
+	  if (uchar_data != NULL)
+	    {
+	      for ( int i = offset; i < length + offset; i++ )
+		{
+		  uchar_data[i] = fill;
+		}
+	    }
+	}
+    }
+}
+
 // return new offset 
 int aldatablock_write_uint64be(aldatablock * data, int offset, unsigned long long value )
 {

@@ -123,6 +123,8 @@ unsigned int aldatablock_get_uint32le(aldatablock * data, int offset);
 
 void aldatablock_bzero(aldatablock * data,int offset, int length);
 
+void aldatablock_fill_uchar(aldatablock * data,int offset, int length,unsigned char fill);
+
 // return new offset 
 int aldatablock_write_uint64be(aldatablock * data, int offset, unsigned long long value );
 
