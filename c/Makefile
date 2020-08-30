@@ -1,6 +1,6 @@
 BUILD=../build
 
-BINARIES=c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alpadfile hashtree salsa20 alimp
+BINARIES=c_parser albase json_to_c_stub_sample cryptohash bitfield aljson_ld alpadfile hashtree salsa20 alimp base64
 BUILT_BINARIES=$(addprefix $(BUILD)/,$(BINARIES))
 
 all: $(BUILT_BINARIES)
@@ -14,8 +14,11 @@ $(BUILD)/albase: albase.c albase_test.c  alstrings.c aldebug.c aloutput.c
 $(BUILD)/json_to_c_stub_sample: aljson_encoder.c json_to_c_stub.c json_to_c_stub_sample.c albase.c
 	gcc -g -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson -lalcommon -laldev -lalhash  -lalstack -Wl,-Bdynamic -lm
 
-$(BUILD)/cryptohash: alcryptohash_test.c alcryptohash.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alcryptohash_tool.c aloutput.c
+$(BUILD)/cryptohash: alcryptohash_test.c alcryptohash.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c alcryptohash_tool.c albitfieldwriter.c aloutput.c
 	gcc -g -O0 -o $@ $^
+
+$(BUILD)/base64: albase64url_main.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c aloutput.c albitfieldwriter.c al_options.c
+	gcc -g -O0 -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash  -Wl,-Bdynamic
 
 $(BUILD)/salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c  aloutput.c
 	gcc -g -O0 -o $@ $^

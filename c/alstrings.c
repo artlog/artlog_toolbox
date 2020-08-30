@@ -361,6 +361,29 @@ void aldatablock_bzero(aldatablock * data,int offset, int length)
   }
 }
 
+void aldatablock_fill_uchar(aldatablock * data,int offset, int length, unsigned char fill)
+{
+  if ( fill == 0 )
+    {
+      aldatablock_bzero(data,offset,length);
+    }
+  else
+    {
+      // todo check datablock type
+      if ( ( offset >=0 ) && ( data->length >= offset + length ) )
+	{
+	  unsigned char * uchar_data = data->data.ucharptr;
+	  if (uchar_data != NULL)
+	    {
+	      for ( int i = offset; i < length + offset; i++ )
+		{
+		  uchar_data[i] = fill;
+		}
+	    }
+	}
+    }
+}
+
 // return new offset 
 int aldatablock_write_uint64be(aldatablock * data, int offset, unsigned long long value )
 {
@@ -423,7 +446,33 @@ unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
     }
   return result;  
 }
+
+// read an unsigned int that was stored in little endian at offset in datablock
+unsigned int aldatablock_get_uint32le(aldatablock * data, int offset)
+{
+  // todo check datablock type
+  unsigned int result = 0;
+  if ( data->length >= offset + 4)
+    {
+      unsigned char * intern = (unsigned char *) &result;
+      unsigned char * hack = &data->data.ucharptr[offset];
   
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      memcpy(intern,hack,8);
+#else
+      intern[0]=hack[3];
+      intern[1]=hack[2];
+      intern[2]=hack[1];
+      intern[3]=hack[0];
+#endif
+    }
+  else
+    {
+      aldebug_printf(DBGSTREAM,"|ERROR] get int out of bound %i/%i\n", offset,data->length);
+    }
+  return result;  
+}
+
 void aldatablock_setcstring(aldatablock * block,char * cstring)
 {
   block->data.charptr = cstring;

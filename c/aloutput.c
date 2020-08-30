@@ -139,7 +139,7 @@ void aloutputstream_flush(struct aloutputstream * stream, int word, int bits)
       if ( bits > 0 )
 	{
 	  int bytes = ((bits-1) / CHAR_BIT) + 1;
-	  aldebug_printf(DBGSTREAM,"last pad to byte %i\n", bytes);      
+	  aldebug_printf(DBGSTREAM,"last pad to bits %i byte %i\n", bits, bytes);      
 	  if ( aloutputstream_is_file(stream) )
 	    {
 	      aloutputstream_writeint32_fd(stream,word,stream->fd, bytes);

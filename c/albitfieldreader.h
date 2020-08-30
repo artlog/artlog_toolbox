@@ -18,6 +18,8 @@ struct bitfieldreader * new_fieldreader();
 
 void fieldreader_init(struct bitfieldreader * this);
 
+void fieldreader_setcharmode(struct bitfieldreader * this,unsigned int charbitsize);
+
 /* value returned is an int between 0 and 2^bits-1 */
 int fieldreader_read( struct bitfieldreader * this, int bits );
 
