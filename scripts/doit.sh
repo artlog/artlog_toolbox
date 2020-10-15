@@ -347,7 +347,11 @@ do
 	    echo "run it"
 	    {
 		source ./project_params
-		java -cp $(make -f ${JAVA_MAKEFILE} getname):$(make -f ${JAVA_MAKEFILE} getjavalibs) $project_mainclass
+		javalibs=$(make -f ${JAVA_MAKEFILE} getjavalibs|awk '{ printf "%s:",$1 }')
+		mainlib=$(make -f ${JAVA_MAKEFILE} getname)
+		javarun="java -cp $mainlib:$javalibs $project_mainclass"
+		echo $javarun
+		$javarun
 	    }
 	else
 	    make
