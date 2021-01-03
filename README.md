@@ -95,22 +95,43 @@ albnf was developped to be able to parse uri using ABNF description of those.
 use alabnf within aliri.c to provide iri parsing
 
 
-
-
-../build/aljson_ld dry_run=/home/plhardy.new/artisanlogiciel/code/artlog_toolbox/samples/ololo.json
+../build/aljson_ld dry_run=../samples/ololo.json
 [INFO] json_ld is an extension of aljson for json_ld support
-[WARNING] NOT YET IMPLEMENTED
+[WARNING] NOT YET FULLY IMPLEMENTED
 usage:
 get key index : get_keyword_index=/keyword/
 list keywords : list_keywords=/keyword/
 dry_run keywords : dry_run
 -----
-json input file=/home/plhardy.new/artisanlogiciel/code/artlog_toolbox/samples/ololo.json
-0x55f78870e7c0
-
+json input file=../samples/ololo.json
+0x556f59639800
+{"abc":"edf","json":"crab","ololo":[1,2,3],"subcrab":{"name":"crab","surname":"subcrab"}}
 aljson_ld.c:196 NOT YET implemented
+[DEBUG] free bucket 0x556f59636bf0
+[DEBUG] alhash release 0x556f596362c0 autogrow 200 
 
-__________________________________________________________
+
+
+../build/aljson_ld list_keywords
+[INFO] json_ld is an extension of aljson for json_ld support
+[WARNING] NOT YET FULLY IMPLEMENTED
+0 @context CONTEXT Used to define the short-hand names that are used throughout a JSON-LD document. These short-hand names are called terms and help developers to express specific identifiers in a compact manner. The @context keyword is described in detail in section 5.1 The Context.
+1 @id ID Used to uniquely identify things that are being described in the document with IRIs or blank node identifiers. This keyword is described in section 5.3 Node Identifiers.
+2 @value VALUE Used to specify the data that is associated with a particular property in the graph. This keyword is described in section 6.9 String Internationalization and section 6.4 Typed Values.
+3 @language LANGUAGE Used to specify the language for a particular string value or the default language of a JSON-LD document. This keyword is described in section 6.9 String Internationalization.
+4 @type TYPE Used to set the data type of a node or typed value. This keyword is described in section 6.4 Typed Values.
+5 @container CONTAINER Used to set the default container type for a term. This keyword is described in section 6.11 Sets and Lists.
+6 @list LIST Used to express an ordered set of data. This keyword is described in section 6.11 Sets and Lists.
+7 @set SET Used to express an unordered set of data and to ensure that values are always represented as arrays. This keyword is described in section 6.11 Sets and Lists.
+8 @reverse REVERSE Used to express reverse properties. This keyword is described in section 6.12 Reverse Properties.
+9 @index INDEX Used to specify that a container is used to index information and that processing should continue deeper into a JSON data structure. This keyword is described in section 6.16 Data Indexing.
+10 @base BASE Used to set the base IRI against which relative IRIs are resolved. This keyword is described in section 6.1 Base IRI.
+11 @vocab VOCAB Used to expand properties and values in @type with a common prefix IRI. This keyword is described in section 6.2 Default Vocabulary.
+12 @graph GRAPH Used to express a graph. This keyword is described in section 6.13 Named Graphs.
+13 : X The separator for JSON keys and values that use compact IRIs.
+[DEBUG] free bucket 0x563e036bbbf0
+[DEBUG] alhash release 0x563e036bb2c0 autogrow 200 
+______________________________________________
 
 base64
 
@@ -127,3 +148,23 @@ will create a outfile in current directory with base64 url encoded of filename c
 
 build/base64 -u -d in=filename out=outfile
 will create a outfile in current directory with base64 url decoded of filename content
+
+______________________________________________
+
+cbor
+
+see c/cbor/README 
+
+cd c/cbor
+make
+
+# cbor decoding
+c/cbor$ for cbf in samples/*.cbor; do ../../build/cbor_main infile=$cbf outfile=$cbf.out; done
+
+# cbor encoding : use inform=json
+../../build/cbor_main inform=json infile=../../samples/ololo.json outfile=samples/ololo.cbor
+
+# decode again...
+../../build/cbor_main outfile=samples/ololo.json.out infile=samples/ololo.cbor
+
+_______________________________________________

@@ -16,7 +16,7 @@ void usage()
   printf("usage:\n");
   printf("get key index : %s=/keyword/\n", GET_KEYWORD_INDEXSTR0);
   printf("list keywords : %s=/keyword/\n", LIST_KEYWORDSSTR0);
-  printf("dry_run keywords : %s\n", DRY_RUNSTR0);
+  printf("%s : %s=<inputfile>\n", DRY_RUNSTR0);
 }
 
 int main(int argc, char ** argv)
@@ -102,6 +102,11 @@ int main(int argc, char ** argv)
 	      struct aljson_ld_named_graph * test = aljson_ld_build_from_json(context,root);
 	      // TODO close inputstream
 	      alinputstream_close(&inputstream);
+	    }
+	  else
+	    {
+	      // al way to display errors ?
+	      printf("[ERROR] file '%s' not found\n", dry_run->data.charptr);
 	    }
 	}
     }

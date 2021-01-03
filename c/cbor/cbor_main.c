@@ -93,6 +93,12 @@ int main(int argc, char ** argv )
 			  alcbor_encoder_init(&encoder, &output);		      
 			  alcbor_encoder_json_object(root,&encoder.output_context);
 			}
+		      else
+			{
+			  aldebug_printf(DBGSTREAM,"[ERROR] file to parse '" ALPASCALSTRFMT "' not recognized as json \n",
+					 ALPASCALSTRARGS(infiledata->length,infiledata->data.charptr));
+
+			}
 		    }
 		  else
 		    {

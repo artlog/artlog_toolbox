@@ -104,15 +104,13 @@ int aljson_ld_is_keyword_internal(char * string, struct alhash_table * table)
       // using ALTYPE_FLAG_EMBED can be 0
       return entry->value.data.number;
     }
-
-  // NYI
-  return -2;
+  return AL_EC_INDEX_NOT_FOUND;
 }
 
 void aljson_ld()
 {
   printf("[INFO] json_ld is an extension of aljson for json_ld support\n");
-  printf("[WARNING] NOT YET IMPLEMENTED\n");
+  printf("[WARNING] NOT YET FULLY IMPLEMENTED\n");
 
   int index = 0;
 
@@ -187,12 +185,13 @@ enum aljson_ld_keyword_index aljson_ld_is_keyword(char * string)
   else
     {
       // INITIALIZATION ERROR
-      return -2;
+      return AL_EC_INIT_MISSING;
     }
 }
 
 struct aljson_ld_named_graph * aljson_ld_build_from_json(struct aljson_ld_context* context, struct json_object * root)
 {
-  printf("%s:%i NOT YET implemented\n",__FILE__,__LINE__);
+  printf("%s:%i %s NOT YET implemented. complete iri parsing please.\n",__FILE__,__LINE__,__FUNCTION__);
+  
   return NULL;
 }

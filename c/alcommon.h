@@ -21,6 +21,7 @@ enum al_global_error_code {
   AL_EC_INVALID_INPUT=-2,
   //! more precise than invalid input, error is in one parameter
   AL_EC_INVALID_PARAMETER=-3,
+  // ! error while accessing a file
   AL_EC_FILE_ERROR=-4,
   // ! eof reached stopping current action
   AL_EC_EOF=-5,
@@ -28,6 +29,10 @@ enum al_global_error_code {
   AL_EC_OOB=-6,
   // this should not happen but will...
   AL_EC_BUG=-7,
+  // expected value has no corresponding index
+  AL_EC_INDEX_NOT_FOUND=-8,
+  // some initialization is missing
+  AL_EC_INIT_MISSING=-9,
   AL_EC_OK=1,
   AL_EC_FALSE=0,
   // neither true or false, process should continue to know it
