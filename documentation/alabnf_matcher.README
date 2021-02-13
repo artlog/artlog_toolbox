@@ -8,6 +8,89 @@ ABNF https://fr.wikipedia.org/wiki/Augmented_Backus-Naur_Form
 
 __________________________________________________________________________________________________________________________
 
+
+3th january 2021 current status
+_______________________________
+
+nothing really new since may 2020 ...
+missing good docuemntation and quick way to understand design, each restart on this project is painful.
+
+what is difference between alabnf and alabnf_matcher ?
+
+alabnf parses abnf
+alabnf_parser uses abnf graph to parse a text that should match this abnf.
+
+what we would like : a alabnf_to_c that creates a c code parsing for the given abnf.
+could take some input to show what rules should be visible at c api level.
+
+struct alabnf {
+  // does contain a hash_table dict which is used for rule_def resolution
+  alhash_context context;
+  struct alabnf_rule root_rule;
+};
+
+
+
+~/artisanlogiciel/code/artlog_toolbox$ build/alabnf_matcher abnf/rfc3986_part.abnf abnf/rfc5234_core.abnf
+(...)
+[FATAL] TOO MANY STEPS (NULL char) state ALPHA('0x558a64f91520' T16 IT6 current 0x558a64f93be0 current_type 6 index 0)  in alabnf_matcher.c alabnf_matcher_resolve_state_node 890
+
+
+[INFO] in alabnf.c:alabnf_close_rule:1375
+scheme = (
+next 0x564126808eeb node 0x564126808ce0
+(!!!)ALPHA 
+next (nil) node 0x564126808d00
+*(
+next (nil) node 0x564126808d40
+{node 0x564126808ce0 alt 0x564126808eab
+(!!!)ALPHA/node 0x564126808d80 alt (nil)
+{node 0x564126808d60 alt 0x564126808e8b
+(!!!)DIGIT/node 0x564126808dc1 alt (nil)
+{node 0x564126808da0 alt 0x564126808e6b
+"+"/node 0x564126808e02 alt (nil)
+{node 0x564126808de1 alt 0x564126808e4b
+"-"/node 0x564126808e22 alt (nil)
+"."}}}}))
+[TODO]
+
+
+build/alabnf_matcher 5000 abnf/rfc3987_part.abnf abnf/rfc3986_part.abnf abnf/rfc5234_core.abnf
+
+
+
+
+echo "http" | build/alabnf_matcher 5000 abnf/rfc5234_core.abnf
+
+[DEBUG] ALABNF_MATCH_FULL ('104','h') state (NULL state)  in alabnf_matcher.c alabnf_match 1002
+^^SUCCESS
+unmatched chars (please hit Ctrl+D)
+ttp
+
+ok did match ALPHA
+
+echo "http" | build/alabnf_matcher 5000 abnf/rfc3986_part.abnf abnf/rfc5234_core.abnf > match.txt^C
+plhardy@pavilionartlogiciel:~/artisanlogiciel/code/artlog_toolbox$ cat match.txt 
+scheme = (ALPHA *({ALPHA/{DIGIT/{"+"/{"-"/"."}}}}))
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^SUCCESS
+unmatched chars (please hit Ctrl+D)
+
+ok did match scheme
+
+would be wonderful to have : "scheme"="http145-.+YEP"
+
+
+
+echo 'http+-12322.:' | build/alabnf_matcher 5000 abnf/small_iri.abnf abnf/rfc3986_part.abnf abnf/rfc5234_core.abnf
+
+small_iri.abnf
+IRI            = scheme ":"   ; ihier-part [ "?" iquery ] [ "#" ifragment ]
+
+[FATAL] unresolved rule_ref in alabnf_matcher.c:alabnf_matcher_specialize_reference:351
+rulename=ucschar
+
+
+
 20th may 2019 current status
 ____________________________
 

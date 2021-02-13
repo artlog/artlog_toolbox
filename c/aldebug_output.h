@@ -4,6 +4,7 @@
 #include "aloutput.h"
 
 struct aldebugconfig {
+  int muted;
   struct aloutputstream output;
 };
 
@@ -15,6 +16,12 @@ extern struct aldebugconfig aldebug_default;
 void aldebug_start(char * ouput_uri);
 
 void aldebug_end();
+
+// temporary mute any debug
+void aldebug_mute();
+
+// unmute globally
+void aldebug_unmute();
 
 void aldebug_printf(struct aldebugconfig * debugconfig, const char *format, ...);
 

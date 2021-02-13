@@ -168,3 +168,31 @@ c/cbor$ for cbf in samples/*.cbor; do ../../build/cbor_main infile=$cbf outfile=
 ../../build/cbor_main outfile=samples/ololo.json.out infile=samples/ololo.cbor
 
 _______________________________________________
+
+abnf
+
+
+intention is to parse a anbf decription of iri directly for json_ld ... seems vastly too complicated for purpose.
+
+see documention/alabnf_matcher.README
+
+c/abnf
+make all
+
+read/parse a stream of ABNF syntax and create and struct abnf* internal representation of it
+
+build/alabnf infile=abnf/rfc3986_part.abnf
+
+build/alabnf_matcher 5000 abnf/testrange.abnf
+
+build/alabnf_matcher abnf/rfc3986_part.abnf abnf/rfc5234_core.abnf
+
+
+________________________________________________
+
+c_parser
+
+parses and generate c code ... very messy
+
+see docuementation/c_parser.txt
+_________________________________________________

@@ -31,9 +31,13 @@ int main(int argc, char * argv[])
 	{
 	  // dump it
 	  {
+	    aldebug_mute();
+	    
 	    struct aloutputstream output;
 	    aloutputstream_fd_init(&output, fileno(stdout));
 	    alabnf_dump_rule(&output,&alabnf->root_rule);
+
+	    aldebug_unmute();
 	  }
 	  
 	  aldebug_printf(DBGSTREAM,"[INFO] parsed abnf %p\n", alabnf);
