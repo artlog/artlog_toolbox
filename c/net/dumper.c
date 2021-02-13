@@ -69,7 +69,7 @@ void print_addrinfo(FILE * fp, struct addrinfo * addrinfo)
   fprintf(fp, "\n");
 }
 
-int display_address(char * h_addr, struct hostent * hostent)
+int display_address(FILE* fp,char * h_addr, struct hostent * hostent)
 {
   if ((hostent->h_addrtype == AF_INET6) || (hostent->h_addrtype == AF_INET))
     {
@@ -82,7 +82,7 @@ int display_address(char * h_addr, struct hostent * hostent)
   return 1;
 }
 
-int display_hostent(struct hostent * hostent)
+int display_hostent(FILE* fp,struct hostent * hostent)
 {
   if (hostent == NULL)
     {
@@ -90,16 +90,18 @@ int display_hostent(struct hostent * hostent)
       return 1;
     }
   
-  printf("official host name:'%s'", hostent->h_name);
+  fprintf(fp,"official host name:'%s'", hostent->h_name);
   int alias;
   for (alias=0; hostent->h_aliases[alias] != NULL; alias ++)
     {
-      fprintf(stdout,"alias[%i]=%s",alias,hostent->h_aliases[alias]);
+      fprintf(fp,"alias[%i]=%s",alias,hostent->h_aliases[alias]);
+      fprintf(fp, "\n");
     }
   int aindex;
   for (aindex=0; hostent->h_addr_list[aindex] != NULL; aindex ++)
     {
-      display_address(&(hostent->h_addr_list[aindex]), hostent);
+      display_address(fp,&(hostent->h_addr_list[aindex]), hostent);
+      fprintf(fp, "\n");
     }
 
   return 1;

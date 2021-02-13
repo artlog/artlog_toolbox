@@ -12,6 +12,7 @@
 #include "dumper.h"
 #include "resolve.h"
 #include "loopbackserv.h"
+#include "alinput_sock.h"
 
 #define STRINGIFY(x) #x
 #define STRINGIFYDEFINED(x)  STRINGIFY(x)
@@ -25,49 +26,6 @@ void usage() {
 }
 
 
-int do_connect(struct connect_info * connection)
-{
-    // TODO USE TLS ...
-  
-  struct addrinfo * ainfo = connection->addrinfo;
-
-  while ( ainfo != NULL )
-    {
-      int sockfd = socket(ainfo->ai_family,
-			  ainfo->ai_socktype,
-			  ainfo->ai_protocol);
-
-      if (sockfd <0 )
-	{
-	  perror("socket");
-	  exit(EXIT_FAILURE);
-	}
-
-      if ( connect(sockfd, ainfo->ai_addr, ainfo->ai_addrlen) == 0)
-	{
-	  // play with socket...
-	  connection->addrselected = ainfo;
-	  connection->altls_ctx=NULL;
-	  // connection->altls_ctx.tls_type=ALTLS_TYPE_CLEARTEST;
-
-	  close(sockfd);
-	  int number = 50;
-	  int seconds = 10;
-	  printf("connecting during %i seconds with %i connections\n",seconds, number);
-	  alconn_multiple_connect(number,connection, seconds);
-
-	  printf("connection closed, terminate\n");
-	  break;
-	}
-      else
-	{
-	  printf("can't connect, continue\n");
-	  ainfo = ainfo->ai_next;
-	}
-    }
-  
-  return 1;
-}
 
 int main(int argc, char **argv)
 {
@@ -90,12 +48,29 @@ int main(int argc, char **argv)
   resolve_old(host,LOOPBACKSERV_PORT,AF_INET6);
   resolve_old(host,LOOPBACKSERV_PORT,AF_INET);
   
-  if ( connection.addrinfo != NULL )
+  if ( connection.addrinfo == NULL )
     {
+      fprintf(stderr,"[INFO] connection.addrinfo != NULL \n");
       connect_info_release(&connection);
       exit(1);
     }
 
-  do_connect(&connection);
+  struct alinputstream inputconn;
+  if ( alinput_sock_open_init(&inputconn,&connection) == AL_EC_OK)
+    {
+      int number = 50;
+      int seconds = 10;
+      printf("connecting during %i seconds with %i connections\n",seconds, number);
+      alconn_multiple_connect(number,&connection, seconds);
+	
+      printf("connection closed, terminate\n");
+      
+      alinputstream_close(&inputconn);
+      connect_info_release(&connection);
+    }
+  else
+    {
+      fprintf(stderr,"[ERROR] can't create socket\n");
+    }
 
 }

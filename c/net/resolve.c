@@ -131,7 +131,7 @@ int resolve_old( char * host, int port, int inet_type)
       return lherrno;
     }
 
-  display_hostent(&hostent);
+  display_hostent(stdout,&hostent);
   free(buffer);
   return 0;
   
