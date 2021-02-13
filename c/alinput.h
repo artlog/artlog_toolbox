@@ -10,6 +10,7 @@ enum alinputstream_type {
   ALINPUTSTREAM_TYPE_FD,
   ALINPUTSTREAM_TYPE_SHARED,
   ALINPUTSTREAM_TYPE_SHARED_CHILD,
+  ALINPUTSTREAM_TYPE_NET         ,
 };
 
 enum alinputstream_block {
@@ -29,6 +30,7 @@ struct alinputstream_share_child {
 };
 
 typedef int (*alinput_callback) (struct alinputstream * input);
+typedef int (*alinput_read_block_at_cb) (struct alinputstream * input, aldatablock * block, int offset, int length);
 
 struct alinputstream {
   ALDEBUG_DEFINE_FLAG(debug)
@@ -48,9 +50,12 @@ struct alinputstream {
   } child;
   int mark;
   int self_offset;
+  int total_read;
+  int last_read;
   struct alinputstream * next_chain;
+  alinput_read_block_at_cb read_block_at;
   alinput_callback close_callback;
-  void * private;  
+  void * private;
 };
 
 ALDEBUG_DECLARE_FUNCTIONS(struct alinputstream,alinputstream)

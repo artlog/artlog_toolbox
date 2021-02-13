@@ -16,6 +16,9 @@ void alinputstream_init(struct alinputstream * stream, int fd)
   stream->input.data.ptr=NULL;
   stream->type = ALINPUTSTREAM_TYPE_FD;
   stream->block = ALINPUTSTREAM_BLOCK_32BE;
+  stream->total_read=0;
+  stream->last_read=0;
+  stream->read_block_at=NULL;
 }
 
 void alinputstream_set_close_callback(struct alinputstream * stream, alinput_callback input_callback, void * data)
@@ -49,69 +52,56 @@ enum al_global_error_code  alinputstream_fd_read_datablock(struct alinputstream 
   size_t total = 0;
   size_t r = 0;
 
-  if ( offset + length <= block->length )
-    {       
-      // handle case where bytes are read in multiple chunks (often network issues)
-      while (total < length)
-	{
-	  r = read(stream->fd, &outbuf[offset + total], length - total);
-	  if ( r > 0 )
-	    {
-	      total = total + r;
-	    }
-	  else
-	    {
-	      stream->bits = total * CHAR_BIT;
-	      alinputstream_seteof(stream);
-	      return AL_EC_EOF;
-	    }
-	}
-    }
-  else
+  if (outbuf != NULL )
     {
-      return AL_EC_OOB;
-    }
+      if ( offset + length <= block->length )
+	{       
+	  // handle case where bytes are read in multiple chunks (often network issues)
+	  while (total < length)
+	    {
+	      r = read(stream->fd, &outbuf[offset + total], length - total);
+	      if ( r > 0 )
+		{
+		  total = total + r;
+		  stream->last_read = total;
+		}
+	      else
+		{
+		  stream->total_read += total;
+		  stream->last_read = total;
+		  stream->bits = total * CHAR_BIT;
+		  alinputstream_seteof(stream);
+		  return AL_EC_EOF;
+		}
+	    }
+	  stream->total_read += total;
+	}
+      else
+	{
+	  return AL_EC_OOB;
+	}
 
-  return AL_EC_OK;
+      return AL_EC_OK;
+    }
+  return AL_EC_BUG;
 }
 
 enum al_global_error_code alinputstream_read_block_at(struct alinputstream * stream, aldatablock * block, int offset, int length)
 {
-  if ( stream->input.data.ptr != NULL )
+  if ( stream->read_block_at != NULL )
     {
-      // NYI commented code copied from alinputstream_readuint32 but not fully adapted
-      /*
-      unsigned int res = 0;
-      if (  stream->input.length >= stream->offset + length )
-	{
-	  res = aldatablock_get_uint32be(&stream->input, stream->offset);
-	  stream->offset += length;
-	}
-      else
-	{
-	  int remain = stream->input.length - stream->offset;
-	  if ( remain > 0 )
-	    {
-
-	      int d =0;
-	      for (d=0; d<remain;d++)
-		{
-		  res = ( res * 256 ) + stream->input.data.ucharptr[d];
-		}
-//	      for (d<4;d++)
-//		{
-//		  res *= 256;		  
-//		}
-	      stream->bits = remain * CHAR_BIT;
-	    }
-	  alinputstream_seteof(stream);
-	}
-      */
-      return AL_EC_NYI;
+      return stream->read_block_at(stream,block,offset,length);
     }
   else
     {
-      return alinputstream_fd_read_datablock(stream,block,offset,length);
+      if ( stream->type == ALINPUTSTREAM_TYPE_FD )
+	{
+	  return alinputstream_fd_read_datablock(stream,block,offset,length);
+	}
+      else
+	{
+	  return AL_EC_NYI;
+	}
     }
 }
 
@@ -263,14 +253,6 @@ enum al_global_error_code alinputstream_readline(struct alinputstream * stream, 
   return AL_EC_FALSE;;
 }
 
-// WARNING not part of api ( but  alinputstream_foreach_block )
-int alinputstream_read_block(struct alinputstream * stream,
-			     aldatablock * block)
-{  
-  return read(stream->fd,block->data.charptr,block->length);
-}
-
-
 
 void alinputstream_foreach_block(
 				 struct alinputstream * stream,
@@ -286,12 +268,12 @@ void alinputstream_foreach_block(
   if ( datablock != NULL )
     {
       block.data.ptr=datablock;
-      int read = 0;
-      while ( ( read = alinputstream_read_block(stream, &block) ) == blocksize )
-	{
+      enum al_global_error_code ec = AL_EC_OK;
+      while ( ( ec = alinputstream_read_block_at(stream, &block, 0, block.length) ) == AL_EC_OK )
+	{	  
 	  (*callback) (&block,data);
 	}
-      block.length=read;
+      block.length=stream->last_read;
       if ( finalize != NULL )
 	{
 	  (*finalize) (&block,data);
@@ -305,7 +287,7 @@ int alinputstream_get_readbits(struct alinputstream * stream)
   return stream->bits;
 }
 
-  // create a new child stream ALLOC on heap
+// create a new child stream ALLOC on heap
 struct alinputstream * alinputstream_share_child_alloc()
 {
   struct alinputstream * child_stream = NULL;
