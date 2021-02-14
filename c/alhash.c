@@ -638,3 +638,19 @@ void alhash_context_release(alhash_context * hash_context)
   alstrings_ringbuffer_release(&hash_context->allocator.ringbuffer);
   alhash_release(&hash_context->dict);
 }
+
+int alhash_asint(struct alhash_datablock * str0, int ifnotset, int ifnan )
+{
+  if ( (str0 == NULL ) || (str0->data.charptr == NULL ) )
+    {
+      return ifnotset;
+    }
+  if (aldatablock_embeded(str0))
+    {
+      // NYI but if it does ...
+      return str0->data.number;
+    }
+  // TODO  could fully parse it and check if it is a number or not a number (nan)
+  return atoi(str0->data.charptr);
+  
+}

@@ -127,4 +127,6 @@ void alhash_dump_entry_as_string(struct alhash_entry * entry);
 
 int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int index);
 
+// not strings ...
+int alhash_asint(struct alhash_datablock * datablock, int ifnotset, int ifnan );
 #endif
