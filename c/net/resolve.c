@@ -7,7 +7,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <errno.h>
-
+#include "aldebug_output.h"
 
 #include "dumper.h"
 #include "resolve.h"
@@ -39,7 +39,8 @@ int connect_info_resolve(char * host, int port, struct connect_info * conn)
       result_code = getaddrinfo(hostname,portstr,&hints,&res);
       if (result_code != 0)
 	{
-	  fprintf(stderr,"getaddrinfo failed with %u code meaning %s", result_code, gai_strerror(result_code));
+	   aldebug_printf(DBGSTREAM,"getaddrinfo failed with %u code meaning %s\n", result_code, gai_strerror(result_code));
+	  return 0;
 	}
       
       for (addrinfo=res; addrinfo != NULL; addrinfo = addrinfo->ai_next)
