@@ -11,6 +11,7 @@ struct connect_info {
   struct addrinfo * addrinfo;
   // address we want to use
   struct addrinfo * addrselected;
+  int sockfd;
   char buffer[64];
   struct altls_context * altls_ctx;
 };

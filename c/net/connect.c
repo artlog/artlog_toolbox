@@ -32,6 +32,7 @@ int main(int argc, char **argv)
 
   struct connect_info connection;
   connection.addrinfo=NULL;
+  connection.addrselected=NULL;
  
   if (argc < 2)
     {
@@ -56,10 +57,12 @@ int main(int argc, char **argv)
     }
 
   struct alinputstream inputconn;
-  if ( alinput_sock_open_init(&inputconn,&connection) == AL_EC_OK)
+  // connect timeout = 1s
+  if ( alinput_sock_open_init(&inputconn,&connection,1000) == AL_EC_OK)
     {
       int number = 50;
       int seconds = 10;
+
       printf("connecting during %i seconds with %i connections\n",seconds, number);
       alconn_multiple_connect(number,&connection, seconds);
 	
