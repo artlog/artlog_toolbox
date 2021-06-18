@@ -1,5 +1,15 @@
 #!/bin/bash
 
+
+usage()
+{
+    echo "$0 tool is intended to be use to copy all toolbox scripts within current directory with some reference to toolbox version"
+
+    echo "destroy         removve all scripts deployed by this tool"
+    echo "h|-h|--h|help   this help"
+    echo "copy            default is to deploy scripts"
+}
+
 function update_migration()
 {
     if [[ ! -e deploy.version ]]
@@ -22,6 +32,30 @@ function update_migration()
     cp ${A_TOOLBOX}/.git/refs/heads/master deploy.version
 }
 
+destroy=0
+
+while [[ $# -gt 0 ]]
+do
+    case $1 in
+	destroy)
+	    destroy=1
+	    ;;
+	h|-h|--h|help)
+	    usage
+	    exit 1
+	    ;;
+	copy)
+	    copy=1
+	    ;;
+	*)
+	    echo "[ERROR] unrecognized '$1' argument for $0" >&2
+	    exit 1
+	;;
+    esac
+    shift 1
+done
+
+
 PROJECT_DIR=$(pwd)
 
 if [[ -z $ARTLOG_TOOLBOX ]]
@@ -39,25 +73,23 @@ then
     exit 1
 fi
 
-destroy=0
-
-while [[ $# -gt 0 ]]
-do
-    case $1 in
-	destroy)
-	    destroy=1
-	    ;;
-	*)
-	    echo "[ERROR] unrecognized '$1' argument for $0" >&2
-	    exit 1
-	;;
-    esac
-    shift 1
-done
-
-if [[ $destroy != 1 ]]
+if [[ $destroy == 1 ]]
 then
-    echo "Deploying scripts..."
+    echo "destroy deployed toolbox"
+    for script in $(ls ${A_TOOLBOX}/scripts)
+    do
+	if [[ -f $script ]]
+	then
+	    shortscript=$(basename "$script")
+            echo "deleting '$shortscript'"
+	    rm "${PROJECT_DIR}/$shortscript"
+	fi
+    done
+fi
+
+if [[ $copy == 1 ]]
+then
+    echo "Deploying scripts with copy..."
 
     pushd  ${A_TOOLBOX}
     GIGN=${PROJECT_DIR}/.gitignore
@@ -82,16 +114,5 @@ then
 
     echo "Update migration"
     update_migration
-    
-else
-    echo "destroy deployed toolbox"
-    for script in $(ls ${A_TOOLBOX}/scripts)
-    do
-	if [[ -f $script ]]
-	then
-	    shortscript=$(basename "$script")
-            echo "deleting '$shortscript'"
-	    rm "${PROJECT_DIR}/$shortscript"
-	fi
-    done
 fi
+
