@@ -17,7 +17,7 @@ then
     if [[ -x $ARTLOG_TOOLBOX/deploy.sh ]]
     then
 	# this current script can be altered by deploy, so exec
-	exec $ARTLOG_TOOLBOX/deploy.sh
+	exec $ARTLOG_TOOLBOX/deploy.sh copy
 	echo "[ERROR] ($0) should not reach this point" >&2
     else
 	echo "[ERROR] $ARTLOG_TOOLBOX/deploy.sh not found/executable" >&2

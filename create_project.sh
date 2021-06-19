@@ -174,22 +174,40 @@ fi
 
 THIS_TOOL=$0
 ARTLOG_TOOLBOX=$(dirname $(pwd)/$THIS_TOOL)
+
+echo "[INFO] Look for git repository" >&2
+
 # use current remote ( get first remote url listed in local config )
 ARTLOG_GIT_REPOSITORY=$(git config --local --get-regexp ^remote.*.url | awk 'NR==1 {print $2};')
+
+echo "[INFO] ARTLOG_GIT_REPOSITORY=$ARTLOG_GIT_REPOSITORY" >&2
 
 locatetoolbox=./scripts/locate_artlog_toolbox.sh
 if [[ -f $locatetoolbox ]]
 then
     source $locatetoolbox
 else
-    echo "[EROOR] missing $locatetoolbox" >&2
+    echo "[ERROR] missing $locatetoolbox" >&2
     usage
     exit 1
 fi
 
 select_artlog_toolbox artlog_toolbox
 
-echo "Using ARTLOG_TOOLBOX=$ARTLOG_TOOLBOX"
+# now ARTLOG_TOOLBOX should either be absolute or be relative to new project
+
+# quick and dirty hack  shold perhpas belong to select_artlog_toolbox ...
+if [[ "$ARTLOG_TOOLBOX" == "." ]]
+then
+    echo "[WARNING] relative . transformed to relative path" >&2
+    toolbox_absolute=$(readlink -f $(pwd)/$ARTLOG_TOOLBOX)
+    ARTLOG_TOOLBOX=../$(basename $toolbox_absolute)
+else
+    toolbox_absolute=$ARTLOG_TOOLBOX
+fi
+
+echo "[INFO] Using ARTLOG_TOOLBOX=$ARTLOG_TOOLBOX" >&2
+echo "[INFO] toolbox_absolute=$toolbox_absolute" >&2
 
 check_dependencies
 
@@ -238,9 +256,19 @@ then
     exit 1
 fi
 
-cp $ARTLOG_TOOLBOX/scripts/locate_artlog_toolbox.sh $project_name/init.sh
+init_target_script=$project_name/init.sh
 
-cat <<EOF >>$project_name/init.sh
+source_locate_artlog_toolbox=$toolbox_absolute/scripts/locate_artlog_toolbox.sh
+
+if [[ -f $source_locate_artlog_toolbox ]]
+then
+    cp $source_locate_artlog_toolbox $init_target_script
+else
+    echo "[ERROR] missing  $source_locate_artlog_toolbox  in $(pwd)"
+    exit 1
+fi
+
+cat <<EOF >>$init_target_script
 
 # AFTER function copied from $ARTLOG_TOOLBOX/scripts/locate_artlog_toolbox.sh
 
@@ -266,7 +294,7 @@ then
     fi
 fi
 echo "ARTLOG_TOOLBOX=\$ARTLOG_TOOLBOX" >toolbox.param
-\$ARTLOG_TOOLBOX/deploy.sh
+\$ARTLOG_TOOLBOX/deploy.sh copy
 EOF
 
 pushd $project_name >/dev/null

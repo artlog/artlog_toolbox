@@ -34,13 +34,19 @@ function update_migration()
 
 destroy=0
 
+if [[  $#  == 0 ]]
+then
+    echo "[INFO] use -help to get help"
+    exit 0
+fi
+    
 while [[ $# -gt 0 ]]
 do
     case $1 in
 	destroy)
 	    destroy=1
 	    ;;
-	h|-h|--h|help)
+	h|-h|--h|help|-help|--help)
 	    usage
 	    exit 1
 	    ;;
@@ -48,7 +54,7 @@ do
 	    copy=1
 	    ;;
 	*)
-	    echo "[ERROR] unrecognized '$1' argument for $0" >&2
+	    echo "[ERROR] unrecognized '$1' argument for $0" >&2	    
 	    exit 1
 	;;
     esac
@@ -89,7 +95,7 @@ fi
 
 if [[ $copy == 1 ]]
 then
-    echo "Deploying scripts with copy..."
+    echo "[INFO] Deploying scripts with copy..." >&2
 
     pushd  ${A_TOOLBOX}
     GIGN=${PROJECT_DIR}/.gitignore
@@ -109,7 +115,8 @@ then
 	    echo "$l" >>$GIGN
 	fi
     done
-    cp scripts/* ${PROJECT_DIR}/
+    # copy only shell scripts and makefile
+    cp scripts/*.sh scripts/*.makefile ${PROJECT_DIR}/
     popd
 
     echo "Update migration"
