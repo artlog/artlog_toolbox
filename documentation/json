@@ -125,3 +125,31 @@ cat template/template.json
 
 build/json -c template=template/template.json -- template/refnawak.json 2>/dev/null
 .menu.popup.menuitem.?menu?=[{"value":"New","onclick":"CreateNewDoc()"},{"value":"Open","onclick":"OpenDoc()"},{"value":"Close","onclick":"CloseDoc()"}]
+
+
+latest behavior ( seems expected output to err is done to stdout )
+
+build/json template=template/template.json -- template/refnawak.json
+{"menu":{"id":"file","value":"File","popup":{"menuitem":[{"value":"New","onclick":"CreateNewDoc()"},{"value":"Open","onclick":"OpenDoc()"},{"value":"Close","onclick":"CloseDoc()"}]}}}
+{
+  "menu":{
+    "id":"file",
+    "value":"File",
+    "popup":{
+      "menuitem":.menu.popup.menuitem.?menu?=[
+        {
+          "value":"New",
+          "onclick":"CreateNewDoc()"
+        },
+        {
+          "value":"Open",
+          "onclick":"OpenDoc()"
+        },
+        {
+          "value":"Close",
+          "onclick":"CloseDoc()"
+        }
+      ]
+    }
+  }
+}

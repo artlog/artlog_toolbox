@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <strings.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "alinput.h"
 #include "aljson_import_internal.h"
@@ -12,7 +13,7 @@
 #include "al_options.h"
 #include "al_options_output.h"
 
-const char * aljson_main_version="0.2";
+const char * aljson_main_version="0.2.1";
 
 /**
 a complicated json stream ( one char ahead ) parser 
@@ -25,16 +26,17 @@ static int main_debug=0;
 void usage()
 {
   aldebug_printf(DBGSTREAM,"Output : dump parsed json to standard output.\n");
-  aldebug_printf(DBGSTREAM,"-d debug\n");
-  aldebug_printf(DBGSTREAM,"-m non recursive\n");
-  aldebug_printf(DBGSTREAM,"-c check only (no print)\n");
-  aldebug_printf(DBGSTREAM,"-b bare : no indent\n");
-  aldebug_printf(DBGSTREAM,"indent 2space : hierarchical two spaces header\n");
+  aldebug_printf(DBGSTREAM,"-d                         debug\n");
+  aldebug_printf(DBGSTREAM,"-m                         non recursive\n");
+  aldebug_printf(DBGSTREAM,"-c                         check only (no print)\n");
+  aldebug_printf(DBGSTREAM,"-b                         bare, no indent\n");
+  aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set");
+  aldebug_printf(DBGSTREAM,"indent=flat|2space|tabs    indentation flat or with 2 spaces or with tabs \n");
   aldebug_printf(DBGSTREAM,"json_path=<path>\n");
-  aldebug_printf(DBGSTREAM,"template= filename to open in read only mode to parse in json for template.\n");
+  aldebug_printf(DBGSTREAM,"template=filename          file to open in read only mode to parse in json for template.\n");
   aldebug_printf(DBGSTREAM,"          template is used for json unification ie extracting fields from a template pattern\n");
   aldebug_printf(DBGSTREAM,"-- to separate options from arguments\n");  
-  aldebug_printf(DBGSTREAM,"First argument : filename to open in read only mode to parse in json.\n");
+  aldebug_printf(DBGSTREAM,"First argument filename    file to open in read only mode to parse in json.\n");
 
   aldebug_printf(DBGSTREAM,"\naljson_main version %s\n",aljson_main_version);
 }
@@ -67,8 +69,12 @@ int main(int argc, char ** argv)
 
   
   aljson_init(&json_template_context,&json_template_tokenizer,&print_template_context);
-  // no indent
+
+  struct aloutputstream default_output;
+
+  // default to no indent
   aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
+
   
   struct al_options * options = al_options_create(argc,argv);
 
@@ -77,23 +83,76 @@ int main(int argc, char ** argv)
 
   debug = (al_option_get(options,"d") == NULL) ? 0 : 1;
   checkonly = (al_option_get(options,"c") == NULL) ? 0 : 1;
-  
+
+    struct alhash_datablock * out_filename_value = al_option_get(options,"out");
+  char * out_filename = NULL;
+  if ( out_filename_value != NULL )
+    {
+      out_filename = out_filename_value->data.charptr;
+      FILE * fout = NULL;
+      if ( out_filename != NULL )
+	{
+	  fout=fopen(out_filename,"w");
+	  if ( fout != NULL )
+	    {
+	      aloutputstream_fd_init(&default_output, fileno(fout));
+	    }
+	  else
+	    {
+	      aldebug_printf(DBGSTREAM,"[ERROR] failed to create out file '%s'\n", out_filename );
+	      exit(1);
+	    }
+	}
+    }
+  else
+    {
+      // default to stdout
+      aloutputstream_fd_init(&default_output, fileno(stdout));
+    }
+  aljson_print_ctx_set_output(&print_context,&default_output);
+
   struct alhash_datablock * json_path_value = al_option_get(options,"json_path");
   if ( json_path_value != NULL )
     {
       json_path = json_path_value->data.charptr;
     }
 
+			      
   if ( al_option_get(options,"b") != NULL )
     {
       // bare => no indent
       aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
     }
 
-  if ( al_option_get(options,"indent") != NULL )
+  struct alhash_datablock * indent_value = al_option_get(options,"indent");
+  if ( indent_value != NULL )
     {
-      // indent, TODO should select flat,2space,tab, default 2space
-      aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_2SPACE);
+      // TODO this should be part of al_option tooling.
+      struct match_value {
+	char * match;
+        int value;
+      };
+      struct match_value matches[3] = {
+	{"flat",ALJSON_PRINT_FLAT},
+	{"2space",ALJSON_PRINT_2SPACE},
+	{"tabs",ALJSON_PRINT_TABS}
+      };
+      int found = -1;
+      for (int i = 0; i < 3; i ++ )
+	{	  
+	  if ( strncmp(matches[i].match,indent_value->data.charptr,(long unsigned int) indent_value->length) == 0 )
+	    {
+	      aldebug_printf(DBGSTREAM,"indent set to %s\n", matches[i].match);
+	      aljson_print_ctx_set_format(&print_context,matches[i].value );
+	      found = 1;
+	      break;
+	    }
+	}
+      if ( found == -1 )
+	{
+	  aldebug_printf(DBGSTREAM,"indent option not recognized\n");
+	}
+	 
     }
 
 
@@ -114,7 +173,7 @@ int main(int argc, char ** argv)
       aloutputstream_fd_init(&output,fileno(stderr));
       al_option_dump_output(options,&output);
     }
-			
+  
   json_set_debug(debug);
   json_ctx_set_debug(&json_tokenizer,debug);
   json_ctx_set_debug(&json_template_tokenizer,debug);

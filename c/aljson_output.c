@@ -163,6 +163,11 @@ void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print
     }
 }
 
+void aljson_print_ctx_set_output(struct print_ctx * print_ctx, struct aloutputstream * output)
+{
+  print_ctx->outfile=output;
+}
+  
 // print_ctx default to aljson_dump callbacks
 void aljson_print_ctx_init_format(struct print_ctx * print_ctx, enum aljson_print_format format)
 {
