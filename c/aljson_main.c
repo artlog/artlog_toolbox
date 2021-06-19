@@ -28,7 +28,8 @@ void usage()
   aldebug_printf(DBGSTREAM,"-d debug\n");
   aldebug_printf(DBGSTREAM,"-m non recursive\n");
   aldebug_printf(DBGSTREAM,"-c check only (no print)\n");
-  aldebug_printf(DBGSTREAM,"-b bare : no indent");
+  aldebug_printf(DBGSTREAM,"-b bare : no indent\n");
+  aldebug_printf(DBGSTREAM,"indent 2space : hierarchical two spaces header\n");
   aldebug_printf(DBGSTREAM,"json_path=<path>\n");
   aldebug_printf(DBGSTREAM,"template= filename to open in read only mode to parse in json for template.\n");
   aldebug_printf(DBGSTREAM,"          template is used for json unification ie extracting fields from a template pattern\n");
@@ -87,6 +88,12 @@ int main(int argc, char ** argv)
     {
       // bare => no indent
       aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
+    }
+
+  if ( al_option_get(options,"indent") != NULL )
+    {
+      // indent, TODO should select flat,2space,tab, default 2space
+      aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_2SPACE);
     }
 
 

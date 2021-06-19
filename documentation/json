@@ -1,30 +1,55 @@
-build/json 
-First argument : filename to open in read only mode to parse in json.
-Second argument : filename to open in read only mode to parse in json for template.
-                  template is used for json unification ie extratcing fields from a template pattern
+INSTALL
+
+within parent directory
+
+make all
+
+for more information see ../README.txt
+
+USE
+
+
+build/json
 Output : dump parsed json to standard output.
 -d debug
 -m non recursive
--p path
 -c check only (no print)
+-b bare : no indentjson_path=<path>
+template= filename to open in read only mode to parse in json for template.
+          template is used for json unification ie extracting fields from a template pattern
+-- to separate options from arguments
+First argument : filename to open in read only mode to parse in json.
 
-aljson_main version 0.1
-
+aljson_main version 0.2
 
 __________________________________________________________________
 
-
 build/json -- template/list.json 
-[
-  "a",
-  "b",
-  "c",
-  "d",
-  "e"
+["a","b","c","d","e"]p
 
-]p
-
-
+build/json indent=2space -- template/parse1.json
+{
+  "menu":{
+    "id":"file",
+    "value":"File",
+    "popup":{
+      "menuitem":[
+        {
+          "value":"New",
+          "onclick":"CreateNewDoc()"
+        },
+        {
+          "value":"Open",
+          "onclick":"OpenDoc()"
+        },
+        {
+          "value":"Close",
+          "onclick":"CloseDoc()"
+        }
+      ]
+    }
+  }
+}
 
 check : checks file is a uses a valid json syntax.
 
