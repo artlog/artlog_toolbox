@@ -63,7 +63,7 @@ void alsalsa20_doublerounds_internal(struct alsalsa_internal * salsa, int rounds
 }
 
 
-void alsalsa20_doublerounds(struct alsalsa_internal * salsa, struct alhash_datablock * block,int rounds)
+void alsalsa20_doublerounds(struct alsalsa_internal * salsa, aldatablock * block,int rounds)
 {
   // aldebug_printf(DBGSTREAM,"salsa20_addblock feed block into parameter");
   if ( block->length >= sizeof(int) * 16 )
@@ -76,7 +76,7 @@ void alsalsa20_doublerounds(struct alsalsa_internal * salsa, struct alhash_datab
   alsalsa20_doublerounds_internal(salsa,rounds);
 }
 
-void alsalsa20_addblock(struct alsalsa_internal * salsa, struct alhash_datablock * block)
+void alsalsa20_addblock(struct alsalsa_internal * salsa, aldatablock * block)
 {
   // Salsa20(x) = x + doubleround^10 (x),
   alsalsa20_doublerounds(salsa, block, 10);
@@ -92,7 +92,7 @@ void alsalsa20_addblock(struct alsalsa_internal * salsa, struct alhash_datablock
 
 }
 
-void alsalsa20_toblock(struct alsalsa_internal * salsa, struct alhash_datablock * block)
+void alsalsa20_toblock(struct alsalsa_internal * salsa, aldatablock * block)
 {
   if ( block->length >= sizeof(int) * 16 )
     {
@@ -132,7 +132,7 @@ void alsalsa20_expand32(struct alsalsa_internal * salsa, unsigned char k0[16], u
   // o[0],k0,o[1],n,o[2],k1,o[3]
   
   unsigned int x[16];
-  struct alhash_datablock block;
+  aldatablock block;
 
   block.length = sizeof(x);
   block.type= ALTYPE_OPAQUE;

@@ -560,7 +560,7 @@ char * alstrings_copy_str_block(alstrings_ringbuffer_pointer * ringbufferp, alda
   return newstr;
 }
 
-int alstrings_compare_str0_substr(struct alhash_datablock * str0, struct alhash_datablock * substr)
+int alstrings_compare_str0_substr(aldatablock * str0, aldatablock * substr)
 {
   if ( str0->length == (substr->length + 1) )
     {

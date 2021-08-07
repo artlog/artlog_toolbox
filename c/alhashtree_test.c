@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
   struct alhashtreenode * treenode;
   struct alhashtreenode * rightmost;
   struct alhashtreenode * root;
-  struct alhash_datablock block;
+  aldatablock block;
 
   if ( argc == 1 )
     {

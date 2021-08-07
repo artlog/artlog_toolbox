@@ -84,7 +84,7 @@ int main(int argc, char ** argv)
   debug = (al_option_get(options,"d") == NULL) ? 0 : 1;
   checkonly = (al_option_get(options,"c") == NULL) ? 0 : 1;
 
-    struct alhash_datablock * out_filename_value = al_option_get(options,"out");
+  aldatablock * out_filename_value = al_option_get(options,"out");
   char * out_filename = NULL;
   if ( out_filename_value != NULL )
     {
@@ -111,7 +111,7 @@ int main(int argc, char ** argv)
     }
   aljson_print_ctx_set_output(&print_context,&default_output);
 
-  struct alhash_datablock * json_path_value = al_option_get(options,"json_path");
+  aldatablock * json_path_value = al_option_get(options,"json_path");
   if ( json_path_value != NULL )
     {
       json_path = json_path_value->data.charptr;
@@ -124,7 +124,7 @@ int main(int argc, char ** argv)
       aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
     }
 
-  struct alhash_datablock * indent_value = al_option_get(options,"indent");
+  aldatablock * indent_value = al_option_get(options,"indent");
   if ( indent_value != NULL )
     {
       // TODO this should be part of al_option tooling.
@@ -156,7 +156,7 @@ int main(int argc, char ** argv)
     }
 
 
-  struct alhash_datablock * json_template_value = al_option_get(options,"template");
+  aldatablock * json_template_value = al_option_get(options,"template");
   if ( json_template_value != NULL )
     {
       json_template = json_template_value->data.charptr;

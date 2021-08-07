@@ -18,8 +18,8 @@ for usage samples see alhash_test.c
 struct alhash_entry {
   // hash key of key within key datablock
   long hash_key;
-  struct alhash_datablock key;
-  struct alhash_datablock value;
+  aldatablock key;
+  aldatablock value;
   // another entry at the very same place in the bucket of the hash
   // this is a ring, ie a loop.
   struct alhash_entry * collision_ring; 
@@ -67,12 +67,12 @@ typedef int (*alhash_callback) (struct alhash_entry * entry, void * data, int in
 Warning : does not check for duplicates
 if object is already there, it will be read twice, use alhash_get_entry first.
  */
-struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_datablock * key, struct alhash_datablock * value);
+struct alhash_entry * alhash_put(struct alhash_table * table, aldatablock * key, aldatablock * value);
 
 /**
 return entry owning same key content ( content of key->data over length bytes)
  */
-struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key);
+struct alhash_entry * alhash_get_entry(struct alhash_table * table, aldatablock * key);
 
 // walk entry and all collisions.
 // if callback returns a value != 0 it stops.
@@ -117,5 +117,5 @@ void alhash_dump_entry_as_string(struct alhash_entry * entry);
 int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int index);
 
 // not strings ...
-int alhash_asint(struct alhash_datablock * datablock, int ifnotset, int ifnan );
+int alhash_asint(aldatablock * datablock, int ifnotset, int ifnan );
 #endif

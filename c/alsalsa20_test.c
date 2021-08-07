@@ -95,7 +95,7 @@ unsigned char expand16test1_result[] =
     134, 85,110,246,161,163, 43,235,231, 94,171, 51,145,214,112, 29,
     14,232, 5, 16,151,140,183,141,171, 9,122,181,104,182,177,193};
 
-void build_expand32_test1(  struct alhash_datablock * out)
+void build_expand32_test1(  aldatablock * out)
 {
   struct alsalsa_internal salsa;
   
@@ -117,9 +117,9 @@ void build_expand32_test1(  struct alhash_datablock * out)
 
 int main(int argc, char ** argv)
 {
-  struct alhash_datablock block;
+  aldatablock block;
   unsigned int outdata[16];
-  struct alhash_datablock out;
+  aldatablock out;
   struct alsalsa_internal salsa;
 
   out.type=ALTYPE_OPAQUE;

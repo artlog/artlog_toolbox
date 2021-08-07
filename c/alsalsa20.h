@@ -17,10 +17,10 @@ struct alsalsa_internal {
 
 void alsalsa20_init(struct alsalsa_internal * salsa);
 
-void alsalsa20_doublerounds(struct alsalsa_internal * salsa, struct alhash_datablock * block,int rounds);
+void alsalsa20_doublerounds(struct alsalsa_internal * salsa, aldatablock * block,int rounds);
   
-void alsalsa20_addblock(struct alsalsa_internal * salsa, struct alhash_datablock * block);
-void alsalsa20_toblock(struct alsalsa_internal * salsa, struct alhash_datablock * block);
+void alsalsa20_addblock(struct alsalsa_internal * salsa, aldatablock * block);
+void alsalsa20_toblock(struct alsalsa_internal * salsa, aldatablock * block);
 
 void alsalsa20_expand32(struct alsalsa_internal * salsa, unsigned char k0[16], unsigned char k1[16], unsigned char n[16]);
 

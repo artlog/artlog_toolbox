@@ -16,7 +16,7 @@ void albase_set_debug(int debug)
 // qndirty as usual
 // base
 // correct bases are 2 binary, 8 octal,10 decimal ,16 hexadecimal.
-int albase_build_string_from_int(int integer, int base, alstrings_ringbuffer_pointer * allocator, struct alhash_datablock * out)
+int albase_build_string_from_int(int integer, int base, alstrings_ringbuffer_pointer * allocator, aldatablock * out)
 {
   char buffer[LOCAL_BUFFER_SIZE];
   int v = integer;

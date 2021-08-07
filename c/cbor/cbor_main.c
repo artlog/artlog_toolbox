@@ -31,10 +31,10 @@ int main(int argc, char ** argv )
   aldebug_start((void *) 0);
 
   struct al_options * options = al_options_create(argc,argv);
-  struct alhash_datablock * inform = al_option_get(options,"inform");
-  struct alhash_datablock * infiledata = al_option_get(options,"infile");
-  struct alhash_datablock * hexstring = al_option_get(options,"hexstring");
-  struct alhash_datablock * outfiledata = al_option_get(options,"outfile");
+  aldatablock * inform = al_option_get(options,"inform");
+  aldatablock * infiledata = al_option_get(options,"infile");
+  aldatablock * hexstring = al_option_get(options,"hexstring");
+  aldatablock * outfiledata = al_option_get(options,"outfile");
 
   if ( hexstring != NULL )
     {

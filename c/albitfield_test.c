@@ -23,14 +23,14 @@ int main(int argc, char ** argv)
 
   struct alinputstream input;
   struct aloutputstream output;
-  struct alhash_datablock * opt1 = al_option_get(options,"outfile");
+  aldatablock * opt1 = al_option_get(options,"outfile");
   if ( opt1 != NULL )
     {
       enum al_global_error_code outputerr =  aloutput_file_open_init(&output,opt1->data.charptr);
       if ( outputerr == AL_EC_OK )
 	{
 	  struct bitfieldwriter writer;
-	  struct alhash_datablock * opt2 = al_option_get(options,"infile");
+	  aldatablock * opt2 = al_option_get(options,"infile");
 	  enum al_global_error_code inputerr = AL_EC_OK;
 	  if ( opt2 == NULL )
 	    {

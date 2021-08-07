@@ -33,7 +33,7 @@ WARNING key=value can appear only once, duplicates are ignored.
 struct al_options * al_options_create(int argc, char ** argv);
 
 // get one named option by key
-struct alhash_datablock * al_option_get(struct al_options * options,const char * key);
+aldatablock * al_option_get(struct al_options * options,const char * key);
 
 // add one option
 void al_option_add(struct al_options * options,const char * key,const char * value);

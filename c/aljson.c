@@ -88,7 +88,7 @@ void aljson_set_pos_info(struct json_object * object,  struct json_ctx * ctx)
     }
 }
 
-struct json_object * aljson_new_json_string(struct json_parser_ctx * parser, char objtype, struct alhash_datablock * data)
+struct json_object * aljson_new_json_string(struct json_parser_ctx * parser, char objtype,  aldatablock * data)
 {
 
   ALJSON_PARSER_CTX_DECL_ALLOC(parser,json_object,object)
@@ -172,7 +172,7 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
 }
 
 // allocator should be an allocator context : struct alallocation_ctx ?
-struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_pointer * allocator, struct alhash_datablock * data)
+struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_pointer * allocator,  aldatablock * data)
 {
   struct json_object * object=(struct json_object *) al_alloc_block(allocator,sizeof(struct json_object));
   if (object != NULL)
@@ -225,7 +225,7 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
   // warning, should keep a place for final 0
   grow_ringbuffer_buffer(ctx,tb,1);
   
-  struct alhash_datablock  data;
+   aldatablock  data;
   data.data.ptr = tb->buffer.buf;
   data.length = tb->buffer.bufpos;
   data.type = ALTYPE_OPAQUE;
@@ -429,7 +429,7 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
 }
 
 // FIXME currently focus on string since used only for dict key (which is json_string )
-void aljson_fill_datablock(struct json_object * object, struct alhash_datablock * datablock)
+void aljson_fill_datablock(struct json_object * object,  aldatablock * datablock)
 {
   // todo depending on type
   switch(object->type)
@@ -461,8 +461,8 @@ void * json_dict_hashadd_callback (struct json_object * key, struct json_object 
   if ( data != NULL )
     {
       struct alhash_table * dict = (struct alhash_table *) data;
-      struct alhash_datablock key_datablock;
-      struct alhash_datablock value_datablock;
+       aldatablock key_datablock;
+       aldatablock value_datablock;
       // key is really datablock content
       aljson_fill_datablock(key, &key_datablock);
       // value point to json_object
@@ -1326,7 +1326,7 @@ void * aljson_dict_foreach(
 
 void * aljson_dict_match_value_callback(struct json_object * key, struct json_object * value, void * data)
 {
-  struct alhash_datablock * searchkey = (struct alhash_datablock *) data;
+   aldatablock * searchkey = ( aldatablock *) data;
 
   // handle non zero terminated pair key internal string
   if ( searchkey->length ==  key->string.internal.length )
@@ -1350,7 +1350,7 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
   int foundstatus = 0;
   struct json_object * value = NULL;
 
-  struct alhash_datablock searchkey;
+  aldatablock searchkey;
   searchkey.length = strlen(keyname);
   searchkey.type = ALTYPE_OPAQUE;
   searchkey.data.constcharptr = keyname;  

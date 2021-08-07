@@ -3,7 +3,7 @@
 
 int main(int argc, char ** argv)
 {
-  struct alhash_datablock datablock;
+  aldatablock datablock;
 
   alstrings_ringbuffer_pointer allocator;
   alstrings_ringbuffer_init_autogrow(&allocator,2,256);

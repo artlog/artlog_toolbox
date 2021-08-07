@@ -93,8 +93,8 @@ char * strtoupper(const char * origin, alhash_context * hash_ctx) {
 
 int aljson_ld_is_keyword_internal(char * string, struct alhash_table * table)
 {
-  struct alhash_datablock key;
-  struct alhash_datablock value;
+  aldatablock key;
+  aldatablock value;
   key.type=ALTYPE_OPAQUE;
   key.length=strlen(string);
   key.data.charptr=string;
@@ -127,8 +127,8 @@ void aljson_ld()
 
       // printf("%i %s %s\n", index, keystr, valuestr);
       
-      struct alhash_datablock key;
-      struct alhash_datablock value;
+      aldatablock key;
+      aldatablock value;
       key.type=ALTYPE_OPAQUE;
       key.length=strlen(keystr);
       key.data.charptr=keystr;

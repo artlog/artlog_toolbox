@@ -8,7 +8,7 @@
 
 struct json_object * aljson_encoder_int(int value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
-  struct alhash_datablock data;
+  aldatablock data;
 
   // convert int to json int char representation
   albase_build_string_from_int(value, 10, allocator, &data);
@@ -20,7 +20,7 @@ struct json_object * aljson_encoder_int(int value, struct json_parser_ctx * ctx,
 
 struct json_object * aljson_encoder_pascal_string(int length, const char * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
-  struct alhash_datablock data;
+  aldatablock data;
   
   data.type=ALTYPE_OPAQUE;
   data.data.constcharptr=value;

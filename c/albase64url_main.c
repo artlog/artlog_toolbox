@@ -46,8 +46,8 @@ int main(int argc, char ** argv)
   int encode = (al_option_get(options,"e") == NULL) ? 0 : 1;
   int base64url = (al_option_get(options,"u") == NULL) ? 0 : 1;
   
-  struct alhash_datablock * in_filename_value = al_option_get(options,"in");
-  struct alhash_datablock * out_filename_value = al_option_get(options,"out");
+  aldatablock * in_filename_value = al_option_get(options,"in");
+  aldatablock * out_filename_value = al_option_get(options,"out");
   
   if ( in_filename_value != NULL )
     {

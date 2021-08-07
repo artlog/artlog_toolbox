@@ -17,11 +17,9 @@ enum altype {
 };
 
 /** data pointing on a contiguous block of length bytes
- legacy name since borrowed from hash
-   -> don't use this struct name, prefer aldatablock
   can be direct number data copy for integers 
 **/
-typedef struct alhash_datablock {
+typedef struct {
   enum altype type;
   int length; // > 0 , EMPTY BLOCK NOT VALID
   union {
@@ -159,7 +157,7 @@ char * alstrings_copy_str_block(alstrings_ringbuffer_pointer * ringbufferp, alda
 
 
 /** return 0 if both a equal, else return something different than 0, not yet relevant for ordering*/
-int alstrings_compare_str0_substr(struct alhash_datablock * str0, struct alhash_datablock * substr);
+int alstrings_compare_str0_substr( aldatablock * str0,  aldatablock * substr);
 
 /**
 a is first char and b second

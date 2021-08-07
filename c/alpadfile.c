@@ -18,7 +18,7 @@ int main(int argc, char ** argv)
 
   struct alinputstream input;
   struct aloutputstream output;
-  struct alhash_datablock * opt1 = al_option_get(options,"outfile");
+  aldatablock * opt1 = al_option_get(options,"outfile");
   if ( opt1 != NULL )
     {
       FILE * fout = fopen(opt1->data.charptr, "a");

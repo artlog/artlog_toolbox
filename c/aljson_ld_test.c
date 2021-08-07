@@ -27,10 +27,10 @@ int main(int argc, char ** argv)
   struct al_options * options = al_options_create(argc,argv);
   al_options_set_debug(options,0);
 
-  struct alhash_datablock * opt1=al_option_get(options,GET_KEYWORD_INDEXSTR0);
-  struct alhash_datablock * opt2=al_option_get(options,LIST_KEYWORDSSTR0);
-  struct alhash_datablock * dry_run=al_option_get(options,DRY_RUNSTR0);
-  struct alhash_datablock * debug=al_option_get(options,DEBUGSTR0);
+  aldatablock * opt1=al_option_get(options,GET_KEYWORD_INDEXSTR0);
+  aldatablock * opt2=al_option_get(options,LIST_KEYWORDSSTR0);
+  aldatablock * dry_run=al_option_get(options,DRY_RUNSTR0);
+  aldatablock * debug=al_option_get(options,DEBUGSTR0);
 
   aljson_ld();
   

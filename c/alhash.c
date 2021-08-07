@@ -26,14 +26,14 @@ static unsigned int al_get_index(long hash, int length)
   return index;
 }
 
-int aldatablock_embeded(struct alhash_datablock * key)
+int aldatablock_embeded(aldatablock * key)
 {
   // return ALC_FLAG_IS_SET(key->type,ALTYPE_FLAG_EMBED);
   return 0;
 }
 
 // return  ALH_MR_EQUAL if empty , ALH_MR_INVALID if invalid, ALH_MR_NOT_EQUAL
-enum alhash_match_result aldatablock_is_empty(struct alhash_datablock * key)
+enum alhash_match_result aldatablock_is_empty(aldatablock * key)
 {
   // valid if positive length  and ( either embeded value or ptr is non null )
   // this means that embeded 0 value is OK.
@@ -56,8 +56,8 @@ enum alhash_match_result aldatablock_is_empty(struct alhash_datablock * key)
 key and keyB contain values that are identical
 one interest is for str0 and substr comparison where one ends with '\0' and the other not.
  */
-enum alhash_match_result alhash_is_identical(struct alhash_datablock * key,
-					     struct alhash_datablock * keyB,
+enum alhash_match_result alhash_is_identical(aldatablock * key,
+					     aldatablock * keyB,
 					     int alhash_debug)
 {
   if ( key == keyB )
@@ -133,7 +133,7 @@ enum alhash_match_result alhash_is_identical(struct alhash_datablock * key,
 /**
 return if key matches entry ( see enum alhash_match_result comments )
 **/
-enum alhash_match_result alhash_match(struct alhash_datablock * key, struct alhash_entry * entry, long hash, int alhash_debug)
+enum alhash_match_result alhash_match(aldatablock * key, struct alhash_entry * entry, long hash, int alhash_debug)
 {
   if ( (key != NULL) && (entry != NULL) )
     {
@@ -263,7 +263,7 @@ void alhash_release(struct alhash_table * table)
   table->used = 0xdeadbeef;
 }
 
-struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_datablock * key, struct alhash_datablock * value)  
+struct alhash_entry * alhash_put(struct alhash_table * table, aldatablock * key, aldatablock * value)  
 {
 
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
@@ -344,7 +344,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, struct alhash_data
   return NULL;
 }
 
-struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key)
+struct alhash_entry * alhash_get_entry(struct alhash_table * table, aldatablock * key)
 {
   if (( table != NULL ) && ( key != NULL ))
     {
@@ -643,7 +643,7 @@ void alhash_context_release(alhash_context * hash_context)
   alhash_release(&hash_context->dict);
 }
 
-int alhash_asint(struct alhash_datablock * str0, int ifnotset, int ifnan )
+int alhash_asint(aldatablock * str0, int ifnotset, int ifnan )
 {
   if ( (str0 == NULL ) || (str0->data.charptr == NULL ) )
     {

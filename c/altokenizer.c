@@ -96,8 +96,8 @@ altokenizer_dict_add_string (struct altokenizer *tokenizer, char * buffer, int l
       return NULL;
     }
 
-  struct alhash_datablock key;
-  struct alhash_datablock *valuep;
+  aldatablock key;
+  aldatablock *valuep;
   
   //  create an entry in dict
   key.type = ALTYPE_OPAQUE;

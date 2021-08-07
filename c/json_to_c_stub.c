@@ -14,7 +14,7 @@
 // return json_object pair type.
 struct json_object * json_c_add_json_object_member(const char * name, struct json_object * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
-  struct alhash_datablock data;
+  aldatablock data;
   
   data.data.constcharptr = name;
   data.type=ALTYPE_OPAQUE;

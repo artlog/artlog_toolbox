@@ -25,7 +25,7 @@ int main(int argc, char ** argv)
   aldebug_start(NULL);
   
   struct al_options * options = al_options_create(argc,argv);
-  struct alhash_datablock * infiledata = al_option_get(options,"infile");
+  aldatablock * infiledata = al_option_get(options,"infile");
 
   if ( infiledata != NULL )
     {

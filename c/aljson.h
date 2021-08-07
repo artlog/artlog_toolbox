@@ -63,7 +63,7 @@ struct json_growable
 
 /* a json_object that is a string */
 struct json_string {
-  struct alhash_datablock internal;
+  aldatablock internal;
 };
 
 /* a json list of nitems json objects */
@@ -142,10 +142,10 @@ struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_
 
 // create a json object allocated from allocator
 // if data is non NULL it is copied as json_object.string.internal.
-struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_pointer * allocator, struct alhash_datablock  * data);
+struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_pointer * allocator, aldatablock  * data);
 
 /* internal only 
-struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, struct alhash_datablock  * data);
+struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, aldatablock  * data);
 */
  
 struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct json_object * key);

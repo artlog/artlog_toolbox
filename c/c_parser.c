@@ -116,8 +116,8 @@ alparser_dict_add_string (alhash_context * alparser, char * buffer, int length)
       return NULL;
     }
 
-  struct alhash_datablock key;
-  struct alhash_datablock *valuep;
+  aldatablock key;
+  aldatablock *valuep;
   
   //  create an entry in dict
   key.type = ALTYPE_OPAQUE;
@@ -163,7 +163,7 @@ alparser_dict_add_string (alhash_context * alparser, char * buffer, int length)
   and set last_word and dict_value.
 
   parser->last_word = TOKEN_C_DICTENTRY_ID;
-  parser->dict_value = (struct alhash_datablock *) value;
+  parser->dict_value = (aldatablock *) value;
 
   tokenizer internal token_char_buffer will be flushed.
  */
@@ -763,7 +763,7 @@ c_is_typedef (struct c_parser_ctx *parser)
       return 0;
     }
 
-  struct alhash_datablock key;
+  aldatablock key;
 
   key.type = ALTYPE_OPAQUE;
   key.length = length;
@@ -1915,7 +1915,7 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 		     struct aloutputstream * output)
 {
   struct json_ctx *tokenizer = parser->tokenizer;
-  struct alhash_datablock * type_name_value;
+  aldatablock * type_name_value;
   struct c_full_type type;
   void * lhs_variable_data;
   
@@ -3263,8 +3263,8 @@ void generate_aljson_stub_output( struct c_parser_ctx * parser, struct aloutputs
       int max = 1000;
       char * varname="outstructp";
       // todo
-      struct alhash_datablock * vartype;
-      struct alhash_datablock * datablock = (struct alhash_datablock *) parser->structure_array[i].dict_index ;
+      aldatablock * vartype;
+      aldatablock * datablock = (aldatablock *) parser->structure_array[i].dict_index ;
       vartype = NULL;
 
       // generate read side : json_c_xxxx_from_json_auto
@@ -3279,7 +3279,7 @@ void generate_aljson_stub_output( struct c_parser_ctx * parser, struct aloutputs
       struct c_declaration_info_list * next = parser->structure_array[i].first;
       while ((next != NULL)&&(max>0))
 	{
-	  datablock = (struct alhash_datablock *) next->info.dict_index;
+	  datablock = (aldatablock *) next->info.dict_index;
 	  if ( datablock != NULL )
 	    {
 	      // better than nothing, still does not recognize arrays or pointers
@@ -3350,8 +3350,8 @@ void generate_alc2json_stub_output( struct c_parser_ctx * parser, struct aloutpu
       int max = 1000;
       char * varname="instructp";
       // todo
-      struct alhash_datablock * vartype;
-      struct alhash_datablock * datablock = (struct alhash_datablock *) parser->structure_array[i].dict_index ;
+      aldatablock * vartype;
+      aldatablock * datablock = (aldatablock *) parser->structure_array[i].dict_index ;
       vartype = NULL;
 
       // generate write side : json_c_xxxx_to_json_auto
@@ -3370,7 +3370,7 @@ void generate_alc2json_stub_output( struct c_parser_ctx * parser, struct aloutpu
       struct c_declaration_info_list * next = parser->structure_array[i].first;
       while ((next != NULL)&&(max>0))
 	{
-	  datablock = (struct alhash_datablock *) next->info.dict_index;
+	  datablock = (aldatablock *) next->info.dict_index;
 	  if ( datablock != NULL )
 	    {
 	      // better than nothing, still does not recognize arrays or pointers
@@ -3461,7 +3461,7 @@ int main (int argc, char **argv)
 
   init_c_parser(&parser, &tokenizer, &importer);
 
-  struct alhash_datablock * debugdata = al_option_get(options,"debug");
+  aldatablock * debugdata = al_option_get(options,"debug");
   if ( debugdata != NULL )
     {
       // set debugging for parsing
@@ -3469,7 +3469,7 @@ int main (int argc, char **argv)
       // alhash_set_debug(1);
     }
 
-  struct alhash_datablock * infiledata = al_option_get(options,"infile");
+  aldatablock * infiledata = al_option_get(options,"infile");
   if ( infiledata != NULL )
     {
       aldebug_printf(DBGSTREAM,"[INFO] file to parse '" ALPASCALSTRFMT "'\n",
@@ -3488,7 +3488,7 @@ int main (int argc, char **argv)
       aldebug_printf(DBGSTREAM,"[ERROR] missing argument infile= file to parse.");
     }
 
-  struct alhash_datablock * outformdata = al_option_get(options,"outform");
+  aldatablock * outformdata = al_option_get(options,"outform");
   if (outformdata != NULL)
     {
       aldebug_printf(DBGSTREAM,"[INFO] outform '" ALPASCALSTRFMT "'\n",
@@ -3496,7 +3496,7 @@ int main (int argc, char **argv)
       todo("support multiple outform type. currently any matches");
     }
 
-  struct alhash_datablock * outfile = al_option_get(options,"outfile");
+  aldatablock * outfile = al_option_get(options,"outfile");
   if ( outfile != NULL )
     {
       aldebug_printf(DBGSTREAM,"[INFO] outfile '" ALPASCALSTRFMT "'\n",
@@ -3570,14 +3570,14 @@ int main (int argc, char **argv)
 		  // todo
 		  aloutputstream_printf_1k(genstream,"// Structure %i\n" ,i);
 		  int max = 1000;
-		  struct alhash_datablock * datablock = (struct alhash_datablock *) parser.structure_array[i].dict_index ;
+		  aldatablock * datablock = (aldatablock *) parser.structure_array[i].dict_index ;
 		  // thanks to this format ... print non NULL terminated string
 		  aloutputstream_printf_1k(genstream,"{\"" ALPASCALSTRFMT "\":{",
 			 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 		  struct c_declaration_info_list * next = parser.structure_array[i].first;
 		  while ((next != NULL)&&(max>0))
 		    {
-		      datablock = (struct alhash_datablock *) next->info.dict_index;
+		      datablock = (aldatablock *) next->info.dict_index;
 		      if ( datablock != NULL )
 			{
 			  aloutputstream_printf_1k(genstream,"\"" ALPASCALSTRFMT "\":0,\n",

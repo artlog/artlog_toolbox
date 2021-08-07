@@ -49,12 +49,12 @@ int main(int argc, char **argv)
   aldebug_start((void *) 0);
 
   struct al_options * options = al_options_create(argc,argv);
-  struct alhash_datablock * server = al_option_get(options,"server");
-  struct alhash_datablock * client = al_option_get(options,"client");
-  struct alhash_datablock * portoption = al_option_get(options,"port");
+  aldatablock * server = al_option_get(options,"server");
+  aldatablock * client = al_option_get(options,"client");
+  aldatablock * portoption = al_option_get(options,"port");
 
   // connect timeout in ms
-  struct alhash_datablock * timeoutoption = al_option_get(options,"timeout");
+  aldatablock * timeoutoption = al_option_get(options,"timeout");
 
   struct connect_info connection;
   connection.addrinfo=NULL;

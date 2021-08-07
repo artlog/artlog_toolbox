@@ -14,7 +14,7 @@ void alabnf_print_token(struct aloutputstream * output, struct alhash_entry * my
     {
       if ( mytoken->key.data.ptr != NULL )
 	{
-	  struct alhash_datablock * datablock = &mytoken->key;
+	  aldatablock * datablock = &mytoken->key;
 	  aloutputstream_printf_1k(output,ALPASCALSTRFMT" ",
 		 ALPASCALSTRARGS(datablock->length,datablock->data.charptr));
 	}
@@ -77,7 +77,7 @@ void alabnf_dump_hex_string(struct aloutputstream * output,aldatablock * string 
   aloutput_bytes_as_hex(output,string,0,1);
 }
 
-void alabnf_dump_nameblock(struct aloutputstream * output,struct alhash_datablock * datablock)
+void alabnf_dump_nameblock(struct aloutputstream * output,aldatablock * datablock)
 {
   if ( datablock->data.charptr != NULL )
     {
@@ -91,7 +91,7 @@ void alabnf_dump_nameblock(struct aloutputstream * output,struct alhash_databloc
 
 }
 
-void alabnf_dump_quoted_nameblock(struct aloutputstream * output,struct alhash_datablock * datablock,char start, char end)
+void alabnf_dump_quoted_nameblock(struct aloutputstream * output,aldatablock * datablock,char start, char end)
 {
   if ( datablock->data.charptr != NULL )
     {
@@ -109,7 +109,7 @@ void alabnf_dump_quoted_nameblock(struct aloutputstream * output,struct alhash_d
 
 void alabnf_dump_string(struct aloutputstream * output, struct alabnf_string * string )
 {
-  struct alhash_datablock * datablock = &string->strbloc;
+  aldatablock * datablock = &string->strbloc;
   enum alabnf_string_type string_type = string->type;
 
   if ( string_type == ALABNF_ST_RULENAME )
@@ -147,7 +147,7 @@ void alabnf_dump_rule_ref(struct aloutputstream * output,struct alabnf_rule_ref 
       aloutputstream_printf_1k(output,"(!!!)");
     }
 
-  struct alhash_datablock * datablock = &rule_ref->keyblock;
+  aldatablock * datablock = &rule_ref->keyblock;
 
   
   alabnf_dump_nameblock(output,datablock);

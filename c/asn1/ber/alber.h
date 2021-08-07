@@ -95,6 +95,6 @@ enum alasn1class {
 };
 
 // constructed : 1 constructed, 0 primitive, other values are errors.
-int al_berencode_type(struct alhash_datablock * datablock, int offset, enum alasn1type asn1type, enum alasn1class asn1class, int constructed, int length);
+int al_berencode_type(aldatablock * datablock, int offset, enum alasn1type asn1type, enum alasn1class asn1class, int constructed, int length);
 
 #endif // #ifndef __ALBER_H__

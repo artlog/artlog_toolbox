@@ -28,7 +28,7 @@ void usage()
 struct alinputstream * getinputstream(struct al_options * options)
 {
   struct alinputstream * inputstream = NULL;
-  struct alhash_datablock * opt1 = al_option_get(options,INFILESTR0);
+  aldatablock * opt1 = al_option_get(options,INFILESTR0);
   if ( opt1 != NULL )
     {
       char * filename = opt1->data.charptr;

@@ -47,8 +47,8 @@ int main(int argc, char ** argv)
 	    {
 	      if (( i>0) && (i<read-2))
 		{
-		  struct alhash_datablock key;
-		  struct alhash_datablock value;
+		  aldatablock key;
+		  aldatablock value;
 		  key.type=ALTYPE_OPAQUE;
 		  key.length=i;
 		  key.data.ptr=line;
