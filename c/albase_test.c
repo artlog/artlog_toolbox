@@ -17,11 +17,11 @@ int main(int argc, char ** argv)
       for (int i = 0; i < 200; i += 17)
 	{
 	  int j = i*i*i +3;
-	  aljson_build_string_from_int(j,2,&allocator,&datablock);
-	  aljson_build_string_from_int(j,10,&allocator,&datablock);
-	  aljson_build_string_from_int(j,16,&allocator,&datablock);
-	  aljson_build_string_from_int(-j,16,&allocator,&datablock);
-	  aljson_build_string_from_int(-j,8,&allocator,&datablock);
+	  albase_build_string_from_int(j,2,&allocator,&datablock);
+	  albase_build_string_from_int(j,10,&allocator,&datablock);
+	  albase_build_string_from_int(j,16,&allocator,&datablock);
+	  albase_build_string_from_int(-j,16,&allocator,&datablock);
+	  albase_build_string_from_int(-j,8,&allocator,&datablock);
 	}
     }
 }

@@ -11,7 +11,7 @@ struct json_object * aljson_encoder_int(int value, struct json_parser_ctx * ctx,
   struct alhash_datablock data;
 
   // convert int to json int char representation
-  aljson_build_string_from_int(value, 10, allocator, &data);
+  albase_build_string_from_int(value, 10, allocator, &data);
   data.type=ALTYPE_OPAQUE;
   // '0' means int type
   return aljson_new_json_object('0', allocator, &data);
