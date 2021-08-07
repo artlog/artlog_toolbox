@@ -34,6 +34,14 @@ typedef struct alhash_datablock {
   } data;
 } aldatablock;
 
+struct alstrings_buffer {
+  // internal buffer to collect data of allocated capacity bufsize.
+  char * buf;
+  // position of token buffer where to add data within buf
+  int bufpos;
+  // buffer size to be grown if needed ( see al_token_char_buffer_grow )
+  int bufsize;
+};
 
 /** char buffer RING ( circular list allocated by al_token_char_buffer_alloc(int times); )
  can be filled ONLY ( no removal ).
@@ -44,15 +52,10 @@ token_char_buffer circular linked list is built at first time
 BUT buf and its size is allocated on request only.
 = so initial *times* buckets drives limit =
 
-remark inital name comes from json parser, kept to not rename everywhere
+remark initial name comes from json parser, kept to not rename everywhere
 */
-typedef struct token_char_buffer {  
-  // internal buffer to collect data of allocated capacity bufsize.
-  char * buf;
-  // position of token buffer where to add data within buf
-  int bufpos;
-  // buffer size to be grown if needed ( see al_token_char_buffer_grow )
-  int bufsize;
+typedef struct token_char_buffer {
+  struct alstrings_buffer buffer;
   int canary; // bebedada
   // linked list
   // first always point to allocated first
@@ -61,10 +64,10 @@ typedef struct token_char_buffer {
   struct token_char_buffer * next;
   // next potentialy free and can be replaced by a next after if next is detected full.
   struct token_char_buffer * next_free;  
-} alstrings_out;
+} alstrings_ringbuffer;
 
 // introduced alstrings_ringbuffer_pointer , that point to right token_char_buffer within ring.
-typedef alstrings_out * alstrings_ringbuffer_pointer;
+typedef alstrings_ringbuffer * alstrings_ringbuffer_pointer;
 
 // allocation context ( it can only grow or be fully released )
 struct alallocation_ctx {
@@ -139,7 +142,7 @@ int aldatablock_write_byte(aldatablock * data, int offset, unsigned char value);
 void aldatablock_setcstring(aldatablock * block,char * cstring);
 
 /**
- allocate needed continguous buffer of bytelength from alstrings_ringbuffer_pointer
+ allocate needed contiguous buffer of bytelength from alstrings_ringbuffer_pointer
  and fill data with that reference return a datablock that starts at offset 0.
  negative means reservation did not complete.
  **/

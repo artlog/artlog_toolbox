@@ -3,19 +3,20 @@
 #include <stdlib.h>
 #include "aldebug_output.h"
 
-int altoken_char_buffer_add_char(struct token_char_buffer * ctx, char c)
+int altoken_char_buffer_add_char(alstrings_ringbuffer_pointer ringbuffer, char c)
 {
   int bufsize=ALTOKEN_BUFSIZE_MIN;
-  if (ctx->buf == NULL)
+  struct alstrings_buffer * buffer = &ringbuffer->buffer;
+  if (buffer->buf == NULL)
     {
-      ctx->buf=calloc(1,bufsize);
-      //ctx->buf[bufsize-1]=0;
-      ctx->bufpos=0;
-      ctx->bufsize=bufsize;
+      buffer->buf=calloc(1,bufsize);
+      //buffer->buf[bufsize-1]=0;
+      buffer->bufpos=0;
+      buffer->bufsize=bufsize;
     }
-  if (ctx->bufpos+1>=ctx->bufsize)
+  if (buffer->bufpos+1>=buffer->bufsize)
     {
-      bufsize=ctx->bufsize + ctx->bufsize / 2;
+      bufsize=buffer->bufsize + buffer->bufsize / 2;
       if ( bufsize > ALTOKEN_BUFSIZE_MAX )
 	{
 	  aldebug_printf(DBGSTREAM,"[FATAL] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_MAX);
@@ -25,32 +26,33 @@ int altoken_char_buffer_add_char(struct token_char_buffer * ctx, char c)
 	{
 	  aldebug_printf(DBGSTREAM,"[WARNING] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_WARNING);
 	}
-      char * newbuf=realloc(ctx->buf,bufsize);
+      char * newbuf=realloc(buffer->buf,bufsize);
       if (newbuf != NULL)
 	{
 	  //done by realloc
-	  //memcpy(newbuf,ctx->buf,ctx->bufsize);
-	  //free(ctx->buf);
-	  ctx->buf[bufsize-1]=0;
-	  ctx->bufsize=bufsize; 
-	  ctx->buf=newbuf;
+	  //memcpy(newbuf,buffer->buf,buffer->bufsize);
+	  //free(buffer->buf);
+	  buffer->buf[bufsize-1]=0;
+	  buffer->bufsize=bufsize; 
+	  buffer->buf=newbuf;
 	}
       else
 	{
 	  aldebug_printf(DBGSTREAM,"FATAL memory shortage in %s %s %i\n", __FILE__, __FUNCTION__, __LINE__ );
 	}
     }
-  ctx->buf[ctx->bufpos++]=c;
+  buffer->buf[buffer->bufpos++]=c;
   return 0;
 }
 
-void altoken_flush_char_buffer(struct token_char_buffer * ctx)
+void altoken_flush_char_buffer(alstrings_ringbuffer_pointer ringbuffer)
 {
-  if (ctx->buf != NULL )
+  struct alstrings_buffer * buffer = &ringbuffer->buffer;
+  if (buffer->buf != NULL )
     {
-      free(ctx->buf);
-      ctx->buf=NULL;
-      ctx->bufpos=0;
-      ctx->bufsize=0;
+      free(buffer->buf);
+      buffer->buf=NULL;
+      buffer->bufpos=0;
+      buffer->bufsize=0;
     }
 }

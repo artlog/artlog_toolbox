@@ -43,16 +43,16 @@ struct token_char_buffer * al_token_char_buffer_alloc(int times)
 }
 
 // allocate buffer of chars bytes on heap not zeroed.
-void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer buffer, int chars)
+void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer ringbuffer, int chars)
 {
-  
+  struct alstrings_buffer * buffer = &ringbuffer->buffer;
   buffer->bufsize = chars;
   buffer->bufpos = 0;
   // allocated on heap, NOT zeroed.
   // why not ?
   //buffer->buf = malloc(buffer->bufsize);
   buffer->buf = calloc(1,buffer->bufsize);
-  buffer->canary = ALSTRINGBUFCANARY;
+  ringbuffer->canary = ALSTRINGBUFCANARY;
   // can be freed with int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * data)
   // don't set first or next  
 }
@@ -89,33 +89,13 @@ struct token_char_buffer *  al_token_char_buffer_get_previous(struct token_char_
   return previous;  
 }
 
-/* insert head to a circular buffer */
-// DEPRECATED removed from api
-void al_token_char_buffer_rehead(struct token_char_buffer * newhead, struct token_char_buffer * circular)
-{
-  if ( ( newhead != NULL ) && ( circular != NULL ) && (newhead->next == NULL) )
-    {
-      // get last pointing on circular.
-      struct token_char_buffer * previous =  al_token_char_buffer_get_previous(circular);
-      // to make linus scream
-      if ( previous != NULL)
-	{
-	  previous->next=newhead;
-	}
-      else
-	{
-	  circular->next=newhead;
-	}
-      newhead->next=circular;
-    }
-}
-
 /* pick from buffer one that can provide length
    if not enough place create a new one on heap filled with zeros
 */
-struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * buffer, int length)
+struct token_char_buffer * al_token_char_buffer_grow(alstrings_ringbuffer_pointer ringbuffer, int length)
 {
-  struct token_char_buffer * next  = buffer->next;
+  struct token_char_buffer * next  = ringbuffer->next;
+  struct alstrings_buffer * buffer = &ringbuffer->buffer;
   int bufsize = buffer->bufsize * 2;
 
   if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
@@ -123,9 +103,9 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
       aldebug_printf(DBGSTREAM,"grow token_char_buffer %p %i/%i\n", buffer, buffer->bufpos, buffer->bufsize);
     }
   // last point on first; this is circular
-  while ( ( next != NULL ) && ( next != buffer ) )
+  while ( ( next != NULL ) && ( next != ringbuffer ) )
     {
-      if ( next->buf == NULL )
+      if ( next->buffer.buf == NULL )
 	{
 	  // grown
 	  // at least length...
@@ -137,34 +117,34 @@ struct token_char_buffer * al_token_char_buffer_grow(struct token_char_buffer * 
 	  // what about first and next_free ?
 	  if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	    {
-	      aldebug_printf(DBGSTREAM,"allocate new next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
+	      aldebug_printf(DBGSTREAM,"allocate new next token_char_buffer %p %i/%i\n", next, next->buffer.bufpos, next->buffer.bufsize);
 	    }
 	  return next;
 	}
       else
 	{
 	  // found a place, no need to grow
-	  if ( ( next->bufsize - next->bufpos ) >= length )
+	  if ( ( next->buffer.bufsize - next->buffer.bufpos ) >= length )
 	    {
 	      if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 		{		  
-		  aldebug_printf(DBGSTREAM,"found place next token_char_buffer %p %i/%i\n", next, next->bufpos, next->bufsize);
+		  aldebug_printf(DBGSTREAM,"found place next token_char_buffer %p %i/%i\n", next, next->buffer.bufpos, next->buffer.bufsize);
 		}
 	      return next;
 	    }
 	}
-      if (next->bufsize > 0 )
+      if (next->buffer.bufsize > 0 )
 	{
-	  bufsize = next->bufsize * 2;
+	  bufsize = next->buffer.bufsize * 2;
 	}
       next = next->next;
     }
 
   // what to conclude here if next == buffer ?
   // ==> that it was not possible to allocate a buffer
-  if (  next == buffer )
+  if (  next == ringbuffer )
     {
-      aldebug_printf(DBGSTREAM,"[FATAL] not possible to allocate a buffer. allocate buffer (%p) next (%p) \n", buffer, next);
+      aldebug_printf(DBGSTREAM,"[FATAL] not possible to allocate a buffer. allocate buffer (%p) next (%p) \n", ringbuffer, next);
       return NULL;
     }
   
@@ -186,13 +166,14 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 {
   if ( ringbufferp != NULL )
     {
-      struct token_char_buffer * buffer = (*ringbufferp);
-      if ( buffer->canary !=  ALSTRINGBUFCANARY )
+      struct token_char_buffer * ringbuffer = (*ringbufferp);
+      if ( ringbuffer->canary !=  ALSTRINGBUFCANARY )
 	{
-	  aldebug_printf(DBGSTREAM,"[FATAL] wrong allocation buffer %p, wrong canary %x\n",buffer, buffer->canary);	  
+	  aldebug_printf(DBGSTREAM,"[FATAL] wrong allocation buffer %p, wrong canary %x\n",ringbuffer, ringbuffer->canary);	  
 	}
       if ( length > 0 )
 	{
+	  struct alstrings_buffer * buffer = &ringbuffer->buffer;
 	  if ( buffer != NULL )
 	    {
 	      if ((buffer->bufpos + length) >= buffer->bufsize)
@@ -203,15 +184,15 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 			       "[WARNING] internal char buffer %p full (%i+%i)>=%i\n",
 			       buffer, buffer->bufpos, length, buffer->bufsize);
 		    }
-		  buffer = al_token_char_buffer_grow(buffer, length);
-		  if ( buffer != NULL )
+		  ringbuffer = al_token_char_buffer_grow(ringbuffer, length);
+		  if ( ringbuffer != NULL )
 		    {
-		      if ( ((unsigned long long) buffer) < 1024 )
+		      if ( ((unsigned long long) ringbuffer) < 1024 )
 			{
 			  fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", buffer);
 			}
 		      // could consider this bucket as new head to not walk from start always
-		      (*ringbufferp) = buffer;
+		      (*ringbufferp) = ringbuffer;
 		    }
 		}
 	      if ( buffer != NULL )
@@ -300,13 +281,14 @@ int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * 
   if ( bucket != NULL )
     {
       // see what is done in void al_token_char_buffer_init_internal(struct token_char_buffer * buffer, int chars)
-      if (bucket->buf != NULL )
+      if (bucket->buffer.buf != NULL )
 	{
-	  aldebug_printf(DBGSTREAM,"[DEBUG] free bucket %p\n", bucket->buf);
-	  free( bucket->buf);
+	  aldebug_printf(DBGSTREAM,"[DEBUG] free bucket %p\n", bucket->buffer.buf);
+	  free( bucket->buffer.buf);
 	}
-      bucket->bufsize = 0;
-      bucket->bufpos = 0;
+      bucket->buffer.bufsize = 0;
+      bucket->buffer.bufpos = 0;
+      // TODO shouldn"t we flag it as freed in canary ?
     }
   // continue
   return 0;
@@ -483,11 +465,11 @@ void aldatablock_setcstring(aldatablock * block,char * cstring)
 
 static int alstrings_ringbuffer_get_datablock_internal(alstrings_ringbuffer_pointer ringbuffer, aldatablock * data, int offset)
 {
-  if ( offset < ringbuffer->bufsize )
+  if ( offset < ringbuffer->buffer.bufsize )
     {
       data->type=ALTYPE_OPAQUE;
-      data->data.charptr=&ringbuffer->buf[offset];
-      data->length=ringbuffer->bufsize-offset;
+      data->data.charptr=&ringbuffer->buffer.buf[offset];
+      data->length=ringbuffer->buffer.bufsize-offset;
 
       return offset;
     }
@@ -505,8 +487,8 @@ int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbu
 
       if ( ringbuffer != NULL )
 	{
-	  offset = ringbuffer->bufpos;
-	  if ( ringbuffer->bufsize + offset >= bytelength )
+	  offset = ringbuffer->buffer.bufpos;
+	  if ( ringbuffer->buffer.bufsize + offset >= bytelength )
 	    {
 	      alstrings_ringbuffer_get_datablock_internal(ringbuffer, data, offset);
 	    }
@@ -519,7 +501,7 @@ int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbu
 		    {
 		      fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", ringbuffer);
 		    }
-		  offset = ringbuffer->bufpos;
+		  offset = ringbuffer->buffer.bufpos;
 		  offset = alstrings_ringbuffer_get_datablock_internal(ringbuffer, data,offset);
 		  if ( offset >= 0 )
 		    {

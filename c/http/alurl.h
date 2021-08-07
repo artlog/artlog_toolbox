@@ -1,6 +1,12 @@
 #ifndef __ALURL_H__
 #define __ALURL_H__
 
+
+/* was ../aliri.h tentatively created for general purpose ?
+aliri shold have been automatically created through a bnf parser of rfc, but 
+that was a too far view, i didn't completed.
+ */
+
 //not that beautifull...
 #include "alhttp_common.h"
 
@@ -52,6 +58,7 @@ int alurl_context_init(struct alurl_context * context, void * ext, int ext_hint)
 // allocate a new alurl for url
 struct alurl * alurl_parse_new(struct alurl_context * context, char * url);
 
+// release full context
 int  alurl_release(struct alurl_context * context);
 
 #endif

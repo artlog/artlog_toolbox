@@ -25,4 +25,5 @@ mkdir -p backlog/sprint
 mkdir -p backlog/product
 mkdir deliverables
 mkdir validation
-popd ${SCRUMDIR} >/dev/null
+# exit ${SCRUMDIR}
+popd  >/dev/null

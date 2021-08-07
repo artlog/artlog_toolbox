@@ -74,12 +74,6 @@ return entry owning same key content ( content of key->data over length bytes)
  */
 struct alhash_entry * alhash_get_entry(struct alhash_table * table, struct alhash_datablock * key);
 
-// length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
-// if length is 0 : AUTO : autogrowth is set and length = ALHASH_BUCKET_SIZE)
-// if alhash_func is set to NULL then default string hash is used (alhash_hash_string)
-// DON'T use externally, use alhash_context_init ( that comes with a dedicated context ) and use alparser_ctx->dict as hashtable.
-void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length));
-
 // walk entry and all collisions.
 // if callback returns a value != 0 it stops.
 // return number of elements accepted by callback ( for which callback return value was 0 ).
@@ -93,14 +87,9 @@ int alhash_walk_table( struct alhash_table * table, alhash_callback callback, vo
 // release whole table glue ( ie does not free data content )
 void alhash_release(struct alhash_table * table);
 
-/* int alparser_init(  struct alhash_ctx_ * alparser, int words, int chars);
-alparser_init is FULLY DEPRECATED
-use alhash_context_init(alparser,words,autogrowth) instead
-ex alhash_context_init(alparser,words,chars,200)
-*/
-
 // init word buffer
 // number of words is used for length of alhash_init, so can be 0 then automatic.
+// use hash_context->dict as hashtable.
 int alhash_context_init(alhash_context * hash_context, int words, int chars, int autogrow);
 
 /** fully release all allocation done with alhash */

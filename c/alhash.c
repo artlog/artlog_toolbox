@@ -205,6 +205,10 @@ long alhash_hash_string(void * value, int length)
 }
 
 
+// length in number of entries [ at least ALHASH_BUCKET_SIZE will be used ]
+// if length is 0 : AUTO : autogrowth is set and length = ALHASH_BUCKET_SIZE)
+// if alhash_func is set to NULL then default string hash is used (alhash_hash_string)
+// DON'T use externally, use alhash_context_init that comes with a dedicated context
 void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length))
 {
   if ( alhash_func == NULL )

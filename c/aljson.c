@@ -190,6 +190,31 @@ struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_p
   return object;
 }
 
+int grow_ringbuffer_buffer(struct json_parser_ctx * ctx, struct token_char_buffer * tb, int toadd)
+{
+  int result = 1;
+  struct alstrings_buffer * buffer = &tb->buffer;
+  int newsize = buffer->bufpos + toadd;
+  // warning, should keep a place for final 0
+  if ( newsize > buffer->bufsize )
+    {
+      // realloc for one character ... too bad.
+      ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
+	{
+	  printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,buffer->buf,buffer->bufsize,newsize);
+	}
+      if ( (buffer->buf=realloc(buffer->buf,newsize)) != NULL )
+	{
+	  buffer->bufsize=buffer->bufpos;
+	}
+      else
+	{
+	  result = 0;
+	}
+    }
+  return result;
+}
+
 // allocate a new json_object
 // borrow buf buffer of json_ctx and set it into a json_string
 // reset json_ctx buffer.
@@ -198,20 +223,11 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
   struct json_object * object=NULL;
   struct token_char_buffer * tb = &ctx->tokenizer->token_buf;
   // warning, should keep a place for final 0
-  if ( (tb->bufpos + 1) > tb->bufsize )
-    {
-      // realloc for one character ... too bad.
-      ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
-	{
-	  printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,tb->buf,tb->bufsize,tb->bufpos+1);
-	}
-      tb->buf=realloc(tb->buf,tb->bufpos+1);
-      tb->bufsize=tb->bufpos;
-    }
+  grow_ringbuffer_buffer(ctx,tb,1);
   
   struct alhash_datablock  data;
-  data.data.ptr = tb->buf;
-  data.length = tb->bufpos;
+  data.data.ptr = tb->buffer.buf;
+  data.length = tb->buffer.bufpos;
   data.type = ALTYPE_OPAQUE;
   object = aljson_new_json_string(ctx,objtype,&data);
 
