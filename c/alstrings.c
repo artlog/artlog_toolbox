@@ -30,9 +30,9 @@ int alstrings_debug_flag_is_set(int flag)
    allocated on heap and zeroed
    return first
 */
-struct token_char_buffer * al_token_char_buffer_alloc(int times)
+alstrings_ringbuffer_pointer al_token_char_buffer_alloc(int times)
 {
-  struct token_char_buffer * buffers = calloc(times, sizeof(struct token_char_buffer));
+  alstrings_ringbuffer_pointer buffers = calloc(times, sizeof(struct token_char_buffer));
   for (int i=0; i<times;i++)
     {
       buffers[i].first = buffers;
@@ -55,12 +55,6 @@ void al_token_char_buffer_init_internal(alstrings_ringbuffer_pointer ringbuffer,
   ringbuffer->canary = ALSTRINGBUFCANARY;
   // can be freed with int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * data)
   // don't set first or next  
-}
-
-void al_token_char_buffer_init(alstrings_ringbuffer_pointer buffer, int chars)
-{  
-  aldebug_printf(DBGSTREAM,"[WARNING] use alstrings_ringbuffer_init_autogrow instead of deprecated  al_token_char_buffer_init\n");  
-  al_token_char_buffer_init_internal(buffer,chars);
 }
 
 // get last pointing on circular.
@@ -105,6 +99,7 @@ struct token_char_buffer * al_token_char_buffer_grow(alstrings_ringbuffer_pointe
   // last point on first; this is circular
   while ( ( next != NULL ) && ( next != ringbuffer ) )
     {
+      
       if ( next->buffer.buf == NULL )
 	{
 	  // grown
@@ -166,7 +161,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 {
   if ( ringbufferp != NULL )
     {
-      struct token_char_buffer * ringbuffer = (*ringbufferp);
+      alstrings_ringbuffer_pointer ringbuffer = (*ringbufferp);
       if ( ringbuffer->canary !=  ALSTRINGBUFCANARY )
 	{
 	  aldebug_printf(DBGSTREAM,"[FATAL] wrong allocation buffer %p, wrong canary %x\n",ringbuffer, ringbuffer->canary);	  
@@ -184,9 +179,10 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 			       "[WARNING] internal char buffer %p full (%i+%i)>=%i\n",
 			       buffer, buffer->bufpos, length, buffer->bufsize);
 		    }
-		  ringbuffer = al_token_char_buffer_grow(ringbuffer, length);
+		  ringbuffer = al_token_char_buffer_grow(ringbuffer, length);		  
 		  if ( ringbuffer != NULL )
 		    {
+		      buffer = &ringbuffer->buffer;
 		      if ( ((unsigned long long) ringbuffer) < 1024 )
 			{
 			  fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", buffer);
@@ -288,7 +284,9 @@ int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * 
 	}
       bucket->buffer.bufsize = 0;
       bucket->buffer.bufpos = 0;
-      // TODO shouldn"t we flag it as freed in canary ?
+      // Shouldn"t we flag it as freed in canary : nope since kind might not have changed?
+      // set buf as NULL ?      
+      bucket->buffer.buf = NULL;
     }
   // continue
   return 0;

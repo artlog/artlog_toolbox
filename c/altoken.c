@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include "aldebug_output.h"
 
+// PERHAPS full altoken could end in alstring ?
+
 int altoken_char_buffer_add_char(alstrings_ringbuffer_pointer ringbuffer, char c)
 {
   int bufsize=ALTOKEN_BUFSIZE_MIN;
@@ -51,8 +53,6 @@ void altoken_flush_char_buffer(alstrings_ringbuffer_pointer ringbuffer)
   if (buffer->buf != NULL )
     {
       free(buffer->buf);
-      buffer->buf=NULL;
-      buffer->bufpos=0;
-      buffer->bufsize=0;
+      bzero(buffer, sizeof(*buffer));
     }
 }

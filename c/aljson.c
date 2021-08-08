@@ -190,22 +190,21 @@ struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_p
   return object;
 }
 
-int grow_ringbuffer_buffer(struct json_parser_ctx * ctx, struct token_char_buffer * tb, int toadd)
+int grow_ringbuffer_buffer(struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer ringbuffer, int toadd)
 {
   int result = 1;
-  struct alstrings_buffer * buffer = &tb->buffer;
+  struct alstrings_buffer * buffer = &ringbuffer->buffer;
   int newsize = buffer->bufpos + toadd;
   // warning, should keep a place for final 0
   if ( newsize > buffer->bufsize )
     {
-      // realloc for one character ... too bad.
       ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
 	{
 	  printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,buffer->buf,buffer->bufsize,newsize);
 	}
       if ( (buffer->buf=realloc(buffer->buf,newsize)) != NULL )
 	{
-	  buffer->bufsize=buffer->bufpos;
+	  buffer->bufsize=newsize;
 	}
       else
 	{
@@ -216,23 +215,33 @@ int grow_ringbuffer_buffer(struct json_parser_ctx * ctx, struct token_char_buffe
 }
 
 // allocate a new json_object
-// borrow buf buffer of json_ctx and set it into a json_string
+// borrow buf buffer of json_ctx and give it to a json_string
 // reset json_ctx buffer.
 struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtype)
 {
   struct json_object * object=NULL;
-  struct token_char_buffer * tb = &ctx->tokenizer->token_buf;
+  alstrings_ringbuffer_pointer ringbuffer = &ctx->tokenizer->token_buf;
   // warning, should keep a place for final 0
-  grow_ringbuffer_buffer(ctx,tb,1);
+  // realloc for one character ... too bad.
+  grow_ringbuffer_buffer(ctx,ringbuffer,1);
+  // final 0 added ? don't do that : ( it will fail later... perhaps with equality checking ? ).
+  // tb->buffer.bufpos ++;
+
+  struct alstrings_buffer * buffer = &ringbuffer->buffer;
   
-   aldatablock  data;
-  data.data.ptr = tb->buffer.buf;
-  data.length = tb->buffer.bufpos;
+  aldatablock  data;
+  data.data.ptr = buffer->buf;
+  data.length = buffer->bufpos;
+  // OPAQUE or cstring with final 0 ?
   data.type = ALTYPE_OPAQUE;
+  // buffer pointer is now owned by json string.
   object = aljson_new_json_string(ctx,objtype,&data);
 
-  // buffer will be re-allocated -> where is it done ?
-  bzero(&ctx->tokenizer->token_buf, sizeof(ctx->tokenizer->token_buf));
+  // detaching token buffer, reset it.
+  // ringbuffer buffer will be fully reallocated in altoken_char_buffer_add_char with  ALTOKEN_BUFSIZE_MIN.
+  
+  // bzero(ringbuffer, sizeof(*ringbuffer)); // is too much ( ringbuffer->next and ringbuffer->first lost )
+  bzero(buffer, sizeof(*buffer));
       
   return object;
 }

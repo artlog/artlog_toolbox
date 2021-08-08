@@ -100,12 +100,6 @@ char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp,  aldatablock * 
 useful for autogrowth */
 alstrings_ringbuffer_pointer al_token_char_buffer_alloc(int times);
 
-/* init char buffer to a length of chars
-to use internally after al_token_char_buffer_alloc since it can't grow.
- */
-// INTERNAL ONLY ( to remove from api ) use alstrings_ringbuffer_init_autogrow instead
-void al_token_char_buffer_init(alstrings_ringbuffer_pointer buffer, int chars);
-
 /* allocate a circular buffer of buckets with initial bucket char length 
 will setup ringbuffer
 */
