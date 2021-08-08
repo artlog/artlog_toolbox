@@ -588,3 +588,71 @@ unsigned char alstrings_hex_to_byte(char a, char b)
   unsigned char byte = (unsigned char) ( 16 * hexchar_to_int(a) + hexchar_to_int(b) ) ;
   return byte;
 }
+
+
+int alstrings_buffer_add_char(struct alstrings_buffer * buffer, char c, int newbufsize)
+{
+  int bufsize=newbufsize;
+  if (buffer->buf == NULL)
+    {
+      buffer->buf=calloc(1,bufsize);
+      //buffer->buf[bufsize-1]=0;
+      buffer->bufpos=0;
+      buffer->bufsize=bufsize;
+    }
+  if (buffer->bufpos+1>=buffer->bufsize)
+    {
+      bufsize=buffer->bufsize + buffer->bufsize / 2;
+      /*
+      if ( bufsize > ALTOKEN_BUFSIZE_MAX )
+	{
+	  aldebug_printf(DBGSTREAM,"[FATAL] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_MAX);
+	  exit(0);
+	}
+      if ( bufsize > ALTOKEN_BUFSIZE_WARNING )
+	{
+	  aldebug_printf(DBGSTREAM,"[WARNING] huge memory consumption for a token %i > %i", bufsize, ALTOKEN_BUFSIZE_WARNING);
+	}
+      */      
+      if (alstring_grow_buffer_if_needed(buffer,bufsize) == -1)
+	{
+	  aldebug_printf(DBGSTREAM,"FATAL memory shortage in %s %s %i\n", __FILE__, __FUNCTION__, __LINE__ );
+	}
+      else
+	{
+	  //safeguard provision for C string printf %s
+	  buffer->buf[bufsize-1]=0;
+	}
+    }
+  buffer->buf[buffer->bufpos++]=c;
+  return 0;
+}
+
+void alstrings_buffer_flush(struct alstrings_buffer * buffer)
+{
+  if (buffer->buf != NULL )
+    {
+      free(buffer->buf);
+      bzero(buffer, sizeof(*buffer));
+    }
+}
+
+int alstring_grow_buffer_if_needed(struct alstrings_buffer * buffer, int newsize)
+{
+  // hold result of this function too
+  int oldsize = buffer->bufsize;
+  if ( newsize > oldsize )
+    {
+      char * newbuf=realloc(buffer->buf,newsize);
+      if ( newbuf != NULL )
+	{
+	  buffer->buf=newbuf;
+	  buffer->bufsize=newsize;
+	}
+      else
+	{
+	  oldsize = -1;
+	}
+    }
+  return oldsize;
+}

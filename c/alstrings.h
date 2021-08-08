@@ -159,4 +159,21 @@ given a='f' and b='1' returns 0xf1
 **/
 unsigned char alstrings_hex_to_byte(char a, char b);
 
+/** 
+recreate buffer if needed to newbufsize 
+add char at end of buffer, increase pos
+*/
+int alstrings_buffer_add_char(struct alstrings_buffer * buffer, char c, int newbufsize);
+
+/**
+fully free buffer if non NULL
+*/
+void alstrings_buffer_flush(struct alstrings_buffer * buffer);
+
+/**
+grow it to newsize if needed
+return old size, or -1 of realloc failed.
+*/
+int alstring_grow_buffer_if_needed(struct alstrings_buffer * buffer, int newsize);
+
 #endif

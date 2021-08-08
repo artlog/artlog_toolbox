@@ -192,26 +192,16 @@ struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_p
 
 int grow_ringbuffer_buffer(struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer ringbuffer, int toadd)
 {
-  int result = 1;
   struct alstrings_buffer * buffer = &ringbuffer->buffer;
   int newsize = buffer->bufpos + toadd;
-  // warning, should keep a place for final 0
   if ( newsize > buffer->bufsize )
     {
       ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
 	{
 	  printf("(%s,%s,%i) grow string '%s' from %i to %i\n",__FILE__,__FUNCTION__,__LINE__,buffer->buf,buffer->bufsize,newsize);
 	}
-      if ( (buffer->buf=realloc(buffer->buf,newsize)) != NULL )
-	{
-	  buffer->bufsize=newsize;
-	}
-      else
-	{
-	  result = 0;
-	}
     }
-  return result;
+  return alstring_grow_buffer_if_needed(buffer,newsize);
 }
 
 // allocate a new json_object
