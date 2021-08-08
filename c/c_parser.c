@@ -81,7 +81,7 @@ reset_tokenizer_buffer (struct json_ctx *tokenizer)
 {
   // reset when word is parsed and recognized as either a reserved word or stored in variable dict with cut_string.
   // aldebug_printf(DBGSTREAM,"//reset token buffer\n");
-  tokenizer->token_buf.bufpos = 0;
+  tokenizer->token_buf.buffer.bufpos = 0;
 }
 
 
@@ -136,7 +136,7 @@ alparser_dict_add_string (alhash_context * alparser, char * buffer, int length)
 	{
 	  aldebug_printf(DBGSTREAM,
 		   "[WARNING] internal char buffer for words full %i+%i>%i",
-		   alparser->allocator.ringbuffer->bufpos, length, alparser->allocator.ringbuffer->bufsize);
+		   alparser->allocator.ringbuffer->buffer.bufpos, length, alparser->allocator.ringbuffer->buffer.bufsize);
 	  todo ("[FATAL] word buffer full");
 	  return NULL;
 	}
@@ -172,8 +172,8 @@ c_cut_token_string (struct c_parser_ctx *parser)
 {
   struct json_ctx *tokenizer = parser->tokenizer;
   struct token_char_buffer *tb = &tokenizer->token_buf;
-  char *buffer = tb->buf;
-  int length = tb->bufpos;
+  char *buffer = tb->buffer.buf;
+  int length = tb->buffer.bufpos;
 
   alhash_context *alparser = &parser->alparser;
 
@@ -225,8 +225,8 @@ c_cut_c_string (struct c_parser_ctx *parser, char stop,
 {
   struct json_ctx *tokenizer = parser->tokenizer;
   struct token_char_buffer *tb = &tokenizer->token_buf;
-  char *buffer = tb->buf;
-  int length = tb->bufpos;
+  char *buffer = tb->buffer.buf;
+  int length = tb->buffer.bufpos;
 
   if (buffer == NULL)
     {
@@ -332,8 +332,8 @@ print_c_token (struct c_parser_ctx *parser, enum c_word_token c_token, struct al
 enum c_word_token
 get_word_token (struct token_char_buffer *tb)
 {
-  char *buffer = tb->buf;
-  int length = tb->bufpos;
+  char *buffer = tb->buffer.buf;
+  int length = tb->buffer.bufpos;
   enum c_word_token word_token = TOKEN_C_NOMATCH_ID;
 
   if ((length == 0) || (buffer == NULL))
@@ -748,8 +748,8 @@ c_is_typedef (struct c_parser_ctx *parser)
 
   struct json_ctx *tokenizer = parser->tokenizer;
   struct token_char_buffer *tb = &tokenizer->token_buf;
-  char *buffer = tb->buf;
-  int length = tb->bufpos;
+  char *buffer = tb->buffer.buf;
+  int length = tb->buffer.bufpos;
 
   if (buffer == NULL)
     {
