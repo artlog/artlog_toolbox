@@ -257,6 +257,14 @@ fi
 if [[ -f .params ]]
 then
     source .params
+    if [[ -n $DIALOG ]]
+    then
+	if [[ ! -x $DIALOG ]]
+	then
+	    echo "[ERROR] DIALOG=$DIALOG dialog tool not executable" >&2
+	    exit 1
+	fi
+    fi
 fi
 
 LOG_OUTFILE=.log
@@ -272,7 +280,7 @@ then
 	DIALOG=$(which $DIALOG)
 	if [[ -x $DIALOG ]]
 	then
-	    $DIALOG --menu "Ultra Light IDE" 20 80 2 "select me to validate $DIALOG" justfortest
+	    $DIALOG --menu "Ultra Light IDE" 20 80 2 "select me to validate $DIALOG " justfortest
 	    rc=$?
 	    if [[ $rc != 0 ]]
 	    then
