@@ -14,6 +14,8 @@ get_git_info()
 
 absolute=$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )
 
+clones_dep=clones.dep
+
 pushd $absolute >/dev/null
 
 echo "#"
@@ -31,9 +33,9 @@ fi
 # expect . to be in cube
 get_git_info $project_name
 
-if [[ -f  clones.dep ]]
+if [[ -f  $clones_dep ]]
 then
-    clones=$(< clones.dep)
+    clones=$(< $clones_dep)
     for clone in $clones
     do
 	directory=../$clone
@@ -47,7 +49,7 @@ then
 	fi
     done
 else
-    echo "[INFO] no clone.deps file" >&2
+    echo "[INFO] no $clones_dep file" >&2
 fi
 
 popd >/dev/null
