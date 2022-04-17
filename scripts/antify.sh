@@ -2,6 +2,9 @@
 #
 # Generates to stdout an ant project build.xml content using some parameters from project_params
 #
+# TODO remove it since ant build.xml will parse project_params itself
+# now used only to extract project_name
+#
 # this is used by 4java.makefile for build.xml target
 
 usage()
@@ -12,7 +15,11 @@ usage()
 PROJECT_PARAMS=./project_params
 if [[ -f $PROJECT_PARAMS ]]
 then
+    # extract only project_name
     source $PROJECT_PARAMS
+    project_name=$(grep project_name project_params)
+    project_name=${project_name/project_name=/}
+    echo "project_name=$project_name" >&2
 else
     echo "[ERROR] missing $PROJECT_PARAMS " >&2
     usage
@@ -22,6 +29,8 @@ fi
 # TODO reuse internal tsamp ${DSTAMP} ( after review i do't recall what is wanted to do here )
 
 cat <<EOF
+<!-- for document on apache ant see https://ant.apache.org/manual-1.9.x/index.html -->
+<!-- don't set basedir since it default to parent directory of this file, it is what we want -->
 <project name="$project_name" default="$project_default" basedir="$project_basedir">
     <description>
         $project_name build
@@ -31,10 +40,22 @@ cat <<EOF
   <property name="src" location="java"/>
   <property name="build" location="build"/>
   <property name="dist"  location="dist"/>
-  <!-- Fill me please / todo 
+  <!-- Fill me please / todo since HARDCODED
   <property name="artgraphicslib" value="artgaphics-0.1.0"/>
-  <property name="distversion" value="1.0"/>
   -->
+  <target name="gather_project_params">
+    <!-- original source parameter is in project_params project_version -->
+    <loadfile property="distversion" srcfile="\${basedir}/project_params">
+      <filterchain>
+        <tokenfilter>
+          <containsregex
+              pattern="project_version=([0-9.]+)$"
+              replace="\1" />
+            </tokenfilter>
+      </filterchain>
+    </loadfile>
+    <echo message="distversion : \${distversion}" />
+  </target>
 
   <target name="init">
     <!-- Create the time stamp -->
@@ -50,9 +71,9 @@ EOF
 
 if [[ -z $java_target ]]
 then
-    echo '   <javac srcdir="${src}" destdir="${build}">'
+    echo '   <javac srcdir="${src}" destdir="${build}" includeantruntime="false">'
 else
-    echo "   <javac target=\"$java_target\" source=\"$java_target\" srcdir=\"\${src}\" destdir=\"\${build}\"><compilerarg value=\"-Xlint:-options\"/>"
+    echo "   <javac target=\"$java_target\" source=\"$java_target\" srcdir=\"\${src}\" destdir=\"\${build}\" includeantruntime=\"false\"><compilerarg value=\"-Xlint:-options\">"
 fi
 echo "<!-- suggestion "
 excludes="org/artisanlogiciel/games/javafx/*"
@@ -61,24 +82,26 @@ do
     echo "      <exclude name=\"$exclude\"/>"
 done
 echo "-->"
+echo "     <compilerarg value=\"-Xlint:deprecation,unchecked\" />"
 echo "   </javac>"
 
 cat <<EOF
   </target>
 
-  <target name="dist" depends="compile"
+  <target name="dist" depends="gather_project_params,compile"
         description="generate the distribution" >
     <!-- Create the distribution directory -->
     <mkdir dir="\${dist}/lib"/>
 
-    <!-- Put everything in \${build} into the ${project_name}-${project_version}.jar file  ( \${DSTAMP} not used yet )-->
-    <jar jarfile="\${dist}/lib/${project_name}-${project_version}.jar" basedir="\${build}">
+    <!-- Put everything in \${build} into the ${project_name}-\${distversion}.jar file  ( \${DSTAMP} not used yet )-->
+    <jar jarfile="\${dist}/lib/${project_name}-\${distversion}.jar" basedir="\${build}">
             <manifest>
                 <attribute name="Main-Class" value="$project_mainclass"/>
     <!-- suggestion
-		<attribute name="Class-Path" value="\${artgraphicslib}.jar"/>
+		<attribute name="Class-Path" value="libs/\${artgraphicslib}.jar"/>
     -->
             </manifest>
+	    <fileset dir="lang" includes="**" />
      </jar>
   </target>
 
