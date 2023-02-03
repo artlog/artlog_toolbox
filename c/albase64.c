@@ -23,9 +23,12 @@ void setup_charto6bits(char (*func_6bitstochar)(unsigned int), unsigned char *ch
   charto6bits[complement]=64;
   for (unsigned char i=0; i< 64; i++)
     {
+#ifdef DEBUG
       printf("%c",func_6bitstochar(i));
+#endif
       charto6bits[func_6bitstochar(i)]=i;
     }
+
 }
       
 
@@ -113,7 +116,8 @@ int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinp
     block = fieldreader_read( &bfreader, 6);
     if ( bitfieldreader_is_eof(&bfreader) )
       {
-	read =  bitfieldreader_get_readbits(&bfreader);
+	read = bitfieldreader_get_readbits(&bfreader);
+	aldebug_printf(DBGSTREAM,"*** eof read bits %i block %x ***\n",read, block);
       }
     else
       {
@@ -130,6 +134,8 @@ int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinp
 
   // pad input 6 bits * 4
   int pad = bits % 24;
+
+  aldebug_printf(DBGSTREAM,"\n pad %i.",pad);
   // 0,  17..23 => nothing.
   if ( ( pad > 0 ) && ( pad <=  16 ) )
     {

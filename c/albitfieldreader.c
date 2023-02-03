@@ -53,10 +53,11 @@ unsigned int fieldreader_nextword(struct bitfieldreader * this)
 	  this->bitOffset = this->dataSize-bits;
 	  // reached eof while reading word, then not fully read word.
 	  this->readbits=bits;
-	  if (0)
+	  // #ifdef DEBUG
 	    {
 	      aldebug_printf(DBGSTREAM,"EOF readbits %i\n",  this->readbits);
 	    }
+	  // #endif
 	}
       else
 	{
@@ -177,10 +178,12 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 	{
 	  return head;
 	}
+
+      // not this->eof and not bits == bitsize
+      
       // current word had entirely been read, need a new one
       // don't do that... nextword() will be done by next read...
       field = bitfieldreader_internal_read( this, bits - bitsize);
-
       if ( this->eof )
 	{
 	  this->readbits = bitsize;
@@ -191,6 +194,7 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 	{
 	  aldebug_printf(DBGSTREAM,"head %08x tail %08x\n", head, field);
 	}
+
       // reconstruct all
       // more significant bits in first word, least in last
       field = field | ( head << (bits - bitsize));
@@ -204,10 +208,22 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 
 int bitfieldreader_is_eof(struct bitfieldreader * this)
 {
+    	  // #ifdef DEBUG
+	    {
+	      aldebug_printf(DBGSTREAM,"EOF ?s %i\n",  this->eof);
+	    }
+	  // #endif
+
   return this->eof;
 }
 
 int bitfieldreader_get_readbits(struct bitfieldreader * this)
 {
+  	  // #ifdef DEBUG
+	    {
+	      aldebug_printf(DBGSTREAM,"EOF readbits %i\n",  this->readbits);
+	    }
+	  // #endif
+
   return this->readbits;
 }
