@@ -17,8 +17,8 @@ void usage()
   aldebug_printf(DBGSTREAM,"-d decode\n");
   aldebug_printf(DBGSTREAM,"-e encode\n");
   aldebug_printf(DBGSTREAM,"-u use base64url\n");
-  aldebug_printf(DBGSTREAM,"in=<input filnename>");
-  aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set");
+  aldebug_printf(DBGSTREAM,"in=<input filnename>\n");
+  aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set\n");
 }
 
 void test_base64(char * text)
@@ -66,58 +66,57 @@ int main(int argc, char ** argv)
 
   if (filename != NULL)
     {
-  	  if ( strlen(filename) > 0)
+      if ( strlen(filename) > 0)
+	{
+	  FILE * f = fopen(filename,"r");
+	  if ( f != NULL )
 	    {
-	      FILE * f = fopen(filename,"r");
-	      if ( f != NULL )
+	      struct alinputstream input;
+	      struct aloutputstream output;
+	      alinputstream_init(&input, fileno(f));
+	      FILE * fout = NULL;
+	      if ( out_filename != NULL )
 		{
-		  struct alinputstream input;
-		  struct aloutputstream output;
-		  alinputstream_init(&input, fileno(f));
-		  FILE * fout = NULL;
-		  if ( out_filename != NULL )
+		  fout=fopen(out_filename,"w");
+		  if ( fout != NULL )
 		    {
-		      fout=fopen(out_filename,"w");
-		      if ( fout != NULL )
-			{
-			  aloutputstream_fd_init(&output, fileno(fout));
-			}
-		      else
-			{
-			  aldebug_printf(DBGSTREAM,"[ERROR] failed to create out file '%s'\n", out_filename );
-			  exit(1);
-			}
+		      aloutputstream_fd_init(&output, fileno(fout));
 		    }
 		  else
 		    {
-		      aloutputstream_fd_init(&output, fileno(stdout));
+		      aldebug_printf(DBGSTREAM,"[ERROR] failed to create out file '%s'\n", out_filename );
+		      exit(1);
 		    }
-		  if ( encode )
-		    {
-		      albase64func_frominput(func_6bits_to_char,&input,&output);
-		    }
-		  else
-		    {
-		      albase64func_decode_frominput(func_6bits_to_char,&input,&output);
-		    }
-		  fclose(f);
-		  // todo close output too...
 		}
 	      else
 		{
-		  aldebug_printf(DBGSTREAM,"[ERROR] failed to open file '%s'\n", filename );
+		  aloutputstream_fd_init(&output, fileno(stdout));
 		}
+	      if ( encode )
+		{
+		  albase64func_frominput(func_6bits_to_char,&input,&output);
+		}
+	      else
+		{
+		  albase64func_decode_frominput(func_6bits_to_char,&input,&output);
+		}
+	      fclose(f);
+	      // todo close output too...
 	    }
 	  else
 	    {
-	      aldebug_printf(DBGSTREAM,"[ERROR] expected a filename\n");
+	      aldebug_printf(DBGSTREAM,"[ERROR] failed to open file '%s'\n", filename );
 	    }
+	}
+      else
+	{
+	  aldebug_printf(DBGSTREAM,"[ERROR] expected a filename\n");
+	}
 
     }
   else
     {
       usage();
     }
-
   aldebug_end();
 }

@@ -29,7 +29,7 @@ libaljsonobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libaljsonsources))
 # default target is to build libraries
 libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 
-all: libs tests libinclude
+all: libs tests libinclude $(BUILD)/base64
 
 libinclude: $(LIBINCLUDESABS)
 
@@ -79,6 +79,7 @@ $(libobjects): | $(BUILD)/lib
 
 
 tests: testjson testhash $(BUILD)/test_alstack testbtree testallist
+
 
 
 testbtree: $(BUILD)/testbtree $(TMPTESTDIR)
@@ -141,6 +142,10 @@ $(BUILD)/private/obj/%.o: c/%.c $(BUILD)/private/obj
 	@echo "bad hack fixme" && mkdir -p $(BUILD)/private/obj/tests
 	@echo compile private $< 
 	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I$(INCLUDEDIR) -I c/private $< -o $@
+
+$(BUILD)/base64:
+	@echo 'quick hack'
+	cd c; make ../$(BUILD)/base64
 
 clean:
 	rm -rf $(BUILD)

@@ -1,0 +1,6 @@
+program <name of file to get base64 url> (<debug>)
+-d decode
+-e encode
+-u use base64url
+in=<input filnename>
+out=<output filename>, use stdout if not set

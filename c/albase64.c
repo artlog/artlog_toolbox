@@ -13,7 +13,7 @@ char base64urlchars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 static char complement='=';
 
 // 65 is an error, 64 is complement.
-// fills up reverse table. charto6bits expcetd to be of length 256
+// fills up reverse table. charto6bits expected to be of length 256
 void setup_charto6bits(char (*func_6bitstochar)(unsigned int), unsigned char *charto6bits)
 {
   for (int i=0; i< 256; i++)
@@ -195,7 +195,8 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
       {
 	// does it trace ? where ?
 	bitblock = charto6bits[c];
-	aldebug_printf(DBGSTREAM,"%c%i.",c,bitblock);
+	// ... in debug mode only .. to check
+	// aldebug_printf(DBGSTREAM,"%c%i.",c,bitblock);
 	if ( bitblock < 64 )
 	  {
 	    // add 6 bits to output.

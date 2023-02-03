@@ -1,0 +1,16 @@
+#!/bin/bash
+
+
+# Voici donc un texte qui va être encodé en base64
+#
+# Il faut vérifier que l'encodage est correct.
+#
+# L'encodage base64 de référence est celui d'openssl
+
+openssl base64 -e -in $0 -out plaintext.pem
+
+sed -z 's/\n//g' plaintext.pem > plaintext.b64
+
+# run it ( to not have to set +x ) :
+echo bash $0
+

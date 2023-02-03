@@ -135,6 +135,10 @@ ______________________________________________
 
 base64
 
+build it :
+
+c$ make ../build/base64
+
 build/base64
 program <name of file to get base64 url> (<debug>)
 -d decode
@@ -148,6 +152,23 @@ will create a outfile in current directory with base64 url encoded of filename c
 
 build/base64 -u -d in=filename out=outfile
 will create a outfile in current directory with base64 url decoded of filename content
+
+**WARNING** it is **not** -in=filename but in=filename ( ie there is no - ).
+
+what would lead to this not very nivce error :
+
+```
+build/base64 -e -in=build/base64 
+[TODO] al_options_get_duplicates NYI
+[TODO] al_options_get_duplicates NYI
+[TODO] al_options_get_duplicates NYI
+program <name of file to get base64 url> (<debug>)
+-d decode
+-e encode
+-u use base64url
+in=<input filnename>
+out=<output filename>, use stdout if not set
+```
 
 ______________________________________________
 
