@@ -13,7 +13,7 @@
 #include "al_options.h"
 #include "al_options_output.h"
 
-const char * aljson_main_version="0.2.1";
+const char * aljson_main_version="0.2.2";
 
 /**
 a complicated json stream ( one char ahead ) parser 
@@ -30,6 +30,7 @@ void usage()
   aldebug_printf(DBGSTREAM,"-m                         non recursive\n");
   aldebug_printf(DBGSTREAM,"-c                         check only (no print)\n");
   aldebug_printf(DBGSTREAM,"-b                         bare, no indent\n");
+  aldebug_printf(DBGSTREAM,"maxdepth=<integer value for max depth>     over maxdepth switch to non recursive\n");
   aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set");
   aldebug_printf(DBGSTREAM,"indent=flat|2space|tabs    indentation flat or with 2 spaces or with tabs \n");
   aldebug_printf(DBGSTREAM,"json_path=<path>\n");
@@ -84,6 +85,16 @@ int main(int argc, char ** argv)
   debug = (al_option_get(options,"d") == NULL) ? 0 : 1;
   checkonly = (al_option_get(options,"c") == NULL) ? 0 : 1;
 
+  aldatablock * maxdepth_value = al_option_get(options,"maxdepth");
+  char * maxdepth_str = NULL;
+  // hardcoded default ( big since non recursive is more buggy ).
+  int maxdepth = 100;
+  if ( maxdepth_value != NULL )
+    {
+      maxdepth_str = maxdepth_value->data.charptr;
+      maxdepth = atoi(maxdepth_str);
+    }
+    
   aldatablock * out_filename_value = al_option_get(options,"out");
   char * out_filename = NULL;
   if ( out_filename_value != NULL )
@@ -178,6 +189,12 @@ int main(int argc, char ** argv)
   json_ctx_set_debug(&json_tokenizer,debug);
   json_ctx_set_debug(&json_template_tokenizer,debug);
   main_debug=debug;
+
+  // hacky, plays with parsing_depth in fact ( max depth is 10000 )
+  if ( maxdepth_str != NULL )
+    {
+      json_context.parsing_depth=maxdepth;
+    }
 
   if (json_filename != NULL)
     {

@@ -31,7 +31,7 @@ struct json_parser_ctx
   struct json_level squote; // simple quote "'"
   struct json_level variable; // variable "?" ; to use existing framework JSON_TOGGLE not really sound yet.
   struct json_ctx * tokenizer;
-  int parsing_depth; // stack calll on recursive parsing.
+  int parsing_depth; // stack calls on recursive parsing.
   int max_depth; // protect stack calls.
 };
 
@@ -138,7 +138,7 @@ struct json_object {
 
 /** Where output is finaly done  **/
 
-struct json_object * syntax_error(struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
+struct json_object * syntax_error(const char * function, int line,struct json_parser_ctx * ctx,enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent);
 
 // create a json object allocated from allocator
 // if data is non NULL it is copied as json_object.string.internal.

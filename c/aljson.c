@@ -10,6 +10,9 @@
 #include "aljson_dump.h"
 #include "aldebug_output.h"
 
+// well quick and dirty ...
+#define JSON_TODO
+
 #ifdef JSON_TODO
 #include "altodo.h"
 #else
@@ -127,7 +130,7 @@ struct json_object * aljson_new_json_error(struct json_parser_ctx * parser, enum
   return object;
 }
 
-struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent)
+struct json_object * syntax_error(const char * function, int line, struct json_parser_ctx * parser, enum json_syntax_error erroridx, void * data,struct json_object * object,struct json_object * parent)
 {
   char c=0;
   int max_buff = 1024;
@@ -162,6 +165,7 @@ struct json_object * syntax_error(struct json_parser_ctx * parser, enum json_syn
   err_object->error.string.internal.length=buf_idx;  
   if ( ctx->debug_level > 0 )
     {
+      printf("At %s:%i ",function,line);
       aljson_dump_object(err_object,&aljson_print_ctx_debug);
       printf("while parsing object :\n");
       aljson_dump_object(object,&aljson_print_ctx_debug);
@@ -642,12 +646,12 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		      }
 		    else
 		      {
-			syntax_error(ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
+			syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
 		      }
 		  }
 		else
 		  {
-		    syntax_error(ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
 		  }
 		object=NULL;
 	      }
@@ -684,17 +688,17 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 			  }
 			else
 			  {
-			    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
+			    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
 			  }
 		      }
 		    else
 		      {
-			syntax_error(ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
+			syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
 		      }
 		  }
 		else
 		  {
-		    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
 		  }
 		object=NULL;
 	      }
@@ -705,7 +709,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    if ((parent != NULL) && (parent->type == '"'))
 	      {
 		// can't parse a string within a string
-		syntax_error(ctx,JSON_ERROR_STRING_IN_STRING, data,object,parent);
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_STRING_IN_STRING, data,object,parent);
 	      }
 	    else
 	      {
@@ -732,7 +736,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		      }
 		    else
 		      {
-			syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
+			syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
 		      }
 		  }
 		else
@@ -756,7 +760,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	  case JSON_TOKEN_VARIABLE_ID:
 	    if ( object != NULL )
 	      {
-		syntax_error(ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
 	      }
 	    else
 	      {
@@ -765,7 +769,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		struct json_object * variable_name = cut_string_object(ctx,'?');	  
 		if (variable_name == NULL )
 		  {
-		    syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
 		  }
 		else
 		  {
@@ -798,7 +802,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		    object->pair.value=value;
 		    if ( value == NULL )
 		      {
-			syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,object,parent);
+			syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,object,parent);
 		      }
 		    else
 		      {
@@ -814,14 +818,14 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		else
 		  {
 		    debug_tag(ctx->tokenizer,object->type);
-		    syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
 		    object=NULL;
 		  }
 	      }
 	    else
 	      {
 		debug_tag(ctx->tokenizer,'#');
-		syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
 	      }
 	    break;
 	  case JSON_TOKEN_SQUOTE_ID:
@@ -840,7 +844,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    else
 	      {
 		--ctx->parsing_depth;
-		return syntax_error(ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
+		return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
 	      }
 	    break;
 	  case JSON_TOKEN_TRUE_ID:
@@ -869,7 +873,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    else
 	      {
 		--ctx->parsing_depth;
-		return syntax_error(ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
+		return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
 	      }
 	    break;
 	  case JSON_TOKEN_EOF_ID:
@@ -878,12 +882,12 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    if ( object != NULL )
 	      {
 		--ctx->parsing_depth;
-		return syntax_error(ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
+		return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
 	      }
 	    else
 	      {
 		--ctx->parsing_depth;
-		return syntax_error(ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
+		return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
 	      }
 	  }
 	  
@@ -913,7 +917,7 @@ struct json_object * check_parent_is_pair(struct json_parser_ctx * ctx, void * d
       parent->pair.value=*object;
       if ( *object == NULL )
 	{
-	  syntax_error(ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,*object,parent);
+	  syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_KEY_WITHOUT_VALUE,data,*object,parent);
 	}
       else
 	{
@@ -999,7 +1003,6 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		  {
 		    if ( json_debug > 0 )
 		      {
-			printf("LOOK HERE 0\n");
 			aljson_dump_object(object,&aljson_print_ctx_debug);
 		      }
 
@@ -1007,12 +1010,12 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		  }
 		else
 		  {
-		    syntax_error(ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
 		  }
 	      }
 	    else
-	      {
-		syntax_error(ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
+	      {		
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
 	      }
 	    object=NULL;
 	  }
@@ -1046,11 +1049,11 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	element = alstack_pop(stack);
 	if ( element != NULL )
 	  {
-	    parent = element->reference;
+	    parent = element->reference;       
 	    if ( ( parent != NULL ) && (parent->type == ':' ) )
 	      {
 		// ERROR no reason to end a pair in an array.
-		syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
 	      }
 	  }
 
@@ -1066,21 +1069,32 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		      }
 		    else
 		      {
-			syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
+			syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_CLOSE_NON_LIST,data,object,parent);
 		      }
 		  }
 		else
 		  {
-		    syntax_error(ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_CLOSE_INVALID_PARENT,data,object,parent);
 		  }
 	      }
 	    else
 	      {
-		syntax_error(ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_CLOSE_NO_PARENT, data,object,parent);
 	      }
 	    object=NULL;
 	  }
+	if ( json_debug > 0 )
+	  {
+	    // before concrete
+	    aljson_dump_object(parent,&aljson_print_ctx_debug);
+	  }
 	object=aljson_concrete(ctx,parent);
+	if ( json_debug > 0 )
+	  {
+	    // after concrete
+	    aljson_dump_object(object,&aljson_print_ctx_debug);
+	  }
+
 	break;
       case JSON_TOKEN_DQUOTE_ID:
 	if ( object != NULL )
@@ -1118,7 +1132,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		  }
 		else
 		  {
-		    syntax_error(ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
 		  }
 		// readd parent [ since poped ]
 		alstack_push_ref(stack, (void *) parent);
@@ -1137,7 +1151,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
       case JSON_TOKEN_VARIABLE_ID:
 	if ( object != NULL )
 	  {
-	    syntax_error(ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
+	    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_VARIABLE_BOUNDARY,data,object,parent);
 	  }
 	else
 	  {
@@ -1146,7 +1160,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    struct json_object * variable_name = cut_string_object(ctx,'?');	  
 	    if (variable_name == NULL )
 	      {
-		syntax_error(ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_VARIABLE_NAME_NULL,data,object,parent);
 	      }
 	    else
 	      {
@@ -1174,20 +1188,21 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		alstack_push_ref(stack,(void *) pair);
 
 		// next object will be value, detected at '}' or ','
+		// and ] ???
 		object = NULL;
     
 	      }
 	    else
 	      {
 		debug_tag(ctx->tokenizer,object->type);
-		syntax_error(ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
+		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_KEY_NON_QUOTED,data,object,parent);
 		object=NULL;
 	      }
 	  }
 	else
 	  {
 	    debug_tag(ctx->tokenizer,'#');
-	    syntax_error(ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
+	    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_VALUE_WITHOUT_KEY,data,object,parent);
 	  }
 	break;
       case JSON_TOKEN_SQUOTE_ID:
@@ -1209,7 +1224,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	else
 	  {
 	    alstack_destroy(stack, NULL);
-	    return syntax_error(ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
+	    return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_NUMBER_MISPLACED,data, object,parent);
 	  }
 	break;
       case JSON_TOKEN_TRUE_ID:
@@ -1233,7 +1248,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	else
 	  {
 	    alstack_destroy(stack, NULL);
-	    return syntax_error(ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
+	    return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_CONSTANT_MISPLACED,data, object,parent);
 	  }
 	break;
       case JSON_TOKEN_EOF_ID:
@@ -1250,11 +1265,11 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	alstack_destroy(stack, NULL);
 	if ( object != NULL )
 	  {	    
-	    return syntax_error(ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
+	    return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_VALUE_CHAR_UNEXPECTED, data, object,parent);
 	  }
 	else
 	  {
-	    return syntax_error(ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
+	    return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
 	  }
       }
     
@@ -1276,6 +1291,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 // try recursive only if depth is not > ctx->max_depth
 struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
 {
+
   if ( ctx->parsing_depth > ctx->max_depth)
     {
       return parse_level_non_recursive(ctx,data,parent);
@@ -1284,6 +1300,7 @@ struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, stru
     {
       return parse_level_recursive(ctx,data,parent);
     }
+
 }
 
 
@@ -1412,8 +1429,8 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
 // return number of char read == relative position of first unrecognized char
 int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 {
-  int cumul = 0;
-  int result = 0;
+  long cumul = 0;
+  long result = 0;
   int negative = 0;
   int i = 0;
   int limit = number->internal.length - pos;
@@ -1450,7 +1467,9 @@ int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 		    {
 		      // overflow.
 		      todo("[ERROR] should handle overflow for json_get_int(..)");
-		      break;
+		      // FIXME !!! at least don't break...
+		      cumul = 0;
+		      // break;
 		    }
 		  else
 		    {
@@ -1476,7 +1495,8 @@ int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 	    }
 	}
 
-      *(resultp) = result;
+      // FIXME, wrap a long into an int
+      *(resultp) = (int) result;
     }
   return i;
 }

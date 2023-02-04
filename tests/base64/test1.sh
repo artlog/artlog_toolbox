@@ -19,6 +19,10 @@ check_diff_files()
     then
 	log_error unexpected diff '(<) is ref' "'$fref'" 'and (>) is testing' "'$ftest'"
 	log_error hint meld $fref $ftest
+	if [[ -n $automeld ]]
+	then
+	    $automeld $fref $ftest&
+	fi
     fi
 }
 
@@ -32,6 +36,23 @@ check_diff()
 check_errors()
 {
     [[ -n $errors ]] && echo "$errors" &&  exit $EXITERROR
+}
+
+encode_decode_test()
+{
+    reftest=$1
+    $base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.b64 2>${TESTOUT}/$reftest.b64.stderr
+    check_diff $reftest.b64
+    $base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.2.b64 2>${TESTOUT}/$reftest.2.b64.stderr
+
+    if false
+    then
+	# difference can be seen due to out of bound views might not be relevant
+	check_diff_files ${TESTOUT}/$reftest.b64.stderr ${TESTOUT}/$reftest.2.b64.stderr
+    fi
+
+    $base64 -d in=${TESTOUT}/$reftest.b64 out=${TESTOUT}/$reftest 2>${TESTOUT}/$reftest.stderr
+    check_diff $reftest
 }
 
 full_test()
@@ -97,8 +118,6 @@ fi
 $base64 -e in=ref/plaintext.txt out=${TESTOUT}/plaintext.b64 2>${TESTOUT}/plaintext.b64.stderr
 $base64 -e in=ref/plaintext.txt out=${TESTOUT}/plaintext.b64.2 2>${TESTOUT}/plaintext.b64.2.stderr
 
-$automeld ${TESTOUT}/plaintext.b64.stderr ${TESTOUT}/plaintext.b64.2.stderr&
-
 check_diff plaintext.b64
 
 $base64 -d in=ref/plaintext.b64 out=${TESTOUT}/plaintext.txt
@@ -117,28 +136,15 @@ then
     diff ${TESTOUT}/plaintext.txt ${TESTOUT}/plaintext.txt.1
 fi
 
-reftest=gnubase64.txt
-$base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.b64 2>${TESTOUT}/$reftest.b64.stderr
-check_diff $reftest.b64
-$base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.2.b64 2>${TESTOUT}/$reftest.2.b64.stderr
-
-if false
-then
-    # difference can be seen due to out of bound views might not be relevant
-    check_diff_files ${TESTOUT}/$reftest.b64.stderr ${TESTOUT}/$reftest.2.b64.stderr
-fi
-
-$base64 -d in=${TESTOUT}/$reftest.b64 out=${TESTOUT}/$reftest 2>${TESTOUT}/$reftest.stderr
-check_diff $reftest
+encode_decode_test gnubase64.txt
 
 }
-
 
 BUILD=../../build
 EXITERROR=1
 
 #automeld=meld
-automeld=echo
+automeld=
 
 #base64=$BUILD/base64
 #base64=$BUILD/base64_dbg

@@ -101,7 +101,8 @@ void aljson_init(
   json_context->tokenizer=json_tokenizer;
   // HARDCODED max_depth 10000
   json_context->max_depth=10000;
-  json_context->parsing_depth=json_context->max_depth - 4;
+  // WHY ??? For a test ? could it even be negative ?
+  json_context->parsing_depth=json_context->max_depth > 4 ? json_context->max_depth - 4 : 0;
 
   if ( print_context != NULL )
     {

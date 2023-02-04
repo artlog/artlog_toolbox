@@ -354,7 +354,7 @@ void aljson_dump_object( struct json_object * object, struct print_ctx * print_c
 	  aljson_dump_error_object(object, print_ctx);
 	  break;
         default:
-	  aldebug_printf(DBGSTREAM,"ERROR type %c %p",object->type, print_ctx);
+	  aldebug_printf(DBGSTREAM,"ERROR type %c(%x) %p",object->type,object->type, print_ctx);
 	}
     }
   else
