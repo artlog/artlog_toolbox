@@ -102,40 +102,53 @@ int aloutputwritechar(struct aloutputstream * output, char c)
 int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output)
 {
   int bits = 0;
-  int read = 0;
+  int bitreadden = 0;
   char b64char =0;
 
   struct bitfieldreader bfreader;
   fieldreader_init(&bfreader);
-  // char mode
-  fieldreader_setcharmode(&bfreader,8);
+  // char mode, WHY ? seems buggy
+  // fieldreader_setcharmode(&bfreader,8);
   fieldreader_setinput(&bfreader,inputstream);
 
   unsigned int block;
+  int iseof = 0;
   do {
     block = fieldreader_read( &bfreader, 6);
-    if ( bitfieldreader_is_eof(&bfreader) )
+    iseof = bitfieldreader_is_eof(&bfreader);
+    if ( iseof )
       {
-	read = bitfieldreader_get_readbits(&bfreader);
-	aldebug_printf(DBGSTREAM,"*** eof read bits %i block %x ***\n",read, block);
+	bitreadden = bitfieldreader_get_readbits(&bfreader);
+	aldebug_printf(DBGSTREAM,"*** eof bitreadden %i block %08x ***\n",bitreadden, block);
       }
     else
       {
-	read=6;
+	bitreadden=6;
       }
-    if ( read > 0 )
+    if ( bitreadden > 0 )
       {
-	bits+=read;
+	bits+=bitreadden;
 	b64char = (*func_6bitstochar)(block);
+#ifdef DEBUG
+	aldebug_printf(DBGSTREAM,"b64char '%c'(%x) block %08x bit readden %i\n",b64char,b64char,block,bitreadden);
+#endif
 	// addchar to output
 	aloutputwritechar(output,b64char);
       }
-  } while ( read == 6 );
+#ifdef DEBUG
+    else
+      {
+	aldebug_printf(DBGSTREAM,"block %08x bit readden %i\n",block,bitreadden);
+      }
+#endif
+  } while ( ( bitreadden == 6 ) && ( ! iseof) );
 
   // pad input 6 bits * 4
   int pad = bits % 24;
 
-  aldebug_printf(DBGSTREAM,"\n pad %i.",pad);
+#ifdef DEBUG
+  aldebug_printf(DBGSTREAM,"pad %i bits %i\n",pad, bits);
+#endif
   // 0,  17..23 => nothing.
   if ( ( pad > 0 ) && ( pad <=  16 ) )
     {
@@ -147,7 +160,6 @@ int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinp
 	  aloutputwritechar(output,complement);
 	}
     }
-
   return 0;
 }
 
@@ -155,6 +167,7 @@ int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinp
 int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output)
 {
   int bits = 0;
+  // bytes
   int read = 0;
   unsigned char bitblock =0;
   unsigned char charto6bits[256];

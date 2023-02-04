@@ -417,12 +417,14 @@ unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
       intern[2]=hack[1];
       intern[3]=hack[0];
 #else
+      // why 8 ?
+      #error untested
       memcpy(intern,hack,8);
 #endif
     }
   else
     {
-      aldebug_printf(DBGSTREAM,"|ERROR] get int out of bound %i/%i\n", offset,data->length);
+      aldebug_printf(DBGSTREAM,"[ERROR] get int out of bound %i/%i\n", offset,data->length);
     }
   return result;  
 }
@@ -438,6 +440,7 @@ unsigned int aldatablock_get_uint32le(aldatablock * data, int offset)
       unsigned char * hack = &data->data.ucharptr[offset];
   
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+      // why 8 ?
       memcpy(intern,hack,8);
 #else
       intern[0]=hack[3];
@@ -448,7 +451,7 @@ unsigned int aldatablock_get_uint32le(aldatablock * data, int offset)
     }
   else
     {
-      aldebug_printf(DBGSTREAM,"|ERROR] get int out of bound %i/%i\n", offset,data->length);
+      aldebug_printf(DBGSTREAM,"[ERROR] get int out of bound %i/%i\n", offset,data->length);
     }
   return result;  
 }
