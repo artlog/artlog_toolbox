@@ -215,7 +215,9 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
 	// does it trace ? where ?
 	bitblock = charto6bits[c];
 	// ... in debug mode only .. to check
-	// aldebug_printf(DBGSTREAM,"%c%i.",c,bitblock);
+#ifdef DEBUG
+	aldebug_printf(DBGSTREAM,"%c%i.",c,bitblock);
+#endif
 	if ( bitblock < 64 )
 	  {
 	    // add 6 bits to output.
@@ -225,8 +227,7 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
 	  if ( bitblock == 64 )
 	    {
 	      // complement case
-	      // to check if it is right behavior : reset offset, don't write any remaing bits if any.
-	      bfoutput.bitOffset=0;
+	      // should flush bitfieldwriter, rely on bitfielwriter_padtobyte
 	      read = 0;
 	    }
 	  else
@@ -237,9 +238,13 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
       }
   } while ( read == 1 );
 
-  
+
+#ifdef DEBUG
+  aldebug_printf(DBGSTREAM," final padding \n");
+#endif
+
   bitfieldwriter_padtobyte(&bfoutput);
-			   
+
   return 0;
 }
 

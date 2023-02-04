@@ -1,0 +1,14 @@
+#!/bin/bash
+
+
+# Voici donc un texte qui va être encodé en base64
+#
+# Il faut vérifier que l'encodage est correct.
+#
+# Test avec le base64 des gnu coreutils
+
+base64 -w0 - <$0 >$0.b64
+
+# run it ( to not have to set +x ) :
+echo bash $0
+

@@ -18,6 +18,9 @@ $(BUILD)/cryptohash: alcryptohash_test.c alcryptohash.c alstrings.c aldebug.c al
 	gcc -g -O0 -o $@ $^
 
 $(BUILD)/base64: albase64url_main.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c aloutput.c albitfieldwriter.c al_options.c
+	gcc -g -O0 -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash  -Wl,-Bdynamic
+
+$(BUILD)/base64_dbg: albase64url_main.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c aloutput.c albitfieldwriter.c al_options.c
 	gcc -g -O0 -DDEBUG -o $@ $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash  -Wl,-Bdynamic
 
 $(BUILD)/salsa20: alsalsa20.c alsalsa20_test.c alstrings.c aldebug.c altodo.c  aloutput.c

@@ -135,6 +135,14 @@ void fieldreader_setinput( struct bitfieldreader * this, struct alinputstream * 
 unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bits )
 {
 
+#ifdef DEBUG
+	    {
+	      char buffer [33];
+	      tobitstring(this->currentWord,buffer);
+	      aldebug_printf(DBGSTREAM,"enter %s:%i reading bit on offset %i bits %i currentWord %08x %s\n",__FUNCTION__,__LINE__, this->bitOffset, bits,this->currentWord, buffer);
+	    }
+#endif
+
   if ( this->eof )
     {      
       aldebug_printf(DBGSTREAM,"ERROR reading on a bitstream that reached eof already\n");
@@ -171,7 +179,7 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
 	    }
 #endif
 	    
-	    field = this->currentWord >> ( this->dataSize - bits);
+	    field = this->currentWord >> ( this->dataSize - bits );
 	    // most significant bits are read then removed them from currentWord
 	    this->currentWord <<= bits;
 	    this->currentRead <<= bits;
@@ -184,7 +192,6 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
       else if ( bits == this->readbits )
 	{
 	  this->eof=1;
-	  return this->currentWord;
 	}
       else
 	{
@@ -361,7 +368,7 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
     field = bitfieldreader_internal_read(this,bits);
 #ifdef DEBUG
 	{
-	  aldebug_printf(DBGSTREAM,"field %08x\n", field);
+	  aldebug_printf(DBGSTREAM,"%s:%i field %08x\n", __FUNCTION__, __LINE__, field);
 	}
 #endif
     

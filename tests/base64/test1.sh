@@ -18,6 +18,7 @@ check_diff_files()
     if ! diff $fref $ftest
     then
 	log_error unexpected diff '(<) is ref' "'$fref'" 'and (>) is testing' "'$ftest'"
+	log_error hint meld $fref $ftest
     fi
 }
 
@@ -33,13 +34,10 @@ check_errors()
     [[ -n $errors ]] && echo "$errors" &&  exit $EXITERROR
 }
 
-BUILD=../../build
-TESTOUT=tmp
-EXITERROR=1
+full_test()
+{
 
-clean_test
-
-base64=$BUILD/base64
+    clean_test
 
 if [[ ! -x $base64 ]]
 then
@@ -85,7 +83,7 @@ then
        check_diff_files ${TESTOUT}/charfile.b64.stderr.1 ${TESTOUT}/charfile.b64.stderr.2
        if [[ -n $errors ]]
        then
-	   meld  ${TESTOUT}/charfile.b64.stderr.1 ${TESTOUT}/charfile.b64.stderr.2
+	   $automeld  ${TESTOUT}/charfile.b64.stderr.1 ${TESTOUT}/charfile.b64.stderr.2
        fi
     fi
        
@@ -99,7 +97,7 @@ fi
 $base64 -e in=ref/plaintext.txt out=${TESTOUT}/plaintext.b64 2>${TESTOUT}/plaintext.b64.stderr
 $base64 -e in=ref/plaintext.txt out=${TESTOUT}/plaintext.b64.2 2>${TESTOUT}/plaintext.b64.2.stderr
 
-meld ${TESTOUT}/plaintext.b64.stderr ${TESTOUT}/plaintext.b64.2.stderr&
+$automeld ${TESTOUT}/plaintext.b64.stderr ${TESTOUT}/plaintext.b64.2.stderr&
 
 check_diff plaintext.b64
 
@@ -119,5 +117,38 @@ then
     diff ${TESTOUT}/plaintext.txt ${TESTOUT}/plaintext.txt.1
 fi
 
+reftest=gnubase64.txt
+$base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.b64 2>${TESTOUT}/$reftest.b64.stderr
+check_diff $reftest.b64
+$base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.2.b64 2>${TESTOUT}/$reftest.2.b64.stderr
+
+if false
+then
+    # difference can be seen due to out of bound views might not be relevant
+    check_diff_files ${TESTOUT}/$reftest.b64.stderr ${TESTOUT}/$reftest.2.b64.stderr
+fi
+
+$base64 -d in=${TESTOUT}/$reftest.b64 out=${TESTOUT}/$reftest 2>${TESTOUT}/$reftest.stderr
+check_diff $reftest
+
+}
+
+
+BUILD=../../build
+EXITERROR=1
+
+#automeld=meld
+automeld=echo
+
+#base64=$BUILD/base64
+#base64=$BUILD/base64_dbg
+
+for fragrance in base64_dbg base64
+do    
+    echo -e "\n\n******** TESTING $fragrance **********\n\n"
+    TESTOUT=tmp.$fragrance
+    base64=$BUILD/$fragrance
+    full_test
+done
 
 check_errors

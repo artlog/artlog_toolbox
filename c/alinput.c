@@ -197,6 +197,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
   unsigned char result = 0;
   if ( alinputstream_iseof(stream) )
     {
+      stream->bits = 0;
       return 0;
     }
 
@@ -216,6 +217,7 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
       else
 	{
 	  // set eof only if full chain is eof.
+	  stream->bits = 0;
 	  alinputstream_seteof(stream);
 	  result = 0;
 	}
