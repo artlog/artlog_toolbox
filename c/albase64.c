@@ -23,7 +23,7 @@ void setup_charto6bits(char (*func_6bitstochar)(unsigned int), unsigned char *ch
   charto6bits[complement]=64;
   for (unsigned char i=0; i< 64; i++)
     {
-#ifdef DEBUG
+#ifdef DEBUG_BASE64
       printf("%c",func_6bitstochar(i));
 #endif
       charto6bits[func_6bitstochar(i)]=i;
@@ -119,7 +119,9 @@ int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinp
     if ( iseof )
       {
 	bitreadden = bitfieldreader_get_readbits(&bfreader);
+#ifdef DEBUG_BASE64	
 	aldebug_printf(DBGSTREAM,"*** eof bitreadden %i block %08x ***\n",bitreadden, block);
+#endif	
       }
     else
       {
@@ -129,13 +131,13 @@ int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinp
       {
 	bits+=bitreadden;
 	b64char = (*func_6bitstochar)(block);
-#ifdef DEBUG
+#ifdef DEBUG_BASE64
 	aldebug_printf(DBGSTREAM,"b64char '%c'(%x) block %08x bit readden %i\n",b64char,b64char,block,bitreadden);
 #endif
 	// addchar to output
 	aloutputwritechar(output,b64char);
       }
-#ifdef DEBUG
+#ifdef DEBUG_BASE64
     else
       {
 	aldebug_printf(DBGSTREAM,"block %08x bit readden %i\n",block,bitreadden);
@@ -146,7 +148,7 @@ int albase64func_frominput(char (*func_6bitstochar)(unsigned int) , struct alinp
   // pad input 6 bits * 4
   int pad = bits % 24;
 
-#ifdef DEBUG
+#ifdef DEBUG_BASE64
   aldebug_printf(DBGSTREAM,"pad %i bits %i\n",pad, bits);
 #endif
   // 0,  17..23 => nothing.
@@ -215,7 +217,7 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
 	// does it trace ? where ?
 	bitblock = charto6bits[c];
 	// ... in debug mode only .. to check
-#ifdef DEBUG
+#ifdef DEBUG_BASE64
 	aldebug_printf(DBGSTREAM,"%c%i.",c,bitblock);
 #endif
 	if ( bitblock < 64 )
@@ -239,7 +241,7 @@ int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struc
   } while ( read == 1 );
 
 
-#ifdef DEBUG
+#ifdef DEBUG_BASE64
   aldebug_printf(DBGSTREAM," final padding \n");
 #endif
 
