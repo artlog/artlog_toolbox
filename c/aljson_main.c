@@ -16,7 +16,8 @@
 const char * aljson_main_version="0.2.2";
 
 /**
-a complicated json stream ( one char ahead ) parser 
+a complicated json stream ( one char ahead ) parser
+preserve ordering of pairs in { }
 
 see usage()
 **/
@@ -31,12 +32,12 @@ void usage()
   aldebug_printf(DBGSTREAM,"-c                         check only (no print)\n");
   aldebug_printf(DBGSTREAM,"-b                         bare, no indent\n");
   aldebug_printf(DBGSTREAM,"maxdepth=<integer value for max depth>     over maxdepth switch to non recursive\n");
-  aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set");
-  aldebug_printf(DBGSTREAM,"indent=flat|2space|tabs    indentation flat or with 2 spaces or with tabs \n");
+  aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set\n");
+  aldebug_printf(DBGSTREAM,"indent=flat|spaces|tabs    indentation flat or with 2 spaces or with tabs \n");
   aldebug_printf(DBGSTREAM,"json_path=<path>\n");
   aldebug_printf(DBGSTREAM,"template=filename          file to open in read only mode to parse in json for template.\n");
   aldebug_printf(DBGSTREAM,"          template is used for json unification ie extracting fields from a template pattern\n");
-  aldebug_printf(DBGSTREAM,"-- to separate options from arguments\n");  
+  aldebug_printf(DBGSTREAM,"-- to separate options from arguments\n");
   aldebug_printf(DBGSTREAM,"First argument filename    file to open in read only mode to parse in json.\n");
 
   aldebug_printf(DBGSTREAM,"\naljson_main version %s\n",aljson_main_version);
@@ -145,7 +146,7 @@ int main(int argc, char ** argv)
       };
       struct match_value matches[3] = {
 	{"flat",ALJSON_PRINT_FLAT},
-	{"2space",ALJSON_PRINT_2SPACE},
+	{"spaces",ALJSON_PRINT_SPACES},
 	{"tabs",ALJSON_PRINT_TABS}
       };
       int found = -1;

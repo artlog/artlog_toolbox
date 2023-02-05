@@ -151,14 +151,14 @@ void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print
 	print_ctx->s_indent = NULL;
       }
       break;
-    case ALJSON_PRINT_2SPACE:
+    case ALJSON_PRINT_SPACES:
       // this is default
     default:
       {
 	print_ctx->indent=0;
-	print_ctx->do_indent=2; // 0 no indent, >= 1 number of space by indent.
+	print_ctx->do_indent=3; // 0 no indent, >= 1 number of space by indent.
 	print_ctx->s_indent=" ";
-	print_ctx->format = ALJSON_PRINT_2SPACE;
+	print_ctx->format = ALJSON_PRINT_SPACES;
       }
     }
 }
@@ -196,7 +196,7 @@ void aljson_print_ctx_init_format(struct print_ctx * print_ctx, enum aljson_prin
 
 void aljson_print_ctx_init(struct print_ctx * print_ctx)
 {
-  aljson_print_ctx_init_format(print_ctx, ALJSON_PRINT_2SPACE);
+  aljson_print_ctx_init_format(print_ctx, ALJSON_PRINT_SPACES);
 }
 
 void aljson_print_object_name(struct json_object * object, struct print_ctx * print_ctx)

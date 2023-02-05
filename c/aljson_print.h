@@ -13,7 +13,7 @@ typedef void (*aljson_print_printf_callback)(struct print_ctx * print_ctx, const
 
 enum aljson_print_format {
 			  ALJSON_PRINT_TABS,
-			  ALJSON_PRINT_2SPACE,
+			  ALJSON_PRINT_SPACES,
 			  ALJSON_PRINT_FLAT
 };
 

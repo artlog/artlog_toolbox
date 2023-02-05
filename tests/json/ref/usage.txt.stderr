@@ -4,7 +4,8 @@ Output : dump parsed json to standard output.
 -c                         check only (no print)
 -b                         bare, no indent
 maxdepth=<integer value for max depth>     over maxdepth switch to non recursive
-out=<output filename>, use stdout if not setindent=flat|2space|tabs    indentation flat or with 2 spaces or with tabs 
+out=<output filename>, use stdout if not set
+indent=flat|spaces|tabs    indentation flat or with 2 spaces or with tabs 
 json_path=<path>
 template=filename          file to open in read only mode to parse in json for template.
           template is used for json unification ie extracting fields from a template pattern
