@@ -95,6 +95,11 @@ check_diff usage.txt.stderr
 # don't even try to run executable if usage differs.
 check_errors
 
+$json indent=spaces -- ref/Q3390720.json.pp >${TESTOUT}/Q3390720.json.pp
+
+check_diff Q3390720.json.pp 
+
+
 #encode_decode_test one cbor json
 #encode_decode_test map cbor json
 
@@ -102,6 +107,8 @@ check_errors
 $json maxdepth=50 -- ref/syntax_error_101.json
 
 $json maxdepth=20000 -- ref/syntax_error_101.json
+
+
 
 # this shows that mix recursive & non_recursive is buggy
 $json -- ref/syntax_error_101.json
