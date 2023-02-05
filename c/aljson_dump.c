@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <math.h>
 
+// quick fix to actualy not fix ...
+#define NUMBER_AS_STRINGS
+
 struct aloutputstream * aljson_get_output(struct print_ctx * print_ctx)
 {
   return print_ctx->outfile;
@@ -29,7 +32,7 @@ void aljson_dump_exit_indent(struct print_ctx * print_ctx)
 }
 
 void aljson_dump_string( struct json_object * object, struct print_ctx * print_ctx)
-{  
+{
   struct aloutputstream * output=aljson_get_output(print_ctx);
   if ( object != NULL)
     {
@@ -47,7 +50,7 @@ void aljson_dump_string( struct json_object * object, struct print_ctx * print_c
 	  // todo("implement ALTYPE_STR0 for string->internal.type");
 	  aloutputstream_printf_1k(output,ALPASCALSTRFMT,
 		 ALPASCALSTRARGS(string->internal.length,(char *) string->internal.data.ptr));
-	}      
+	}
     }
   else
     {
@@ -62,6 +65,10 @@ void aljson_dump_string_number( struct json_object * object, struct print_ctx * 
       struct aloutputstream * output=aljson_get_output(print_ctx);
       if ( object->type == '0' )
 	{
+	  // might use direct internal representation without encoding.
+#ifdef NUMBER_AS_STRINGS
+	  aljson_dump_string( object, print_ctx);
+#else
 	  float f = json_get_float(object);
 	  if ( ceilf(f) == f )
 	    {
@@ -71,6 +78,7 @@ void aljson_dump_string_number( struct json_object * object, struct print_ctx * 
 	    {
 	      aloutputstream_printf_1k(output,"%.6f",f);
 	    }
+#endif
 	}
       else
 	{
@@ -101,7 +109,7 @@ void aljson_dump_variable( struct json_variable * variable, struct print_ctx * p
       if ( variable->bound == 1 )
 	{
 	  aloutputstream_printf_1k(output,"=");
-	  aljson_dump_object(variable->value, print_ctx);	  
+	  aljson_dump_object(variable->value, print_ctx);
 	}
     }
 }
@@ -120,7 +128,7 @@ void aljson_dump_indent(struct print_ctx * print_ctx)
 	  if ( i < 80 )
 	    {
 	      while ( i >0 )
-		{	      
+		{
 		  aloutputstream_printf_1k(output,"%s",print_ctx->s_indent);
 		  --i;
 		}
@@ -150,7 +158,7 @@ void aljson_dump_pair_object( struct json_object * object, struct print_ctx * pr
 void aljson_dump_variable_object( struct json_object * object, struct print_ctx * print_ctx)
 {
 
-  struct aloutputstream * output=aljson_get_output(print_ctx);     
+  struct aloutputstream * output=aljson_get_output(print_ctx);
   if ( object != NULL)
     {
       assert(object->type == '?');
@@ -196,7 +204,7 @@ void aljson_dump_dict_object( struct json_object * object, struct print_ctx * pr
     {
       return;
     }
-  
+
   aloutputstream_printf_1k(output,"%c",object->type);
   aljson_dump_enter_indent(print_ctx);
   if (object->dict.nitems > 0)
@@ -243,7 +251,7 @@ void aljson_dump_growable( struct json_growable *growable, struct print_ctx * pr
     }
   else
     {
-      if (growable->size != 0) aloutputstream_printf_1k(output,"#");	
+      if (growable->size != 0) aloutputstream_printf_1k(output,"#");
     }
   aloutputstream_printf_1k(output,"%c|",growable->final_type);
 }
@@ -279,7 +287,7 @@ void aljson_dump_constant_object( struct json_object * object, struct print_ctx 
     {
       aldebug_printf(DBGSTREAM,"ERROR constant type %c %p NULL",object->type, print_ctx);
     }
-    
+
 }
 
 void aljson_dump_error_object( struct json_object* object, struct print_ctx * print_ctx)
@@ -304,7 +312,7 @@ void aljson_dump_object( struct json_object * object, struct print_ctx * print_c
 {
   static int depth = 0;
   struct aloutputstream * output=aljson_get_output(print_ctx);
-  
+
   ++depth;
 
   if ( depth > print_ctx->max_depth )
@@ -313,7 +321,7 @@ void aljson_dump_object( struct json_object * object, struct print_ctx * print_c
       --depth;
       return;
     }
-  
+
   if (object != NULL)
     {
       // printf("%p[%c]",object,object->type);
@@ -353,7 +361,7 @@ void aljson_dump_object( struct json_object * object, struct print_ctx * print_c
 	case 'E':
 	  aljson_dump_error_object(object, print_ctx);
 	  break;
-        default:
+	default:
 	  aldebug_printf(DBGSTREAM,"ERROR type %c(%x) %p",object->type,object->type, print_ctx);
 	}
     }
@@ -364,4 +372,3 @@ void aljson_dump_object( struct json_object * object, struct print_ctx * print_c
 
   --depth;
 }
-

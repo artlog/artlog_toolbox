@@ -1590,6 +1590,7 @@ float json_get_float(struct json_object * object )
 
 // convert a string value into an int value...
 // here assume encoded as string
+// int is 32bits and might not be enough ...
 int json_get_int(struct json_object * object )
 {
   int result = 0;
