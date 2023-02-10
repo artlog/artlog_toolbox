@@ -1,26 +1,6 @@
 #!/bin/bash
 
-
-log_any()
-{
-    echo "$@" >&2
-}
-
-log_error()
-{
-    log_any "[ERROR] $@"
-    errors="$errors $@"
-}
-
-log_warn()
-{
-    log_any "[WARNING] $@"
-}
-
-clean_test()
-{
-    rm -r ./${TESTOUT}
-}
+source ../lib/basefuncs.sh
 
 check_diff_files()
 {
@@ -77,19 +57,7 @@ then
     exit $EXITERROR
 fi
 
-mime_file=$(file --mime $base64)
-
-mime_ref="$base64: application/x-pie-executable; charset=binary"
-mime_ref2="$base64: application/x-sharedlib; charset=binary"
-
-if [[ $mime_file != $mime_ref ]]
-then
-    log_warn  "'$mime_file' != '$mime_ref'"
-    if [[  $mime_file != $mime_ref2 ]]
-    then
-	log_error "'$mime_file' != '$mime_ref2'"
-    fi
-fi
+check_executable "$base64"
 
 mkdir ${TESTOUT}
 

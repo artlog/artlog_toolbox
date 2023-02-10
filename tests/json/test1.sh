@@ -1,17 +1,8 @@
 #!/bin/bash
 
-# cbor test copied from cbor
+# json test copied from cbor
 
-log_error()
-{
-    echo "[ERROR] $@" >&2
-    errors="$errors $@"
-}
-
-clean_test()
-{
-    rm -r ./${TESTOUT}
-}
+source ../lib/basefuncs.sh
 
 check_diff_files()
 {
@@ -70,48 +61,41 @@ full_test()
 
     clean_test
 
-if [[ ! -x $json ]]
-then
-    log_error "'$json' is not executable'"
-    exit $EXITERROR
-fi
+    if [[ ! -x $json ]]
+    then
+	log_error "'$json' is not executable'"
+	exit $EXITERROR
+    fi
 
-mime_file=$(file --mime $json)
+    check_executable "$json"
 
-mime_ref="$json: application/x-pie-executable; charset=binary"
+    mkdir ${TESTOUT}
 
-if [[ $mime_file != $mime_ref ]]
-then
-    log_error "'$mime_file' != '$mime_ref'"
-fi
+    $json >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
 
-mkdir ${TESTOUT}
+    check_diff usage.txt
+    check_diff usage.txt.stderr
 
-$json >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
+    # don't even try to run executable if usage differs.
+    check_errors
 
-check_diff usage.txt
-check_diff usage.txt.stderr
+    $json indent=spaces -- ref/Q3390720.json.pp >${TESTOUT}/Q3390720.json.pp
 
-# don't even try to run executable if usage differs.
-check_errors
-
-$json indent=spaces -- ref/Q3390720.json.pp >${TESTOUT}/Q3390720.json.pp
-
-check_diff Q3390720.json.pp 
+    check_diff Q3390720.json.pp 
 
 
-#encode_decode_test one cbor json
-#encode_decode_test map cbor json
+    #encode_decode_test one cbor json
+    #encode_decode_test map cbor json
 
-# $json -d -- ref/appendix_a.json
-$json maxdepth=50 -- ref/syntax_error_101.json
+    # $json -d -- ref/appendix_a.json
+    $json maxdepth=50 -- ref/syntax_error_101.json
 
-$json maxdepth=20000 -- ref/syntax_error_101.json
+    $json maxdepth=20000 -- ref/syntax_error_101.json
 
 
 
-# this shows that mix recursive & non_recursive is buggy
-$json -- ref/syntax_error_101.json
+    # this shows that mix recursive & non_recursive is buggy
+    $json -- ref/syntax_error_101.json
 
 }
 

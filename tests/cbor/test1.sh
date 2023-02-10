@@ -2,16 +2,7 @@
 
 # cbor test copied from base64
 
-log_error()
-{
-    echo "[ERROR] $@" >&2
-    errors="$errors $@"
-}
-
-clean_test()
-{
-    rm -r ./${TESTOUT}
-}
+source ../lib/basefuncs.sh
 
 check_diff_files()
 {
@@ -70,33 +61,32 @@ full_test()
 
     clean_test
 
-if [[ ! -x $cbor ]]
-then
-    log_error "'$cbor' is not executable'"
-    exit $EXITERROR
-fi
+    if [[ ! -e $cbor ]]
+    then
+	log_error "$cbor does not exists"
+	log_warn "Your might want to do: cd ../../c/cbor; make"
+    fi
+    
+    if [[ ! -x $cbor ]]
+    then
+	log_error "'$cbor' is not executable'"    
+	exit $EXITERROR
+    fi
 
-mime_file=$(file --mime $cbor)
+    check_executable "$cbor"
 
-mime_ref="$cbor: application/x-pie-executable; charset=binary"
+    mkdir ${TESTOUT}
 
-if [[ $mime_file != $mime_ref ]]
-then
-    log_error "'$mime_file' != '$mime_ref'"
-fi
+    $cbor >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
 
-mkdir ${TESTOUT}
+    check_diff usage.txt
+    check_diff usage.txt.stderr
 
-$cbor >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
+    # don't even try to run executable if usage differs.
+    check_errors
 
-check_diff usage.txt
-check_diff usage.txt.stderr
-
-# don't even try to run executable if usage differs.
-check_errors
-
-encode_decode_test one cbor json
-encode_decode_test map cbor json
+    encode_decode_test one cbor json
+    encode_decode_test map cbor json
 
 }
 
