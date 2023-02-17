@@ -6,7 +6,9 @@ void process_element(void * data, void * datacontext, struct albtree * btree)
 {
   if (data != NULL)
     {
-      printf("%s\n",(char*) data);
+      printf("%p:",btree);
+      printf("'%s' ",(char*) data);
+      printf("%p %p\n",btree->left,btree->right);
     }
   else
     {
@@ -21,6 +23,7 @@ void basic_test()
   struct albtree * leaf = NULL;
   
   albtree_init(root, "root", NULL, NULL);
+
   leaf = albtree_insert_left(root,"a");
   leaf = albtree_insert_left(leaf,"b");
   leaf = albtree_insert_left(leaf,"c");
@@ -30,11 +33,14 @@ void basic_test()
   leaf = albtree_insert_right(leaf,"B");
   leaf = albtree_insert_right(leaf,"C");
   leaf = albtree_insert_right(leaf,"D");
-
   
+  printf("walk SLR\n");
   albtree_walk(root, ALBTREE_WP_SLR, process_element, NULL,10);
+  printf("walk LSR\n");
   albtree_walk(root, ALBTREE_WP_LSR, process_element, NULL,10);
+  printf("walk RSL\n");
   albtree_walk(root, ALBTREE_WP_RSL, process_element, NULL,10);
+  printf("walk LRS\n");
   albtree_walk(root, ALBTREE_WP_LRS, process_element, NULL,10);
 
   if ( root != NULL )

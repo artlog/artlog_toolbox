@@ -81,8 +81,11 @@ void albtree_set_right(struct albtree * btree, struct albtree * right)
 struct albtree * albtree_internal_alloc(struct albtree * btree, void * data)
 { 
   struct albtree * newtree = (*btree->allocate)();
+  // TO check : why move parent left element below ?
   // if there is already a left part then this is inserted before it.
-  albtree_init(newtree,data,btree->left,NULL); 
+  albtree_init(newtree,data,btree->left,NULL);
+  // move left part, don't duplicate it in parent.
+  btree->left=NULL;
   // same allocator than btree.
   newtree->allocate=btree->allocate;
   newtree->clean=btree->clean;
@@ -105,7 +108,7 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 }
 
 // recursive implementation
- void albtree_walk_recursive(struct albtree * btree, enum albtreewalkprocess walkprocess, void (* data_process) (void * data, void * contextdata, struct albtree * btree), void * contextdata, int depth)
+ void albtree_walk_recursive(struct albtree * btree, enum albtreewalkprocess walkprocess, void (* data_process) (void * data, void * contextdata, struct albtree * btree4), void * contextdata, int depth)
 {
   if ( depth > 0 )
     {
@@ -147,7 +150,6 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 	      albtree_walk_recursive(btree->right, walkprocess,data_process,contextdata, depth-1);
 	      break;
 	    }
-      
 	  // third
 	  switch(walkprocess)
 	    {
