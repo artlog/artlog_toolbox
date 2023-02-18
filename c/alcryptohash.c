@@ -207,8 +207,7 @@ void alsha2_pad_to_512bits(struct alsha2_internal * intern, aldatablock * last_b
   ALDEBUG_IF_DEBUG(intern,alsha2x,debug)
     {
       aldebug_printf(DBGSTREAM,"last block padded state %i length %i\n", intern->state, intern->cumulated_length);
-      // fixme
-      aloutput_bytes_as_hex(NULL,output,0,8);
+      aloutput_bytes_as_hex(&((DBGSTREAM)->output),output,0,8);
     }
 
 }
@@ -225,8 +224,7 @@ void alsha224_turn(struct alsha2_internal * shainternal, int offset, aldatablock
   ALDEBUG_IF_DEBUG(shainternal,alsha2x,debug)
     {
       aldebug_printf(DBGSTREAM,"alhash turn on state %i offset %i\n", shainternal->state, offset);
-      // fixme
-      aloutput_bytes_as_hex(NULL,input,0,8);
+      aloutput_bytes_as_hex(&((DBGSTREAM)->output),input,0,8);
     }
 
   memcpy(H,shainternal->H, sizeof(H));

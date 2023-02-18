@@ -1,5 +1,8 @@
 # artlog_toolbox
 
+Personal project
+Some documentation in my personal wiki https://www4.artisanlogiciel.net/dokuwiki/doku.php?id=it:dev:artlog:toolbox
+
 NOT SUITABLE FOR ANY PURPOSE
 
 a toy toolbox for toy projects in C and java
@@ -217,3 +220,4 @@ parses and generate c code ... very messy
 
 see docuementation/c_parser.txt
 _________________________________________________
+

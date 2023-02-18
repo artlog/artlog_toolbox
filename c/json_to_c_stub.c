@@ -15,15 +15,15 @@
 struct json_object * json_c_add_json_object_member(const char * name, struct json_object * value, struct json_parser_ctx * ctx, alstrings_ringbuffer_pointer * allocator)
 {
   aldatablock data;
-  
+
   data.data.constcharptr = name;
   data.type=ALTYPE_OPAQUE;
   data.length = strlen(data.data.ptr);
   data.data.ptr = al_copy_block(allocator, &data);
 
   aldebug_printf(DBGSTREAM,"[DEBUG] add key:" ALPASCALSTRFMT " %i\n",
-	 ALPASCALSTRARGS(data.length,(char *) data.data.ptr),
-	 data.length);
+                 ALPASCALSTRARGS(data.length,(char *) data.data.ptr),
+                 data.length);
   // create json pair with name of field
   struct json_object * key = aljson_new_json_object('"',  allocator, &data);
   struct json_object * pair = aljson_new_pair_key(ctx, key);

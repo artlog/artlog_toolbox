@@ -25,7 +25,7 @@ aldebug: aldebug_test.c
 test0:
 	$(BUILD)/albase
 	$(BUILD)/json_to_c_stub_sample
-	$(BUILD)/c_parser infile=$(BUILD)/input_for_c_parser.h outform=aljson_stub
+	$(BUILD)/c_parser infile=../input_for_c_parser.h outform=aljson_stub
 	$(BUILD)/cryptohash '' d
 	$(BUILD)/cryptohash $(BUILD)/cryptohash
 	$(BUILD)/bitfield outfile=bitfieldcopy

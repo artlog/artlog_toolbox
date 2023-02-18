@@ -66,7 +66,7 @@ int albase_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
 	  s[p]='-';
 	}
     }
-      
+
   int length = LOCAL_BUFFER_SIZE - p;
   if (albase_debug != 0)
     {
@@ -91,7 +91,7 @@ int albase_build_string_from_int(int integer, int base, alstrings_ringbuffer_poi
     {
       aldebug_printf(DBGSTREAM,"length %i allocation failure\n",length);
     }
-  
+
   // should be 0 if everything went fine
   return v;
   
