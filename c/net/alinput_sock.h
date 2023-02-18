@@ -12,6 +12,6 @@
 connect to all possibles address at the same time
 if multiple addresses are possible select the fastest reply
 **/
-enum al_global_error_code  alinput_sock_open_init(struct alinputstream * input, struct connect_info * connection, unsigned int connect_timeout_ms);
+enum al_global_error_code  alinput_sock_open_init(struct alinputstream * input, struct alconnect_info * connection, unsigned int connect_timeout_ms);
   
 #endif // ALINPUT_SOCK_HEADER_

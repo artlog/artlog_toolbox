@@ -10,9 +10,9 @@
 #include "aldebug_output.h"
 
 #include "dumper.h"
-#include "resolve.h"
+#include "alresolve.h"
 
-int connect_info_resolve(char * host, int port, struct connect_info * conn)
+int connect_info_resolve(char * host, int port, struct alconnect_info * conn)
 {
       const char * hostname = host;
       struct addrinfo hints;
@@ -57,13 +57,7 @@ int connect_info_resolve(char * host, int port, struct connect_info * conn)
       return 1;
 }
 
-// deprected please use connect_info_resolve
-int resolve_new(char * host, int port, struct connect_info * conn)
-{
-  return connect_info_resolve(host,port,conn);
-}
-
-int resolve_old( char * host, int port, int inet_type)
+int connect_info_resolve_old( char * host, int port, int inet_type)
 {
   struct hostent hostent;
   char * buffer = NULL;
@@ -139,7 +133,7 @@ int resolve_old( char * host, int port, int inet_type)
 }
 
 
-void connect_info_release(struct connect_info * conn)
+void connect_info_release(struct alconnect_info * conn)
 {
   if ( ( conn != NULL ) && ( conn->addrinfo != NULL ) )
     {

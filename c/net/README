@@ -1,6 +1,12 @@
 project ongoing
 
+
+clientserver is somehow a kind of tiny fuzzy netcat.
+
 sudo apt install libssl-dev
 
 make clean
 make
+
+
+test it with ./test.sh

@@ -27,7 +27,7 @@ int alinput_sock_close(struct alinputstream * input)
   return 0;
 }
 
-void select_connection(struct alinputstream * input, struct connect_info * connection, int sockfd,struct addrinfo * ainfo )
+void select_connection(struct alinputstream * input, struct alconnect_info * connection, int sockfd,struct addrinfo * ainfo )
 {
 
   printf("[INFO] connection selected\n");
@@ -50,7 +50,7 @@ void select_connection(struct alinputstream * input, struct connect_info * conne
   alinputstream_set_close_callback(input,alinput_sock_close,NULL);
 }
 
-enum al_global_error_code  alinput_sock_open_init(struct alinputstream * input, struct connect_info * connection, unsigned int timeout_ms)
+enum al_global_error_code  alinput_sock_open_init(struct alinputstream * input, struct alconnect_info * connection, unsigned int timeout_ms)
 {
   if (input != NULL )
     {

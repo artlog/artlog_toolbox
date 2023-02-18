@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "dumper.h"
-#include "resolve.h"
+#include "alresolve.h"
 #include "loopbackserv.h"
 #include "alinput_sock.h"
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
   // connect timeout in ms
   aldatablock * timeoutoption = al_option_get(options,"timeout");
 
-  struct connect_info connection;
+  struct alconnect_info connection;
   connection.addrinfo=NULL;
   connection.addrselected=NULL;
 
@@ -88,8 +88,8 @@ int main(int argc, char **argv)
 
 	if ( connect_info_resolve(host,port,&connection) )
 	  {
-	    resolve_old(host,port,AF_INET6);
-	    resolve_old(host,port,AF_INET);
+	    connect_info_resolve_old(host,port,AF_INET6);
+	    connect_info_resolve_old(host,port,AF_INET);
 	  }
 	else
 	  {

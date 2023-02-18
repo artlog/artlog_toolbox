@@ -23,7 +23,7 @@ void disable_sigpipe()
   }
 }
 
-int alconn_multiple_connect(int number, struct connect_info * cto, int seconds)
+int alconn_multiple_connect(int number, struct alconnect_info * cto, int seconds)
 {
   struct pollfd connection[number];
   int i = 0;

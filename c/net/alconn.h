@@ -6,7 +6,7 @@
 #include <netdb.h>
 #include "altls_wrapper.h"
 
-struct connect_info {
+struct alconnect_info {
   // first answer ( might by linked with others ).
   struct addrinfo * addrinfo;
   // address we want to use
@@ -25,6 +25,7 @@ read from /dev/urandom and write to initial socket connections
 mono thread write to randomly choosen connections among number ones openned 
 accuracy is +/- 1 second.
 */
-int alconn_multiple_connect(int number, struct connect_info * to, int seconds);
+int alconn_multiple_connect(int number, struct alconnect_info * to, int seconds);
+
 
 #endif
