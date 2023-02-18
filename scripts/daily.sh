@@ -10,8 +10,9 @@ usage()
 }
 
 THIS_SCRIPT=$0
-YEAR=$(date +"%Y")
-TODAYDIR=$(date +"%d%m")
+YEARDIR=$(date +"%Y")
+MONTHDIR=$(date +"%m")
+TODAYDIR=$(date +"%d")
 DAILYDIR=activity
 
 while [[ $# > 0 ]]
@@ -43,21 +44,23 @@ fi
 
 pushd ${DAILYDIR} >/dev/null
 
-if [[ ! -d $YEAR ]]
+if [[ ! -d $YEARDIR ]]
 then
     if [[ $create == 1 ]]
     then
-	mkdir $YEAR
+	mkdir $YEARDIR
     else
-	echo "[ERROR] Missing directory $YEAR in $(pwd)" >&2
+	echo "[ERROR] Missing directory $YEARDIR in $(pwd)" >&2
 	usage
 	exit 1
     fi
 fi
 
-if [[ -d $YEAR ]]
+if [[ -d $YEARDIR ]]
 then
-    pushd $YEAR
+    pushd $YEARDIR
+    [[ -d $MONTHDIR ]] || mkdir $MONTHDIR
+    pushd $MONTHDIR
     [[ -d $TODAYDIR ]] || mkdir $TODAYDIR
     if [[ -d $TODAYDIR ]]
     then
@@ -65,6 +68,7 @@ then
 	emacs whatido.txt&
 	popd
     fi
+    popd
     popd
 fi
 
