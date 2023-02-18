@@ -1,6 +1,11 @@
 BUILD=../../build
 INCLUDES=$(BUILD)/include
 
+all:	tests alinput_test aloutput_test aldebug test0
+	./alinput_test <alinput_test.c
+	./aloutput_test
+	./aldebug
+
 tests: save_test
 	./save_test_setup.sh
 	./save_test ./savetest save test
@@ -42,4 +47,4 @@ clean:
 	rm -f bitfieldcopy
 	rm -f aloutput_test
 
-.PHONY: test0 tests clean
+.PHONY: test0 tests clean all

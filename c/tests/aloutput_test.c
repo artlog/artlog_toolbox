@@ -39,9 +39,9 @@ int main(int argc, char ** argv)
 	  test.type = ALTYPE_SUBSTR;
 	  test.data.ucharptr=buffer;
 	  test.length=sizeof(buffer);      
-	  alouput_bytes_as_hex(&out, &test, 1, 4);
-	  alouput_bytes_as_hex(&out, &test, 0, 4);
-	  alouput_bytes_as_hex(&out, &test, 0, sizeof(buffer));
+	  aloutput_bytes_as_hex(&out, &test, 1, 4);
+	  aloutput_bytes_as_hex(&out, &test, 0, 4);
+	  aloutput_bytes_as_hex(&out, &test, 0, sizeof(buffer));
 	  aloutputstream_close(&out);
 	}
       else
