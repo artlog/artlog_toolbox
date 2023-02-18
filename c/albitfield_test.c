@@ -95,11 +95,9 @@ int main(int argc, char ** argv)
                 }
               // else bits=shuffle % 32;
             }
-            // calling this does create wrong length ... to check
-            // currently input tests file are byte aligned, so output will be aligned too
-            // then this pad to byte should to nothing, but does ...
-            // this is more a problem at read that does not return correct numbre of bits.
-            // bitfieldwriter_padtobyte(&writer);
+            // this will do something only if source is not aligned on bits.
+            // since it is a normal file it has to be bytes, then aligned.
+            bitfieldwriter_padtobyte(&writer);
             aldebug_printf(DBGSTREAM,"total bits %i, bytes %i", total_bits, total_bits/8);
             alinputstream_close(&input);
           }

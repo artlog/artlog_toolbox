@@ -16,7 +16,9 @@ struct bitfieldreader {
   unsigned int currentWord;
   int eof;
   // bit reads on source stream for currentWord
-  int readbits; // last number of bits during read at eof to read...
+  int readbits;
+  // number of bits honored on last return.
+  int lastreadbits;
 };
 
 struct bitfieldreader * new_fieldreader();
@@ -25,11 +27,11 @@ void fieldreader_init(struct bitfieldreader * this);
 
 void fieldreader_setcharmode(struct bitfieldreader * this,unsigned int charbitsize);
 
-/* 
+/*
    bits : number of bits we want to read, should be <= (sizeof(int) * 8 )
-   value returned is an int between 0 and 2^bits-1 
+   value returned is an int between 0 and 2^bits-1
    it always read all bits if possible.
-   result is padded only when source stream reached eof  
+   result is padded only when source stream reached eof
    caller should check bitfieldread_is_eof and  bitfieldreader_get_readbits
    to know what part of result is valid
 */

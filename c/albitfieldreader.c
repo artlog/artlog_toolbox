@@ -6,12 +6,12 @@
 
 void tobitstring(unsigned int a,char buffer [33])
 {
-	      for ( int i=0; i< 32;i++)
-		{
-		  buffer[31-i] = '0' + (a & 1 );
-		  a >>= 1;
-		}
-	      buffer[32] = 0;
+      for ( int i=0; i< 32;i++)
+        {
+          buffer[31-i] = '0' + (a & 1 );
+          a >>= 1;
+        }
+      buffer[32] = 0;
 }
 
 struct bitfieldreader * new_fieldreader()
@@ -25,6 +25,7 @@ void fieldreader_init(struct bitfieldreader * this)
   this->currentWord=0;
   this->dataSize=32;
   this->readbits=0;
+  this->lastreadbits=0;
   this->eof=0;
   this->currentRead=0;
   this->bitOffset=0;
@@ -72,12 +73,13 @@ unsigned int fieldreader_nextword(struct bitfieldreader * this)
 	    }
 #endif
 
+      // input stream read bits is always aligned on CHAR_BITS
       int bits = alinputstream_get_readbits(this->stream);
       if ( bits > 0 )
-	{	  
+	{
 	  // field is aligned most signifiant bits first
 	  this->currentWord = field;
-	  // skip missing bits ( align bitOffset with readbits )
+	  // skip missing bits ( align bitOffset with readbits ) => this is the issue !?
 	  this->readbits = bits;
 	  this->bitOffset = this->dataSize-bits;
 #ifdef DEBUG
@@ -130,6 +132,17 @@ void fieldreader_setinput( struct bitfieldreader * this, struct alinputstream * 
   this->stream=inputstream;
 }
 
+void bitfieldreader_set_eof(struct bitfieldreader * this, int lastreadbits)
+{
+  if ( this->eof == 1 )
+    {
+      aldebug_printf(DBGSTREAM,"[ERROR] eof called twice %i source eof %i (readbits %i) \n",  this->eof, this->stream->eof, this->readbits);
+      return;
+    }
+  this->eof=1;
+  this->lastreadbits=lastreadbits;
+}
+
 unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bits )
 {
 
@@ -153,6 +166,7 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
       // consume some extra unread bits.
       if ( bits < this->readbits )
 	{
+	  this->lastreadbits = bits;
 	  this->readbits -= bits;
 	  if ( this->bitOffset == 0 )
 	    {
@@ -189,15 +203,16 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
 	}
       else if ( bits == this->readbits )
 	{
-	  this->eof=1;
+	  bitfieldreader_set_eof(this, this->readbits);
 	}
       else
 	{
+	  // want to consume more bits than remaining
 	  bits = this->readbits;
+	  bitfieldreader_set_eof(this, this->readbits);
 	  // all read bits were consumed
 	  this->readbits = 0;
-	  this->eof=1;
-	}      
+	}
     }
 
   if ( bits == 0 )
@@ -214,7 +229,7 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
 
   // what we read so far...
   unsigned int field = this->currentWord;
-  
+
   // a new word is needed
   if ( this->bitOffset == 0 ) {
     fieldreader_nextword(this);
@@ -235,11 +250,11 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
 	else
 	  {
 	    bits = this->readbits;
-	    this->eof=1;
+	    bitfieldreader_set_eof(this,this->readbits);
 	  }
       }
   }
-  
+
   // terminal part do the job
   if ( bits == this->dataSize ) {
     // special case to keep sign
@@ -247,8 +262,8 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
     this->currentWord = 0;
     this->bitOffset = 0;
   }
-  else {        
-    field = this->currentWord >> ( this->dataSize - bits);    
+  else {
+    field = this->currentWord >> ( this->dataSize - bits);
     // most significant bits are read then removed them from currentWord
     this->currentWord <<= bits;
     this->currentRead <<= bits;
@@ -258,6 +273,8 @@ unsigned int bitfieldreader_internal_read( struct bitfieldreader * this, int bit
   return field;
 }
 
+// assumption is done here that bits can't be > 2 * dataSize
+// but this might be wrong ? nope int return so there is an obvious limit
 int fieldreader_read( struct bitfieldreader * this, int bits )
 {
   unsigned int field = 0;
@@ -272,18 +289,19 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
       return 0;
     }
 
-  // if more bits needed that word currently used.
-  if ( ( bits  + this->bitOffset ) > this->dataSize)
+  // if more bits needed than word currently used.
+  if ( ( bits  + this->bitOffset ) > this->dataSize )
     {
       int bitsize = this->dataSize - this->bitOffset;
       head = bitfieldreader_internal_read( this, bitsize);
 
+      // actualy do padding with 0.
+      int missingbits = bits - bitsize;
+
       if ( this->eof )
 	{
-	  // actualy do padding with 0.	  
-	  int missingbits = bits - bitsize;
 	  field = (head >> this->bitOffset) << missingbits;
-#ifdef DEBUG
+	  //#ifdef DEBUG
 	  {
 	        char fieldstr [33];
 		tobitstring(field,fieldstr);
@@ -291,12 +309,12 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 		tobitstring(head,headstr);
 		aldebug_printf(DBGSTREAM,"%s:%i field %08x head %08x bits %i bitsize %i readbits %i bitOffset %i missingbits %i %s %s\n", __FUNCTION__, __LINE__, field, head, bits, bitsize, this->readbits, this->bitOffset, missingbits, fieldstr, headstr);
 	  }
-#endif
+	  //#endif
 	  // return bit read without padding
 	  this->readbits=bitsize;
 	  return field;
 	}
-      
+
       if ( bits == bitsize )
 	{
 #ifdef DEBUG
@@ -304,7 +322,7 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 	    aldebug_printf(DBGSTREAM,"%s:%i head %08x bits %i  bitsize %i\n", __FUNCTION__, __LINE__ ,head, bits, bitsize);
 	  }
 #endif
-	  
+
 	  return head;
 	}
 
@@ -321,31 +339,38 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
       // not this->eof and not bits == bitsize
 
       // more significant bits in first word, least in last
-      int shiftbits = (bits - bitsize);
+      int shiftbits = missingbits;
 
 
       // current word had entirely been consumed, need more to complete request.
       // not fully true
       // current source word can be fully read, but not fully consumed.
-      
+
 #ifdef DEBUG
-	  {
-	    aldebug_printf(DBGSTREAM,"%s:%i need more to complete request.\n", __FUNCTION__, __LINE__);
-	  }
+      {
+	aldebug_printf(DBGSTREAM,"%s:%i need more to complete request.\n", __FUNCTION__, __LINE__);
+      }
 #endif
 
-
-      field = bitfieldreader_internal_read( this, bits - bitsize);
+      field = bitfieldreader_internal_read( this, missingbits);
 
       if ( this->eof )
 	{
-	  // we read all
-	  this->readbits = bits;
+	  // all was read.
+	  // less than bits, bitsize + what was read above
+	  if ( bitsize + this->lastreadbits <= bits )
+	    {
+	      this->lastreadbits = bitsize + this->lastreadbits;
+	    }
+	  else
+	    {
+	      aldebug_printf(DBGSTREAM,"[ERROR] %s:%i last read bits %i unexpected here .\n", __FUNCTION__, __LINE__,this->lastreadbits);
+	    }
 	  // because debugged this way ...
 	  // shiftbits = this->dataSize - bits;
 	  shiftbits = 0;
 	}
-      
+
 #ifdef DEBUG
 	{
 	  aldebug_printf(DBGSTREAM,"field %08x bits %i  bitsize %i shiftbits %i\n", field, bits, bitsize, shiftbits);
@@ -369,7 +394,6 @@ int fieldreader_read( struct bitfieldreader * this, int bits )
 	  aldebug_printf(DBGSTREAM,"%s:%i field %08x\n", __FUNCTION__, __LINE__, field);
 	}
 #endif
-    
   }
 
 #ifdef DEBUG
@@ -396,9 +420,9 @@ int bitfieldreader_get_readbits(struct bitfieldreader * this)
 {
 #ifdef DEBUG
 	    {
-	      aldebug_printf(DBGSTREAM,"get readbits %i\n",  this->readbits);
+	      aldebug_printf(DBGSTREAM,"get last read bits %i %i\n", this->lastreadbits, this->readbits);
 	    }
 #endif
 
-  return this->readbits;
+  return this->lastreadbits;
 }
