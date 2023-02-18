@@ -179,9 +179,9 @@ void aljson_dump_list_object( struct json_object * object, struct print_ctx * pr
   int i=0;
   struct aloutputstream * output=aljson_get_output(print_ctx);
   aloutputstream_printf_1k(output,"%c",object->type);
-  aljson_dump_enter_indent( print_ctx);
   if (object->list.nitems > 0)
     {
+      aljson_dump_enter_indent( print_ctx);
       aljson_dump_indent(print_ctx);
       aljson_dump_object(object->list.value[0], print_ctx);
       for(i=1;i< object->list.nitems;i++)
@@ -190,9 +190,9 @@ void aljson_dump_list_object( struct json_object * object, struct print_ctx * pr
 	  aljson_dump_indent(print_ctx);
 	  aljson_dump_object(object->list.value[i], print_ctx);
 	}
+      aljson_dump_exit_indent( print_ctx);
+      aljson_dump_indent(print_ctx);
     }
-  aljson_dump_exit_indent( print_ctx);
-  aljson_dump_indent(print_ctx);
   aloutputstream_printf_1k(output,"]");
 }
 

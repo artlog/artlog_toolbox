@@ -55,9 +55,9 @@ int main(int argc, char ** argv)
   FILE * template_file;
 
   aldebug_start(NULL);
-  
+
   // intialisation of json content parser
-  
+
   struct json_parser_ctx json_context;
   struct json_ctx json_tokenizer;
   struct print_ctx print_context;
@@ -69,7 +69,6 @@ int main(int argc, char ** argv)
   struct json_ctx json_template_tokenizer;
   struct print_ctx print_template_context;
 
-  
   aljson_init(&json_template_context,&json_template_tokenizer,&print_template_context);
 
   struct aloutputstream default_output;
@@ -77,7 +76,6 @@ int main(int argc, char ** argv)
   // default to no indent
   aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
 
-  
   struct al_options * options = al_options_create(argc,argv);
 
   // don't set debug to options
@@ -95,7 +93,7 @@ int main(int argc, char ** argv)
       maxdepth_str = maxdepth_value->data.charptr;
       maxdepth = atoi(maxdepth_str);
     }
-    
+
   aldatablock * out_filename_value = al_option_get(options,"out");
   char * out_filename = NULL;
   if ( out_filename_value != NULL )
@@ -129,7 +127,6 @@ int main(int argc, char ** argv)
       json_path = json_path_value->data.charptr;
     }
 
-			      
   if ( al_option_get(options,"b") != NULL )
     {
       // bare => no indent
@@ -151,7 +148,7 @@ int main(int argc, char ** argv)
       };
       int found = -1;
       for (int i = 0; i < 3; i ++ )
-	{	  
+	{
 	  if ( strncmp(matches[i].match,indent_value->data.charptr,(long unsigned int) indent_value->length) == 0 )
 	    {
 	      aldebug_printf(DBGSTREAM,"indent set to %s\n", matches[i].match);
@@ -164,7 +161,7 @@ int main(int argc, char ** argv)
 	{
 	  aldebug_printf(DBGSTREAM,"indent option not recognized\n");
 	}
-	 
+
     }
 
 
@@ -178,14 +175,14 @@ int main(int argc, char ** argv)
     {
       json_filename = al_option_getarg(options,0);
     }
-  
+
   if ( debug > 0 )
     {
       struct aloutputstream output;
       aloutputstream_fd_init(&output,fileno(stderr));
       al_option_dump_output(options,&output);
     }
-  
+
   json_set_debug(debug);
   json_ctx_set_debug(&json_tokenizer,debug);
   json_ctx_set_debug(&json_template_tokenizer,debug);
@@ -201,7 +198,7 @@ int main(int argc, char ** argv)
     {
       struct json_import_context_data data;
       struct json_import_context_data template_data;
-      
+
       struct alinputstream inputstream;
       struct alinputstream template_inputstream;
 
@@ -220,7 +217,7 @@ int main(int argc, char ** argv)
 	  // where the parsing actualy take place
 	  root=parse_level(&json_context,&data,root);
 	  fclose(data_file);
-	    
+
 	  if ( json_path != NULL )
 	    {
 	      struct json_object * found = aljson_walk_path(json_path, &json_context,root);
@@ -237,13 +234,15 @@ int main(int argc, char ** argv)
 	    if ( checkonly == 0 )
 	      {
 		aljson_output(root,&print_context);
+		// add a final \n.
+		print_context.printf(&print_context,"\n");
 	      }
 	    else
 	      {
 		aldebug_printf(DBGSTREAM,"parsing complete\n");
 	      }
 	  }
-	    
+
 	  if ( json_template != NULL )
 	    {
 	      if ( debug > 0 )
@@ -277,13 +276,11 @@ int main(int argc, char ** argv)
 		    }
 		}
 	    }
-	      
 	}
       else
 	{
 	  exit(1);
 	}
-      
     }
   else
     {
@@ -293,4 +290,3 @@ int main(int argc, char ** argv)
   aldebug_end();
   exit(0);
 }
-
