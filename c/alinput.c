@@ -138,7 +138,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	      /** align to msb ??
 	      for (d<4;d++)
 		{
-		  res *= 256;		  
+		  res *= 256;
 		}
 	      */
 	      stream->bits = remain * CHAR_BIT;

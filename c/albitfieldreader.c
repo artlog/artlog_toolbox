@@ -85,8 +85,6 @@ unsigned int fieldreader_nextword(struct bitfieldreader * this)
 	      aldebug_printf(DBGSTREAM,"EOF readbits %i\n",  this->readbits);
 	    }
 #endif
-	    // reached eof while reading word, then not fully read word.
-	    // this->readbits=bits;
 	}
       else
 	{

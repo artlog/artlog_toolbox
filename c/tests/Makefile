@@ -34,9 +34,9 @@ test0:
 	$(BUILD)/cryptohash '' d
 	$(BUILD)/cryptohash $(BUILD)/cryptohash
 	$(BUILD)/bitfield outfile=bitfieldcopy
+	diff bitfieldcopy $(BUILD)/bitfield
 	$(BUILD)/hashtree 'ceci est la premiere pharse' 'la seconde phrase' 'la troisieme phrase' '4' '5' '6'
 	$(BUILD)/salsa20
-
 
 
 clean:

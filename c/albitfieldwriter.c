@@ -29,7 +29,7 @@ void bitfieldwriter_release(struct bitfieldwriter ** pthis)
     {
       free(*pthis);
       *pthis=NULL;
-    }  
+    }
 }
 
 void bitfieldwriter_init(struct bitfieldwriter * this)
@@ -41,17 +41,21 @@ void bitfieldwriter_init(struct bitfieldwriter * this)
 }
 
 /** write at current offset
-assume never write more than needed bits to complete a word 
-assume meaningfull bits are aligned at right in least significant part 
+assume never write more than needed bits to complete a word
+assume meaningfull bits are aligned at right in least significant part
 
 will cumulate bits from left in most significant part.
 */
 void bitfieldwriter_internal_write(struct bitfieldwriter * this, unsigned int field, int bits)
 {
   if ( bits == this->dataSize )
-    { 
+    {
       // special case to keep sign
-      this->nextWord = field; 
+      this->nextWord = field;
+      if ( this ->bitOffset != 0 )
+	{
+	  aldebug_printf(DBGSTREAM,"[WARNING] writting full dataSise at non 0 bitOffset %i / dataSize %i \n", this->bitOffset, this->dataSize );
+	}
       this->bitOffset = 0;
       // a new word is needed
       bitfieldwriter_newword(this);
@@ -61,21 +65,25 @@ void bitfieldwriter_internal_write(struct bitfieldwriter * this, unsigned int fi
       // seems sign bit might be lost here... to check
       // field = field & ( 0x7FFFFFFF >> ( this->dataSize - bits - 1 ));
       this->nextWord = this->nextWord | ( field << ( this->dataSize - bits - this->bitOffset));
-      unsigned int newOffset  = this->bitOffset + bits; 
+      unsigned int newOffset  = this->bitOffset + bits;
       if ( newOffset >= this->dataSize )
 	{
+	  if ( newOffset > this->dataSize )
+	    {
+	      aldebug_printf(DBGSTREAM,"[WARNING] writting more bits %i than dataSize for bitOffset %i / dataSize %i \n", bits, this->bitOffset, this->dataSize );
+	    }
 	  bitfieldwriter_newword(this);
 	}
       else
 	{
 	  this->bitOffset = newOffset;
 	}
-    }       
+    }
 
 }
 
 
-// assume meaningfull bits are aligned at right in least significant part 
+// assume meaningfull bits are aligned at right in least significant part
 void bitfieldwriter_write(struct bitfieldwriter * this, unsigned int field, int bits)
 {
   if ( this->dataSize >  bits_per_int )
@@ -95,9 +103,9 @@ void bitfieldwriter_write(struct bitfieldwriter * this, unsigned int field, int 
     // split current word in most significants bits / least significant bits.
 
     int remainingbits = bits - bitstofill;
-    
+
     // most significant bits first, suppress least significant bits
-    bitfieldwriter_internal_write( this, ((field & 0x7FFFFFF) >> remainingbits) , bitstofill);
+    bitfieldwriter_internal_write( this, (field >> remainingbits) , bitstofill);
 
     // no need of newWord() previous write already done it
 
@@ -120,7 +128,9 @@ void bitfieldwriter_padtoword(struct bitfieldwriter * this)
 
 void bitfieldwriter_padtobyte(struct bitfieldwriter * this)
 {
+  // FIXME calling it does wrong file length ... to check
   if ( this->bitOffset != 0) {
+    aldebug_printf(DBGSTREAM,"[WARNING] padding due to bitOffset %i / dataSize %i \n", this->bitOffset, this->dataSize );    
     if ( this->stream != NULL )
       {
 	aloutputstream_flush(this->stream,this->nextWord,this->bitOffset);
@@ -136,4 +146,3 @@ void bitfieldwriter_setoutputstream(struct bitfieldwriter * this, struct aloutpu
 {
   this->stream = output;
 }
-
