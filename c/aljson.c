@@ -2,7 +2,6 @@
    A complicated json stream ( one char ahead ) parser
    dual implementiation call stack and data stack
    for in-depth parsing, if max-depth is hit then switch to non recursive implementation
-   ( to fix : switch back fails ).
 **/
 
 
@@ -800,7 +799,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		  {
 		    struct json_object * pair=aljson_new_pair_key(ctx,object);
 		    object=pair;
-		    struct json_object * value=parse_level_recursive(ctx,data,NULL);
+		    struct json_object * value=parse_level(ctx,data,NULL);
 		    object->pair.value=value;
 		    if ( value == NULL )
 		      {
