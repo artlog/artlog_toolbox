@@ -96,7 +96,7 @@ testhash: $(BUILD)/hash $(TMPTESTDIR)
 $(BUILD)/hash:  $(BUILD)/obj/alhash_test.o
 	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -lalhash -lalcommon -Wl,-Bdynamic
 
-testjson:$(BUILD)/json $(TMPTESTDIR)
+testjson: $(BUILD)/json $(TMPTESTDIR)
 	$< -- $(TEMPLATE)/test.json >$(TMPTESTDIR)/parse1.json 2>$(TMPTESTDIR)/$@.parse1.json.out.2
 	$< -- $(TEMPLATE)/parse1.json >$(TMPTESTDIR)/parse2.json 2>$(TMPTESTDIR)/$@.parse2.json.out.2
 	$< -- $(TEMPLATE)/refnawak.json >$(TMPTESTDIR)/parse3.json 2>$(TMPTESTDIR)/$@.parse3.json.out.2
@@ -106,7 +106,7 @@ testjson:$(BUILD)/json $(TMPTESTDIR)
 	@diff $(TMPTESTDIR)/parse1.json $(TMPTESTDIR)/parse3.json && echo "parse3.json [OK]"
 	$< -- $(TEMPLATE)/test2.json  >$(TMPTESTDIR)/test2.json 2>$(TMPTESTDIR)/$@.test2.json.out.2
 
-testallist:$(BUILD)/testallist $(TMPTESTDIR)
+testallist: $(BUILD)/testallist $(TMPTESTDIR)
 	$< 10x 10x 10x -decomp >$(TMPTESTDIR)/$@.1000.decomp.out
 
 $(BUILD)/testallist: $(BUILD)/private/obj/tests/allist_test.o
@@ -115,11 +115,12 @@ $(BUILD)/testallist: $(BUILD)/private/obj/tests/allist_test.o
 $(BUILD)/tmp:
 	mkdir -p $@
 
-$(BUILD)/json: $(objects)
-	@echo link json objects $(objects) and libjson
-	$(LD) -o $@ $(LDFLAGS) $^ -L$(BUILD)/lib -Wl,-Bstatic -laljson  -lalstack -lalhash -lalcommon -laldev  -Wl,-Bdynamic -lm
+$(BUILD)/json: $(objects) $(BUILD)/lib/libaljson.a
+	@echo link json objects $(objects) and libjson 
+	$(LD) -o $@ $(LDFLAGS) $(objects) -L$(BUILD)/lib -Wl,-Bstatic -laljson  -lalstack -lalhash -lalcommon -laldev  -Wl,-Bdynamic -lm
 
 $(BUILD)/obj:
+	@echo 'create $@ directory'
 	mkdir -p $@
 
 $(BUILD)/private/obj:
@@ -134,7 +135,7 @@ $(BUILD)/include:
 $(BUILD)/include/%.h: c/%.h $(BUILD)/include
 	cp $< $@
 
-$(BUILD)/obj/%.o: c/%.c $(BUILD)/obj
+$(BUILD)/obj/%.o: c/%.c
 	@echo compile $< 
 	$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I$(INCLUDEDIR) $< -o $@
 

@@ -1,3 +1,11 @@
+/**
+   A complicated json stream ( one char ahead ) parser
+   dual implementiation call stack and data stack
+   for in-depth parsing, if max-depth is hit then switch to non recursive implementation
+   ( to fix : switch back fails ).
+**/
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -29,10 +37,10 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
   {
     {.value=JSON_CONSTANT_TRUE},
     {.value=JSON_CONSTANT_FALSE},
-    {.value=JSON_CONSTANT_NULL},    
+    {.value=JSON_CONSTANT_NULL},
   };
 
-  
+
 // TODO follow specs from  http://json.org/ http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
 
 /**
@@ -65,12 +73,6 @@ int json_set_debug(int debug)
     }
   return previous;
 }
-
-/**
-a complicated json stream ( one char ahead ) parser 
-dual implementiation call stack and data stack 
-for in-depth parsing, if max-depth is hit then switch to non recursive implementation
-**/
 
 JSON_DEFINE_TOGGLE(squote,'\'')
 JSON_DEFINE_TOGGLE(dquote,'"')
@@ -148,10 +150,10 @@ struct json_object * syntax_error(const char * function, int line, struct json_p
   while ( c!= 0)
     {
       if ( (ctx->pos_info.line < err_object->pos_info.line + 5 ) && ( buf_idx < max_buff ) )
-	{	  
+	{
 	  err_buf[buf_idx]=c;
 	  buf_idx ++;
-	}      
+	}
       c = ctx->next_char(ctx, data);
     }
   err_object->error.string.internal.type=ALTYPE_OPAQUE;
@@ -161,8 +163,8 @@ struct json_object * syntax_error(const char * function, int line, struct json_p
     {
       buf_idx=max_buff-1;
     }
-  err_buf[buf_idx]=0;  
-  err_object->error.string.internal.length=buf_idx;  
+  err_buf[buf_idx]=0;
+  err_object->error.string.internal.length=buf_idx;
   if ( ctx->debug_level > 0 )
     {
       printf("At %s:%i ",function,line);
@@ -222,7 +224,7 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
   // tb->buffer.bufpos ++;
 
   struct alstrings_buffer * buffer = &ringbuffer->buffer;
-  
+
   aldatablock  data;
   data.data.ptr = buffer->buf;
   data.length = buffer->bufpos;
@@ -233,10 +235,10 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
 
   // detaching token buffer, reset it.
   // ringbuffer buffer will be fully reallocated in altoken_char_buffer_add_char with  ALTOKEN_BUFSIZE_MIN.
-  
+
   // bzero(ringbuffer, sizeof(*ringbuffer)); // is too much ( ringbuffer->next and ringbuffer->first lost )
   bzero(buffer, sizeof(*buffer));
-      
+
   return object;
 }
 
@@ -396,7 +398,7 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
   struct json_growable * growable = &obj->growable;
   struct json_link * link=NULL;
   int size=growable->size;
-  int i=0;  
+  int i=0;
   struct json_object * object= (struct json_object *) ALALLOC(parser->alparser.allocator, sizeof(struct json_object) + size*sizeof(struct json_object *)); // a little bigger than needed
   if (object != NULL)
     {
@@ -455,8 +457,8 @@ void aljson_fill_datablock(struct json_object * object,  aldatablock * datablock
     default:
 	     todo("data type no yet supported for datablock");
 	     aldebug_printf(DBGSTREAM,"ERROR not supported datatype %c ",object->type);
-    }  
-  
+    }
+
 }
 
 void * json_dict_hashadd_callback (struct json_object * key, struct json_object * value, void * data)
@@ -476,7 +478,7 @@ void * json_dict_hashadd_callback (struct json_object * key, struct json_object 
       if ( json_debug > 0 )
 	{
 	  alhash_dump_entry_as_string(entry);
-	}      
+	}
       return NULL;
     }
   // something non NULL ...
@@ -502,7 +504,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
       if ( link != NULL)
 	{
 	  if (growable->head.value != NULL)
-	    { 
+	    {
 	      if (growable->head.value->type == ':') {
 		dict->items[i]=&growable->head.value->pair;
 		growable->head.value->owner=object;
@@ -515,7 +517,7 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 	      link=growable->head.next;
 	      while ((link != NULL)&&(i<size))
 		{
-		  if (link->value!=NULL) 
+		  if (link->value!=NULL)
 		    {
 		      if (link->value->type == ':')
 			{
@@ -605,7 +607,7 @@ struct json_object * new_json_constant_object(struct json_parser_ctx * parser, c
     {
       memory_shortage(NULL);
     }
-  return object;  
+  return object;
 }
 
 // forward definition to fallback if depth is too big.
@@ -618,14 +620,14 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
   struct json_object * object=NULL;
 
   ++ctx->parsing_depth;
-  
+
   last_token = json_tokenizer(ctx->tokenizer,data);
 
   while (last_token != NULL)  {
- 
+
 	switch(last_token->token)
 	  {
-	  case JSON_TOKEN_OPEN_PARENTHESIS_ID: 
+	  case JSON_TOKEN_OPEN_PARENTHESIS_ID:
 	    JSON_OPEN(ctx,parenthesis,object);
 	    object=parse_level(ctx,data,object); // expects to parse until '}' included
 	    if (parent == NULL)
@@ -678,7 +680,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    JSON_CLOSE(ctx,braket);
 	    if (object !=NULL)
 	      {
-		if ( parent !=NULL ) 
+		if ( parent !=NULL )
 		  {
 		    if (parent->type=='G')
 		      {
@@ -728,7 +730,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		  {
 		    printf("(%i parent:%p object:%p",last_token->token,parent,object);
 		  }
-		if (parent !=NULL) 
+		if (parent !=NULL)
 		  {
 		    if ( parent->type=='G')
 		      {
@@ -794,11 +796,11 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    // previous should be a string
 	    if (object !=NULL)
 	      {
-		if (object->type == '\"') 
+		if (object->type == '\"')
 		  {
 		    struct json_object * pair=aljson_new_pair_key(ctx,object);
 		    object=pair;
-		    struct json_object * value=parse_level(ctx,data,NULL);
+		    struct json_object * value=parse_level_recursive(ctx,data,NULL);
 		    object->pair.value=value;
 		    if ( value == NULL )
 		      {
@@ -890,7 +892,6 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 		return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
 	      }
 	  }
-	  
 	last_token = json_tokenizer(ctx->tokenizer,data);
   }
 
@@ -906,7 +907,7 @@ struct json_object * check_parent_is_pair(struct json_parser_ctx * ctx, void * d
       // FATAL coding error
       return NULL;
     }
-  
+
   if ( ( parent != NULL ) && (parent->type == ':' ) )
     {
       if ( json_debug > 0 )
@@ -947,14 +948,15 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
   struct alstackelement * element;
   struct json_object * object=NULL; // previous object on same parsing level
   int stopwithparent = 0;
-  
-  stack = alstack_allocate();
-  element = NULL;
 
+  // stack replacing call stack of recursive case.
+  stack = alstack_allocate();
   if ( stack == NULL )
     {
       return NULL;
     }
+
+  element = NULL;
 
   if ( parent != NULL )
     {
@@ -962,12 +964,19 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
       parent = NULL;
       stopwithparent = 1;
     }
+  else
+    {
+      if ( FLAG_IS_SET(json_debug,1)  )
+	{
+	  aldebug_printf(DBGSTREAM, "[DEBUG] %s:%i parse non recursive called without parent",__FUNCTION__,__LINE__);
+	}
+    }
 
   last_token = json_tokenizer(ctx->tokenizer,data);
 
   // what is object : previous object on same parsing level
   // what is parent : direct parent of object
-  
+
   while (last_token != NULL)  {
 
     if ( json_debug > 0 )
@@ -978,44 +987,73 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
     switch(last_token->token)
       {
       case JSON_TOKEN_OPEN_PARENTHESIS_ID:
-	// create object 
+	// create object
 	JSON_OPEN(ctx,parenthesis,object);
 	alstack_push_ref(stack,(void *) object);
 	object=NULL;
 	// expects to parse until '}' included
 	break;
       case JSON_TOKEN_CLOSE_PARENTHESIS_ID:
-	JSON_CLOSE(ctx,parenthesis);
 	element = alstack_pop(stack);
 	if ( element != NULL )
 	  {
+	    JSON_CLOSE(ctx,parenthesis);
 	    parent = element->reference;
 	    // object is there to be added in parent later with '}',']' or ','
 	    parent = check_parent_is_pair(ctx,data,stack,parent,&object);
 	  }
-
+	else
+	  {
+	    if ( FLAG_IS_SET(json_debug,1)  )
+	      {
+		aldebug_printf(DBGSTREAM, "[DEBUG] %s:%i stack empty ? try exiting ?",__FUNCTION__,__LINE__);
+	      }
+	  }
 	// last object for this } group
 	if (object !=NULL)
 	  {
-	    if ((parent != NULL) && ( parent->type=='G'))
+	    if ( parent != NULL )
 	      {
-		if ( parent->growable.final_type == '{')
+		if ( parent->type=='G')
 		  {
-		    if ( json_debug > 0 )
+		    if ( parent->growable.final_type == '{')
 		      {
-			aljson_dump_object(object,&aljson_print_ctx_debug);
-		      }
+			if ( json_debug > 0 )
+			  {
+			    aljson_dump_object(object,&aljson_print_ctx_debug);
+			  }
+			aljson_add_to_growable(ctx,&parent->growable,object);
 
-		    aljson_add_to_growable(ctx,&parent->growable,object);
+#ifdef JSON_NR_EMPTY_STACK
+			if ( (alstack_used(stack) == 0 ) && ( stopwithparent == 1 ) )
+			  {
+			    if ( FLAG_IS_SET(json_debug,1)  )
+			      {
+				aldebug_printf(DBGSTREAM, "[DEBUG] %s:%i stack empty exiting",__FUNCTION__,__LINE__);
+			      }
+
+			    goto parse_level_non_recursive_exit;
+			  }
+#endif
+
+		      }
+		    else
+		      {
+			syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
+		      }
 		  }
 		else
 		  {
-		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_NON_DICT,data,object,parent);
+		    syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
 		  }
 	      }
 	    else
-	      {		
-		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
+	      {
+		// would it be possible to have to return to recursive ?
+		if ( FLAG_IS_SET(json_debug,1)  )
+		  {
+		    aldebug_printf(DBGSTREAM, "[DEBUG] no parent ? try exiting ?");
+		  }
 	      }
 	    object=NULL;
 	  }
@@ -1049,23 +1087,42 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	element = alstack_pop(stack);
 	if ( element != NULL )
 	  {
-	    parent = element->reference;       
+	    parent = element->reference;
 	    if ( ( parent != NULL ) && (parent->type == ':' ) )
 	      {
 		// ERROR no reason to end a pair in an array.
 		syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_LIST_ELEMENT_INVALID_PARENT,data,object,parent);
 	      }
 	  }
+	else
+	  {
+	    // stack is empty, might be necessary to return or is it an internal error ?
+	    // would it be possible to have to return to recursive ?
+	    if ( FLAG_IS_SET(json_debug,1)  )
+	      {
+		aldebug_printf(DBGSTREAM, "[DEBUG] %s:%i stack empty ? try exiting ?",__FUNCTION__,__LINE__);
+	      }
+	  }
 
 	if (object !=NULL)
 	  {
-	    if ( parent !=NULL ) 
+	    if ( parent !=NULL )
 	      {
 		if (parent->type=='G')
 		  {
 		    if ( parent->growable.final_type == '[')
 		      {
 			aljson_add_to_growable(ctx,&parent->growable,object);
+#ifdef JSON_NR_EMPTY_STACK
+			if ( (alstack_used(stack) == 0 ) && ( stopwithparent == 1 ) )
+			  {
+			    if ( FLAG_IS_SET(json_debug,1)  )
+			      {
+				aldebug_printf(DBGSTREAM, "[DEBUG] %s:%i stack empty exiting",__FUNCTION__,__LINE__);
+			      }
+			    goto parse_level_non_recursive_exit;
+			  }
+#endif
 		      }
 		    else
 		      {
@@ -1104,7 +1161,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    if ( json_debug > 0 )
 	      {
 		aljson_dump_object(object,&aljson_print_ctx_debug);
-	      }			    
+	      }
 	  }
 	object=cut_string_object(ctx,'"');
 	break;
@@ -1115,7 +1172,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    element = alstack_pop(stack);
 	    if ( element != NULL )
 	      {
-		parent = element->reference;		    
+		parent = element->reference;
 		parent = check_parent_is_pair(ctx,data,stack,parent,&object);		    
 	      }
 
@@ -1124,7 +1181,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		printf("(%i parent:%p object:%p",last_token->token,parent,object);
 	      }
 
-	    if (parent !=NULL) 
+	    if (parent !=NULL)
 	      {
 		if ( parent->type=='G')
 		  {
@@ -1180,7 +1237,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	// previous should be a string
 	if (object !=NULL)
 	  {
-	    if (object->type == '\"') 
+	    if (object->type == '\"')
 	      {
 		struct json_object * pair=aljson_new_pair_key(ctx,object);
 
@@ -1190,7 +1247,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 		// next object will be value, detected at '}' or ','
 		// and ] ???
 		object = NULL;
-    
+
 	      }
 	    else
 	      {
@@ -1243,7 +1300,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	      case JSON_TOKEN_NULL_ID:
 		object=new_json_constant_object(ctx, 'n',JSON_CONSTANT_NULL);
 		break;
-	      } 
+	      }
 	  }
 	else
 	  {
@@ -1272,29 +1329,54 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	    return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_TOKEN_CHAR_UNEXPECTED, data, object,parent);
 	  }
       }
-    
+
     // case where a parent was given
     if ( stopwithparent && (alstack_used(stack) == 0) )
       {
+	if ( FLAG_IS_SET(json_debug,1)  )
+	  {
+	    aldebug_printf(DBGSTREAM, "[DEBUG] %s:%i non recursive loop end, back to parent", __FILE__,__LINE__);
+	  }
 	break;
       }
 
     last_token = json_tokenizer(ctx->tokenizer,data);
   }
 
+#ifdef JSON_NR_EMPTY_STACK
+  // yep you see it this is a label for a goto
+parse_level_non_recursive_exit:
+#endif
   object=aljson_concrete(ctx,object);
   alstack_destroy(stack, NULL);
   return object;
 
 }
 
-// try recursive only if depth is not > ctx->max_depth
+/** allows to choose between recursive and non recursive parsing
+    try recursive only if depth is not > ctx->max_depth
+*/
 struct json_object * parse_level(struct json_parser_ctx * ctx, void * data, struct json_object * parent)
 {
 
   if ( ctx->parsing_depth > ctx->max_depth)
     {
-      return parse_level_non_recursive(ctx,data,parent);
+      // FIXME parent should not be NULL when switching from recursive to non recursive
+      if ( parent == NULL )
+	{
+	  // !!! parent can be null !!!
+	  // this actualy is a problem since it defeat purpose of non recursive
+	  // to protect again stack smashing
+	  if ( FLAG_IS_SET(json_debug,1)  )
+	  {
+	    aldebug_printf(DBGSTREAM, "[DEBUG] forcing recursive due to parent NULL at parsing depth %i", ctx->parsing_depth);
+	  }
+	  return parse_level_recursive(ctx,data,parent);
+	}
+      else
+	{
+	  return parse_level_non_recursive(ctx,data,parent);
+	}
     }
   else
     {
@@ -1318,7 +1400,7 @@ struct json_object * json_list_get( struct json_object * object, int index)
 void * aljson_dict_foreach(
 			 struct json_object * object,
 			 void * (* callback) (struct json_object * key, struct json_object * value, void * data),
-			 void * data)				     
+			 void * data)
 {
   int i;
   struct json_object * value = NULL;
@@ -1351,7 +1433,7 @@ void * aljson_dict_match_value_callback(struct json_object * key, struct json_ob
 	{
 	  return value;
 	}
-    }  
+    }
   return NULL;
 }
 
@@ -1369,8 +1451,8 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
   aldatablock searchkey;
   searchkey.length = strlen(keyname);
   searchkey.type = ALTYPE_OPAQUE;
-  searchkey.data.constcharptr = keyname;  
-  
+  searchkey.data.constcharptr = keyname;
+
   // htable search
   if ( object->type == '{' )
     {
@@ -1414,7 +1496,6 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
 
   // fallback to foreach walk
   value = (struct json_object *) aljson_dict_foreach(object,aljson_dict_match_value_callback,(void *) &searchkey);
-		      
 
   // collect error case were not found  in hashtable but was in json_dict items
   if ( ( foundstatus != 0 ) && ( value != NULL ) )
@@ -1443,7 +1524,7 @@ int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 	  if (( limit > 0 ) && ( chars[0] == '-' ))
 	    {
 	      negative=1;
-	      i=1;	      
+	      i=1;
 	    }
 	  for (; i < limit ; i++)
 	    {
@@ -1474,7 +1555,7 @@ int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 		  else
 		    {
 		      result=cumul;
-		    }		      
+		    }
 		}
 	      else
 		{
