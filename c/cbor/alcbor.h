@@ -1,7 +1,6 @@
 #ifndef ALCBOR_HEADER_
 #define ALCBOR_HEADER_
 
-
 // field encoding type
 typedef enum alcbor_field_encoding_type {
 					 ALCBOR_FET_NOT_SET = -2,

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# please note :
+#
+# base64_dbg should be build
+# cd ../../c; make ../build/base64_dbg
+
 source ../lib/basefuncs.sh
 
 check_diff_files()

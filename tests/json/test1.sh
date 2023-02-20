@@ -56,6 +56,12 @@ encode_decode_test()
     check_diff $reftest.$srcext
 }
 
+runit()
+{
+    echo "$@"
+    $@
+}
+
 full_test()
 {
 
@@ -88,14 +94,18 @@ full_test()
     #encode_decode_test map cbor json
 
     # $json -d -- ref/appendix_a.json
-    $json maxdepth=50 -- ref/syntax_error_101.json
 
-    $json maxdepth=20000 -- ref/syntax_error_101.json
+    # fully recursive
+    runit $json maxdepth=50 -- ref/syntax_error_101.json
 
+    # fully non recursive
+    runit $json maxdepth=20000 -- ref/syntax_error_101.json
 
+    # this shows that mix recursive & non_recursive has hacks
+    # $json -d -- ref/syntax_error_101.json
 
-    # this shows that mix recursive & non_recursive is buggy
-    $json -- ref/syntax_error_101.json
+    # mix recursive and non recursive
+    runit $json -- ref/syntax_error_101.json
 
 }
 

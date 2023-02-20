@@ -7,10 +7,11 @@
 #include "aljson_dump.h"
 #include "alcbor_encoder.h"
 #include "aljson_import_internal.h"
+#include "alformat.h"
 
 #include <stddef.h>
 
-const char * CBOR_MAIN_VERSION = "0.2";
+const char * CBOR_MAIN_VERSION = "0.3";
 
 void usage()
 {
@@ -19,7 +20,7 @@ void usage()
   aldebug_printf(DBGSTREAM,"https://en.wikipedia.org/wiki/CBOR\n");
 
   aldebug_printf(DBGSTREAM,"hexstring=<hex string> to be converted to raw bytes in outfile ( in this case cbor)\n");
-  aldebug_printf(DBGSTREAM,"inform=... if set infile is read as json\n");
+  aldebug_printf(DBGSTREAM,"inform=json|cbor format of infile\n");
   aldebug_printf(DBGSTREAM,"infile=<cbor or json input file>\n");
   aldebug_printf(DBGSTREAM,"outfile=<json or cbor output file to be created>\n");
 }
@@ -36,8 +37,14 @@ int main(int argc, char ** argv )
   aldatablock * hexstring = al_option_get(options,"hexstring");
   aldatablock * outfiledata = al_option_get(options,"outfile");
 
+  // default to cbor
+  enum al_format inform_format=AL_FMT_CBOR;
+
+  
   if ( hexstring != NULL )
     {
+      // convert from hexstring to bytes ...
+      // why is it done here ??
       if ( outfiledata != NULL )
 	{
 	  struct aloutputstream output;
@@ -68,55 +75,69 @@ int main(int argc, char ** argv )
 	    struct aloutputstream output;
 	    if ( aloutput_file_open_init(&output, outfiledata->data.charptr) == AL_EC_OK )
 	      {
+		if (inform != NULL)
+		  {
+		    if ( inform->data.charptr != NULL )
+		      {
+			char * txt = inform->data.charptr;
 
-		  if ( inform != NULL )
-		    {		      
-		      // TODO check inform content ( json .. )
-		      // ASSUME if inform given this is json
-		      // 1 parse json
-		      // convert it to cbor
-		      struct json_parser_ctx json_context;
-		      struct json_ctx json_tokenizer;
-		      struct print_ctx print_context;
+			inform_format = alstring_prefix(txt,"json",4,AL_FMT_JSON,AL_FMT_UNSET);
+			if ( inform_format == AL_FMT_UNSET )
+			  {
+			    inform_format = alstring_prefix(txt,"cbor",4,AL_FMT_CBOR,AL_FMT_UNSET);
+			  }		    
+		      }
+		  }
+
+		if ( inform_format == AL_FMT_JSON )
+		  {	      
+		    // parse json and convert it to cbor
+		    struct json_parser_ctx json_context;
+		    struct json_ctx json_tokenizer;
+		    struct print_ctx print_context;
 		      
-		      aljson_init(&json_context,&json_tokenizer,&print_context);
-		      aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
+		    aljson_init(&json_context,&json_tokenizer,&print_context);
+		    aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
 		      
-		      struct json_object * root=NULL;
-		      struct json_import_context_data data;
-		      data.inputstream=&input;
-		      root=parse_level(&json_context,&data,root);
+		    struct json_object * root=NULL;
+		    struct json_import_context_data data;
+		    data.inputstream=&input;
+		    root=parse_level(&json_context,&data,root);
 
-		      if ( root != NULL )
-			{
-			  struct alcbor_encoder encoder;
-			  alcbor_encoder_init(&encoder, &output);		      
-			  alcbor_encoder_json_object(root,&encoder.output_context);
-			}
-		      else
-			{
-			  aldebug_printf(DBGSTREAM,"[ERROR] file to parse '" ALPASCALSTRFMT "' not recognized as json \n",
-					 ALPASCALSTRARGS(infiledata->length,infiledata->data.charptr));
+		    if ( root != NULL )
+		      {
+			struct alcbor_encoder encoder;
+			alcbor_encoder_init(&encoder, &output);		      
+			alcbor_encoder_json_object(root,&encoder.output_context);
+		      }
+		    else
+		      {
+			aldebug_printf(DBGSTREAM,"[ERROR] file to parse '" ALPASCALSTRFMT "' not recognized as json \n",
+				       ALPASCALSTRARGS(infiledata->length,infiledata->data.charptr));
 
-			}
-		    }
-		  else
-		    {
-		      alcbor_parsing_context_init(&cbor_context,&input,&output);
-		      alcbor_parse(&cbor_context);
-		      struct json_object * root = alcbor_get_json_root(&cbor_context);
-		      if ( root != NULL )
-			{
-			  struct print_ctx print_ctx;
-			  struct json_parser_ctx * parser_ctx = alcbor_get_json_context(&cbor_context);
+		      }
+		  }
+		else
+		  {
+		    // parse cbor and convert it to json
+		    alcbor_parsing_context_init(&cbor_context,&input,&output);
+		    alcbor_parse(&cbor_context);
+		    struct json_object * root = alcbor_get_json_root(&cbor_context);
+		    if ( root != NULL )
+		      {
+			struct print_ctx print_ctx;
+			struct json_parser_ctx * parser_ctx = alcbor_get_json_context(&cbor_context);
 			  
-			  aljson_print_ctx_init(&print_ctx);
-			  print_ctx.outfile=&output;
-			  // should dump it to output
-			  aljson_dump_object(root, &print_ctx);
-			}		    
-		      alcbor_parsing_context_release(&cbor_context);
-		    }
+			aljson_print_ctx_init(&print_ctx);
+			aljson_print_ctx_set_format(&print_ctx,ALJSON_PRINT_FLAT);
+			print_ctx.outfile=&output;
+			// should dump it to output
+			aljson_dump_object(root, &print_ctx);
+			// add a final \n.
+			print_ctx.printf(&print_ctx,"\n");
+		      }		    
+		    alcbor_parsing_context_release(&cbor_context);
+		  }
 		  aloutputstream_close(&output);
 	      }
 	    else

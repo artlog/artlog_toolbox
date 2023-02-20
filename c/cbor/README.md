@@ -4,7 +4,7 @@
 https://cbor.io/
 
 
-decode cbor -> json
+## decode cbor -> json
 
 then should find api in aljson to build json object.
 
@@ -23,4 +23,7 @@ cat one.json
 ```
 make tests
 ```
+
+## encode json -> cbor
+
 

@@ -36,23 +36,22 @@ encode_decode_test()
     reftest=$1
     srcext=$2
     dstext=$3
-    if [[ $srcext == "json" ]]
-    then
-	inform="inform=$srcext"
-    else
-	inform=
-    fi
-    $cbor $inform infile=ref/$reftest.$srcext outfile=${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
+    echo "[TEST] $reftest $srcext -> $dstext"
+    inform="inform=$srcext"
+    outform="inform=$dstext"
+  
+    run $cbor $inform infile=ref/$reftest.$srcext outfile=${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
     check_diff $reftest.$dstext
-    $cbor $inform infile=ref/$reftest.$srcext outfile=${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
-
+        
     if false
     then
+	run $cbor $inform infile=ref/$reftest.$srcext outfile=${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
+
 	# difference can be seen due to out of bound views might not be relevant
 	check_diff_files ${TESTOUT}/$reftest.$dstext.stderr ${TESTOUT}/$reftest.2.$dstext.stderr
     fi
 
-    $cbor infile=${TESTOUT}/$reftest.$dstext outfile=${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
+    run $cbor $outform infile=${TESTOUT}/$reftest.$dstext outfile=${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
     check_diff $reftest.$srcext
 }
 
@@ -85,9 +84,24 @@ full_test()
     # don't even try to run executable if usage differs.
     check_errors
 
-    encode_decode_test one cbor json
+    encode_decode_test one json cbor
+    encode_decode_test one cbor json   
+
+    encode_decode_test map json cbor
     encode_decode_test map cbor json
 
+    samplename=Q3390720
+    run $cbor inform=json infile=../json/ref/$samplename.json outfile=tmp.cbor_main/$samplename.cbor
+    run $cbor inform=cbor infile=tmp.cbor_main/$samplename.cbor outfile=tmp.cbor_main/$samplename.json 
+
+
+}
+
+
+run()
+{
+    echo $@
+    $@
 }
 
 BUILD=../../build

@@ -1,8 +1,8 @@
-version 0.2
+version 0.3
 convert cbor <-> json  Not fully implemented
 https://tools.ietf.org/html/rfc7049
 https://en.wikipedia.org/wiki/CBOR
 hexstring=<hex string> to be converted to raw bytes in outfile ( in this case cbor)
-inform=... if set infile is read as json
+inform=json|cbor format of infile
 infile=<cbor or json input file>
 outfile=<json or cbor output file to be created>

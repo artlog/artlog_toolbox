@@ -1,7 +1,10 @@
 #include "alcbor_encoder.h"
 #include "alcbor.h"
 #include "aljson_output.h"
+#include "aldebug_output.h"
+
 #include <stddef.h>
+
 
 struct alcbor_encoder * alcbor_encoder_json_get_encoder(struct aljson_output_context * output_context)
 {
@@ -81,6 +84,8 @@ void alcbor_encoder_json_list_object(struct json_object * object, struct aljson_
   struct alcbor_encoder * encoder=alcbor_encoder_json_get_encoder(output_context);
   struct aloutputstream * output=encoder->output;
   int length = object->list.nitems;
+
+  aldebug_printf(DBGSTREAM,"[INFO] encode list \n");
   if ( alcbor_encoder_encode_mt_and_length(ALCBOR_MT4_ARRAY,length,output) != ALCBOR_FET_ERROR )
     {
       for(int i=0;i< length;i++)

@@ -176,4 +176,11 @@ return old size, or -1 of realloc failed.
 */
 int alstring_grow_buffer_if_needed(struct alstrings_buffer * buffer, int newsize);
 
+/**
+helper on ctring
+if cstring txt is a prefix of keyword returns match else return miss
+keywordlength should be smaller or equal to keyword cstring length
+**/
+int alstring_prefix(char * txt, char* keyword, int keywordlength, int match, int miss);
+
 #endif
