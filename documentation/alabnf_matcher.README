@@ -225,7 +225,7 @@ status :
 
 what can it parse, where does it fails ?
 
-why is there a alabnf - albnf_test.c) and alabanf_matcher ?
+why is there a alabnf - albnf_test.c and alabanf_matcher ?
 
 alabnf.c => read/parse a stream of ABNF syntax and create and struct abnf* internal represention of it
 
