@@ -169,6 +169,9 @@ $(BUILD)/base64: $(staticlibraries) | libinclude
 $(BUILD)/cbor_main: $(staticlibraries) | libinclude
 	cd c/cbor; make ../../$(BUILD)/cbor_main
 
+$(BUILD)/alabnf $(BUILD)/alabnf_matcher: $(staticlibraries) | libinclude
+	cd c/abnf; make ../../$@
+
 clean:
 	rm -rf $(BUILD)
 
