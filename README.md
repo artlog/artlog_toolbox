@@ -15,6 +15,10 @@ provides implementations for static libraries
 
 and provide bash scripts for toy projects
 
+# json
+
+
+
 ______________
 
 
@@ -198,7 +202,7 @@ abnf
 
 intention is to parse a anbf decription of iri directly for json_ld ... seems vastly too complicated for purpose.
 
-see documention/alabnf_matcher.README
+see documentation/alabnf_matcher.README
 
 c/abnf
 make all

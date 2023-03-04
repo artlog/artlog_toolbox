@@ -115,9 +115,10 @@ altokenizer_dict_add_string (struct altokenizer *tokenizer, char * buffer, int l
       key.data.ptr = al_copy_block(&context->allocator.ringbuffer,&key);
       if ( key.data.ptr== NULL )
 	{
+	  struct alstrings_buffer * buffer = &context->allocator.ringbuffer->buffer;
 	  aldebug_printf (NULL,
 		   "[WARNING] internal char buffer for words full %i+%i>%i",
-		   context->allocator.ringbuffer->bufpos, length, context->allocator.ringbuffer->bufsize);
+		   buffer->bufpos, length, buffer->bufsize);
 	  return NULL;
 	}
       valuep = &key;
@@ -143,23 +144,23 @@ altokenizer_reset_buffer_pos (struct altokenizer *tokenizer)
 {
   // reset when word is parsed and recognized as either a reserved word or stored in variable dict with cut_string.
   // printf("//reset token buffer\n");
-  tokenizer->token_buf.bufpos = 0;
+  tokenizer->token_buf.buffer.bufpos = 0;
 }
 
 int altokenizer_get_pending_chars(struct altokenizer * tokenizer)
 {
   struct token_char_buffer *tb = &tokenizer->token_buf;
   //  char *buffer = tb->buf;
-  int length = tb->bufpos;
+  int length = tb->buffer.bufpos;
   return length;
 }
 
 struct alhash_entry *
 altokenizer_cut_token_string(struct altokenizer *tokenizer)
 {
-  struct token_char_buffer *tb = &tokenizer->token_buf;
-  char *buffer = tb->buf;
-  int length = tb->bufpos;
+  struct alstrings_buffer * strbuffer = &tokenizer->token_buf.buffer;
+  char *buffer = strbuffer->buf;
+  int length = strbuffer->bufpos;
 
   struct alhash_entry *entry = altokenizer_dict_add_string(tokenizer, buffer, length);
 

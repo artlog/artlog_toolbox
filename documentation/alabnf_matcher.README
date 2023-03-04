@@ -9,6 +9,18 @@ ABNF https://fr.wikipedia.org/wiki/Augmented_Backus-Naur_Form
 __________________________________________________________________________________________________________________________
 
 
+4th March 2023 current status
+_____________________________
+
+Just trying to recompile it... not working dur to changes in alstrings.h
+
+add personal wiki page https://www4.artisanlogiciel.net/dokuwiki/doku.php?id=it:dev:artlog:abnf
+
+still painful too understand what to cover here and status ...
+
+created a tests/abnf/
+
+
 3th january 2021 current status
 _______________________________
 
