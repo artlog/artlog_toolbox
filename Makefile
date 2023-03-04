@@ -14,6 +14,8 @@ libsrc=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c c/aljson_dump.c
 src=c/aljson_main.c
 libraries=aljson alsave altest allist aldev alhash alcommon alstack
 
+staticlibraries=$(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
+
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 
@@ -38,7 +40,7 @@ libaljsonsources=c/aljson_parser.c c/aljson.c c/aljson_import_internal.c\
 libaljsonobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libaljsonsources))
 
 # default target is to build libraries
-libs: $(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
+libs: $(staticlibraries)
 
 all: libinclude libs tests $(BUILD)/base64
 
@@ -161,9 +163,11 @@ $(BUILD)/private/obj/%.o: c/%.c | $(BUILD)/private/obj
 	@$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I$(INCLUDEDIR)\
  -I c/private $< -o $@
 
-$(BUILD)/base64:
-	@echo 'quick hack'
+$(BUILD)/base64: $(staticlibraries) | libinclude
 	cd c; make ../$(BUILD)/base64
+
+$(BUILD)/cbor_main: $(staticlibraries) | libinclude
+	cd c/cbor; make ../../$(BUILD)/cbor_main
 
 clean:
 	rm -rf $(BUILD)
