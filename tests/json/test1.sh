@@ -42,9 +42,11 @@ encode_decode_test()
     else
 	inform=
     fi
-    $json $inform infile=ref/$reftest.$srcext outfile=${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
+    # $json $inform infile=ref/$reftest.$srcext out=${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
+    $json $inform -- ref/$reftest.$srcext >${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
     check_diff $reftest.$dstext
-    $json $inform infile=ref/$reftest.$srcext outfile=${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
+    # $json $inform infile=ref/$reftest.$srcext out=${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
+    $json $inform -- ref/$reftest.$srcext >${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
 
     if false
     then
@@ -52,7 +54,8 @@ encode_decode_test()
 	check_diff_files ${TESTOUT}/$reftest.$dstext.stderr ${TESTOUT}/$reftest.2.$dstext.stderr
     fi
 
-    $json infile=${TESTOUT}/$reftest.$dstext outfile=${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
+    # $json infile=${TESTOUT}/$reftest.$dstext out=${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
+    $json -- ${TESTOUT}/$reftest.$dstext >${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
     check_diff $reftest.$srcext
 }
 
@@ -107,6 +110,9 @@ full_test()
     # mix recursive and non recursive
     runit $json -- ref/syntax_error_101.json
 
+    encode_decode_test backslash json json
+
+    
 }
 
 BUILD=../../build
