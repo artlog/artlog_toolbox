@@ -271,7 +271,37 @@ int parse_until_escaped_level(struct json_ctx * ctx, void * data, char stop, cha
       else if ( c == escape )
 	{
 	  c=ctx->next_char(ctx, data);
-	  if ( c != 0 ) ctx->add_char(ctx,stop, c);
+	  if ( c != 0 )
+	    {
+	      // THIS is where \n and other should have been quoted ...
+	      // "\/bfnrtu
+	      // waht to do if outside this ?
+	      switch(c)
+		{
+		case 'n':
+		  c='\n';
+		  break;
+		case 'b':
+		  // backspacee ???
+		  c='\b';
+		  break;
+		case 't':
+		  c='\t';
+		  break;
+		case 'f':
+		  c='\f';
+		  break;
+		case 'r':
+		  c='\r';
+		  break;
+		case 'u':
+		  // TODO unicode, current : keep it ...
+		  ctx->add_char(ctx,stop, escape);
+		default:
+		  break;
+		}
+	      ctx->add_char(ctx,stop, c);
+	    }
 	}
       else {
 	ctx->add_char(ctx,stop, c);

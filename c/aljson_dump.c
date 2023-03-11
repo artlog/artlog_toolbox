@@ -39,7 +39,7 @@ void aljson_dump_string( struct json_object * object, struct print_ctx * print_c
       struct json_string * string = &object->string;
       if ( ( object->type != '$' ) && ( object->type != '0') )
 	{
-	  aloutputstream_printf_1k(output,"%c" ALPASCALSTRFMT "%c",
+	  aloutputstream_printf_1k(output,"?%c" ALPASCALSTRFMT "%c",
 		 object->type,
 		 ALPASCALSTRARGS(string->internal.length,(char *) string->internal.data).ptr,
 		 object->type);
@@ -92,6 +92,7 @@ void aljson_dump_pair( struct json_pair * pair, struct print_ctx * print_ctx)
   struct aloutputstream * output=aljson_get_output(print_ctx);
   aljson_dump_object(pair->key, print_ctx);
   aloutputstream_printf_1k(output,":");
+  // quick to use aljson_output
   aljson_dump_object(pair->value, print_ctx);
 }
 
@@ -339,13 +340,16 @@ void aljson_dump_object( struct json_object * object, struct print_ctx * print_c
 	case '"':
 	case '\'':
 	case '$':
-	  aljson_dump_string(object, print_ctx);
+	  (*print_ctx->string_output)(object, print_ctx);
+	  // aljson_dump_string(object, print_ctx);
 	  break;
 	case '0':
 	  aljson_dump_string_number(object, print_ctx);
 	  break;
 	case ':':
-	  aljson_dump_pair_object(object, print_ctx);
+	  // brainless
+	  (*print_ctx->pair_output)(object, print_ctx);
+	  //aljson_dump_pair_object(object, print_ctx);
 	  break;
 	case ',':
 	  aloutputstream_printf_1k(output,"#");

@@ -20,6 +20,9 @@
  should be rewritten for dump to either be independent or to use aljson_xxx_ouput ( ie reverse ).
 --------------------
 */
+// defined in aljson_dump ....
+struct aloutputstream * aljson_get_output(struct print_ctx * print_ctx);
+
 
 void aljson_print_printf(struct print_ctx * print_ctx, const char *format, ...)
 {
@@ -63,6 +66,114 @@ void aljson_growable_output(struct json_object * object, struct print_ctx * prin
   assert(object->type == 'G');
   struct json_growable * growable=&object->growable;
   aljson_json_growable_output(growable, print_ctx);
+}
+
+
+// https://www.json.org/json-en.html
+void aljson_quoted_string_output( struct json_string * string, struct aloutputstream * stream ,char quote)
+{
+     
+  // NULL terminated string ?
+  // todo("implement ALTYPE_STR0 for string->internal.type");
+  int length = string->internal.length;
+  char * str =  string->internal.data.ptr;
+  for (int i = 0 ; i < length; i ++ )
+    {
+      char c = str[i];
+      // should do reverse of aljson_parser parse_until_escaped_level
+      // TODO handle UTF8
+      switch (c)
+	{
+	case '\n':
+	  aloutputstream_write_byte(stream,'\\');
+	  aloutputstream_write_byte(stream,'n');
+	  break;
+	case '\r':
+	  aloutputstream_write_byte(stream,'\\');
+	  aloutputstream_write_byte(stream,'r');
+	  break;
+	case '\t':
+	  aloutputstream_write_byte(stream,'\\');
+	  aloutputstream_write_byte(stream,'t');
+	  break;
+	case '\f':
+	  aloutputstream_write_byte(stream,'\\');
+	  aloutputstream_write_byte(stream,'f');
+	  break;
+	case '"':
+	case '\\':
+	  aloutputstream_write_byte(stream,'\\');
+	default:
+	  aloutputstream_write_byte(stream,c);
+	}
+    }
+}
+  
+// add escape '\' for protected characters
+void aljson_string_output( struct json_object * object, struct print_ctx * print_ctx)
+{
+  struct aloutputstream * stream=aljson_get_output(print_ctx);
+  if ( object != NULL)
+    {
+      struct json_string * string = &object->string;
+      if ( ( object->type != '$' ) && ( object->type != '0') )
+	{
+	  // TODO , this seems to be an error at first sight
+	  // we should not be called for such object type.
+
+	  // ARGHH in fact this is what is called, type of quoted string is char ' or "
+
+	  if ( object->type == '"' )
+	    {
+	      char quote=object->type;
+	      aloutputstream_write_byte(stream,quote);
+	      aljson_quoted_string_output(string,stream,quote);
+	      aloutputstream_write_byte(stream,quote);
+	    }
+	  else
+	    {
+	      	  aloutputstream_printf_1k(stream,"%c" ALPASCALSTRFMT "%c",
+		 object->type,
+		 ALPASCALSTRARGS(string->internal.length,(char *) string->internal.data).ptr,
+		 object->type);
+	    }
+	    
+	}
+      else
+	{
+	  // NULL terminated string ?
+	  // todo("implement ALTYPE_STR0 for string->internal.type");
+	  aloutputstream_printf_1k(stream,ALPASCALSTRFMT,
+		 ALPASCALSTRARGS(string->internal.length,(char *) string->internal.data.ptr));
+	}
+    }
+  else
+    {
+      aloutputstream_printf_1k(stream,"'0");
+    }
+}
+
+
+void aljson_json_pair_output( struct json_pair * pair, struct print_ctx * print_ctx)
+{
+  struct aloutputstream * output=aljson_get_output(print_ctx);
+  aljson_dump_object(pair->key, print_ctx);
+  aloutputstream_printf_1k(output,":");
+  aljson_string_output(pair->value, print_ctx);
+}
+
+void aljson_pair_output( struct json_object * object, struct print_ctx * print_ctx)
+{
+  if ( object != NULL)
+    {
+      assert(object->type == ':');
+      aljson_json_pair_output(&object->pair, print_ctx);
+    }
+  else
+    {
+      struct aloutputstream * output=aljson_get_output(print_ctx);
+      aloutputstream_printf_1k(output,":0");
+    }
 }
 
 // limited to print_ctx->max_depth since relying on code stack call.
@@ -184,10 +295,10 @@ void aljson_print_ctx_init_format(struct print_ctx * print_ctx, enum aljson_prin
   
   print_ctx->dict_output=aljson_dump_dict_object;
   print_ctx->list_output=aljson_dump_list_object;
-  print_ctx->string_output=aljson_dump_string;
+  print_ctx->string_output=aljson_string_output;
   print_ctx->number_output=aljson_dump_string_number;
   print_ctx->error_output=aljson_dump_error_object;
-  print_ctx->pair_output=aljson_dump_pair_object;
+  print_ctx->pair_output=aljson_pair_output;
   print_ctx->constant_output=aljson_dump_constant_object;
   print_ctx->variable_output=aljson_dump_variable_object;
 
@@ -258,9 +369,9 @@ void aljson_output_with_callback(struct json_object * object, struct aljson_outp
 	case '[':
 	  (*callback->list_object)(object, output_context);
 	  break;
-	case '"':
-	case '\'':
-	case '$':
+	case '"': // DQUOTE
+	case '\'': // SQUOTE
+	case '$':  // VAR ?
 	   (*callback->string)(object, output_context);
 	  break;
 	case '0':
