@@ -207,9 +207,9 @@ void aljson_dump_dict_object( struct json_object * object, struct print_ctx * pr
     }
 
   aloutputstream_printf_1k(output,"%c",object->type);
-  aljson_dump_enter_indent(print_ctx);
   if (object->dict.nitems > 0)
     {
+      aljson_dump_enter_indent(print_ctx);
       aljson_dump_indent(print_ctx);
       aljson_dump_pair(object->dict.items[0], print_ctx);
       for(i=1;i< object->dict.nitems;i++)
@@ -218,9 +218,9 @@ void aljson_dump_dict_object( struct json_object * object, struct print_ctx * pr
 	  aljson_dump_indent(print_ctx);
 	  aljson_dump_pair(object->dict.items[i], print_ctx);
 	}
+      aljson_dump_exit_indent( print_ctx);
+      aljson_dump_indent(print_ctx);
     }
-  aljson_dump_exit_indent( print_ctx);
-  aljson_dump_indent(print_ctx);
   aloutputstream_printf_1k(output,"}");
 }
 
