@@ -43,20 +43,22 @@ encode_decode_test()
 	inform=
     fi
     # $json $inform infile=ref/$reftest.$srcext out=${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
-    $json $inform -- ref/$reftest.$srcext >${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
+    $json $inform indent=spaces -- ref/$reftest.$srcext >${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
     check_diff $reftest.$dstext
     # $json $inform infile=ref/$reftest.$srcext out=${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
-    $json $inform -- ref/$reftest.$srcext >${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
+    $json $inform indent=spaces -- ref/$reftest.$srcext >${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
 
-    if false
+    if true
     then
 	# difference can be seen due to out of bound views might not be relevant
 	check_diff_files ${TESTOUT}/$reftest.$dstext.stderr ${TESTOUT}/$reftest.2.$dstext.stderr
     fi
 
     # $json infile=${TESTOUT}/$reftest.$dstext out=${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
-    $json -- ${TESTOUT}/$reftest.$dstext >${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
+    $json indent=none -- ${TESTOUT}/$reftest.$dstext >${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
     check_diff $reftest.$srcext
+
+    log_any "[INFO] encode decode json $reftest $srcext $dstext '$errors'"
 }
 
 runit()
@@ -110,7 +112,7 @@ full_test()
     # mix recursive and non recursive
     runit $json -- ref/syntax_error_101.json
 
-    encode_decode_test backslash json json
+    encode_decode_test backslash json pp.json
 
     
 }
