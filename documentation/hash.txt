@@ -1,8 +1,0 @@
-
-alhash fournit un une table de hachage
-
-déterminer le meilleur hash en fonction des entrées
-
-h(B)=h(A)+1
-h(C)=h(B)+1
-...
