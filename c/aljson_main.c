@@ -33,7 +33,8 @@ void usage()
   aldebug_printf(DBGSTREAM,"-b                         bare, no indent\n");
   aldebug_printf(DBGSTREAM,"maxdepth=<integer value for max depth>     over maxdepth switch to non recursive\n");
   aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set\n");
-  aldebug_printf(DBGSTREAM,"indent=flat|spaces|tabs    indentation flat or with 2 spaces or with tabs \n");
+  aldebug_printf(DBGSTREAM,"indent=flat|spaces[:x]|tabs    indentation flat or with x ( default 3 ) spaces or with tabs \n");
+  aldebug_printf(DBGSTREAM,"space_after   add a space after : of a pair\n");
   aldebug_printf(DBGSTREAM,"json_path=<path>\n");
   aldebug_printf(DBGSTREAM,"template=filename          file to open in read only mode to parse in json for template.\n");
   aldebug_printf(DBGSTREAM,"          template is used for json unification ie extracting fields from a template pattern\n");
@@ -159,12 +160,39 @@ int main(int argc, char ** argv)
 	}
       if ( found == -1 )
 	{
-	  aldebug_printf(DBGSTREAM,"indent option not recognized\n");
+	  // TODO support any number of spaces...
+	  // lame brainless parsing ...
+	  if ( strncmp("spaces:1",indent_value->data.charptr,(long unsigned int) indent_value->length) == 0 )
+	    {
+	      aldebug_printf(DBGSTREAM,"indent set to one space\n");
+	      aljson_print_ctx_set_format(&print_context,ALJSON_PRINT_SPACES);
+	      // force one space
+	      print_context.do_indent=1;
+	      found = 1;
+	    }
+	  else
+	  if ( strncmp("spaces:2",indent_value->data.charptr,(long unsigned int) indent_value->length) == 0 )
+	    {
+	      aldebug_printf(DBGSTREAM,"indent set to 2 spaces\n");
+	      aljson_print_ctx_set_format(&print_context,ALJSON_PRINT_SPACES);
+	      // force 2 spaces
+	      print_context.do_indent=2;
+	      found = 1;
+	    }
+	  else
+	    {
+	      aldebug_printf(DBGSTREAM,"indent option not recognized\n");
+	    }
 	}
 
     }
 
-
+  aldatablock * space_after_value = al_option_get(options,"space_after");
+  if ( space_after_value != NULL )
+    {
+      print_context.space_after=1;
+    }
+  
   aldatablock * json_template_value = al_option_get(options,"template");
   if ( json_template_value != NULL )
     {

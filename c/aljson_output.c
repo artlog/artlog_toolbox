@@ -158,8 +158,13 @@ void aljson_json_pair_output( struct json_pair * pair, struct print_ctx * print_
 {
   struct aloutputstream * output=aljson_get_output(print_ctx);
   aljson_dump_object(pair->key, print_ctx);
-  aloutputstream_printf_1k(output,":");
-  aljson_string_output(pair->value, print_ctx);
+  aloutputstream_write_byte(output,':');
+  if ( print_ctx->space_after == 1 )
+    {
+          aloutputstream_write_byte(output,' ');
+    }
+  // might not be a string, can be dict, constant, ...
+  aljson_output(pair->value, print_ctx);
 }
 
 void aljson_pair_output( struct json_object * object, struct print_ctx * print_ctx)
@@ -244,6 +249,7 @@ void aljson_output(struct json_object * object, struct print_ctx * print_ctx)
 void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print_format format)
 {
   print_ctx->format = format;
+  print_ctx->space_after=0;
   switch(format)
     {
     case ALJSON_PRINT_TABS:
@@ -263,9 +269,15 @@ void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print
       }
       break;
     case ALJSON_PRINT_SPACES:
-      // this is default
+      {
+	print_ctx->indent=0;
+	print_ctx->do_indent=3; // 0 no indent, >= 1 number of space by indent.
+	print_ctx->s_indent=" ";
+	print_ctx->format = ALJSON_PRINT_SPACES;
+      }
     default:
       {
+	// this is default : 3 spaces
 	print_ctx->indent=0;
 	print_ctx->do_indent=3; // 0 no indent, >= 1 number of space by indent.
 	print_ctx->s_indent=" ";

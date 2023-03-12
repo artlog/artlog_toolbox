@@ -91,8 +91,11 @@ void aljson_dump_pair( struct json_pair * pair, struct print_ctx * print_ctx)
 {
   struct aloutputstream * output=aljson_get_output(print_ctx);
   aljson_dump_object(pair->key, print_ctx);
-  aloutputstream_printf_1k(output,":");
-  // quick to use aljson_output
+  aloutputstream_write_byte(output,':');
+  if ( print_ctx->space_after == 1 )
+    {
+          aloutputstream_write_byte(output,' ');
+    }
   aljson_dump_object(pair->value, print_ctx);
 }
 

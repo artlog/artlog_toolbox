@@ -27,6 +27,7 @@ struct print_ctx
   int max_depth;
   int indent;
   int do_indent; // 0 no indent, >= 1 number of space by indent.
+  int space_after; // 0 no space after : pair, 1 one space.
   char * s_indent;
   enum aljson_print_format format;
   
