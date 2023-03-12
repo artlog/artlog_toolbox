@@ -196,7 +196,7 @@ select_artlog_toolbox artlog_toolbox
 
 # now ARTLOG_TOOLBOX should either be absolute or be relative to new project
 
-# quick and dirty hack  shold perhpas belong to select_artlog_toolbox ...
+# quick and dirty hack  should perhpas belong to select_artlog_toolbox ...
 if [[ "$ARTLOG_TOOLBOX" == "." ]]
 then
     echo "[WARNING] relative . transformed to relative path" >&2
