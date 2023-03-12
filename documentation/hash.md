@@ -11,3 +11,14 @@ dotty / kgraphviewer file:out.dot
 dot -Tpng out.dot  >out.png
 
 BUG : only one node is displayed while many digraph are set in out.dot...
+
+gvpr -f split.gvpr out.dot
+
+```
+BEG_G {
+  fname = sprintf("%s.dot",$G.name);
+  writeG($G, fname);
+}
+```
+
+dotty *_18.dot
