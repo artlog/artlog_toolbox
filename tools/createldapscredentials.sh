@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # create ldaps certificate
 
@@ -318,18 +317,6 @@ path_len = 1
 
 EOF
 }
-
-
-# https://www.gnutls.org/manual/html_node/certtool-Invocation.html
-
-common_config=common_config.sh
-if [[ ! -f $common_config ]]
-then
-    echo"[ERROR] Missing $common_config" >&2
-    exit 1
-fi
-
-source $common_config
 
 organisation=$entity
 

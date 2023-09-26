@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # create ca authority
 
@@ -23,16 +22,16 @@ organization = "$organisation"
 unit = "IT"
 
 # The locality of the subject.
-locality = Valbonne
+locality = Liffre
 
 # The state of the certificate owner.
-state = "PACA"
+state = "Bretagne"
 
 # The country of the subject. Two letter code.
 country = FR
 
 # The common name of the certificate owner.
-cn = "SLV VALBONNE"
+cn = "Artlog"
 
 # A user id of the certificate owner.
 #uid = "clauper"
@@ -319,18 +318,6 @@ path_len = 2
 EOF
 }
 
-
-
-# https://www.gnutls.org/manual/html_node/certtool-Invocation.html
-
-common_config=common_config.sh
-if [[ ! -f $common_config ]]
-then
-    echo"[ERROR] Missing $common_config" >&2
-    exit 1
-fi
-
-source $common_config
 
 certtool --generate-privkey --outfile $cakeyfile --rsa
 
