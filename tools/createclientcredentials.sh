@@ -1,16 +1,16 @@
 
-# create ca authority
-
+# create client certificate
 
 # input
 # $organisation
-# ldapserverdnsname
 # output
-# ca_template.cfg
-create_ca_template()
+# client_template.cfg file
+#
+# https://www.tldp.org/HOWTO/archived/LDAP-Implementation-HOWTO/certificates.html
+create_client_template()
 {
 
-    cat <<EOF >ca_template.cfg
+    cat <<EOF >client_template.cfg
 # X.509 Certificate options
 #
 # DN options
@@ -22,7 +22,7 @@ organization = "$organisation"
 unit = "IT"
 
 # The locality of the subject.
-locality = "$locality"
+locality = $locality
 
 # The state of the certificate owner.
 state = "$state"
@@ -31,10 +31,10 @@ state = "$state"
 country = FR
 
 # The common name of the certificate owner.
-cn = "Artlog"
+cn = "$client"
 
 # A user id of the certificate owner.
-#uid = "clauper"
+uid = "$client"
 
 # Set domain components
 #dc = "name"
@@ -66,11 +66,11 @@ cn = "Artlog"
 # The serial number of the certificate
 # The value is in decimal (i.e. 1963) or hex (i.e. 0x07ab).
 # Comment the field for a random serial number.
-serial = 007
+# serial = 008
 
 # In how many days, counting from today, this certificate will expire.
 # Use -1 if there is no expiration date.
-expiration_days = 1825
+expiration_days = 700
 
 # Alternatively you may set concrete dates and time. The GNU date string 
 # formats are accepted. See:
@@ -82,7 +82,7 @@ expiration_days = 1825
 # X.509 v3 extensions
 
 # A dnsname in case of a WWW server.
-#dns_name = "www.morethanone.org"
+# dns_name = "$clienterverdnsname"
 
 # An othername defined by an OID and a hex encoded string
 #other_name = "1.3.6.1.5.2.2 302ca00d1b0b56414e5245494e2e4f5247a11b3019a006020400000002a10f300d1b047269636b1b0561646d696e"
@@ -103,7 +103,7 @@ expiration_days = 1825
 #ip_address = "192.168.1.1"
 
 # An email in case of a person
-email = "it@$entity"
+email = "$client@$entity"
 
 # TLS feature (rfc7633) extension. That can is used to indicate mandatory TLS
 # extension features to be provided by the server. In practice this is used
@@ -125,10 +125,10 @@ challenge_password = 123456
 #crl_dist_points = "http://www.getcrl.crl/getcrl/"
 
 # Whether this is a CA certificate or not
-ca
+# ca
 
 # Subject Unique ID (in hex)
-#subject_unique_id = cafecafecafe
+# subject_unique_id = cafecafecafe
 
 # Issuer Unique ID (in hex)
 #issuer_unique_id = 00153225
@@ -150,7 +150,7 @@ ca
 
 # Whether this key will be used to sign other certificates. The
 # keyCertSign flag in RFC5280 terminology.
-cert_signing_key
+# cert_signing_key
 
 # Whether this key will be used to sign CRLs. The
 # cRLSign flag in RFC5280 terminology.
@@ -178,7 +178,7 @@ cert_signing_key
 # Whether this certificate will be used for a TLS client;
 # this sets the id-kp-serverAuth (1.3.6.1.5.5.7.3.1) of 
 # extended key usage.
-#tls_www_client
+tls_www_client
 
 # Whether this certificate will be used for a TLS server;
 # This sets the id-kp-clientAuth (1.3.6.1.5.5.7.3.2) of 
@@ -241,9 +241,8 @@ cert_signing_key
 # Path length contraint. Sets the maximum number of
 # certificates that can be used to certify this certificate.
 # (i.e. the certificate chain length)
-# WARNING this should be NOT be unset for CA else it confuses firefox 62.0 pkix/nss
 #path_len = -1
-path_len = 2
+path_len = 1
 
 # OCSP URI
 # ocsp_uri = http://my.ocsp.server/ocsp
@@ -318,12 +317,13 @@ path_len = 2
 EOF
 }
 
+$defer certtool --generate-privkey --outfile $clientkeyfile --rsa
 
-$defer certtool --generate-privkey --outfile $cakeyfile --rsa
+clientname=$client
 
-organisation=$entity
-
-create_ca_template
-
-$defer certtool --generate-self-signed --load-privkey $cakeyfile --template ca_template.cfg --outfile $cacertfile
-
+create_client_template
+$defer certtool --generate-request --load-privkey $clientkeyfile \
+   --outfile $clientreqfile --template client_template.cfg
+$defer certtool --generate-certificate --load-request $clientreqfile \
+   --outfile $clientcertfile --load-ca-certificate $cacertfile \
+   --load-ca-privkey $cakeyfile --template client_template.cfg

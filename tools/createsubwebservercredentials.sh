@@ -1,4 +1,3 @@
-#!/bin/bash
 
 ## assume CA authority already created and local
 
@@ -23,10 +22,10 @@ organization = "SERVEUR WEB de $organisation"
 unit = "IT"
 
 # The locality of the subject.
-locality = Valbonne
+locality = "$locality"
 
 # The state of the certificate owner.
-state = "PACA"
+state = "$state"
 
 # The country of the subject. Two letter code.
 country = FR
@@ -244,7 +243,7 @@ path_len = -1
 #path_len = 1
 
 # OCSP URI
-ocsp_uri = http://${webserver}.slv-valbonne.fr/ocsp
+ocsp_uri = http://${webserver}.${entity}/ocsp
 
 # CA issuers URI
 # ca_issuers_uri = http://my.ca.issuer
@@ -316,48 +315,12 @@ ocsp_uri = http://${webserver}.slv-valbonne.fr/ocsp
 EOF
 }
 
-while [[ $# > 0 ]]
-do
-    echo "$1"
-    case $1 in
-	webserver=*)
-	    webserver=${1/webserver=/}
-	    ;;
-	entity=*)
-	    entity=${1/entity=/}
-	    ;;
-	*)
-	    echo "Unrecognized '$1'"
-	    ;;
-    esac
-    shift
-done
-
-if [[ "$webserver" == "" ]]
-then
-    echo "[ERROR] expecting webserver=" >&2
-    exit 1
-else
-    echo "[INFO] generating for '$webserver'"    
-fi
-
-
-# https://www.gnutls.org/manual/html_node/certtool-Invocation.html
-
-common_config=common_config.sh
-if [[ ! -f $common_config ]]
-then
-    echo "[ERROR] Missing $common_config" >&2
-    exit 1
-fi
-
-source $common_config
 
 organisation=$entity
 
 if which certtool
 then    
-    certtool --generate-privkey --outfile $webserverkeyfile --rsa --bits 3072
+    $defer certtool --generate-privkey --outfile $webserverkeyfile --rsa --bits 3072
 else
     echo "[ERROR] certtool not found, can't generate private key" >&2
     exit 1
@@ -368,11 +331,10 @@ then
     echo "[ERROR] private key of webserver creation fails, expected file $webserverkeyfile" >&2
 fi
 
-
 create_webserver_template
 
-certtool --generate-request --load-privkey $webserverkeyfile \
+$defer certtool --generate-request --load-privkey $webserverkeyfile \
    --outfile $webserverreqfile --template ${webserver}_template.cfg
-certtool --generate-certificate --load-request $webserverreqfile \
+$defer certtool --generate-certificate --load-request $webserverreqfile \
    --outfile $webservercertfile --load-ca-certificate $cacertfile \
    --load-ca-privkey $cakeyfile --template ${webserver}_template.cfg

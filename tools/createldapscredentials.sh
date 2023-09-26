@@ -16,16 +16,16 @@ create_ldaps_template()
 # DN options
 
 # The organization of the subject.
-organization = "SERVEUR LDAP de $organisation"
+organization = "SERVEUR LDAP $ldap de $organisation"
 
 # The organizational unit of the subject.
 unit = "IT"
 
 # The locality of the subject.
-locality = Valbonne
+locality = $locality
 
 # The state of the certificate owner.
-state = "PACA"
+state = "$state"
 
 # The country of the subject. Two letter code.
 country = FR
@@ -104,7 +104,7 @@ dns_name = "$ldapserverdnsname"
 #ip_address = "192.168.1.1"
 
 # An email in case of a person
-email = "it@slv-valbonne.fr"
+email = "it@$entity"
 
 # TLS feature (rfc7633) extension. That can is used to indicate mandatory TLS
 # extension features to be provided by the server. In practice this is used
@@ -318,14 +318,13 @@ path_len = 1
 EOF
 }
 
-organisation=$entity
+$defer certtool --generate-privkey --outfile $ldapskeyfile --rsa
 
-certtool --generate-privkey --outfile $ldapskeyfile --rsa
+ldapserverdnsname=$ldap.${entity}.fr
 
-ldapserverdnsname=ldaps.${entity}.fr
 create_ldaps_template
-certtool --generate-request --load-privkey $ldapskeyfile \
+$defer certtool --generate-request --load-privkey $ldapskeyfile \
    --outfile $ldapsreqfile --template ldaps_template.cfg
-certtool --generate-certificate --load-request $ldapsreqfile \
+$defer certtool --generate-certificate --load-request $ldapsreqfile \
    --outfile $ldapscertfile --load-ca-certificate $cacertfile \
    --load-ca-privkey $cakeyfile --template ldaps_template.cfg

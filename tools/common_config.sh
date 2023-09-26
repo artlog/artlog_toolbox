@@ -10,11 +10,6 @@ log_error()
 
 setup_certificate_configurations()
 {
-    if [[ -z $webserver ]]
-    then
-	webserver=webserver
-	log_any "[WARNING] webserver undefined, using $webserver"
-    fi
 
     if [[ -z $entity ]]
     then
@@ -24,12 +19,39 @@ setup_certificate_configurations()
 
     cakeyfile=${entity}-ca.key
     cacertfile=${entity}-ca-cert.pem
-    ldapskeyfile=${entity}-ldaps.key
-    ldapsreqfile=${entity}-ldaps-cert.req
-    ldapscertfile=${entity}-ldaps-cert.pem
-    webserverkeyfile=${entity}-${webserver}.key
-    webserverreqfile=${entity}-${webserver}-cert.req
-    webservercertfile=${entity}-${webserver}-cert.pem
+
+    if [[ -z $ca ]]
+    then
+	if [[ ! -f $cakeyfile ]]
+	then
+	    log_error "missing $cakeyfile for entity=$entity CAN'T sign certificates"
+	    exit 1
+	fi
+    fi
+
+    if [[ -n $ldap ]]
+    then
+	prefix=${entity}-${ldap}
+	ldapskeyfile=${prefix}.key
+	ldapsreqfile=${prefix}-cert.req
+	ldapscertfile=${prefix}-cert.pem
+    fi
+
+    if [[ -n $webserver ]]
+    then
+	prefix=${entity}-${webserver}
+	webserverkeyfile=${prefix}.key
+	webserverreqfile=${prefix}-cert.req
+	webservercertfile=${prefix}-cert.pem
+    fi
+
+    if [[ -n $client ]]
+    then
+	prefix=${entity}-user-${client}
+	clientkeyfile=${prefix}.key
+	clientreqfile=${prefix}-cert.req
+	clientcertfile=${prefix}-cert.pem
+    fi
 
     dcvalue=${entity}.fr
     webserverdnsname=${webserver}.${entity}.fr
@@ -46,4 +68,8 @@ setup_certificate_configurations()
     echo "webservercertfile=$webservercertfile"
     echo "dcvalue=$dcvalue"
     echo "webserverdnsname=$webserverdnsname"
+    echo "clientkeyfile=$clientkeyfile"
+    echo "clientreqfile=$clientreqfile"
+    echo "clientcertfile=$clientcertfile"
+
 }
