@@ -42,7 +42,7 @@ libaljsonobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libaljsonsources))
 # default target is to build libraries
 libs: $(staticlibraries)
 
-all: libinclude libs tests $(BUILD)/base64 $(BUILD)/aljson_ld $(BUILD)/cbor_main
+all: libinclude libs tests $(BUILD)/base64 $(BUILD)/aljson_ld $(BUILD)/cbor_main $(BUILD)/alabnf $(BUILD)/alabnf_matcher
 
 libinclude: $(LIBINCLUDESABS)
 
