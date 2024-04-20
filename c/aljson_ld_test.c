@@ -16,7 +16,7 @@ void usage()
   printf("usage:\n");
   printf("get key index : %s=/keyword/\n", GET_KEYWORD_INDEXSTR0);
   printf("list keywords : %s=/keyword/\n", LIST_KEYWORDSSTR0);
-  printf("%s : %s=<inputfile>\n", DRY_RUNSTR0);
+  printf("%s : %s=<inputfile>\n", DRY_RUNSTR0, DRY_RUNSTR0);
 }
 
 int main(int argc, char ** argv)
