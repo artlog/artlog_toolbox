@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
-
 #include "c_parser.h"
 #include "altodo.h"
 #include "aljson_import_internal.h"
@@ -3600,6 +3599,11 @@ int main (int argc, char **argv)
 	    {
 	      generate_aljson_stub_output(&parser,genstream);
 	      generate_alc2json_stub_output(&parser,genstream);
+	    }
+	  else
+	    {
+	      aldebug_printf(DBGSTREAM,
+			     "// [WARNING] no used_structures found\n");
 	    }
 
 	}

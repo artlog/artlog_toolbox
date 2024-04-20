@@ -27,10 +27,12 @@ aloutput_test: aloutput_test.c
 aldebug: aldebug_test.c
 	gcc -Wall -g -o $@ $^ -I$(INCLUDES) -I../private -L$(BUILD)/lib -Wl,-Bstatic -laldev -lalcommon -lalhash  -Wl,-Bdynamic
 
-test0:
-	$(BUILD)/albase
+test_c_parser:
 	$(BUILD)/json_to_c_stub_sample
 	$(BUILD)/c_parser infile=../input_for_c_parser.h outform=aljson_stub
+
+test0:
+	$(BUILD)/albase
 	$(BUILD)/cryptohash '' d
 	$(BUILD)/cryptohash $(BUILD)/cryptohash
 	$(BUILD)/bitfield outfile=bitfieldcopy
@@ -47,4 +49,4 @@ clean:
 	rm -f bitfieldcopy
 	rm -f aloutput_test
 
-.PHONY: test0 tests clean all
+.PHONY: test0 test_c_parser tests clean all

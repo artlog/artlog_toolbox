@@ -2,7 +2,12 @@ build/c_parser
 
 USAGE:
 work in progress: first goal is to generate json stub from c struct definition see json_to_c_stub.c
-ex:./c_parser infile=./input_for_c_parser.h outform=aljson_stub
+ex:./c_parser infile=./input_for_c_parser.h outform=aljson_stub >output_of_c_parser.c
+
+WARNING :
+outform= is mandatory but its content is currently disregarded, and it is output from, not a output file.
+output is on stderr and mixed with various debug ... shoud output do stdout.
+
 more advanced goal is to be a c parser ... 
 ex:./c_parser debug=true infile=./c_parser.c
 
