@@ -225,6 +225,70 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
     }
 }
 
+static int hexchar_to_int_status(char a, int *status)
+{
+  if ( status != NULL ) {
+      if (( a >= '0' ) && ( a <= 'f' )) {
+        if (( a >= ':' ) && ( a <= '@' )) {
+            (*status) = 1;
+          }          
+        }
+      else
+        {
+          (*status) = 1;
+        }
+    }
+  int x = (a > '9') ? 10 + a - 'a'  : a - '0';
+  return x;
+}
+
+unsigned char alinputstream_readhex(struct alinputstream * stream, int * status)
+{
+  int first = 0;
+  int second = 0;
+  if ( alinputstream_iseof(stream) )
+    {
+      stream->bits = 0;
+      return 0;
+    }
+  first = hexchar_to_int_status(alinputstream_readuchar(stream),status);
+  if ( (status == NULL) || (*status == 0) )
+    {
+      second = hexchar_to_int_status(alinputstream_readuchar(stream),status);
+    }
+  return (unsigned char) ( 16 * first + second ) ;
+}
+
+enum al_global_error_code alinputstream_readhex_stream(struct alinputstream * stream, aldatablock * block, int* bytesread)
+{
+  int index = 0;
+  unsigned char * buffer = block->data.ucharptr;
+
+  if ( alinputstream_iseof(stream) )
+    {
+        return AL_EC_FALSE;
+    }
+
+  int status = 0;
+  while ( index < block->length )
+    {
+      unsigned char byte = alinputstream_readhex(stream, &status);      
+      if ( alinputstream_iseof(stream) | (status != 0) )
+	{
+	  buffer[index]='\0';
+          if ( bytesread != NULL )
+            {
+              *bytesread=index;
+            }
+	  return AL_EC_OK;
+	}	  
+      buffer[index]=byte;
+      index++;
+    }
+  // block too short or eof already hit
+  return AL_EC_FALSE;;
+}
+
 enum al_global_error_code alinputstream_readline(struct alinputstream * stream, aldatablock * block)
 {
   int index = 0;

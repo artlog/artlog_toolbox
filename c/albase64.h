@@ -28,4 +28,6 @@ char albase64url_6bitstochar(unsigned int inbits);
 
 int albase64func_decode_frominput(char (*func_6bitstochar)(unsigned int) , struct alinputstream * inputstream, struct aloutputstream * output);
 
+int albase64(aldatablock * input, struct aloutputstream * output);
+
 #endif // #ifndef __ALBASE64_H__

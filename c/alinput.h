@@ -121,4 +121,6 @@ enum al_global_error_code alinputstream_readline(struct alinputstream * stream, 
 
 enum al_global_error_code alinputstream_read_block_at(struct alinputstream * stream, aldatablock * block, int offset, int length);
 
+/** read a full stream as hexadecimal into datablock output */
+enum al_global_error_code alinputstream_readhex_stream(struct alinputstream * stream, aldatablock * block, int* bytesread);
 #endif

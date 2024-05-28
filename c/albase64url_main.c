@@ -14,10 +14,12 @@
 void usage()
 {
   aldebug_printf(DBGSTREAM,"program <name of file to get base64 url> (<debug>)\n");
+  aldebug_printf(DBGSTREAM,"-h this hel\n");
   aldebug_printf(DBGSTREAM,"-d decode\n");
   aldebug_printf(DBGSTREAM,"-e encode\n");
+  aldebug_printf(DBGSTREAM,"-x read hex\n");
   aldebug_printf(DBGSTREAM,"-u use base64url\n");
-  aldebug_printf(DBGSTREAM,"in=<input filnename>\n");
+  aldebug_printf(DBGSTREAM,"in=<input filnename>, use stdin if not set\n");
   aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set\n");
 }
 
@@ -45,6 +47,8 @@ int main(int argc, char ** argv)
 
   int encode = (al_option_get(options,"e") == NULL) ? 0 : 1;
   int base64url = (al_option_get(options,"u") == NULL) ? 0 : 1;
+  int hexin = (al_option_get(options,"x") == NULL) ? 0 : 1;
+  int help = (al_option_get(options,"h") == NULL) ? 0 : 1;
   
   aldatablock * in_filename_value = al_option_get(options,"in");
   aldatablock * out_filename_value = al_option_get(options,"out");
@@ -64,55 +68,70 @@ int main(int argc, char ** argv)
 
   char (*func_6bits_to_char) (unsigned int) = base64url ? albase64url_6bitstochar : albase64_6bitstochar;
 
-  if (filename != NULL)
+  if ( help == 0 )
     {
-      if ( strlen(filename) > 0)
+      FILE * f = NULL;
+      if ( (filename != NULL) && (strlen(filename) > 0))
 	{
-	  FILE * f = fopen(filename,"r");
-	  if ( f != NULL )
-	    {
-	      struct alinputstream input;
-	      struct aloutputstream output;
-	      alinputstream_init(&input, fileno(f));
-	      FILE * fout = NULL;
-	      if ( out_filename != NULL )
-		{
-		  fout=fopen(out_filename,"w");
-		  if ( fout != NULL )
-		    {
-		      aloutputstream_fd_init(&output, fileno(fout));
-		    }
-		  else
-		    {
-		      aldebug_printf(DBGSTREAM,"[ERROR] failed to create out file '%s'\n", out_filename );
-		      exit(1);
-		    }
-		}
-	      else
-		{
-		  aloutputstream_fd_init(&output, fileno(stdout));
-		}
-	      if ( encode )
-		{
-		  albase64func_frominput(func_6bits_to_char,&input,&output);
-		}
-	      else
-		{
-		  albase64func_decode_frominput(func_6bits_to_char,&input,&output);
-		}
-	      fclose(f);
-	      // todo close output too...
-	    }
-	  else
-	    {
-	      aldebug_printf(DBGSTREAM,"[ERROR] failed to open file '%s'\n", filename );
-	    }
-	}
+	  f = fopen(filename,"r");
+        }
       else
-	{
-	  aldebug_printf(DBGSTREAM,"[ERROR] expected a filename\n");
-	}
-
+        {
+          f = stdin;
+        }      
+      if ( f != NULL )
+        {
+          struct alinputstream input;
+          struct aloutputstream output;
+          alinputstream_init(&input, fileno(f));
+          FILE * fout = NULL;
+          if ( out_filename != NULL )
+            {
+              fout=fopen(out_filename,"w");
+              if ( fout != NULL )
+                {
+                  aloutputstream_fd_init(&output, fileno(fout));
+                }
+              else
+                {
+                  aldebug_printf(DBGSTREAM,"[ERROR] failed to create out file '%s'\n", out_filename );
+                  exit(1);
+                }
+            }
+          else
+            {
+              aloutputstream_fd_init(&output, fileno(stdout));
+            }
+          if ( hexin )
+            {
+              aldebug_printf(DBGSTREAM,"[INFO] hex input\n");
+                aldatablock block;
+                int length=1024;
+                char * buffer = calloc(1,length);
+                block.data.charptr=buffer;
+                block.length=length;
+                block.type=ALTYPE_STR0;
+                int bytesread = 0;
+                alinputstream_readhex_stream(&input, &block, &bytesread);
+                block.length=bytesread;
+                albase64(&block, &output);
+                free(buffer);
+            }
+          else if ( encode )
+            {
+              albase64func_frominput(func_6bits_to_char,&input,&output);
+            }
+          else
+            {
+              albase64func_decode_frominput(func_6bits_to_char,&input,&output);
+            }
+          fclose(f);
+          // todo close output too...
+        }
+      else
+        {
+          aldebug_printf(DBGSTREAM,"[ERROR] failed to open file '%s'\n", filename );
+        }
     }
   else
     {
