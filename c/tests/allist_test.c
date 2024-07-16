@@ -16,7 +16,7 @@
 // direct acces to internal implementation for indexset_getrelindex
 #include "../allist_internal.h"
 // dump
-#include "../dump.h"
+#include "../aldump.h"
 
 #define PRIMCOUNT 25
 

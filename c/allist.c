@@ -7,7 +7,7 @@
 #include "aldebug.h"
 #include "aldebug_output.h"
 
-#include "dump.h"
+#include "aldump.h"
 
 static int debug=0;
 

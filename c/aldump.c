@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "dump.h"
+#include "aldump.h"
 // direct acces to internal implementation
 #include "allist_internal.h"
 #include "alstrings.h"
