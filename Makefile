@@ -46,9 +46,9 @@ all: libinclude libs tests $(BUILD)/base64 $(BUILD)/aljson_ld $(BUILD)/cbor_main
 
 libinclude: $(LIBINCLUDESABS)
 
-$(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o\
+$(BUILD)/lib/liballist.a: $(BUILD)/obj/allist.o $(BUILD)/obj/aldump.o\
  $(INCLUDEDIR)/allist.h
-	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/dump.o
+	ar rccs $@ $(BUILD)/obj/allist.o $(BUILD)/obj/aldump.o
 
 $(BUILD)/lib/libaljson.a: $(libaljsonobjects)
 	ar rccs $@ $^
