@@ -32,6 +32,7 @@ test_c_parser:
 	$(BUILD)/c_parser infile=../input_for_c_parser.h outform=aljson_stub
 
 test0:
+	$(MAKE) -C ..
 	$(BUILD)/albase
 	$(BUILD)/cryptohash '' d
 	$(BUILD)/cryptohash $(BUILD)/cryptohash
@@ -48,5 +49,6 @@ clean:
 	rm -f alinput_test
 	rm -f bitfieldcopy
 	rm -f aloutput_test
+	rm -f aldebug
 
 .PHONY: test0 test_c_parser tests clean all
