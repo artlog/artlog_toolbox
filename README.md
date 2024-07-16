@@ -13,14 +13,10 @@ provides implementations for static libraries
 - altest
 - json
 
-and provide bash scripts for toy projects
-
 # json
 
 
-
-______________
-
+## build
 
 to build all and create .h from imports in build/include :
 
@@ -28,22 +24,27 @@ make all
 
 result is within build/ directory
 
-to retest :
+## tests
 
 make tests
 
 => json test , used for pretty printing json content.
 can compare two json files ( with limitations, and key order matter ).
 
-_______________
+with tests directory
+
+runall.sh
+
+## usage
 
 json tool json_path : allow to extract a specific value.
 
 build/json json_path=@id -- samples/json-ld.json 
 "http://dbpedia.org/resource/John_Lennon"
-_______________
 
-json tool template : allow to match a json template
+## json template
+
+allow to match a json template
 
 build/json template=template/template.json -- template/test.json
 {"menu":{"id":"file","value":"File","popup":{"menuitem":[{"value":"New","onclick":"CreateNewDoc()"},{"value":"Open","onclick":"OpenDoc()"},{"value":"Close","onclick":"CloseDoc()"}]}}}
@@ -71,21 +72,7 @@ build/json template=template/template.json -- template/test.json
 }
 template 'template/template.json' and 'template/test.json' json match
 
-_______________
-
-HOW TO create a new project using current toolbox as tool scripts ?
-
-
-./createproject.sh <project_name> c
-
-or
-
-./createproject.sh <project_name> java
-
-given type of project create a project in parent directory named after project name
-
-________________
-
+# json-ld
 
 aljson_ld
 
@@ -138,9 +125,9 @@ aljson_ld.c:196 NOT YET implemented
 13 : X The separator for JSON keys and values that use compact IRIs.
 [DEBUG] free bucket 0x563e036bbbf0
 [DEBUG] alhash release 0x563e036bb2c0 autogrow 200 
-______________________________________________
 
-base64
+
+# base64
 
 build it :
 
@@ -177,27 +164,24 @@ in=<input filnename>
 out=<output filename>, use stdout if not set
 ```
 
-______________________________________________
-
-cbor
+# cbor
 
 see c/cbor/README 
 
 cd c/cbor
 make
 
-# cbor decoding
+## cbor decoding
 c/cbor$ for cbf in samples/*.cbor; do ../../build/cbor_main infile=$cbf outfile=$cbf.out; done
 
-# cbor encoding : use inform=json
+## cbor encoding : use inform=json
 ../../build/cbor_main inform=json infile=../../samples/ololo.json outfile=samples/ololo.cbor
 
-# decode again...
+## decode again...
 ../../build/cbor_main outfile=samples/ololo.json.out infile=samples/ololo.cbor
 
-_______________________________________________
 
-abnf
+# abnf
 
 
 intention is to parse a anbf decription of iri directly for json_ld ... seems vastly too complicated for purpose.
@@ -216,12 +200,10 @@ build/alabnf_matcher 5000 abnf/testrange.abnf
 build/alabnf_matcher abnf/rfc3986_part.abnf abnf/rfc5234_core.abnf
 
 
-________________________________________________
-
-c_parser
+# c_parser
 
 parses and generate c code ... very messy
 
 see docuementation/c_parser.txt
-_________________________________________________
+
 
