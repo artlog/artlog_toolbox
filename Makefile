@@ -56,7 +56,7 @@ $(BUILD)/lib/libaljson.a: $(libaljsonobjects)
 $(BUILD)/lib/libalsave.a:  $(BUILD)/obj/alsave.o  $(INCLUDEDIR)/alsave.h
 	ar rccs $@ $<
 
-$(BUILD)/lib/libaltest.a:  $(BUILD)/obj/check_test.o $(INCLUDEDIR)/check_test.h
+$(BUILD)/lib/libaltest.a:  $(BUILD)/private/obj/tests/check_test.o c/private/check_test.h
 	ar rccs $@ $<
 
 $(BUILD)/lib/libaldev.a:  $(BUILD)/obj/altodo.o $(INCLUDEDIR)/altodo.h
