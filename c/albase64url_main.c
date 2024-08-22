@@ -66,7 +66,7 @@ int main(int argc, char ** argv)
   // don't set debug to options
   al_options_set_debug(options,0);
 
-  char (*func_6bits_to_char) (unsigned int) = base64url ? albase64url_6bitstochar : albase64_6bitstochar;
+  struct albase64_context * albase64_context_p = base64url ? &ALBASE64_CONTEXT_URL : &ALBASE64_CONTEXT_DEFAULT;
 
   if ( help == 0 )
     {
@@ -119,11 +119,11 @@ int main(int argc, char ** argv)
             }
           else if ( encode )
             {
-              albase64func_frominput(func_6bits_to_char,&input,&output);
+              albase64_encode(albase64_context_p,&input,&output);
             }
           else
             {
-              albase64func_decode_frominput(func_6bits_to_char,&input,&output);
+              albase64_decode(albase64_context_p,&input,&output);
             }
           fclose(f);
           // todo close output too...

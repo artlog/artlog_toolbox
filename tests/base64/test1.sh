@@ -79,13 +79,14 @@ echo -n 'a' > ${TESTOUT}/charfile.txt
 
 if true
 then
-    $base64 -e in=${TESTOUT}/charfile.txt out=${TESTOUT}/charfile.b64 2>${TESTOUT}/charfile.b64.stderr.1
-
-    $base64 -e in=${TESTOUT}/charfile.txt out=${TESTOUT}/charfile.b64 2>${TESTOUT}/charfile.b64.stderr.2
-
-    $base64 -d in=${TESTOUT}/charfile.b64 out=${TESTOUT}/charfile.txt.1 2>${TESTOUT}/charfile.txt.stderr.1
-
-    $base64 -d in=${TESTOUT}/charfile.b64 out=${TESTOUT}/charfile.txt.2 2>${TESTOUT}/charfile.txt.stderr.2
+    for loop in 1 2
+    do
+	$base64 -e in=${TESTOUT}/charfile.txt out=${TESTOUT}/charfile.b64 2>${TESTOUT}/charfile.b64.stderr.$loop
+    done
+    for loop in 1 2
+    do
+	$base64 -d in=${TESTOUT}/charfile.b64 out=${TESTOUT}/charfile.txt.$loop 2>${TESTOUT}/charfile.txt.stderr.$loop
+    done
 
     # difference can be seen due to out of bound views might not be relevant
     if false
@@ -98,7 +99,6 @@ then
     fi
        
     check_diff_files ${TESTOUT}/charfile.txt.stderr.1 ${TESTOUT}/charfile.txt.stderr.2
-
 
     check_diff_files ${TESTOUT}/charfile.txt ${TESTOUT}/charfile.txt.1
 
