@@ -66,7 +66,7 @@ check_executable "$base64"
 
 mkdir ${TESTOUT}
 
-$base64 >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
+$base64 -h >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr
 
 check_diff usage.txt
 check_diff usage.txt.stderr

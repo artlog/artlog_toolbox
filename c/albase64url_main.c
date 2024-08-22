@@ -14,11 +14,11 @@
 void usage()
 {
   aldebug_printf(DBGSTREAM,"program <name of file to get base64 url> (<debug>)\n");
-  aldebug_printf(DBGSTREAM,"-h this hel\n");
+  aldebug_printf(DBGSTREAM,"-h this help\n");
   aldebug_printf(DBGSTREAM,"-d decode\n");
   aldebug_printf(DBGSTREAM,"-e encode\n");
   aldebug_printf(DBGSTREAM,"-x read hex\n");
-  aldebug_printf(DBGSTREAM,"-u use base64url\n");
+  aldebug_printf(DBGSTREAM,"-u use base64 url encoding\n");
   aldebug_printf(DBGSTREAM,"in=<input filnename>, use stdin if not set\n");
   aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set\n");
 }
