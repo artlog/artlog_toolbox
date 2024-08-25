@@ -145,6 +145,7 @@ void alcbor_encoder_json_dict_object(struct json_object * object, struct aljson_
     }
 }
 
+// Might be a float ...
 void alcbor_encoder_json_string_number_object(struct json_object * object, struct aljson_output_context * output_context)
 {
     struct alcbor_encoder * encoder=alcbor_encoder_json_get_encoder(output_context);

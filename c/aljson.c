@@ -432,7 +432,7 @@ struct json_object * create_json_list(struct json_parser_ctx * parser, struct js
   return object;
 }
 
-// FIXME currently focus on string since used only for dict key (which is json_string )
+// FIXME currently focus on string since used only for dict key (which is json_string)
 void aljson_fill_datablock(struct json_object * object,  aldatablock * datablock)
 {
   // todo depending on type
@@ -454,7 +454,7 @@ void aljson_fill_datablock(struct json_object * object,  aldatablock * datablock
     case ',':
 	     printf("#");
     default:
-	     todo("data type no yet supported for datablock");
+	     todo("data type not yet supported for datablock");
 	     aldebug_printf(DBGSTREAM,"ERROR not supported datatype %c ",object->type);
     }
 
@@ -1665,12 +1665,12 @@ float json_get_float(struct json_object * object )
       todo("[ERROR] should handle wrong object type or NULL for json_get_float(..)");
     }
   return fresult;
-
 }
 
 // convert a string value into an int value...
 // here assume encoded as string
 // int is 32bits and might not be enough ...
+// FIXME might not be an int by a float...
 int json_get_int(struct json_object * object )
 {
   int result = 0;

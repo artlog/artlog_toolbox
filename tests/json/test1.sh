@@ -49,9 +49,11 @@ encode_decode_test()
 	indent="indent=spaces:2 space_after"
     fi
     # $json $inform infile=ref/$reftest.$srcext out=${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
+    echo $json $inform $indent -- ref/$reftest.$srcext ">${TESTOUT}/$reftest.$dstext" "2>${TESTOUT}/$reftest.$dstext.stderr"
     $json $inform $indent -- ref/$reftest.$srcext >${TESTOUT}/$reftest.$dstext 2>${TESTOUT}/$reftest.$dstext.stderr
     check_diff $reftest.$dstext
     # $json $inform infile=ref/$reftest.$srcext out=${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
+    echo $json $inform $indent -- ref/$reftest.$srcext ">${TESTOUT}/$reftest.2.$dstext" "2>${TESTOUT}/$reftest.2.$dstext.stderr"
     $json $inform $indent -- ref/$reftest.$srcext >${TESTOUT}/$reftest.2.$dstext 2>${TESTOUT}/$reftest.2.$dstext.stderr
 
     if true
@@ -61,6 +63,7 @@ encode_decode_test()
     fi
 
     # $json infile=${TESTOUT}/$reftest.$dstext out=${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
+    echo $json indent=flat -- ${TESTOUT}/$reftest.$dstext ">${TESTOUT}/$reftest.$srcext" "2>${TESTOUT}/$reftest.$srcext.stderr"
     $json indent=flat -- ${TESTOUT}/$reftest.$dstext >${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
     check_diff $reftest.$srcext
 

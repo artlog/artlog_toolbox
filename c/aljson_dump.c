@@ -7,7 +7,7 @@
 #include <math.h>
 
 // quick fix to actualy not fix ...
-#define NUMBER_AS_STRINGS
+// #define NUMBER_AS_STRINGS
 
 struct aloutputstream * aljson_get_output(struct print_ctx * print_ctx)
 {
@@ -70,7 +70,12 @@ void aljson_dump_string_number( struct json_object * object, struct print_ctx * 
 	  aljson_dump_string( object, print_ctx);
 #else
 	  float f = json_get_float(object);
-	  if ( ceilf(f) == f )
+	  if ( fpclassify(f) ==  FP_INFINITE )
+	    {
+	      // emulate infinity
+	      aloutputstream_printf_1k(output,"1e500");
+	    }
+	  else if ( ceilf(f) == f )
 	    {
 	      aloutputstream_printf_1k(output,"%.0f",f);
 	    }

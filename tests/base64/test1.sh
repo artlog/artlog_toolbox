@@ -3,9 +3,19 @@
 # please note :
 #
 # base64_dbg should be build
-# cd ../../c; make ../build/base64_dbg
+
+build_base64_dbg()
+{
+    pushd ../../c
+    make ../build/base64_dbg
+# duplicate with make
+#    gcc -g -O0 -DDEBUG_BASE64 -DDEBUG -o ../build/base64_dbg albase64url_main.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c aloutput.c albitfieldwriter.c al_options.c -L../build/lib -Wl,-Bstatic -lalhash  -Wl,-Bdynamic
+    popd
+}
 
 source ../lib/basefuncs.sh
+
+build_base64_dbg
 
 check_diff_files()
 {
@@ -125,7 +135,10 @@ then
     diff ${TESTOUT}/plaintext.txt ${TESTOUT}/plaintext.txt.1
 fi
 
-encode_decode_test gnubase64.txt
+for plaintext in gnubase64.txt
+do
+    encode_decode_test gnubase64.txt
+done
 
 }
 
