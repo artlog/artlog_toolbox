@@ -1,0 +1,32 @@
+build/alabnf_matcher 5000 abnf/testrange2.abnf
+[INFO] max steps set to 5000
+[DEBUG] adding 'abnf/testrange2.abnf' as input
+[DEBUG] rematch 0x55cb7b238270 43 'C' at L0C1
+[DEBUG] add char sC[DEBUG] add char sH[DEBUG] add char sA[DEBUG] add char sR[DEBUG] CLOSE 0x55cb7b23b38a 20 '?' at L0C5
+CHAR[DEBUG] alhash get entry 'CHAR'
+[DEBUG] alhash put entry 'CHAR'
+[DEBUG] close name string 0x55cb7c11ea40
+[DEBUG] stack_rule_ref ('46','.') in rule 0 at L0C5  in alabnf.c alabnf_stack_rule_ref 1596
+[INFO] NEW RULE 'CHAR'
+[DEBUG] string_ruledef ('32',' ') in rule 0 at L0C7  in alabnf.c alabnf_start_string_ruledef 1435
+[DEBUG] string_ruledef ('37','%') in rule 0 at L0C8  in alabnf.c alabnf_start_string_ruledef 1435
+[DEBUG] typed_string ('120','x') in rule 0 at L0C9  in alabnf.c alabnf_start_typed_string 860
+
+23 0x17 '.'
+[INFO] LF
+[DEBUG] CLOSE 0x55cb7b23b2dc a '?' at L1C0
+[DEBUG] rematch 0x55cb7b23a30b a '?' at L1C0
+[DEBUG] string_ruledef ('10','.') in rule 0 at L1C0  in alabnf.c alabnf_start_string_ruledef 1435
+[INFO] LF
+[DEBUG] string_ruledef ('10','.') in rule 0 at L2C0  in alabnf.c alabnf_start_string_ruledef 1435
+[INFO] LF
+[WARNING] empty lines ('10','.') in rule 0 at L3C0  in alabnf.c alabnf_handle_lf 253
+[DEBUG] string_ruledef ('10','.') in rule 0 at L3C0  in alabnf.c alabnf_start_string_ruledef 1435
+[INFO] LF
+[DEBUG] string_ruledef ('10','.') in rule 0 at L4C0  in alabnf.c alabnf_start_string_ruledef 1435
+[INFO] parsing a rule in stack of 1 tokens .
+[INFO] in alabnf.c:alabnf_close_rule:1339
+string_type(0):%xErreur de segmentation
+
+
+==> one line systax without LF
