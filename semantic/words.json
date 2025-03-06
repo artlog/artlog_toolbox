@@ -1,0 +1,54 @@
+{
+    "logging":{
+	"error":{},
+	"warning":{},
+	"information":{},
+	"audit":{}
+    },
+    "crud":{
+	"create":{},
+	"read":{},
+	"update":{},
+	"delete":{}
+    },
+    "branch":{
+	"goto":{},
+	"break":{},
+	"exit":{},
+	"call":{},
+    },
+    "storage":{
+	"temporal":{
+	    "permanent":{},
+	    "temporary":{},
+	}
+	"position":{
+	    "local":{}
+	    "remote":{}
+	}
+    },
+    "repeat":{
+	"for":{
+	    "all":{},
+	    "any":{}
+	},
+	"while":{
+	}
+    },
+    "condition":{
+	"true":{},
+	"false":{},
+    },
+    "existence":{
+	"exists":{},
+	"don't exist":{},
+	"we don't know":[}
+    },
+    "expectation":{
+	"expected":{},
+	"unexpected":{},
+	"fact":{}
+    }    
+}
+
+    
