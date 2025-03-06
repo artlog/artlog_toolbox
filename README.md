@@ -5,13 +5,20 @@ Some documentation in my personal wiki https://www4.artisanlogiciel.net/dokuwiki
 
 NOT SUITABLE FOR ANY PURPOSE
 
-a toy toolbox for toy projects in C and java
+a toy toolbox for toy projects in C
 
 provides implementations for static libraries
-- allist
-- alsave
-- altest
-- json
+
+within build/lib/
+
+libalcommon.a
+libaltest.a
+liballist.a
+libaldev.a
+libalhash.a
+libalstack.a
+libaljson.a
+libalsave.a
 
 # json
 
