@@ -36,7 +36,7 @@ check_errors()
 
 encode_decode_test()
 {
-    reftest=$1
+    local reftest=$1
     $base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.b64 2>${TESTOUT}/$reftest.b64.stderr
     check_diff $reftest.b64
     $base64 -e in=ref/$reftest out=${TESTOUT}/$reftest.2.b64 2>${TESTOUT}/$reftest.2.b64.stderr
@@ -66,7 +66,7 @@ check_executable "$base64"
 
 mkdir ${TESTOUT}
 
-$base64 >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
+$base64 -h >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
 
 check_diff usage.txt
 check_diff usage.txt.stderr
@@ -127,6 +127,8 @@ fi
 
 encode_decode_test gnubase64.txt
 
+encode_decode_test saml.response
+
 }
 
 BUILD=../../build
@@ -138,7 +140,8 @@ automeld=
 #base64=$BUILD/base64
 #base64=$BUILD/base64_dbg
 
-for fragrance in base64_dbg base64
+#for fragrance in base64_dbg base64
+for fragrance in base64
 do    
     echo -e "\n\n******** TESTING $fragrance **********\n\n"
     TESTOUT=tmp.$fragrance

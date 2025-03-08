@@ -54,6 +54,7 @@ void bitfieldwriter_internal_write(struct bitfieldwriter * this, unsigned int fi
       this->nextWord = field;
       if ( this ->bitOffset != 0 )
 	{
+	  // to check triggered with tests
 	  aldebug_printf(DBGSTREAM,"[WARNING] writting full dataSise at non 0 bitOffset %i / dataSize %i \n", this->bitOffset, this->dataSize );
 	}
       this->bitOffset = 0;

@@ -14,7 +14,7 @@
 void usage()
 {
   aldebug_printf(DBGSTREAM,"program <name of file to get base64 url> (<debug>)\n");
-  aldebug_printf(DBGSTREAM,"-h this hel\n");
+  aldebug_printf(DBGSTREAM,"-h this help\n");
   aldebug_printf(DBGSTREAM,"-d decode\n");
   aldebug_printf(DBGSTREAM,"-e encode\n");
   aldebug_printf(DBGSTREAM,"-x read hex\n");

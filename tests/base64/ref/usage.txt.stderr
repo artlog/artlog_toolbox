@@ -1,6 +1,8 @@
 program <name of file to get base64 url> (<debug>)
+-h this help
 -d decode
 -e encode
+-x read hex
 -u use base64url
-in=<input filnename>
+in=<input filnename>, use stdin if not set
 out=<output filename>, use stdout if not set
