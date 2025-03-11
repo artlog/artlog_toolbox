@@ -7,7 +7,7 @@
 
 /**
 Level of token seen :
-char depend on context ( see struct json_ctx )
+char depend on context ( see json_token_ctx )
 parenthesis
 braket
 dquote
@@ -30,7 +30,7 @@ struct json_parser_ctx
   struct json_level dquote; // double quote '"'
   struct json_level squote; // simple quote "'"
   struct json_level variable; // variable "?" ; to use existing framework JSON_TOGGLE not really sound yet.
-  struct json_ctx * tokenizer;
+  json_token_ctx * tokenizer;
   int parsing_depth; // stack calls on recursive parsing.
   int max_depth; // protect stack calls.
 };
@@ -145,7 +145,7 @@ struct json_object * syntax_error(const char * function, int line,struct json_pa
 struct json_object * aljson_new_json_object(char objtype, alstrings_ringbuffer_pointer * allocator, aldatablock  * data);
 
 /* internal only 
-struct json_object * aljson_new_json_string(struct json_ctx * ctx, char objtype, aldatablock  * data);
+struct json_object * aljson_new_json_string(json_token_ctx * ctx, char objtype, aldatablock  * data);
 */
  
 struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct json_object * key);

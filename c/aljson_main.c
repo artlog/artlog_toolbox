@@ -59,14 +59,14 @@ int main(int argc, char ** argv)
 
   // intialisation of json content parser
   struct json_parser_ctx json_context;
-  struct json_ctx json_tokenizer;
+  json_token_ctx json_tokenizer;
   struct print_ctx print_context;
 
   aljson_init(&json_context,&json_tokenizer,&print_context);
 
   // initialisation of json template parser
   struct json_parser_ctx json_template_context;
-  struct json_ctx json_template_tokenizer;
+  json_token_ctx json_template_tokenizer;
   struct print_ctx print_template_context;
 
   aljson_init(&json_template_context,&json_template_tokenizer,&print_template_context);

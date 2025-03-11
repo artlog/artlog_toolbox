@@ -21,14 +21,14 @@ enum als_flag {
  **/
 void aljson_init(
 	       struct json_parser_ctx * json_context,
-	       struct json_ctx * json_tokenizer,
+	       json_token_ctx * json_tokenizer,
 	       struct print_ctx * print_context);
 
-char json_import_next_char(struct json_ctx* ctx, void * data);
+char json_import_next_char(json_token_ctx* ctx, void * data);
 
-void json_import_pushback_char(struct json_ctx *ctx, void *data, char pushback);
+void json_import_pushback_char(json_token_ctx *ctx, void *data, char pushback);
 
-void json_import_context_initialize(struct json_ctx *ctx);
+void json_import_context_initialize(json_token_ctx *ctx);
 
 void json_import_print_context_initialize(struct print_ctx * print_context);
 #endif

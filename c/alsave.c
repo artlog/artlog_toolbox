@@ -92,7 +92,7 @@ char * alsave_get_fullfilename(struct alsavecontext * save_context)
 int alsave_shift_file_name(struct alsavecontext * savecontext)
 {
   // HARDCODED LIMIT
-  char fullpath[5000];
+  char fullpath[6000];
   DIR *currentdir;
   struct dirent *fileentry;
   // biggest index acceptable.
@@ -106,7 +106,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
   if ( currentdir != NULL )
     {
       // HARDCODED LIMIT
-      char template[512];
+      char template[1024];
       char * freefile = NULL;
 
       // HARDCODED LIMIT
@@ -138,8 +138,8 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
       // need to move file to have a place.
       if ( freefile == NULL )
 	{
-	  char oldpath[256];
-	  char newpath[256];
+	  char oldpath[512];
+	  char newpath[512];
 	  int dir_fd=dirfd(currentdir);
 	  int count = 0; // number of entries matching template found
 	  int index_max = 0;
@@ -212,8 +212,8 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 		{
 		  for (int i=1; i<index_max; i++)
 		    {
-		      sprintf(oldpath,"%s.%i.%s", prefix,i,extension);
-		      sprintf(fullpath,"%s/%s",savecontext->dir,oldpath);
+		      snprintf(oldpath,sizeof(oldpath),"%s.%i.%s", prefix,i,extension);
+		      snprintf(fullpath,sizeof(fullpath),"%s/%s",savecontext->dir,oldpath);
 		      // file exists
 		      if ( alsave_file_exists(fullpath) == -1 )
 			{

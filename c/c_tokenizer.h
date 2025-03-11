@@ -4,6 +4,6 @@
 // in fact should be a json_tokenizer, will be fixed after end of full rework 
 #include "aljson_parser.h"
 
-struct al_token * c_tokenizer(struct json_ctx * ctx, void * data);
+struct al_token * c_tokenizer(json_token_ctx * ctx, void * data);
 
 #endif

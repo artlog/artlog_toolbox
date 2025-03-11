@@ -32,7 +32,7 @@ char get_aslash(char c)
     }
 }
 
-int c_tokenize_string_until(struct json_ctx * ctx, void * data, char stop)
+int c_tokenize_string_until(json_token_ctx * ctx, void * data, char stop)
 {
   char c = ctx->next_char(ctx, data);
   while ( c != 0)
@@ -55,7 +55,7 @@ int c_tokenize_string_until(struct json_ctx * ctx, void * data, char stop)
 }
 
 // match everything until */
-struct al_token * c_tokenizer_eat_up_to_end_of_comment(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_eat_up_to_end_of_comment(json_token_ctx * ctx, void * data)
 {
   int match = 0;
 
@@ -104,7 +104,7 @@ struct al_token * c_tokenizer_eat_up_to_end_of_comment(struct json_ctx * ctx, vo
   JSON_TOKEN(EOF);
 }
 
-struct al_token * c_tokenizer_eat_up_word(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_eat_up_word(json_token_ctx * ctx, void * data)
 {
   char c = ctx->next_char(ctx, data);
   int text = 0;
@@ -145,7 +145,7 @@ struct al_token * c_tokenizer_eat_up_word(struct json_ctx * ctx, void * data)
 }
 
 // match until end of line ( cr of lf )
-struct al_token * c_tokenizer_eat_up_to_end_of_line(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_eat_up_to_end_of_line(json_token_ctx * ctx, void * data)
 {
 
   char c = ctx->next_char(ctx, data);
@@ -169,14 +169,14 @@ struct al_token * c_tokenizer_eat_up_to_end_of_line(struct json_ctx * ctx, void 
   JSON_TOKEN(EOF);
 }
 
-struct al_token * c_pragma_handler(struct json_ctx * ctx, void * data)
+struct al_token * c_pragma_handler(json_token_ctx * ctx, void * data)
 {
   struct al_token * token =  c_tokenizer_eat_up_to_end_of_line(ctx,data);
   JSON_TOKEN(PRAGMA);
 }
 
 // expect to enter here while a first '/' has been hit...
-struct al_token * c_tokenizer_potential_comment(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_potential_comment(json_token_ctx * ctx, void * data)
 {
   char c = ctx->next_char(ctx, data);
 
@@ -213,7 +213,7 @@ struct al_token * c_tokenizer_potential_comment(struct json_ctx * ctx, void * da
 
 }
 
-struct al_token * c_tokenizer_starting_with_minus(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_minus(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -244,7 +244,7 @@ struct al_token * c_tokenizer_starting_with_minus(struct json_ctx * ctx, void * 
     }
 }
 
-struct al_token * c_tokenizer_starting_with_and(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_and(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -262,7 +262,7 @@ struct al_token * c_tokenizer_starting_with_and(struct json_ctx * ctx, void * da
     }
 }
 
-struct al_token * c_tokenizer_starting_with_exclamation(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_exclamation(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -280,7 +280,7 @@ struct al_token * c_tokenizer_starting_with_exclamation(struct json_ctx * ctx, v
     }
 }
 
-struct al_token * c_tokenizer_starting_with_plus(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_plus(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -302,7 +302,7 @@ struct al_token * c_tokenizer_starting_with_plus(struct json_ctx * ctx, void * d
     }
 }
 
-struct al_token * c_tokenizer_starting_with_or(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_or(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -320,7 +320,7 @@ struct al_token * c_tokenizer_starting_with_or(struct json_ctx * ctx, void * dat
     }
 }
 
-struct al_token * c_tokenizer_starting_with_equal(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_equal(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -338,7 +338,7 @@ struct al_token * c_tokenizer_starting_with_equal(struct json_ctx * ctx, void * 
     }
 }
 
-struct al_token * c_tokenizer_starting_with_superior(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_superior(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -356,7 +356,7 @@ struct al_token * c_tokenizer_starting_with_superior(struct json_ctx * ctx, void
     }
 }
 
-struct al_token * c_tokenizer_starting_with_inferior(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer_starting_with_inferior(json_token_ctx * ctx, void * data)
 {
     char c = ctx->next_char(ctx, data);
     switch (c)  {
@@ -374,7 +374,7 @@ struct al_token * c_tokenizer_starting_with_inferior(struct json_ctx * ctx, void
     }
 }
 
-struct al_token * c_tokenizer(struct json_ctx * ctx, void * data)
+struct al_token * c_tokenizer(json_token_ctx * ctx, void * data)
 {
   char c = ctx->next_char(ctx, data);
   ctx->internal_flags &= !JSON_FLAG_IGNORE;

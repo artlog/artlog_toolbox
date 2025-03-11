@@ -12,12 +12,12 @@ JSON_TOKEN_DEFINE_TOKENIZER(DQUOTE,'"')
 JSON_TOKEN_DEFINE_TOKENIZER(SQUOTE,'\'')
 JSON_TOKEN_DEFINE_TOKENIZER(VARIABLE,'?')
 
-ALDEBUG_DEFINE_FUNCTIONS(struct json_ctx, json_ctx,debug_level)
+ALDEBUG_DEFINE_FUNCTIONS(json_token_ctx, json_ctx,debug_level)
 
 /**
  return a json_object with a type '0' and json_string set to number if parsing is ok else return NULL
 */
-struct al_token * tokenizer_NUMBER(struct json_ctx * ctx, char first, void * data)
+struct al_token * tokenizer_NUMBER(json_token_ctx * ctx, char first, void * data)
 {
   int state = parse_number_level(ctx, first, data);
   if ( state == ALJSON_NPSTATE_COMPLETE )
@@ -27,7 +27,7 @@ struct al_token * tokenizer_NUMBER(struct json_ctx * ctx, char first, void * dat
   return (struct al_token *) NULL;
 }
 
-struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * data)
+struct al_token * tokenizer_CONSTANT(json_token_ctx * ctx, char first, void * data)
 {
   switch(first)
     {
@@ -64,7 +64,7 @@ struct al_token * tokenizer_CONSTANT(struct json_ctx * ctx, char first, void * d
 }
 
 /** Initialize json_context **/
-void json_context_initialize(struct json_ctx *json_context, json_ctx_get_next_char next_char)
+void json_context_initialize(json_token_ctx *json_context, json_ctx_get_next_char next_char)
 {
   bzero(json_context,sizeof(*json_context));
   json_context->next_char=next_char;
@@ -72,7 +72,7 @@ void json_context_initialize(struct json_ctx *json_context, json_ctx_get_next_ch
   json_context->add_char=add_char;
 }
 
-void pushback_char(struct json_ctx *ctx, void *data, char pushback)
+void pushback_char(json_token_ctx *ctx, void *data, char pushback)
 {
   /*
   struct json_string * str = (struct json_string *) data;
@@ -87,7 +87,7 @@ void pushback_char(struct json_ctx *ctx, void *data, char pushback)
 }
 
 // keep a growable buffer in ctx, grow it as needed
-int add_char(struct json_ctx * ctx, char token, char c)
+int add_char(json_token_ctx * ctx, char token, char c)
 {
   if ( json_ctx_is_debug(ctx,TOKENIZER_DEBUG_ADD) )
     {
@@ -97,7 +97,7 @@ int add_char(struct json_ctx * ctx, char token, char c)
   return altoken_char_buffer_add_char(&ctx->token_buf,c);
 }
 
-void debug_tag(struct json_ctx *ctx,char c)
+void debug_tag(json_token_ctx *ctx,char c)
 {
   if (ctx != NULL )
     {
@@ -114,7 +114,7 @@ void flush_char_buffer(alstrings_ringbuffer * ctx)
 }
 
 // TODO convert to altokenizer_consume
-int json_ctx_consume(struct json_ctx * ctx, void * data, char * str)
+int json_ctx_consume(json_token_ctx * ctx, void * data, char * str)
 {
   int index = 0;
   char c = ctx->next_char(ctx,data);
@@ -139,7 +139,7 @@ int json_ctx_consume(struct json_ctx * ctx, void * data, char * str)
 /**
  return internal parsing state. ALJSON_NPSTATE_COMPLETE means parsing did find a number.
 */
-enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char first, void * data)
+enum aljson_number_parser_state parse_number_level(json_token_ctx * ctx, char first, void * data)
 {
   enum aljson_number_parser_state state = ALJSON_NPSTATE_INIT;
   char c = first;
@@ -259,7 +259,7 @@ enum aljson_number_parser_state parse_number_level(struct json_ctx * ctx, char f
 }
 
 
-int parse_until_escaped_level(struct json_ctx * ctx, void * data, char stop, char escape)
+int parse_until_escaped_level(json_token_ctx * ctx, void * data, char stop, char escape)
 {
   char c = ctx->next_char(ctx, data);
   while ( c != 0)
@@ -313,7 +313,7 @@ int parse_until_escaped_level(struct json_ctx * ctx, void * data, char stop, cha
 
 
 // find the next token
-struct al_token * json_tokenizer(struct json_ctx * ctx, void * data)
+struct al_token * json_tokenizer(json_token_ctx * ctx, void * data)
 {
   char c = ctx->next_char(ctx, data);
 

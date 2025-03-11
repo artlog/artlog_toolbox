@@ -76,7 +76,7 @@ c_create_error (struct c_parser_ctx *parser, enum c_parser_state state,
 }
 
 void
-reset_tokenizer_buffer (struct json_ctx *tokenizer)
+reset_tokenizer_buffer (json_token_ctx *tokenizer)
 {
   // reset when word is parsed and recognized as either a reserved word or stored in variable dict with cut_string.
   // aldebug_printf(DBGSTREAM,"//reset token buffer\n");
@@ -169,7 +169,7 @@ alparser_dict_add_string (alhash_context * alparser, char * buffer, int length)
 void *
 c_cut_token_string (struct c_parser_ctx *parser)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   alstrings_ringbuffer *tb = &tokenizer->token_buf;
   char *buffer = tb->buffer.buf;
   int length = tb->buffer.bufpos;
@@ -222,7 +222,7 @@ void *
 c_cut_c_string (struct c_parser_ctx *parser, char stop,
 		struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   alstrings_ringbuffer *tb = &tokenizer->token_buf;
   char *buffer = tb->buffer.buf;
   int length = tb->buffer.bufpos;
@@ -533,7 +533,7 @@ void
 c_print_json_token (struct c_parser_ctx *parser, struct al_token *token,
 		    struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   switch (token->token)
     {
     case JSON_TOKEN_OPEN_PARENTHESIS_ID:
@@ -669,7 +669,7 @@ c_print_json_token (struct c_parser_ctx *parser, struct al_token *token,
 struct al_token *
 c_parse_next (struct c_parser_ctx *parser)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   struct al_token *token;
 
   token = c_tokenizer (tokenizer, parser->tokenizer_data);
@@ -712,7 +712,7 @@ c_parse_next (struct c_parser_ctx *parser)
 struct al_token *
 c_parse_variable (struct c_parser_ctx *parser, struct al_token *token)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -745,7 +745,7 @@ int
 c_is_typedef (struct c_parser_ctx *parser)
 {
 
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   alstrings_ringbuffer *tb = &tokenizer->token_buf;
   char *buffer = tb->buffer.buf;
   int length = tb->buffer.bufpos;
@@ -795,7 +795,7 @@ c_parse_left_type (struct c_parser_ctx *parser,
 		   int c_token,
 		   struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   int c_type = -1;
   int named = 0;
 
@@ -1194,7 +1194,7 @@ struct al_token *
 c_parse_lhs (struct c_parser_ctx *parser, struct al_token *token,
 	     struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -1296,7 +1296,7 @@ struct al_token *
 c_parse_rhs (struct c_parser_ctx *parser, struct al_token *token,
 	     struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -1372,7 +1372,7 @@ struct al_token *
 c_parse_rhs_semi_colon (struct c_parser_ctx *parser, struct al_token *token,
 			struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   // token = c_parse_rhs(parser,token,output);
   token = c_parse_simple_expression (parser, token,output);
 
@@ -1403,7 +1403,7 @@ struct al_token *
 c_parse_call_definition_parameters (struct c_parser_ctx *parser,
 				    struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   struct al_token *token = NULL;
   int i = 0;
   token = c_parse_next (parser);
@@ -1456,7 +1456,7 @@ struct al_token *
 c_parse_call_parameters (struct c_parser_ctx *parser, struct al_token *token,
 			 struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
 
   int i = 0;
   if (token == NULL)
@@ -1573,7 +1573,7 @@ c_parse_simple_expression (struct c_parser_ctx *parser,
 			   struct al_token *token,
 			   struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -1722,7 +1722,7 @@ c_parse_simple_boolean_expression (struct c_parser_ctx *parser,
 				   struct al_token *token,
 				   struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -1762,7 +1762,7 @@ c_parse_logical_expression (struct c_parser_ctx *parser,
 			    struct al_token *token,
 			    struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
 
   aloutputstream_printf_1k(output,"// parse logical expression\n");
   if (token == NULL)
@@ -1836,7 +1836,7 @@ c_parse_enum_member (struct c_parser_ctx *parser,
 		     struct c_enum_info *enum_info, int index,
 		     struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   struct al_token *token = NULL;
   token = c_parse_next (parser);
   if (token == NULL)
@@ -1913,7 +1913,7 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 		     int within_typedef,
 		     struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   aldatablock * type_name_value;
   struct c_full_type type;
   void * lhs_variable_data;
@@ -2125,7 +2125,7 @@ struct al_token *
 c_parse_case (struct c_parser_ctx *parser, struct al_token *token,
 	      struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   int ca = 0;
   parser->state = C_STATE_START_ID;
   if (token == NULL)
@@ -2169,7 +2169,7 @@ c_parse_block (struct c_parser_ctx *parser, struct al_token *token,
 	       enum c_parser_state state,
 	       struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   c_show_info (parser, "INFO", "block start");
   token = eat_json_token (JSON_TOKEN_OPEN_BRACE_ID, parser, token,output);
   if (token == NULL)
@@ -2264,7 +2264,7 @@ struct al_token *
 c_parse_function_params (struct c_parser_ctx *parser, struct al_token *token,
 			 struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   c_show_info (parser, "INFO", "parse func params");
   if (token != NULL)
     {
@@ -2336,7 +2336,7 @@ c_parse_toplevel_statement (struct c_parser_ctx *parser,
 			    enum c_parser_state level_state,
 			    struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -2586,7 +2586,7 @@ c_parse_case_statement (struct c_parser_ctx *parser, struct al_token *token,
 			enum c_parser_state level_state,
 			struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
 
   if (token == NULL)
     {
@@ -2957,7 +2957,7 @@ c_parse_statement (struct c_parser_ctx *parser, struct al_token *token,
 		   enum c_parser_state level_state,
 		   struct aloutputstream * output)
 {
-  struct json_ctx *tokenizer = parser->tokenizer;
+  json_token_ctx *tokenizer = parser->tokenizer;
 
   if (token == NULL)
     {
@@ -3232,7 +3232,7 @@ c_parse_statement (struct c_parser_ctx *parser, struct al_token *token,
 
 
 int
-init_c_parser (struct c_parser_ctx *parser, struct json_ctx *tokenizer,
+init_c_parser (struct c_parser_ctx *parser, json_token_ctx *tokenizer,
 	       void *data)
 {
   bzero (parser, sizeof (*parser));
@@ -3442,7 +3442,7 @@ int main (int argc, char **argv)
 {
   struct c_parser_ctx parser;
   struct json_import_context_data importer;
-  struct json_ctx tokenizer;
+  json_token_ctx tokenizer;
   struct alinputstream main_inputstream;
   struct alinputstream * inputstream = NULL;
   struct aloutputstream main_outputstream;

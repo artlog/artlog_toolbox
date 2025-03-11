@@ -19,7 +19,7 @@ char json_read_char(struct json_import_context_data * json_import_data)
   return json_import_data->last;
 }
 
-char json_import_next_char(struct json_ctx* ctx, void * data)
+char json_import_next_char(json_token_ctx* ctx, void * data)
 {
   struct json_import_context_data * json_import_data = (struct json_import_context_data *) data;
   if ( FLAG_IS_SET( json_import_data->flags,ALSFLAG_PUSHBACK ) )
@@ -52,7 +52,7 @@ char json_import_next_char(struct json_ctx* ctx, void * data)
     }
 }
 
-void json_import_pushback_char(struct json_ctx *ctx, void *data, char pushback)
+void json_import_pushback_char(json_token_ctx *ctx, void *data, char pushback)
 {
   struct json_import_context_data * json_import_data = (struct json_import_context_data *) data;
 
@@ -67,7 +67,7 @@ void json_import_pushback_char(struct json_ctx *ctx, void *data, char pushback)
   ctx->pos--;
 }
 
-void json_import_context_initialize(struct json_ctx *ctx)
+void json_import_context_initialize(json_token_ctx *ctx)
 {
   json_context_initialize( ctx, json_import_next_char);
   ctx->pushback_char=json_import_pushback_char;
@@ -85,7 +85,7 @@ void json_import_print_context_initialize(struct print_ctx * print_context)
 
 void aljson_init(
 	       struct json_parser_ctx * json_context,
-	       struct json_ctx * json_tokenizer,
+	       json_token_ctx * json_tokenizer,
 	       struct print_ctx * print_context)
 {
     // clean ground

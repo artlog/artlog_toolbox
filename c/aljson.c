@@ -72,7 +72,7 @@ JSON_DEFINE_TOGGLE(variable,'?')
 
 // only if pos is needed for debugging
 // might not be relevant if transcoded from a non json input stream.
-void aljson_set_pos_info(struct json_object * object,  struct json_ctx * ctx)
+void aljson_set_pos_info(struct json_object * object,  json_token_ctx * ctx)
 {
   if ( ctx != NULL )
     {
@@ -100,7 +100,7 @@ struct json_object * aljson_new_json_string(struct json_parser_ctx * parser, cha
 struct json_object * aljson_new_json_error(struct json_parser_ctx * parser, enum json_syntax_error erroridx)
 { 
   ALJSON_PARSER_CTX_DECL_ALLOC(parser,json_object,object)
-  struct json_ctx * ctx = parser->tokenizer;
+  json_token_ctx * ctx = parser->tokenizer;
 
   if (object != NULL)
     {
@@ -125,7 +125,7 @@ struct json_object * syntax_error(const char * function, int line, struct json_p
   int max_buff = 1024;
   int buf_idx=0;
   char * err_buf = malloc(max_buff);
-  struct json_ctx * ctx = parser->tokenizer;
+  json_token_ctx * ctx = parser->tokenizer;
   if ( err_buf == NULL )
     {
       memory_shortage(NULL);
@@ -339,7 +339,7 @@ void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * 
 
 struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct json_object * key)
 {
-  struct json_ctx * ctx = parser->tokenizer;
+  json_token_ctx * ctx = parser->tokenizer;
   struct json_object * object=malloc(sizeof(struct json_object));
   debug_tag(ctx,':');
   if (object != NULL)
@@ -358,7 +358,7 @@ struct json_object * aljson_new_pair_key(struct json_parser_ctx * parser, struct
 
 struct json_object * new_variable(struct json_parser_ctx * parser, struct json_object * key)
 {
-  struct json_ctx * ctx = parser->tokenizer;
+  json_token_ctx * ctx = parser->tokenizer;
   struct json_object * object=malloc(sizeof(struct json_object));
   debug_tag(ctx,'?');
   if (object != NULL)
@@ -575,7 +575,7 @@ struct json_object * new_json_constant_object(struct json_parser_ctx * parser, c
 {
   ALJSON_PARSER_CTX_DECL_ALLOC(parser,json_object,object)
 
-  struct json_ctx * ctx = parser->tokenizer;
+  json_token_ctx * ctx = parser->tokenizer;
 
   debug_tag(ctx,t);
   if (object != NULL)
