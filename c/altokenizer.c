@@ -149,7 +149,7 @@ altokenizer_reset_buffer_pos (struct altokenizer *tokenizer)
 
 int altokenizer_get_pending_chars(struct altokenizer * tokenizer)
 {
-  struct token_char_buffer *tb = &tokenizer->token_buf;
+  alstrings_ringbuffer *tb = &tokenizer->token_buf;
   //  char *buffer = tb->buf;
   int length = tb->buffer.bufpos;
   return length;

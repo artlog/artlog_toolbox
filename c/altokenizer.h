@@ -21,7 +21,7 @@ struct altokenizer
   // add a char to currently parsed token.
   altokenizer_add_token_char add_char;
   // for add_char usage, created and grown by add_char
-  struct token_char_buffer token_buf;
+  alstrings_ringbuffer token_buf;
   struct al_token last_token;
   alhash_context context;
   int words;

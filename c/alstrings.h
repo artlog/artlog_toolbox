@@ -5,7 +5,7 @@
 
 #define ALSTRINGBUFCANARY 0xbebedada
 
-// type of one object (struct alhash_datablock ) within ( struct token_char_buffer )
+// type of one object (struct alhash_datablock ) within ( struct alstrings_ringbuffer )
 enum altype {
   ALTYPE_OPAQUE=0, // opaque type meaning no encoding type known.
   ALTYPE_CINTLE=1, // NYI c integer in little endian, length is externaly defined in bytes 
@@ -37,34 +37,34 @@ struct alstrings_buffer {
   char * buf;
   // position of token buffer where to add data within buf
   int bufpos;
-  // buffer size to be grown if needed ( see al_token_char_buffer_grow )
+  // buffer size to be grown if needed ( see al_alstrings_ringbuffer_grow )
   int bufsize;
 };
 
-/** char buffer RING ( circular list allocated by al_token_char_buffer_alloc(int times); )
+/** char buffer RING ( circular list allocated by al_alstrings_ringbuffer_alloc(int times); )
  can be filled ONLY ( no removal ).
  pointer should not move ( once allocated, can be moved ).
  can grow ( 2* growth ).
 
-token_char_buffer circular linked list is built at first time
+alstrings_ringbuffer circular linked list is built at first time
 BUT buf and its size is allocated on request only.
 = so initial *times* buckets drives limit =
 
 remark initial name comes from json parser, kept to not rename everywhere
 */
-typedef struct token_char_buffer {
+typedef struct alstrings_ringbuffer {
   struct alstrings_buffer buffer;
   int canary; // bebedada
   // linked list
   // first always point to allocated first
-  struct token_char_buffer * first;
+  struct alstrings_ringbuffer * first;
   // next is circular 
-  struct token_char_buffer * next;
+  struct alstrings_ringbuffer * next;
   // next potentialy free and can be replaced by a next after if next is detected full.
-  struct token_char_buffer * next_free;  
+  struct alstrings_ringbuffer * next_free;  
 } alstrings_ringbuffer;
 
-// introduced alstrings_ringbuffer_pointer , that point to right token_char_buffer within ring.
+// introduced alstrings_ringbuffer_pointer , that point to right alstrings_ringbuffer within ring.
 typedef alstrings_ringbuffer * alstrings_ringbuffer_pointer;
 
 // allocation context ( it can only grow or be fully released )
@@ -86,19 +86,19 @@ usualy double of size
 search within list of possible buffers
 it should not change existing allocation ( that are pointed to )
  */
-alstrings_ringbuffer_pointer al_token_char_buffer_grow(alstrings_ringbuffer_pointer buffer, int length);
+alstrings_ringbuffer_pointer al_alstrings_ringbuffer_grow(alstrings_ringbuffer_pointer buffer, int length);
 
 // allocate length byte within buffer, does not zero them ( keep content ).
 // return pointer on first char in buffer
 char * al_alloc_block(alstrings_ringbuffer_pointer * ringbuffer, int length);
   
-// copy data content into token_char_buffer, return pointer on first char within buffer ( to update within data.ptr )
+// copy data content into alstrings_ringbuffer, return pointer on first char within buffer ( to update within data.ptr )
 // WARNING this can actualy change ringbufferp content.
 char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp,  aldatablock * data);
 
-/* create a circular list of struct token_char_buffer of size times.
+/* create a circular list of struct alstrings_ringbuffer of size times.
 useful for autogrowth */
-alstrings_ringbuffer_pointer al_token_char_buffer_alloc(int times);
+alstrings_ringbuffer_pointer al_alstrings_ringbuffer_alloc(int times);
 
 /* allocate a circular buffer of buckets with initial bucket char length 
 will setup ringbuffer

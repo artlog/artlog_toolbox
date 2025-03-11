@@ -58,7 +58,6 @@ int main(int argc, char ** argv)
   aldebug_start(NULL);
 
   // intialisation of json content parser
-
   struct json_parser_ctx json_context;
   struct json_ctx json_tokenizer;
   struct print_ctx print_context;

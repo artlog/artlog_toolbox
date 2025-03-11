@@ -108,7 +108,7 @@ void debug_tag(struct json_ctx *ctx,char c)
     }
 }
 
-void flush_char_buffer(struct token_char_buffer * ctx)
+void flush_char_buffer(alstrings_ringbuffer * ctx)
 {
   altoken_flush_char_buffer(ctx);
 }

@@ -12,8 +12,8 @@ struct al_token {
 };
 
 // add a char within token char buffer that will be flush at cut_string_object or flush_char_buffer
-int altoken_char_buffer_add_char(struct token_char_buffer * ctx, char c);
+int altoken_char_buffer_add_char(alstrings_ringbuffer * ctx, char c);
 
-void altoken_flush_char_buffer(struct token_char_buffer * ctx);
+void altoken_flush_char_buffer(alstrings_ringbuffer * ctx);
 
 #endif

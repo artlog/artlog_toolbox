@@ -113,7 +113,7 @@ struct json_ctx
   // add a char to currently parsed token.
   json_ctx_add_token_char add_char;
   // for add_char usage
-  struct token_char_buffer token_buf;
+  alstrings_ringbuffer token_buf;
   // byte position within 'possible' input stream
   int pos;
   int internal_flags;
@@ -155,7 +155,7 @@ int add_char(struct json_ctx * ctx, char token, char c);
 
 char next_char(struct json_ctx* ctx, void * data);
 
-void flush_char_buffer(struct token_char_buffer * token_char_buffer);
+void flush_char_buffer(alstrings_ringbuffer * token_char_buffer);
 
 // consume str and check all consumed chars string equals str content
 int json_ctx_consume(struct json_ctx * ctx, void * data, char * str);

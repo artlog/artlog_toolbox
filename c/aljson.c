@@ -42,18 +42,6 @@ struct json_constant json_constant_object[JSON_CONSTANT_LAST]=
 
 // TODO follow specs from  http://json.org/ http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf
 
-/**
-TODO unify debug to use ALDEBUG_IF_DEBUG(&ctx->alparser,alhash_context,1)
-struct json_parser_ctx
-{
-  struct alhash_context alparser;
-
- in alhash.h
- struct alhash_context {
-  ALDEBUG_DEFINE_FLAG(debug)
-
- **/
-
 int json_debug=0;
 
 struct print_ctx aljson_print_ctx_debug;
