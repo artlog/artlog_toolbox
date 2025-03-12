@@ -206,8 +206,8 @@ struct json_object * cut_string_object(struct json_parser_ctx * ctx, char objtyp
   alstrings_ringbuffer_pointer ringbuffer = &ctx->tokenizer->token_buf;
   // warning, should keep a place for final 0
   // realloc for one character ... too bad.
-  if ( grow_ringbuffer_buffer(ctx,ringbuffer,1) <= 0 ) {
-    // FATAL ERROR grow failed
+  if ( grow_ringbuffer_buffer(ctx,ringbuffer,1) < 0 ) {
+    printf("(%s,%s,%i) FATAL grow failed\n",__FILE__,__FUNCTION__,__LINE__);
     return NULL;
   }
   // final 0 added ? don't do that : ( it will fail later... perhaps with equality checking ? ).

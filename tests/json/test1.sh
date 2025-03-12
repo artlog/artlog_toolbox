@@ -64,7 +64,7 @@ encode_decode_test()
     $json indent=flat -- ${TESTOUT}/$reftest.$dstext >${TESTOUT}/$reftest.$srcext 2>${TESTOUT}/$reftest.$srcext.stderr
     check_diff $reftest.$srcext
 
-    log_any "[INFO] encode decode json $reftest $srcext $dstext '$errors'"
+    log_info "encode decode json $reftest $srcext $dstext '$errors'"
 }
 
 runit()
