@@ -13,4 +13,4 @@ template=filename          file to open in read only mode to parse in json for t
 -- to separate options from arguments
 First argument filename    file to open in read only mode to parse in json.
 
-aljson_main version 0.2.2
+aljson_main version 0.2.3

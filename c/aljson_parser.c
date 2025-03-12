@@ -27,31 +27,56 @@ struct al_token * tokenizer_NUMBER(json_token_ctx * ctx, char first, void * data
   return (struct al_token *) NULL;
 }
 
+void add_char_and_flush(json_token_ctx * ctx, char token, char c)
+{
+  ctx->add_char(ctx,token,c);
+  flush_char_buffer(&ctx->token_buf);
+}
+
+// consume str and check all consumed chars string equals str content
+int tokenizer_consume(json_token_ctx * ctx, void * data, char * str)
+{
+  int index = 0;
+  char c = ctx->next_char(ctx,data);
+  while ( (c != 0 ) && (str[index] != 0) )
+    {
+      if ( c != str[index] )
+	{
+	  return 0;
+	}
+      ctx->add_char(ctx,c,c);
+      ++ index;
+      if (str[index] == 0)
+	{
+	  break;
+	}      
+      c =ctx->next_char(ctx,data);
+    }
+  return (str[index] == 0);
+}
+
 struct al_token * tokenizer_CONSTANT(json_token_ctx * ctx, char first, void * data)
 {
   switch(first)
     {
     case 't':  
-      if ( json_ctx_consume(ctx,data,"rue") )
+      if ( tokenizer_consume(ctx,data,"rue") )
 	{
-	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(&ctx->token_buf);
+	  add_char_and_flush(ctx,first,first);
 	  JSON_TOKEN(TRUE);
 	}
       break;
     case 'f':
-	if (json_ctx_consume(ctx,data,"alse") )
+	if (tokenizer_consume(ctx,data,"alse") )
 	  {
-	    ctx->add_char(ctx,first,first);
-	    flush_char_buffer(&ctx->token_buf);
+	    add_char_and_flush(ctx,first,first);
 	    JSON_TOKEN(FALSE);
 	  }
       break;
     case 'n':
-      if ( json_ctx_consume(ctx,data,"ull") )
+      if ( tokenizer_consume(ctx,data,"ull") )
 	{
-	  ctx->add_char(ctx,first,first);
-	  flush_char_buffer(&ctx->token_buf);
+	  add_char_and_flush(ctx,first,first);
 	  JSON_TOKEN(NULL);
 	}
       break;
@@ -112,29 +137,6 @@ void flush_char_buffer(alstrings_ringbuffer * ctx)
 {
   altoken_flush_char_buffer(ctx);
 }
-
-// TODO convert to altokenizer_consume
-int json_ctx_consume(json_token_ctx * ctx, void * data, char * str)
-{
-  int index = 0;
-  char c = ctx->next_char(ctx,data);
-  while ( (c != 0 ) && (str[index] != 0) )
-    {
-      if ( c != str[index] )
-	{
-	  return 0;
-	}
-      ctx->add_char(ctx,c,c);
-      ++ index;
-      if (str[index] == 0)
-	{
-	  break;
-	}      
-      c =ctx->next_char(ctx,data);
-    }
-  return (str[index] == 0);
-}
-
 
 /**
  return internal parsing state. ALJSON_NPSTATE_COMPLETE means parsing did find a number.

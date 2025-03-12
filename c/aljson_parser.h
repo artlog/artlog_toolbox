@@ -110,7 +110,7 @@ typedef struct json_token_ctx_
   ALDEBUG_DEFINE_FLAG(debug_level)
   // add a char to currently parsed token.
   json_ctx_add_token_char add_char;
-  // for add_char usage
+  // for add_char usage NO AUTOGROWTH
   alstrings_ringbuffer token_buf;
   // byte position within 'possible' input stream
   int pos;
@@ -154,9 +154,6 @@ int add_char(json_token_ctx * ctx, char token, char c);
 char next_char(json_token_ctx* ctx, void * data);
 
 void flush_char_buffer(alstrings_ringbuffer * token_char_buffer);
-
-// consume str and check all consumed chars string equals str content
-int json_ctx_consume(json_token_ctx * ctx, void * data, char * str);
 
 /**
  return internal parsing state. 9 means parsing did find a number.

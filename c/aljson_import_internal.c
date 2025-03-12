@@ -95,7 +95,7 @@ void aljson_init(
   // allocator intialization
   // HARDCODED 10 words, 1024 initial buffer and 78% autogrow ( 200/256th )
   alhash_context_init(&json_context->alparser,10,1024,200);
-    
+
   json_import_context_initialize(json_tokenizer);
   
   json_context->tokenizer=json_tokenizer;

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "aldebug_output.h"
 
+// >=0 if add did work
 int altoken_char_buffer_add_char(alstrings_ringbuffer_pointer ringbuffer, char c)
 {
   struct alstrings_buffer * buffer = &ringbuffer->buffer;

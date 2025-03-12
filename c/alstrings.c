@@ -618,7 +618,8 @@ int alstrings_buffer_add_char(struct alstrings_buffer * buffer, char c, int newb
       */
       if (alstring_grow_buffer_if_needed(buffer,bufsize) == -1)
 	{
-	  aldebug_printf(DBGSTREAM,"FATAL memory shortage in %s %s %i\n", __FILE__, __FUNCTION__, __LINE__ );
+	  aldebug_printf(DBGSTREAM,"FATAL memory shortage in %s %s %i size %i\n", __FILE__, __FUNCTION__, __LINE__, bufsize );
+	  return -1;
 	}
       else
 	{
