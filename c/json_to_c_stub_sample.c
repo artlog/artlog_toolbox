@@ -192,7 +192,7 @@ int main(int argc, char ** argv)
   if ( allocator != NULL )
     {
       struct test_1 test1;
-      struct json_ctx json_tokenizer;
+      json_token_ctx json_tokenizer;
       struct print_ctx print_context;
       struct json_parser_ctx * ctx = calloc(1,sizeof(struct json_parser_ctx));
       ctx->tokenizer=&json_tokenizer;

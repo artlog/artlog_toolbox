@@ -55,11 +55,11 @@ void al_alstrings_ringbuffer_alloc_internal(alstrings_ringbuffer_pointer ringbuf
 }
 
 // get last pointing on circular.
-alstrings_ringbuffer *  al_alstrings_ringbuffer_get_previous(alstrings_ringbuffer * circular)
+alstrings_ringbuffer_pointer  al_alstrings_ringbuffer_get_previous(alstrings_ringbuffer_pointer circular)
 {
-  alstrings_ringbuffer * buffer = circular;
-  alstrings_ringbuffer * previous = circular;
-  alstrings_ringbuffer * next = buffer->next;
+  alstrings_ringbuffer_pointer buffer = circular;
+  alstrings_ringbuffer_pointer previous = circular;
+  alstrings_ringbuffer_pointer next = buffer->next;
   // HARDCODED max buckets 1000
   int max = 1000;
   while ( ( next != NULL ) && ( next != buffer ) && ( max > 0) )
@@ -83,9 +83,9 @@ alstrings_ringbuffer *  al_alstrings_ringbuffer_get_previous(alstrings_ringbuffe
 /* pick from buffer one that can provide length
    if not enough place create a new one on heap filled with zeros
 */
-alstrings_ringbuffer * al_alstrings_ringbuffer_grow(alstrings_ringbuffer_pointer ringbuffer, int length)
+alstrings_ringbuffer_pointer al_alstrings_ringbuffer_grow(alstrings_ringbuffer_pointer ringbuffer, int length)
 {
-  alstrings_ringbuffer * next  = ringbuffer->next;
+  alstrings_ringbuffer_pointer next  = ringbuffer->next;
   struct alstrings_buffer * buffer = &ringbuffer->buffer;
   int bufsize = buffer->bufsize * 2;
 
@@ -227,7 +227,7 @@ char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * d
 {
   if ( ringbufferp != NULL )
     {
-      alstrings_ringbuffer * buffer = (*ringbufferp);
+      alstrings_ringbuffer_pointer buffer = (*ringbufferp);
       if ( buffer != NULL )
 	{
 	  char * buf = al_alloc_block(ringbufferp, data->length);
@@ -262,7 +262,7 @@ void alstrings_ringbuffer_init_autogrow(alstrings_ringbuffer_pointer * ringbuffe
 {
   if ( ringbufferp != NULL )
     {
-      alstrings_ringbuffer * allocated = al_alstrings_ringbuffer_alloc(buckets);
+      alstrings_ringbuffer_pointer allocated = al_alstrings_ringbuffer_alloc(buckets);
       al_alstrings_ringbuffer_alloc_internal(allocated,firstbucketlength);
       if ( alstrings_debug_flag_is_set(ALSTRINGS_DEBUG_FLAG) )
 	{
@@ -276,7 +276,7 @@ int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * 
 {
   if ( bucket != NULL )
     {
-      // see what is done in void al_alstrings_ringbuffer_alloc_internal(alstrings_ringbuffer * buffer, int chars)
+      // see what is done in void al_alstrings_ringbuffer_alloc_internal(alstrings_ringbuffer_pointer buffer, int chars)
       if (bucket->buffer.buf != NULL )
 	{
 	  aldebug_printf(DBGSTREAM,"[DEBUG] free bucket %p\n", bucket->buffer.buf);
@@ -294,9 +294,9 @@ int alstrings_freebucket(alstrings_ringbuffer_pointer bucket, int count, void * 
 
 void alstrings_ringbuffer_walk_buckets(alstrings_ringbuffer_pointer ringbuffer, int (*callback) (alstrings_ringbuffer_pointer bucket, int count, void * data), void * data)
 {
-  alstrings_ringbuffer * buffer = ringbuffer;
-  alstrings_ringbuffer * previous = NULL;
-  alstrings_ringbuffer * next = buffer->next;
+  alstrings_ringbuffer_pointer buffer = ringbuffer;
+  alstrings_ringbuffer_pointer previous = NULL;
+  alstrings_ringbuffer_pointer next = buffer->next;
   int count = 0;
 
   if ( callback(buffer,count,data) == 0)
@@ -318,7 +318,7 @@ void alstrings_ringbuffer_release(alstrings_ringbuffer_pointer * ringbufferp)
 {
   if (ringbufferp != NULL )
     {
-      alstrings_ringbuffer * torelease = (*ringbufferp);
+      alstrings_ringbuffer_pointer torelease = (*ringbufferp);
       if ( torelease != NULL )
 	{
 	  alstrings_ringbuffer_walk_buckets(torelease, alstrings_freebucket, NULL);

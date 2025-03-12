@@ -170,7 +170,7 @@ void *
 c_cut_token_string (struct c_parser_ctx *parser)
 {
   json_token_ctx *tokenizer = parser->tokenizer;
-  alstrings_ringbuffer *tb = &tokenizer->token_buf;
+  alstrings_ringbuffer_pointer tb = &tokenizer->token_buf;
   char *buffer = tb->buffer.buf;
   int length = tb->buffer.bufpos;
 
@@ -223,7 +223,7 @@ c_cut_c_string (struct c_parser_ctx *parser, char stop,
 		struct aloutputstream * output)
 {
   json_token_ctx *tokenizer = parser->tokenizer;
-  alstrings_ringbuffer *tb = &tokenizer->token_buf;
+  alstrings_ringbuffer_pointer tb = &tokenizer->token_buf;
   char *buffer = tb->buffer.buf;
   int length = tb->buffer.bufpos;
 
@@ -329,7 +329,7 @@ print_c_token (struct c_parser_ctx *parser, enum c_word_token c_token, struct al
 
 
 enum c_word_token
-get_word_token (alstrings_ringbuffer *tb)
+get_word_token (alstrings_ringbuffer_pointer tb)
 {
   char *buffer = tb->buffer.buf;
   int length = tb->buffer.bufpos;
@@ -746,7 +746,7 @@ c_is_typedef (struct c_parser_ctx *parser)
 {
 
   json_token_ctx *tokenizer = parser->tokenizer;
-  alstrings_ringbuffer *tb = &tokenizer->token_buf;
+  alstrings_ringbuffer_pointer tb = &tokenizer->token_buf;
   char *buffer = tb->buffer.buf;
   int length = tb->buffer.bufpos;
 
