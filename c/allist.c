@@ -38,7 +38,7 @@ int indexset_get(struct  indexset * indexset, int pabs)
       aldebug_printf(DBGSTREAM,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
-  return ( FLAG_IS_SET(indexset->set,(1L << pabs)) );
+  return ( FLAG_IS_SET(indexset->set,(1LL << pabs)) );
 }
 
 int indexset_reset(struct indexset * indexset, int pabs)
@@ -49,14 +49,14 @@ int indexset_reset(struct indexset * indexset, int pabs)
       aldebug_printf(DBGSTREAM,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
-  if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
+  if ( ! FLAG_IS_SET(indexset->set,(1LL << pabs)) )
     {
       // already unset
       return 0;
     }
   else
     {
-      indexset->set = indexset->set ^ (1L << pabs);
+      indexset->set = indexset->set ^ (1LL << pabs);
       -- indexset->count;
       return 1;
     }
@@ -70,11 +70,11 @@ int indexset_set(struct indexset * indexset, int pabs)
       aldebug_printf(DBGSTREAM,"[ERROR] wrong membership abs for indexset %i %s:%i", pabs, __func__,__LINE__);
       return 0;
     }
-  if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
+  if ( ! FLAG_IS_SET(indexset->set,(1LL << pabs)) )
     {
-      indexset->set = indexset->set | (1L << pabs);
+      indexset->set = indexset->set | (1LL << pabs);
       ++ indexset->count;
-        if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
+        if ( ! FLAG_IS_SET(indexset->set,(1LL << pabs)) )
 	  {
 	    aldebug_printf(DBGSTREAM,"[FATAL] setting %i in indexset %llx failed [%s:%i]",pabs,indexset->set, __func__,__LINE__);
 	  }
