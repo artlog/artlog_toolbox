@@ -266,19 +266,19 @@ void al_options_parse_key_value(struct al_options * options,const char * arg)
 	    value = &arg[index+1];
 	    while ( c != FINAL_NUL )
 	      {
-		valuelength++;     
+		valuelength++;
 		index++;
 		c=arg[index];
-	      }	    
+	      }
 	  }
 	  goto parsed;
 	  break;
 	default:
-	  keylength++;      
+	  keylength++;
 	}
       index++;
       c=arg[index];
-    }  
+    }
 
  parsed:
   keybloc.type=ALTYPE_SUBSTR;
@@ -288,7 +288,7 @@ void al_options_parse_key_value(struct al_options * options,const char * arg)
   valuebloc.type=ALTYPE_SUBSTR;
   valuebloc.data.constcharptr=value;
   valuebloc.length=valuelength;
-  
+
  // key=value
  // was sscanf(arg,"%m[^=]=%m[^=]",&key,&value);
  if ( ( key != NULL )  && (value != NULL))

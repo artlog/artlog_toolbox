@@ -8,7 +8,6 @@ for more information see ../README.txt
 
 USE
 
-
 build/json
 Output : dump parsed json to standard output.
 -d debug
