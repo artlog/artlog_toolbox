@@ -47,13 +47,10 @@ struct alhashtreenode {
   // allocation context
   struct alallocation_ctx * context;
 };
-
-typedef void  (*alhashtree_output_node_func) (struct aloutputstream * output, struct alhashtreenode * treenode);
   
 struct alhashtree_snapshot {
   int id;
   struct aloutputstream output;
-  alhashtree_output_node_func output_node_func;
 };
 
 // compute empty sha256 hash globally.
@@ -87,6 +84,6 @@ void alhashtree_snapshot_init(struct alhashtree_snapshot * snapshot,const char *
 
 void alhashtree_snapshot_close(struct alhashtree_snapshot * snapshot);
 
-void alhashtree_snapshot_process(void * data, void * contextdata, struct albtree * btree);
+void alhashtree_snapshot_process(void * data, void * contextdata, struct albtree * btree,struct albtree * parent);
 
 #endif // #ifndef __ALHASHTREE_H__

@@ -14,7 +14,18 @@ struct albtreeprocessinfo {
   int count;
 };
 
-void freealbtreeprocess(void * data, void * datacontext, struct albtree * btree)
+// does nothing on purpose (avoid NULL checking)
+void albtree_dummy_walk(void * data,
+		   void * datacontext,
+		   struct albtree * btree,
+		   struct albtree * parent)
+{
+}
+
+void freealbtreeprocess(void * data,
+			void * datacontext,
+			struct albtree * btree,
+			struct albtree * parent)
 {
   if ( btree != NULL )
     {
@@ -39,7 +50,7 @@ int albtree_freeall(struct albtree * btree)
   info.count=0;
   // well walk left right and S at the end.
   // TODO collect orphans due to depth... ( memory leak ).
-  albtree_walk(btree, ALBTREE_WP_LRS, freealbtreeprocess, &info,500);
+  albtree_walk(btree, ALBTREE_WP_LRS, freealbtreeprocess, albtree_dummy_walk, &info,500);
   return info.count;
 }
 
@@ -108,7 +119,14 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 }
 
 // recursive implementation
- void albtree_walk_recursive(struct albtree * btree, enum albtreewalkprocess walkprocess, void (* data_process) (void * data, void * contextdata, struct albtree * btree4), void * contextdata, int depth)
+ void albtree_walk_recursive(
+			     struct albtree * btree,
+			     enum albtreewalkprocess walkprocess,
+			     albtree_walk_callback walk_enter,
+			     albtree_walk_callback walk_exit,
+			     void * contextdata,
+			     int depth,
+			     struct albtree * parent)
 {
   if ( depth > 0 )
     {
@@ -119,17 +137,17 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 	    {      
 	    case ALBTREE_WP_SLR:
 	    case ALBTREE_WP_SRL:
-	      data_process(btree->data,contextdata,btree);
+	      walk_enter(btree->data,contextdata,btree,parent);
 	      break;
 
 	    case ALBTREE_WP_LSR:
 	    case ALBTREE_WP_LRS:
-	      albtree_walk_recursive(btree->left, walkprocess,data_process,contextdata,depth-1);
+	      albtree_walk_recursive(btree->left, walkprocess,walk_enter,walk_exit,contextdata,depth-1,btree);
 	      break;
 
 	    case ALBTREE_WP_RSL:
 	    case ALBTREE_WP_RLS:      
-	      albtree_walk_recursive(btree->right, walkprocess,data_process,contextdata,depth-1);
+	      albtree_walk_recursive(btree->right, walkprocess,walk_enter,walk_exit,contextdata,depth-1,btree);
 	      break;
 	    }
 	  // second
@@ -137,17 +155,17 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 	    {
 	    case ALBTREE_WP_SLR:
 	    case ALBTREE_WP_RLS:
-	      albtree_walk_recursive(btree->left, walkprocess,data_process,contextdata,depth-1);
+	      albtree_walk_recursive(btree->left, walkprocess,walk_enter,walk_exit,contextdata,depth-1,btree);
 	      break;
       
 	    case ALBTREE_WP_LSR:
 	    case ALBTREE_WP_RSL:
-	      data_process(btree->data,contextdata,btree);
+	      walk_enter(btree->data,contextdata,btree,parent);
 	      break;
 	
 	    case ALBTREE_WP_LRS:
 	    case ALBTREE_WP_SRL:
-	      albtree_walk_recursive(btree->right, walkprocess,data_process,contextdata, depth-1);
+	      albtree_walk_recursive(btree->right, walkprocess,walk_enter,walk_exit,contextdata, depth-1,btree);
 	      break;
 	    }
 	  // third
@@ -155,31 +173,42 @@ struct albtree * albtree_insert_right(struct albtree * btree, void * data)
 	    {
 	    case ALBTREE_WP_SLR:
 	    case ALBTREE_WP_LSR:
-	      albtree_walk_recursive(btree->right, walkprocess,data_process,contextdata,depth-1);
+	      albtree_walk_recursive(btree->right, walkprocess,walk_enter,walk_exit,contextdata,depth-1,btree);
 	      break;
 
 	    case ALBTREE_WP_RSL:
 	    case ALBTREE_WP_SRL:
-	      albtree_walk_recursive(btree->left, walkprocess,data_process,contextdata,depth-1);
+	      albtree_walk_recursive(btree->left, walkprocess,walk_enter,walk_exit,contextdata,depth-1,btree);
 	      break;
 
 	    case ALBTREE_WP_RLS:
 	    case ALBTREE_WP_LRS:
-	      data_process(btree->data,contextdata,btree);
+	      walk_enter(btree->data,contextdata,btree,parent);
 	      break;
 	    }
-	}
+	  
+	  walk_exit(btree->data,contextdata,btree,parent);
+	}      
     }
 }
 
 
- void albtree_walk(struct albtree * btree, enum albtreewalkprocess walkprocess, void (* data_process) (void * data, void * contextdata, struct albtree * btree), void * contextdata, int depth)
+void albtree_walk(
+		  struct albtree * btree,
+		  enum albtreewalkprocess walkprocess,
+		  albtree_walk_callback walk_enter,
+		  albtree_walk_callback walk_exit,
+		  void * contextdata,
+		  int depth)
 {
-  albtree_walk_recursive(btree, walkprocess,data_process,contextdata, depth);
+  albtree_walk_recursive(btree, walkprocess,walk_enter,walk_exit,contextdata, depth, NULL);
 }
 
 // to complete, need for more inputs.
-void searchprocess(void * data, void * datacontext, struct albtree * btree)
+void searchprocess(void * data,
+		   void * datacontext,
+		   struct albtree * btree,
+		   struct albtree * parent)
 {
   if ( btree != NULL )
     {
@@ -210,7 +239,7 @@ struct albtreepath * albtree_get_path(struct albtree * btree, struct albtree * c
   path.index=0;
   path.walkprocess = ALBTREE_WP_SLR;
   
-  albtree_walk(btree,path.walkprocess,searchprocess,&path,64);
+  albtree_walk(btree,path.walkprocess,searchprocess,albtree_dummy_walk,&path,64);
   struct albtreepath * result = malloc(sizeof(*result));
   memcpy(&path,result,sizeof(path));
   return result;

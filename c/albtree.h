@@ -81,9 +81,25 @@ struct albtree * albtree_insert_left(struct albtree * btree, void * data);
 /** return tree constructed with data and set to right of btree */
 struct albtree * albtree_insert_right(struct albtree * btree, void * data);
 
-/** walk btree using wlaklingprocess ordering given and callback for each data data_process
-    for a maximum depth limit of depth ( MANDATORY ) */
-void albtree_walk(struct albtree * btree, enum albtreewalkprocess walkprocess, void (* data_process) (void * data, void * contextdata, struct albtree * btree), void * contextdata, int depth);
+// btree is self
+// parent is parent : NULL for root.
+typedef void (*albtree_walk_callback) (
+				       void * data,
+				       void * contextdata,
+				       struct albtree * btree,
+				       struct albtree * parent);
+
+/** walk btree using walkingprocess ordering given and callback for each data data_process
+    for a maximum depth limit of depth ( MANDATORY )
+    btree is root
+*/
+void albtree_walk(
+		  struct albtree * btree,
+		  enum albtreewalkprocess walkprocess,
+		  albtree_walk_callback walk_enter,
+		  albtree_walk_callback walk_exit,
+		  void * contextdata,
+		  int depth);
 
 
 /** comparator return < 0 if value(left)<value(right) ; 0 if value(left)== value(right) and > 0 else */

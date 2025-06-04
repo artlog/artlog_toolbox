@@ -5,3 +5,4 @@ tests/base64/tmp.base64_dbg
 tests/json/tmp.json
 tests/cbor/tmp.cbor_main
 /config.h
+TAGS

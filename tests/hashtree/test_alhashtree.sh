@@ -1,5 +1,13 @@
 #!/bin/bash
 
+show_dots() {
+    if [[ -f out.dot ]]
+    then
+	gvpr -f split.gvpr out.dot
+	dotty *_0.dot&
+    fi
+}
+    
 
 hashtree=../../build/hashtree
 
@@ -14,6 +22,6 @@ fi
 
 $hashtree 'ceci est la premiere phrase' 'la seconde phrase' 'la troisieme phrase' '4' '5' '6' 'sept' '8' '9' '10' '11' '12' '13' '14' '15' '16' '17' 'et la fin ?'
 
-gvpr -f split.gvpr out.dot
+show_dots
 
-dotty *_0.dot&
+../../build/json indent=spaces:2 -- out.json

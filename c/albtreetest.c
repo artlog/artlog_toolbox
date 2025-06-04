@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-void process_element(void * data, void * datacontext, struct albtree * btree)
+void dummy_walk(void * data, void * datacontext, struct albtree * btree, struct albtree * parent)
+{
+}
+
+void process_element(void * data, void * datacontext, struct albtree * btree, struct albtree * parent)
 {
   if (data != NULL)
     {
@@ -35,13 +39,13 @@ void basic_test()
   leaf = albtree_insert_right(leaf,"D");
   
   printf("walk SLR\n");
-  albtree_walk(root, ALBTREE_WP_SLR, process_element, NULL,10);
+  albtree_walk(root, ALBTREE_WP_SLR, process_element, dummy_walk,NULL,10);
   printf("walk LSR\n");
-  albtree_walk(root, ALBTREE_WP_LSR, process_element, NULL,10);
+  albtree_walk(root, ALBTREE_WP_LSR, process_element, dummy_walk,NULL,10);
   printf("walk RSL\n");
-  albtree_walk(root, ALBTREE_WP_RSL, process_element, NULL,10);
+  albtree_walk(root, ALBTREE_WP_RSL, process_element, dummy_walk,NULL,10);
   printf("walk LRS\n");
-  albtree_walk(root, ALBTREE_WP_LRS, process_element, NULL,10);
+  albtree_walk(root, ALBTREE_WP_LRS, process_element, dummy_walk,NULL,10);
 
   if ( root != NULL )
     {
@@ -76,7 +80,7 @@ int test_insert_sorted(int argc, char ** argv)
 	}
 	 
     }
-  albtree_walk(root, ALBTREE_WP_LSR, process_element, NULL,argc);
+  albtree_walk(root, ALBTREE_WP_LSR, process_element, dummy_walk, NULL,argc);
   int count = albtree_freeall(root);
   if ( count != argc )
     {
@@ -99,7 +103,7 @@ int main(int argc, char ** argv)
       {
 	leaf = albtree_insert_left(leaf,argv[i]);      
       }
-    albtree_walk(root, ALBTREE_WP_SLR, process_element, NULL,argc);
+    albtree_walk(root, ALBTREE_WP_SLR, process_element, dummy_walk,NULL,argc);
     int count = albtree_freeall(root);
     if ( count != argc )
       {

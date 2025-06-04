@@ -114,19 +114,6 @@ void alhashtree_clean(struct alhashtreenode * treenode)
   free(treenode);
 }
 
-
-void alhashtree_snapshot_process(void * data, void * contextdata, struct albtree * btree)
-{
-  struct alhashtree_snapshot * snapshot = (struct alhashtree_snapshot *) contextdata;
-  struct aloutputstream * output = &snapshot->output;
-  struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
-  alhashtree_dump_treenode(NULL,treenode);
-  if ( output != NULL )
-    {
-      snapshot->output_node_func(output,treenode);
-    }
-}
-
 void alhashtree_snapshot_init(struct alhashtree_snapshot * snapshot,const char * filename)
 {
   aloutput_file_open_init(&snapshot->output,filename);

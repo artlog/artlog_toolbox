@@ -20,53 +20,65 @@ void  alhashtree_to_dot(struct aloutputstream * output, struct alhashtreenode * 
 void alhashtree_snapshot_to_dot(struct alhashtree_snapshot * snapshot,struct alhashtreenode * root);
 */
 
-void  alhashtree_to_dot(struct aloutputstream * output, struct alhashtreenode * treenode)
+void  alhashtree_to_dot_exit(void * data,
+			 void * contextdata,
+			 struct albtree * btree,
+			 struct albtree * parent)
 {
-  struct albtree * btreenode = &treenode->btree;
+}
 
-  aloutputstream_printf_1k(output,"node%p [label=<",btreenode);
-  if ( btreenode->data != NULL )
+void  alhashtree_to_dot(void * data,
+			 void * contextdata,
+			 struct albtree * btree,
+			 struct albtree * parent)
+{
+  struct alhashtree_snapshot * snapshot = (struct alhashtree_snapshot *) contextdata;
+  struct aloutputstream * output = &snapshot->output;
+  struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
+
+  aloutputstream_printf_1k(output,"node%p [label=<",btree);
+  if ( btree->data != NULL )
     {
-      aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"20\">%s</FONT><BR/>",(char *) btreenode->data);
+      aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"20\">%s</FONT><BR/>",(char *) btree->data);
     }
   
   if ( treenode->hash.length > 0 )
     {
       aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"16\">hash=");
       aloutput_bytes_as_hex(output, &treenode->hash, 0, 8);
-      aloutputstream_printf_1k(output,"</FONT>",btreenode,btreenode);
+      aloutputstream_printf_1k(output,"</FONT>");
     }
 
-  aloutputstream_printf_1k(output,">]",btreenode,btreenode);
+  aloutputstream_printf_1k(output,">]",btree,btree);
 
-  if ( btreenode->left != NULL )
+  if ( btree->left != NULL )
     {
-      if ( btreenode->right != NULL )
+      if ( btree->right != NULL )
 	{
 	  aloutputstream_printf_1k(output,
 				   "node%p -> node%p [color=blue];\n"
 				   "node%p -> node%p [color=red];\n",
-				   btreenode,
-				   btreenode->left,
-				   btreenode,
-				   btreenode->right);
+				   btree,
+				   btree->left,
+				   btree,
+				   btree->right);
 	}
       else
 	{
 	  aloutputstream_printf_1k(output,
 				   "node%p -> node%p [color=blue];\n",
-				   btreenode,
-				   btreenode->left);
+				   btree,
+				   btree->left);
 	}
     }
   else
     {
-      if ( btreenode->right != NULL )
+      if ( btree->right != NULL )
 	{
 	  aloutputstream_printf_1k(output,
 				   "node%p -> node%p [color=red];\n",
-				   btreenode,
-				   btreenode->right);
+				   btree,
+				   btree->right);
 	}
     }
   
@@ -76,23 +88,86 @@ void alhashtree_snapshot_to_dot(struct alhashtree_snapshot * snapshot,struct alh
 {
   struct aloutputstream * dotoutput = &snapshot->output;
   int snapid = snapshot->id;
-  snapshot->output_node_func=alhashtree_to_dot;
   
   aloutputstream_printf_1k(dotoutput,"digraph root%p_%i {\n", &root->btree,snapid);
   
-  albtree_walk(&root->btree, ALBTREE_WP_SLR,  alhashtree_snapshot_process, snapshot, 10);
+  albtree_walk(&root->btree, ALBTREE_WP_SLR,  alhashtree_to_dot, alhashtree_to_dot_exit, snapshot, 10);
   aloutputstream_printf_1k(dotoutput,"}\n", &root->btree);
 
   snapshot->id=snapid+1;
 }
 
-void alhashtree_data_process(void * data, void * contextdata, struct albtree * btree)
+void  alhashtree_to_json_exit(void * data,
+			 void * contextdata,
+			 struct albtree * btree,
+			 struct albtree * parent)
 {
-  // to improve
-  struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
-  alhashtree_dump_treenode(NULL,treenode);
+  struct alhashtree_snapshot * snapshot = (struct alhashtree_snapshot *) contextdata;
+  struct aloutputstream * output = &snapshot->output;
+
+  aloutputstream_printf_1k(output,"}\n");
 }
+
+void  alhashtree_to_json(void * data,
+			 void * contextdata,
+			 struct albtree * btree,
+			 struct albtree * parent)
+{
+  struct alhashtree_snapshot * snapshot = (struct alhashtree_snapshot *) contextdata;
+  struct aloutputstream * output = &snapshot->output;
+  struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
+ 
+  if ( parent ) {
+    if (parent->left == btree) {
+      aloutputstream_printf_1k(output,"\n\"left\":");
+    }
+    else if (parent->right == btree) {
+      aloutputstream_printf_1k(output,"\n,\"right\":");
+    }
+    else {
+      // when does this happens ?
+      aloutputstream_printf_1k(output,"<UNEXPECTED>");
+    }
+  }
+
+  aloutputstream_printf_1k(output,"{");
   
+  if ( btree->data != NULL )
+    {
+      aloutputstream_printf_1k(output,"\"data\":\"%s\"",(char *) btree->data);
+      
+    }
+  
+  if ( treenode->hash.length > 0 )
+    {
+      if ( btree->data != NULL )
+	{
+	  aloutputstream_printf_1k(output,",");
+	}
+      aloutputstream_printf_1k(output,"\"hash\":\"");
+      aloutput_bytes_as_hex(output, &treenode->hash, 0, 8);
+      aloutputstream_printf_1k(output,"\"");
+    }
+  if ( btree->left != NULL )
+    {
+      aloutputstream_printf_1k(output,",");
+    }
+
+}
+
+void alhashtree_snapshot_to_json(struct alhashtree_snapshot * snapshot,struct alhashtreenode * root)
+{
+  struct aloutputstream * output = &snapshot->output;
+  int snapid = snapshot->id;
+
+  aloutputstream_printf_1k(output,"[\n");
+  
+  albtree_walk(&root->btree, ALBTREE_WP_SLR,  alhashtree_to_json,alhashtree_to_json_exit, snapshot, 10);
+
+  aloutputstream_printf_1k(output,"]\n");
+  snapshot->id=snapid+1;
+}
+
 int main(int argc, char ** argv)
 {
   struct alallocation_ctx context;
@@ -164,18 +239,23 @@ int main(int argc, char ** argv)
       }
     }
 
+  // save snapshot
+  alhashtree_snapshot_close(&snapshot);
+
+  // another snapshot in json
+  alhashtree_snapshot_init(&snapshot,"out.json");
+
   // find and reset root
   depth=alhashtree_depth_to_root(rightmost, &root);
   aldebug_printf(DBGSTREAM,"depth %i\n",depth);
-  // self left right
-  albtree_walk(&root->btree, ALBTREE_WP_SLR,  alhashtree_data_process, NULL, 10);
+  alhashtree_snapshot_to_json(&snapshot,root);
 
   // save snapshot
   alhashtree_snapshot_close(&snapshot);
 
   // cleanup
   alhashtree_clean(treenode);
-
+ 
   alstrings_ringbuffer_release(&context.ringbuffer);
 
   aldebug_end();
