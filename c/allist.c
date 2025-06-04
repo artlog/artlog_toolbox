@@ -76,7 +76,7 @@ int indexset_set(struct indexset * indexset, int pabs)
       ++ indexset->count;
         if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
 	  {
-	    aldebug_printf(DBGSTREAM,"[FATAL] setting %i in indexset %llx failed [%s:%i]",indexset->set, pabs, __func__,__LINE__);
+	    aldebug_printf(DBGSTREAM,"[FATAL] setting %i in indexset %llx failed [%s:%i]",pabs,indexset->set, __func__,__LINE__);
 	  }
       return 1;
     }
