@@ -181,7 +181,10 @@ $(BUILD)/c_parser: $(staticlibraries) | libinclude
 clean:
 	rm -rf $(BUILD)
 
-.PHONY:clean test libs all tests testjson testhash libinclude
+dev:
+	cd c/; etags *.[ch]
+
+.PHONY:clean test libs all tests testjson testhash libinclude dev
 
 # needed to keep those files within include after make ( remove unused )
 .PRECIOUS: $(INCLUDEDIR)/%.h

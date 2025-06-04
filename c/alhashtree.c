@@ -51,6 +51,7 @@ void alhashtree_dump_btreenode(struct aloutputstream * output, struct albtree * 
 		   "right %p\n",
 		   btreenode,
 		   btreenode->allocate,
+		   // the only thing specific to this hashtree...
 		   alhashtree_allocate,
 		   albtree_allocate,
 		   btreenode->left,
@@ -106,59 +107,6 @@ void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreen
   
 }
 
-void  alhashtree_to_dot(struct aloutputstream * output, struct alhashtreenode * treenode)
-{
-  struct albtree * btreenode = &treenode->btree;
-
-  aloutputstream_printf_1k(output,"node%p [label=<",btreenode);
-  if ( btreenode->data != NULL )
-    {
-      aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"20\">%s</FONT><BR/>",(char *) btreenode->data);
-    }
-  
-  if ( treenode->hash.length > 0 )
-    {
-      aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"16\">hash=");
-      aloutput_bytes_as_hex(output, &treenode->hash, 0, 8);
-      aloutputstream_printf_1k(output,"</FONT>",btreenode,btreenode);
-    }
-
-  aloutputstream_printf_1k(output,">]",btreenode,btreenode);
-  
-      
-  if ( btreenode->left != NULL )
-    {
-      if ( btreenode->right != NULL )
-	{
-	  aloutputstream_printf_1k(output,
-				   "node%p -> node%p [color=blue];\n"
-				   "node%p -> node%p [color=red];\n",
-				   btreenode,
-				   btreenode->left,
-				   btreenode,
-				   btreenode->right);
-	}
-      else
-	{
-	  aloutputstream_printf_1k(output,
-				   "node%p -> node%p [color=blue];\n",
-				   btreenode,
-				   btreenode->left);
-	}
-    }
-  else
-    {
-      if ( btreenode->right != NULL )
-	{
-	  aloutputstream_printf_1k(output,
-				   "node%p -> node%p [color=red];\n",
-				   btreenode,
-				   btreenode->right);
-	}
-    }
-  
-}
-
 
 void alhashtree_clean(struct alhashtreenode * treenode)
 {
@@ -167,15 +115,15 @@ void alhashtree_clean(struct alhashtreenode * treenode)
 }
 
 
-void alhashtree_snapshot_process(void * data, void * contextdata, struct albtree * btree)  
+void alhashtree_snapshot_process(void * data, void * contextdata, struct albtree * btree)
 {
   struct alhashtree_snapshot * snapshot = (struct alhashtree_snapshot *) contextdata;
-  struct aloutputstream * dotoutput = &snapshot->output;
+  struct aloutputstream * output = &snapshot->output;
   struct alhashtreenode * treenode = (struct alhashtreenode *) btree;
   alhashtree_dump_treenode(NULL,treenode);
-  if ( dotoutput != NULL )
+  if ( output != NULL )
     {
-      alhashtree_to_dot(dotoutput,treenode);
+      snapshot->output_node_func(output,treenode);
     }
 }
 
@@ -189,19 +137,6 @@ void alhashtree_snapshot_close(struct alhashtree_snapshot * snapshot)
 {
   aloutputstream_close(&snapshot->output);
   
-}
-void alhashtree_snapshot_to_dot(struct alhashtree_snapshot * snapshot,struct alhashtreenode * root)
-{
-  struct aloutputstream * dotoutput = &snapshot->output;
-  int snapid = snapshot->id;
-  
-  aloutputstream_printf_1k(dotoutput,"digraph root%p_%i {\n", &root->btree,snapid);
-  
-  albtree_walk(&root->btree, ALBTREE_WP_SLR,  alhashtree_snapshot_process, snapshot, 10);
-  aloutputstream_printf_1k(dotoutput,"}\n", &root->btree);
-
-  snapshot->id=snapid+1;  
-
 }
 
 void alsha256hashfunc(
@@ -552,4 +487,3 @@ void * alhashtree_get_data(struct alhashtreenode * treenode)
 {
   return treenode->btree.data;
 }
-

@@ -42,14 +42,18 @@ struct alhashtreenode {
   enum alhashnodetype nodetype;
   aldatablock  hash;
   int canary;
+  // function to create 'cryptographic' hash
   struct alhashtreefunc func;
   // allocation context
   struct alallocation_ctx * context;
 };
 
+typedef void  (*alhashtree_output_node_func) (struct aloutputstream * output, struct alhashtreenode * treenode);
+  
 struct alhashtree_snapshot {
   int id;
   struct aloutputstream output;
+  alhashtree_output_node_func output_node_func;
 };
 
 // compute empty sha256 hash globally.
@@ -79,15 +83,10 @@ int alhashtree_depth_to_root(struct alhashtreenode *intree, struct alhashtreenod
 
 // if output is NULL will use output from alhashtree_glogal_init
 void alhashtree_dump_treenode(struct aloutputstream * output, struct alhashtreenode * treenode);
-
-void  alhashtree_to_dot(struct aloutputstream * output, struct alhashtreenode * treenode
-			);
-
 void alhashtree_snapshot_init(struct alhashtree_snapshot * snapshot,const char * filename);
-
-void alhashtree_snapshot_to_dot(struct alhashtree_snapshot * snapshot,struct alhashtreenode * root);
 
 void alhashtree_snapshot_close(struct alhashtree_snapshot * snapshot);
 
-  
+void alhashtree_snapshot_process(void * data, void * contextdata, struct albtree * btree);
+
 #endif // #ifndef __ALHASHTREE_H__
