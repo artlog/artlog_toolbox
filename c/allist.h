@@ -57,7 +57,10 @@ struct allistelement {
    */
   int memberships;
   /** element data */
-  void * data;
+  union  {
+    void * data;
+    long long data_int64;
+  };
   /**
      indexset global index can be found from
      link[i].memberof->membership_id

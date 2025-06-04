@@ -231,7 +231,7 @@ callback used in foreach  to add a factor into a list.
 void * test2_add_factor (struct allistof * list, struct allistelement * element, struct allistelement * next, int count, void * param)
 {
   struct test2_factor * factor = (struct test2_factor *) param;
-  int prime = (unsigned long long) element->data;
+  int prime = (unsigned long long) element->data_int64;
   if ( list != prime_context->primelp )
     {
       fprintf(stderr,"[ERROR] walking non  prime list to get factors \n");
@@ -412,7 +412,7 @@ int test_fill_primelist()
 	{
 	  if ( list->head != NULL)
 	    {
-	      unsigned long long prim = (unsigned long long)  list->head->data;
+	      unsigned long long prim = (unsigned long long)  list->head->data_int64;
 	      // quick test, at least there should not be more decomposition primes than number divide by smallest decomp prime.
 	      if ( list->count < ( ( prime_context->glob_numbercount / prim  )))
 		{
