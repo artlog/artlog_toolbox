@@ -74,6 +74,10 @@ int indexset_set(struct indexset * indexset, int pabs)
     {
       indexset->set = indexset->set | (1L << pabs);
       ++ indexset->count;
+        if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
+	  {
+	    aldebug_printf(DBGSTREAM,"[FATAL] setting %i in indexset %llx failed [%s:%i]",indexset->set, pabs, __func__,__LINE__);
+	  }
       return 1;
     }
   else
@@ -585,7 +589,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 	}
       else
 	{
-	  if (debug) { aldebug_printf(DBGSTREAM,"memory allocation failure for allistextlink %li bytes. memory shortage !\n", sizeof( struct allistextlink));}
+	  if (debug) { aldebug_printf(DBGSTREAM,"[ERROR] memory allocation failure for allistextlink %li bytes. memory shortage !\n", sizeof( struct allistextlink));}
 	  return NULL;
 	}
     }
@@ -595,7 +599,8 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
       if ( ( membership >= ext->first )  && ( membership < (ext->first + INDEXSET_COUNT)) )
 	{
 	  // found right ext chunk
-	  struct allistlink * link = &ext->link[ membership - ext->first];	  
+	  int relindex = membership - ext->first;
+	  struct allistlink * link = &ext->link[relindex];
 	  if ( link->memberof == NULL )
 	    {
 	      if ( link->next != NULL )
@@ -671,7 +676,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 		      list->head=element;
 		    }
 		}
-	      indexset_set(&ext->indexset,(membership - ext->first));
+	      indexset_set(&ext->indexset,relindex);
 	      list->tail=element;
 	      link->memberof=list;
 	      ++list->count;
