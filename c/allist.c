@@ -345,7 +345,7 @@ int allistelement_getrelindex( struct allistelement * current, int absindex)
 
 void extlink_dump(struct allistextlink * ext)
 {
-  aldebug_printf(DBGSTREAM, "[DEBUG] ext %p first %i\n", ext, ext->first);
+  aldebug_printf(DBGSTREAM, "[DEBUG] ext %p first %i indexset:%llx\n", ext, ext->first,ext->indexset.set);
   for (int i=0; i<INDEXSET_COUNT; i++)
     {
       if ( ext->link[i].memberof != NULL )
@@ -381,7 +381,7 @@ int allistelement_get_memberships_ext(struct allistelement * this)
       int _indexset_count=indexset_count( &ext->indexset);
       if ( count != _indexset_count)
 	{
-	  aldebug_printf(DBGSTREAM, "indexset mismatch [%s:%i] %i!=%i 0x%llx extlink %i\n", __func__,__LINE__,count,_indexset_count,ext->indexset.set,extlinks);
+	  aldebug_printf(DBGSTREAM, "[ERROR] indexset mismatch [%s:%i] %i!=%i 0x%llx extlink %i\n", __func__,__LINE__,count,_indexset_count,ext->indexset.set,extlinks);
 	  aldebug_printf(DBGSTREAM, "[DEBUG] this %p data:%p extlink:%i\n", this, this->data,extlinks);
 	  extlink_dump(ext);
 	}
