@@ -220,7 +220,7 @@ int test_allistcontext_allocation()
 
 struct test2_factor
 {
-  int value; // int and not long long ?
+  long long value;
   struct allistelement * element;
   int error;
 };
@@ -256,17 +256,17 @@ void * test2_add_factor (struct allistof * list, struct allistelement * element,
 	  // this prime is a factor of this number
 	  if ( factor->value % prime == 0 )
 	    {
-	      if (prime_context->params.test_debug > 1) {fprintf(stderr,"factor %i prime %i count %i list %p\n", factor->value, prime, prime_multiples_list->count, prime_multiples_list);}
+	      if (prime_context->params.test_debug > 1) {fprintf(stderr,"factor %lli prime %i count %i list %p\n", factor->value, prime, prime_multiples_list->count, prime_multiples_list);}
 	      if ( allistelement_add_in(factor->element, prime_multiples_list) == NULL )
 		{
-		  if (prime_context->params.test_debug) {fprintf(stderr,"can't add %i in prime factor list %i %i count %i\n", factor->value, count, prime, prime_multiples_list->count);}
+		  if (prime_context->params.test_debug) {fprintf(stderr,"can't add %lli in prime factor list %i %i count %i\n", factor->value, count, prime, prime_multiples_list->count);}
 		  dump_list(prime_multiples_list);
 		  ++factor->error;
 		  return NULL;
 		}
 	      if ( prime_multiples_list->errors > 0 )
 		{
-		  if (prime_context->params.test_debug) {fprintf(stderr,"add %i in prime factor list %i %i count %i has errors %i\n", factor->value, count, prime, prime_multiples_list->count, prime_multiples_list->errors);}
+		  if (prime_context->params.test_debug) {fprintf(stderr,"add %lli in prime factor list %i %i count %i has errors %i\n", factor->value, count, prime, prime_multiples_list->count, prime_multiples_list->errors);}
 		  factor->error += prime_multiples_list->errors;
 		  return NULL;
 		}
@@ -274,7 +274,7 @@ void * test2_add_factor (struct allistof * list, struct allistelement * element,
 	}
       else
 	{
-	  if (prime_context->params.test_debug) {fprintf(stderr,"can't get prime list for %i count %i\n", factor->value, count);}
+	  if (prime_context->params.test_debug) {fprintf(stderr,"can't get prime list for %lli count %i\n", factor->value, count);}
 	}
     }
   return factor;
