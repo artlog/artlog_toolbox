@@ -11,6 +11,7 @@
 
 static int debug=0;
 
+// HARDCODED FIXME
 #define MAXMEMBERSHIPS 500000
 
 int allist_set_debug( int d)
@@ -70,7 +71,7 @@ int indexset_set(struct indexset * indexset, int pabs)
       return 0;
     }
   if ( ! FLAG_IS_SET(indexset->set,(1L << pabs)) )
-    {      
+    {
       indexset->set = indexset->set | (1L << pabs);
       ++ indexset->count;
       return 1;
@@ -126,10 +127,10 @@ int indexset_getrelindex(struct indexset * indexset, int pabs)
   if (debug>2) {     aldebug_printf(DBGSTREAM,"indexset %llx %i %i %i \n", indexset->set, pabs, p1,p2); }
   return p1 + p2 -1;
 }
-  
+
 /**
- * from a relative index in indexset get absolute index
- * ( position of nth bit set )
+ * from a relative index (prel) in indexset get absolute index
+ * prel =~ ( position of nth bit set )
  * this is used if shrunk.
  */
 int indexset_getabsindex(struct indexset * indexset, int prel)
@@ -147,7 +148,8 @@ int indexset_getabsindex(struct indexset * indexset, int prel)
 	return prel;
       }
   // walk number of bit set, and gather index;
-  while ((index < ((sizeof set) * 8)) && (prel > 0 ) && ( set != 0 ))
+  int indexsetbits=(sizeof set) * 8;
+  while ((index < indexsetbits) && (prel > 0 ) && ( set != 0 ))
     {
       unsigned int last =  (( set >> index ) & 0xffffffff);
       if ( (last & 0x1) == 1 )
@@ -312,7 +314,7 @@ int allistelement_getrelindex( struct allistelement * current, int absindex)
 {
   int relindex = -1;
   assert(current != NULL);
-  
+
   if ( allistelement_is_shrunk(current) )
     {
       if (absindex >= INDEXSET_COUNT)
@@ -341,9 +343,22 @@ int allistelement_getrelindex( struct allistelement * current, int absindex)
   return relindex;
 }
 
+void extlink_dump(struct allistextlink * ext)
+{
+  aldebug_printf(DBGSTREAM, "[DEBUG] ext %p first %i\n", ext, ext->first);
+  for (int i=0; i<INDEXSET_COUNT; i++)
+    {
+      if ( ext->link[i].memberof != NULL )
+	{
+	  aldebug_printf(DBGSTREAM, "[DEBUG] indexset membership %p membership_id:%i\n", ext->link[i].memberof, ext->link[i].memberof->membership_id);
+	}
+    }
+}
+
 int allistelement_get_memberships_ext(struct allistelement * this)
 {
   struct allistextlink * ext = NULL;
+  int extlinks=0;
   int extmemberships = 0;
 
   assert(this!=NULL);
@@ -354,7 +369,8 @@ int allistelement_get_memberships_ext(struct allistelement * this)
   ext = this->extlink;
   while ( ext != NULL )
     {
-      int count =0;
+      int count=0;
+      ++ extlinks;
       for (int i=0; i<INDEXSET_COUNT; i++)
 	{
 	  if ( ext->link[i].memberof != NULL )
@@ -362,27 +378,21 @@ int allistelement_get_memberships_ext(struct allistelement * this)
 	      ++count;
 	    }
 	}
-      if ( count != indexset_count( &ext->indexset))
+      int _indexset_count=indexset_count( &ext->indexset);
+      if ( count != _indexset_count)
 	{
-	  aldebug_printf(DBGSTREAM, "indexset mismatch %s:%i %i!=%i 0x%llx\n", __func__,__LINE__,count,indexset_count( &ext->indexset),ext->indexset.set);
-	  for (int i=0; i<INDEXSET_COUNT; i++)
-	    {
-	      if ( ext->link[i].memberof != NULL )
-		{
-		  aldebug_printf(DBGSTREAM, "[DEBUG] ext %p first %i\n", ext, ext->first);
-		  aldebug_printf(DBGSTREAM, "[DEBUG] indexset membership %p %i\n", ext->link[i].memberof, ext->link[i].memberof->membership_id);
-		  aldebug_printf(DBGSTREAM, "[DEBUG] this %p %p\n", this, this->data);
-		}
-	    }
+	  aldebug_printf(DBGSTREAM, "indexset mismatch [%s:%i] %i!=%i 0x%llx extlink %i\n", __func__,__LINE__,count,_indexset_count,ext->indexset.set,extlinks);
+	  aldebug_printf(DBGSTREAM, "[DEBUG] this %p data:%p extlink:%i\n", this, this->data,extlinks);
+	  extlink_dump(ext);
 	}
       extmemberships+=count;
       ext = ext->nextextlink;
 
       if (extmemberships > MAXMEMBERSHIPS)
 	{
-	  aldebug_printf(DBGSTREAM, "[FATAL] number of memberships %i exceed hardcoded limit %i %s:%i\n", extmemberships, MAXMEMBERSHIPS, __func__, __LINE__ );
+	  aldebug_printf(DBGSTREAM, "[FATAL] number of memberships %i exceed hardcoded limit %i [%s:%i]\n", extmemberships, MAXMEMBERSHIPS, __func__, __LINE__ );
 	}
-    }      
+    }
   return extmemberships;
 }
 
@@ -430,7 +440,7 @@ struct allistof * new_allistof(struct allistcontext * context)
 struct allistof * allistcontext_get_membership(struct allistcontext * context, int membership)
 {
   if ( membership < context->next_membership )
-    {     
+    {
       return &context->list[membership];
     }
   // either too big or not yet allocated.
@@ -456,8 +466,7 @@ struct allistextlink * allistelement_get_extlink_ext(struct allistelement * elem
   int membership = list->membership_id;
   if (membership < INDEXSET_COUNT)
     {
-      if (debug) {aldebug_printf(DBGSTREAM,"suspicious get ext link for element %p list %p membership %i smaller than set %i\n", element, list, membership, INDEXSET_COUNT );}
-      
+      if (debug) {aldebug_printf(DBGSTREAM,"suspicious get ext link for element %p list %p membership %i smaller than set %i\n", element, list, membership, INDEXSET_COUNT );} 
     }
   if ( FLAG_IS_SET(element->flags,ALLIST_EXT)  )
     {
@@ -470,13 +479,13 @@ struct allistextlink * allistelement_get_extlink_ext(struct allistelement * elem
 	      return ext;
 	    }
 	  ext = ext->nextextlink;
-	}      
+	}
     }
   return NULL;
 }
-  
+
 struct allistlink * allistelement_get_link_ext(struct allistelement * element, struct allistof * list)
-{  
+{
   int membership = list->membership_id;
   struct allistextlink * ext = allistelement_get_extlink_ext(element,list);
   if ( ext != NULL )
@@ -549,7 +558,7 @@ struct allistelement * walk_one( struct allistelement * current,
   return current;
 }
 
-/** add  in extended part 
+/** add  in extended part
  */
 struct allistelement * allistelement_add_in_ext(struct allistelement * element, struct allistof * list)
 {
@@ -635,7 +644,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 			{
 			  aldebug_printf(DBGSTREAM,"[ERROR] list %p with tail %p set and tail next %p non null\n", list, list->tail, plink->next);
 			  ++ list->errors;
-			}		      
+			}
 		    }
 		  else
 		    {
@@ -661,11 +670,11 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
 		    {
 		      list->head=element;
 		    }
-		}		
+		}
 	      indexset_set(&ext->indexset,(membership - ext->first));
 	      list->tail=element;
-	      link->memberof=list;	      
-	      ++list->count;	      
+	      link->memberof=list;
+	      ++list->count;
 	    }
 
 	  if ( link->memberof == list )
@@ -686,7 +695,7 @@ struct allistelement * allistelement_add_in_ext(struct allistelement * element, 
     }
   return NULL;
 }
-  
+
 struct allistelement * allistelement_add_in(struct allistelement * element, struct allistof * list)
 {
   struct allistof * previouslist = NULL;
@@ -706,12 +715,12 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
       if (debug) {aldebug_printf(DBGSTREAM,"add_in_ext element  %p membership %i \n", element, list->membership_id);}
       return allistelement_add_in_ext(element,list);
     }
-  
+
   previouslist = element->link[allistelement_getrelindex(element,list->membership_id)].memberof;
-  
+
   // was not a member of this list
   if ( previouslist == NULL )
-    {      
+    {
       // empty list
       if (allistelement_is_shrunk(element) )
 	{
@@ -748,7 +757,7 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
 	    }
 	}
       else
-	{	  
+	{
 	  if (allistelement_is_shrunk(element))
 	    {
 	      // can't add an element already shrunk into a new list.
@@ -801,11 +810,10 @@ struct allistelement * allistelement_add_in(struct allistelement * element, stru
 	  ++list->errors;
 	  return NULL;
 	}
-    } 
-  return element;  
+    }
+  return element;
 }
 
-  
 int allistelement_is_in(struct allistelement * element, struct allistof * list)
 {
   int membership = list->membership_id;
@@ -819,7 +827,7 @@ int allistelement_is_in(struct allistelement * element, struct allistof * list)
 
   int rel_index = allistelement_getrelindex(element, list->membership_id);
   if ((rel_index < 0) || ( rel_index > list->membership_id ))
-    {      
+    {
       if (debug) {aldebug_printf(DBGSTREAM, "relindex %i < 0 or > membership %i element %p in %s:%i \n", rel_index, list->membership_id, element, __func__,__LINE__);}
       return 0; // should be -1 or something indicating an error.
     }
@@ -839,7 +847,7 @@ struct allistelement * walk_steps( struct allistelement * current,
   if ( offset > 0 )
     {
       for (int j=0; (current !=NULL) && (j< offset); j++)
-	{	  
+	{
 	  current=walk_one(current,list,offset);
 	}
     }
@@ -887,9 +895,7 @@ void * allist_for_each(struct allistof * list,
   for (int i=0; (current != NULL) && ( i<list->count) ; i++)
     {
       walk=current;
-      
       current = walk_steps(current, step, list);
-      
       result = callback(list, walk, current, i, param);
       if ( result == NULL )
 	{
@@ -994,13 +1000,14 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	  if ( debug > 1 ) {aldebug_printf(DBGSTREAM,"this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
 	  if ( shrunkpos < i )
 	    {
-	      if ( shrunkpos != indexset_getrelindex(&shrunk->indexset,i) )
+	      int relindex=indexset_getrelindex(&shrunk->indexset,i);
+	      if ( shrunkpos != relindex )
 		{
 		  // might even be an assert , this means indexset implementation is wrong.
 		  aldebug_printf(DBGSTREAM,"internal error, indexset implementation inconsistent. contact developper (abs %i, rel %i != %i)\n",
 			  i,
 			  shrunkpos,
-			  indexset_getrelindex(&shrunk->indexset,i)
+			  relindex
 			  );
 		  indexset_dump(&shrunk->indexset,stderr);
 		  ++shrunkerror;
@@ -1067,8 +1074,8 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 	    if ( shrunkpos != (memberships + extmemberships) )
 	      {
 		aldebug_printf(DBGSTREAM,"[ERROR] unexpected membership size %s:%i %i!=%i %i %i\n",__func__,__LINE__,shrunkpos,(memberships + extmemberships), count, extmemberships);
-		shrunkerror++;		
-	      }	    
+		shrunkerror++;
+	      }
 	}
 
       // free ext links
@@ -1105,7 +1112,6 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 
 	  struct allistelement * next = shrunk->link[shrunkpos].next;
 	  struct allistelement * previous = shrunk->link[shrunkpos].previous;
-	  
 	  if ( previous == NULL )
 	    {
 	      if ( shrunk->link[shrunkpos].memberof->head == this )
@@ -1117,7 +1123,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		{
 		  aldebug_printf(DBGSTREAM, "[ERROR] head of owning list mismatch %p != %p %p \n", shrunk->link[shrunkpos].memberof->head, this, shrunk );
 		  ++shrunkerror;
-		}	     
+		}
 	    }
 	  else
 	    {
@@ -1137,7 +1143,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		    {
 		      aldebug_printf(DBGSTREAM, "[ERROR] previous.next membership was not pointing on this %i %p != %p \n", i, plink->next, this);
 		      ++shrunkerror;
-		    }		  
+		    }
 		}
 	      else
 		{
@@ -1145,7 +1151,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		  dump_element_full(this);
 		  exit(0);
 		}
-	    }	  
+	    }
 	  if ( next == NULL )
 	    {
 	      if ( shrunk->link[shrunkpos].memberof->tail == this )
@@ -1177,7 +1183,7 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
 		    {
 		      aldebug_printf(DBGSTREAM, "[ERROR] next.previous %i was not pointing on this %p != %p \n", i, nlink->next, this);
 		      ++shrunkerror;
-		    }		  
+		    }
 		}
 	      else
 		{
@@ -1212,5 +1218,5 @@ struct allistelement * allistelement_shrink(struct allistelement * this, struct 
     {
       if ( debug > 1 ) {aldebug_printf(DBGSTREAM,"RETURN this %p shrunk %p indexset %llu \n",this, shrunk, shrunk->indexset.set);}
     }
-  return shrunk;      
+  return shrunk;
 }

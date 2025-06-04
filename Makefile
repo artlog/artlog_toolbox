@@ -139,7 +139,7 @@ testjson: $(BUILD)/json | $(TMPTESTDIR)
  2>$(TMPTESTDIR)/$@.test2.json.out.2
 
 testallist: $(BUILD)/testallist | $(TMPTESTDIR)
-	$< 10x 10x 10x -decomp >$(TMPTESTDIR)/$@.1000.decomp.out
+	$< 10x 10x 10x -decomp -trace >$(TMPTESTDIR)/$@.1000.decomp.out 2>$(TMPTESTDIR)/$@.1000.decomp.trace
 
 $(BUILD)/testallist: $(BUILD)/private/obj/tests/allist_test.o
 	gcc -g $^ -o $@ -I$(INCLUDEDIR) -L$(BUILD)/lib \
