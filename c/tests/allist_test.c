@@ -17,6 +17,8 @@
 #include "../allist_internal.h"
 // dump
 #include "../aldump.h"
+// debug
+#include "../aldebug_output.h"
 
 #define PRIMCOUNT 25
 
@@ -29,6 +31,7 @@ struct _exec_params {
   // shrink result
   int shrinkit;
   int decomp;
+  int debug;
 };
 
 struct _prime_context {
@@ -526,7 +529,8 @@ int main(int argc, char * argv[])
     {
       .test_debug=1,
       .shrinkit=0,
-      .decomp=0
+      .decomp=0,
+      .debug=0
     };
 
 
@@ -541,12 +545,12 @@ int main(int argc, char * argv[])
 	      if (strcmp(argv[i],"-debug") == 0)
 		{
 		  printf("debug set\n");
-		  allist_set_debug(1);
+		  params.debug=1;
 		}
 	      else if (strcmp(argv[i],"-trace") == 0)
 		{
 		  printf("debug set\n");
-		  allist_set_debug(2);
+  		  params.debug=2;
 		}
 	      else if (strcmp(argv[i],"-testdebug") == 0)
 		{
@@ -581,6 +585,12 @@ int main(int argc, char * argv[])
 	    }
 	}
       time_t start;
+
+      allist_set_debug(params.debug);
+
+      if (params.debug > 0 ) {
+	aldebug_start(NULL);
+      }
       
       prime_context=create_prime_context(count);
       set_prime_context_params(prime_context, &params);
@@ -638,5 +648,9 @@ int main(int argc, char * argv[])
     {
       free(prime_context);
     }
+
+  if (params.debug > 0 ) {
+    aldebug_end();
+  }
 
 }
