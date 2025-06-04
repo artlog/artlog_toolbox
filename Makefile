@@ -155,7 +155,7 @@ $(INCLUDEDIR)/%.h: c/%.h | $(INCLUDEDIR)
 
 $(BUILD)/obj/%.o: c/%.c | $(BUILD)/obj
 	@echo compile $<
-	$(CC) -Wall -c $(CFLAGS) $(CPPFLAGS) -I$(INCLUDEDIR) $< -o $@
+	$(CC) -Wall -Wcast-align=strict -c $(CFLAGS) $(CPPFLAGS) -I$(INCLUDEDIR) $< -o $@
 
 $(BUILD)/private/obj/%.o: c/%.c | $(BUILD)/private/obj
 	@echo "bad hack fixme" && mkdir -p $(BUILD)/private/obj/tests

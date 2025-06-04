@@ -177,7 +177,10 @@ alint64_t alhash_hash_string(void * value, int length)
   alint64_t hash = 0xdeadbeef00112233;
   if ( length >= 8 )
     {
-      hash = hash ^ *((alint64_t*) (value));
+      // due to arm 32bit alignement for 64bits SIGBUS on *((alint64_t*) value)
+      int value_32_1 = *( (int *) value);
+      int value_32_2 = *( (int *) (value+4));
+      hash = hash ^ ( (alint64_t) value_32_1 | ((alint64_t) value_32_2)  << 32 );
     }
   else if ( length >= 4 )
     {
