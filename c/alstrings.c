@@ -144,7 +144,7 @@ alstrings_ringbuffer_pointer al_alstrings_ringbuffer_grow(alstrings_ringbuffer_p
       aldebug_printf(DBGSTREAM,"allocate buffer (%p) next (%p) !\n", buffer, next);
     }
 
-  if ( ((unsigned long long) next) < 1024 )
+  if ( ((aluint64_t) next) < 1024 )
     {
       fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", buffer);
     }
@@ -179,7 +179,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 		  if ( ringbuffer != NULL )
 		    {
 		      buffer = &ringbuffer->buffer;
-		      if ( ((unsigned long long) ringbuffer) < 1024 )
+		      if ( ((aluint64_t) ringbuffer) < 1024 )
 			{
 			  fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", buffer);
 			}
@@ -365,7 +365,7 @@ void aldatablock_fill_uchar(aldatablock * data,int offset, int length, unsigned 
 }
 
 // return new offset
-int aldatablock_write_uint64be(aldatablock * data, int offset, unsigned long long value )
+int aldatablock_write_uint64be(aldatablock * data, int offset, aluint64_t value )
 {
   // todo check datablock type
   if ( data->length >= offset + 8 )
@@ -417,9 +417,8 @@ unsigned int aldatablock_get_uint32be(aldatablock * data, int offset)
       intern[2]=hack[1];
       intern[3]=hack[0];
 #else
-      // why 8 ?
       #error untested
-      memcpy(intern,hack,8);
+      memcpy(intern,hack,sizeof(result));
 #endif
     }
   else
@@ -440,8 +439,7 @@ unsigned int aldatablock_get_uint32le(aldatablock * data, int offset)
       unsigned char * hack = &data->data.ucharptr[offset];
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-      // why 8 ?
-      memcpy(intern,hack,8);
+      memcpy(intern,hack,sizeof(result));
 #else
       intern[0]=hack[3];
       intern[1]=hack[2];
@@ -498,7 +496,7 @@ int alstrings_ringbuffer_reserve_datablock(alstrings_ringbuffer_pointer * ringbu
 	      ringbuffer = al_alstrings_ringbuffer_grow(ringbuffer, bytelength);
 	      if ( ringbuffer != NULL )
 		{
-		  if ( ((unsigned long long) ringbuffer) < 1024 )
+		  if ( ((aluint64_t) ringbuffer) < 1024 )
 		    {
 		      fprintf(stderr,"[FATAL] very small buffer pointer %p buffer => bug ?\n", ringbuffer);
 		    }

@@ -159,7 +159,7 @@ void flush_char_buffer(alstrings_ringbuffer * token_char_buffer);
  return internal parsing state. 9 means parsing did find a number.
  recognized pattern is added char by char to data using ctx->add_char()
 */
-int parse_number_level(json_token_ctx * ctx, char first, void * data);
+enum aljson_number_parser_state parse_number_level(json_token_ctx * ctx, char first, void * data);
 
 /**
  read until stop char that is eaten.

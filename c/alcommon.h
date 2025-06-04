@@ -1,6 +1,9 @@
 #ifndef _ALCOMMON_H_
 #define _ALCOMMON_H_
 
+// could be qint64 in Qt, see cstdint ...
+typedef long long alint64_t;
+typedef unsigned long long aluint64_t;
 
 #define ALC_FLAG_IS_SET(x,flag) (x & flag) != 0
 #define FLAG_IS_SET ALC_FLAG_IS_SET

@@ -4,8 +4,8 @@
 implementation of a hashtable in a miserable way.
 **/
 
-#include "alhash.h"
 #include "alcommon.h"
+#include "alhash.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -20,9 +20,9 @@ alhash_context alhash_context_default = {
 ALDEBUG_DEFINE_FUNCTIONS(alhash_context, alhash_context, debug);
 
 // make sure index is within bucket size
-static unsigned int al_get_index(long hash, int length)
+static unsigned int al_get_index(alint64_t hash, int length)
 {
-  unsigned int index = ((unsigned long) hash) % length;
+  unsigned int index = ((aluint64_t) hash) % length;
   return index;
 }
 
@@ -133,7 +133,7 @@ enum alhash_match_result alhash_is_identical(aldatablock * key,
 /**
 return if key matches entry ( see enum alhash_match_result comments )
 **/
-enum alhash_match_result alhash_match(aldatablock * key, struct alhash_entry * entry, long hash, int alhash_debug)
+enum alhash_match_result alhash_match(aldatablock * key, struct alhash_entry * entry, alint64_t hash, int alhash_debug)
 {
   if ( (key != NULL) && (entry != NULL) )
     {
@@ -165,7 +165,7 @@ enum alhash_match_result alhash_match(aldatablock * key, struct alhash_entry * e
 
 // this is the core element that should spread values to long space
 // current implementation is quick n' dirty, don't search for smart here.
-long alhash_hash_string(void * value, int length)
+alint64_t alhash_hash_string(void * value, int length)
 {
   char * string = (char *) value;
   // hack for NUL terminated string ie ALTYPE_STR0 hash.
@@ -174,10 +174,10 @@ long alhash_hash_string(void * value, int length)
     {
       length = length -1;
     }
-  long hash = 0xdeadbeef00112233;
+  alint64_t hash = 0xdeadbeef00112233;
   if ( length >= 8 )
     {
-      hash = hash ^ *((long*) (value));
+      hash = hash ^ *((alint64_t*) (value));
     }
   else if ( length >= 4 )
     {
@@ -185,11 +185,11 @@ long alhash_hash_string(void * value, int length)
     }
   else if ( length > 2  )
     {
-      hash = hash ^ ( ((long) string[1]) << 27 ) ^ ( ((long) string[2]) << 43 );
+      hash = hash ^ ( ((alint64_t) string[1]) << 27 ) ^ ( ((alint64_t) string[2]) << 43 );
     }
   else if ( length > 1  )
     {
-      hash = hash ^ ( ((long) string[1]) << 11 );
+      hash = hash ^ ( ((alint64_t) string[1]) << 11 );
     }
 
     
@@ -197,10 +197,10 @@ long alhash_hash_string(void * value, int length)
   return (length > 0) ?
     (
      hash 
-     ^ ((long) string[0]) << 55
-     ^ (((long) string[length/2]) << 13 )
-     ^ (((long) string[length-1]) << 21 )
-     ^ (((long) string[ 371 % length ]) << 2 ))
+     ^ ((alint64_t) string[0]) << 55
+     ^ (((alint64_t) string[length/2]) << 13 )
+     ^ (((alint64_t) string[length-1]) << 21 )
+     ^ (((alint64_t) string[ 371 % length ]) << 2 ))
     : 0;
 }
 
@@ -209,7 +209,7 @@ long alhash_hash_string(void * value, int length)
 // if length is 0 : AUTO : autogrowth is set and length = ALHASH_BUCKET_SIZE)
 // if alhash_func is set to NULL then default string hash is used (alhash_hash_string)
 // DON'T use externally, use alhash_context_init that comes with a dedicated context
-void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (void * value, int length))
+void alhash_init(struct alhash_table * table, int length, alint64_t (*alhash_func) (void * value, int length))
 {
   if ( alhash_func == NULL )
     {
@@ -235,7 +235,7 @@ void alhash_init(struct alhash_table * table, int length, long (*alhash_func) (v
   table->context = &alhash_context_default;
 }
 
-void alhash_context_internal_init(alhash_context * ctx, struct alhash_table * table, int length, long (*alhash_func) (void * value, int length))
+void alhash_context_internal_init(alhash_context * ctx, struct alhash_table * table, int length, alint64_t (*alhash_func) (void * value, int length))
 {
   alhash_init(table,length,alhash_func);
   // if set override current else use this of init (expecting default)
@@ -293,7 +293,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, aldatablock * key,
 	    }
 	}
       
-      long hash = table->alhash_func(key->data.ptr,key->length);
+      alint64_t hash = table->alhash_func(key->data.ptr,key->length);
       int index = al_get_index(hash,table->bucket_size);
       struct alhash_bucket * bucket = table->inner;
       if ( bucket != NULL )
@@ -356,7 +356,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, aldatablock 
       // first should compute hash key
       if ( table->alhash_func != NULL )
 	{
-	  long hash = table->alhash_func(key->data.ptr,key->length);
+	  alint64_t hash = table->alhash_func(key->data.ptr,key->length);
 	  unsigned int index = al_get_index(hash,table->bucket_size);
 	  struct alhash_bucket * bucket = table->inner;
 	  if ( bucket != NULL )

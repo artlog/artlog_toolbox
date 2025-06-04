@@ -6,7 +6,7 @@
 // a paleceholder
 struct alpathfile_options {
   // currently unused
-  long timeout;
+  alint64_t timeout;
 };
 
 enum alpathfile_reply

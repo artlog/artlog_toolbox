@@ -149,7 +149,7 @@ int main(int argc, char ** argv)
       int found = -1;
       for (int i = 0; i < 3; i ++ )
 	{
-	  if ( strncmp(matches[i].match,indent_value->data.charptr,(long unsigned int) indent_value->length) == 0 )
+	  if ( strncmp(matches[i].match,indent_value->data.charptr,(aluint64_t) indent_value->length) == 0 )
 	    {
 	      aldebug_printf(DBGSTREAM,"indent set to %s\n", matches[i].match);
 	      aljson_print_ctx_set_format(&print_context,matches[i].value );
@@ -161,7 +161,7 @@ int main(int argc, char ** argv)
 	{
 	  // TODO support any number of spaces...
 	  // lame brainless parsing ...
-	  if ( strncmp("spaces:1",indent_value->data.charptr,(long unsigned int) indent_value->length) == 0 )
+	  if ( strncmp("spaces:1",indent_value->data.charptr,(aluint64_t) indent_value->length) == 0 )
 	    {
 	      aldebug_printf(DBGSTREAM,"indent set to one space\n");
 	      aljson_print_ctx_set_format(&print_context,ALJSON_PRINT_SPACES);
@@ -170,7 +170,7 @@ int main(int argc, char ** argv)
 	      found = 1;
 	    }
 	  else
-	  if ( strncmp("spaces:2",indent_value->data.charptr,(long unsigned int) indent_value->length) == 0 )
+	  if ( strncmp("spaces:2",indent_value->data.charptr,(aluint64_t) indent_value->length) == 0 )
 	    {
 	      aldebug_printf(DBGSTREAM,"indent set to 2 spaces\n");
 	      aljson_print_ctx_set_format(&print_context,ALJSON_PRINT_SPACES);

@@ -17,7 +17,7 @@ for usage samples see alhash_test.c
   
 struct alhash_entry {
   // hash key of key within key datablock
-  long hash_key;
+  alint64_t hash_key;
   aldatablock key;
   aldatablock value;
   // another entry at the very same place in the bucket of the hash
@@ -44,7 +44,7 @@ struct alhash_table {
   int used; // number of entries in  use
   int autogrow; // 0 don't grow automatically, else grow if alhash_get_free < autogrow.
   struct alhash_bucket * inner;
-  long (*alhash_func) (void * value, int length);
+  alint64_t (*alhash_func) (void * value, int length);
 };
 
 // allocation of words, dict
@@ -58,7 +58,7 @@ typedef struct alhash_ctx_ {
 
 ALDEBUG_DECLARE_FUNCTIONS(alhash_context, alhash_context);
 
-long alhash_hash_string(void * string, int length);
+alint64_t alhash_hash_string(void * string, int length);
 
 // callback to use as a filter, when it returns 0 it means OK any other value is filtered out
 typedef int (*alhash_callback) (struct alhash_entry * entry, void * data, int index);

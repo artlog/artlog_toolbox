@@ -1500,8 +1500,8 @@ struct json_object * json_dict_get_value(const char * keyname, struct json_objec
 // return number of char read == relative position of first unrecognized char
 int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 {
-  long cumul = 0;
-  long result = 0;
+  alint64_t cumul = 0;
+  alint64_t result = 0;
   int negative = 0;
   int i = 0;
   int limit = number->internal.length - pos;
@@ -1566,7 +1566,7 @@ int json_get_int_internal(struct json_string * number, int pos , int * resultp)
 	    }
 	}
 
-      // FIXME, wrap a long into an int
+      // FIXME, wrap a alint64_t into an int
       *(resultp) = (int) result;
     }
   return i;
