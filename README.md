@@ -1,24 +1,22 @@
 # artlog_toolbox
 
 Personal project
+
 Some documentation in my personal wiki https://www4.artisanlogiciel.net/dokuwiki/doku.php?id=it:dev:artlog:toolbox
 
 NOT SUITABLE FOR ANY PURPOSE
 
-a toy toolbox for toy projects in C
+intention was to cover json_ld with low level code.
+
+covers json and local libraries
+
+A toy toolbox for toy projects in C and java
 
 provides implementations for static libraries
-
-within build/lib/
-
-libalcommon.a
-libaltest.a
-liballist.a
-libaldev.a
-libalhash.a
-libalstack.a
-libaljson.a
-libalsave.a
+- allist
+- alsave
+- altest
+- json
 
 # json
 
@@ -27,6 +25,7 @@ libalsave.a
 
 to build all and create .h from imports in build/include :
 
+make clean
 make all
 
 result is within build/ directory

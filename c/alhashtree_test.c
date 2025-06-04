@@ -8,9 +8,9 @@
 
 void usage()
 {
-  printf("Don't use, even at your own risks\n");
-  printf("");
-  printf("add each argument at new rightmost element of btree with hash256 value then dump it.\n"); 
+  printf("Don't use, even at your own risks\n\
+\
+add each argument at new rightmost element of btree with hash256 value then dump it.\n");
 }
 
 void alhashtree_data_process(void * data, void * contextdata, struct albtree * btree)
