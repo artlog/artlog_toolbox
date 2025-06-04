@@ -30,6 +30,8 @@ make all
 
 result is within build/ directory
 
+Makefile is not generated, it is pain odd one ;-), configure is there to recall you to read this README.md ;-)
+
 ## tests
 
 make tests
