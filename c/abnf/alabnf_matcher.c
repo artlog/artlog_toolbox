@@ -10,7 +10,8 @@
 provide a alabnf_match function that will parse a file according to given (already parsed) ABNF syntax
 **/
 
-const void * ALABNF_DEAD_CANARY = (void *) 0xdeadca01;
+// if any action is tried on it should SEGFAULT
+void * ALABNF_DEAD_CANARY = (void *) 0xdeadca01;
 
 // to read alternatives ... ???
 const int ALABNF_READBLOCKSIZE = 4096;
@@ -93,6 +94,20 @@ const char* alabnf_node_type2str[]={
 			      "RANGE",
 			      "STRING"
 };
+
+// for debugging prupose display state value
+const char* alabnf_type2str[] =
+{
+				      "internal_error",
+				      "unset",
+				      "or",
+				      "and",
+				      "iterator",
+				      "reference",
+				      "node"
+};
+
+
 
 // trace/debugging activity
 const char * alabnf_matcher_node_type_to_str(enum alabnf_matcher_state_type t)

@@ -3,9 +3,19 @@
 # please note :
 #
 # base64_dbg should be build
-# cd ../../c; make ../build/base64_dbg
+
+build_base64_dbg()
+{
+    pushd ../../c
+    make ../build/base64_dbg
+# duplicate with make
+#    gcc -g -O0 -DDEBUG_BASE64 -DDEBUG -o ../build/base64_dbg albase64url_main.c alstrings.c aldebug.c altodo.c alinput.c albase64.c albitfieldreader.c aloutput.c albitfieldwriter.c al_options.c -L../build/lib -Wl,-Bstatic -lalhash  -Wl,-Bdynamic
+    popd
+}
 
 source ../lib/basefuncs.sh
+
+build_base64_dbg
 
 check_diff_files()
 {
@@ -66,7 +76,7 @@ check_executable "$base64"
 
 mkdir ${TESTOUT}
 
-$base64 >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr 
+$base64 -h >${TESTOUT}/usage.txt 2>${TESTOUT}/usage.txt.stderr
 
 check_diff usage.txt
 check_diff usage.txt.stderr
@@ -79,13 +89,14 @@ echo -n 'a' > ${TESTOUT}/charfile.txt
 
 if true
 then
-    $base64 -e in=${TESTOUT}/charfile.txt out=${TESTOUT}/charfile.b64 2>${TESTOUT}/charfile.b64.stderr.1
-
-    $base64 -e in=${TESTOUT}/charfile.txt out=${TESTOUT}/charfile.b64 2>${TESTOUT}/charfile.b64.stderr.2
-
-    $base64 -d in=${TESTOUT}/charfile.b64 out=${TESTOUT}/charfile.txt.1 2>${TESTOUT}/charfile.txt.stderr.1
-
-    $base64 -d in=${TESTOUT}/charfile.b64 out=${TESTOUT}/charfile.txt.2 2>${TESTOUT}/charfile.txt.stderr.2
+    for loop in 1 2
+    do
+	$base64 -e in=${TESTOUT}/charfile.txt out=${TESTOUT}/charfile.b64 2>${TESTOUT}/charfile.b64.stderr.$loop
+    done
+    for loop in 1 2
+    do
+	$base64 -d in=${TESTOUT}/charfile.b64 out=${TESTOUT}/charfile.txt.$loop 2>${TESTOUT}/charfile.txt.stderr.$loop
+    done
 
     # difference can be seen due to out of bound views might not be relevant
     if false
@@ -98,7 +109,6 @@ then
     fi
        
     check_diff_files ${TESTOUT}/charfile.txt.stderr.1 ${TESTOUT}/charfile.txt.stderr.2
-
 
     check_diff_files ${TESTOUT}/charfile.txt ${TESTOUT}/charfile.txt.1
 
@@ -125,7 +135,10 @@ then
     diff ${TESTOUT}/plaintext.txt ${TESTOUT}/plaintext.txt.1
 fi
 
-encode_decode_test gnubase64.txt
+for plaintext in gnubase64.txt
+do
+    encode_decode_test gnubase64.txt
+done
 
 }
 

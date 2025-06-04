@@ -16,13 +16,12 @@ const char * CBOR_MAIN_VERSION = "0.3";
 void usage()
 {
   aldebug_printf(DBGSTREAM,"version %s\nconvert cbor <-> json  Not fully implemented\n", CBOR_MAIN_VERSION);
-  aldebug_printf(DBGSTREAM,"https://tools.ietf.org/html/rfc7049\n");
-  aldebug_printf(DBGSTREAM,"https://en.wikipedia.org/wiki/CBOR\n");
-
-  aldebug_printf(DBGSTREAM,"hexstring=<hex string> to be converted to raw bytes in outfile ( in this case cbor)\n");
-  aldebug_printf(DBGSTREAM,"inform=json|cbor format of infile\n");
-  aldebug_printf(DBGSTREAM,"infile=<cbor or json input file>\n");
-  aldebug_printf(DBGSTREAM,"outfile=<json or cbor output file to be created>\n");
+  aldebug_printf(DBGSTREAM,"https://tools.ietf.org/html/rfc7049\n\
+https://en.wikipedia.org/wiki/CBOR\n\
+hexstring=<hex string> to be converted to raw bytes in outfile ( in this case cbor)\n\
+inform=json|cbor format of infile\n\
+infile=<cbor or json input file>\n\
+outfile=<json or cbor output file to be created>\n");
 }
 
 // CBOR encoded data is seen as a stream of data items
@@ -100,8 +99,7 @@ int main(int argc, char ** argv )
 		    aljson_print_ctx_set_format(&print_context, ALJSON_PRINT_FLAT);
 		      
 		    struct json_object * root=NULL;
-		    struct json_import_context_data data;
-		    data.inputstream=&input;
+		    struct json_import_context_data data = { .inputstream=&input, .flags=0, .debug=0, .last=0 };
 		    root=parse_level(&json_context,&data,root);
 
 		    if ( root != NULL )

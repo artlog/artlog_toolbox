@@ -7,10 +7,10 @@
 
 /** fully rely on stream buffering */
 struct json_import_context_data {
-  char last;
   struct alinputstream * inputstream;
   int flags;
   int debug;
+  char last;
 };
 
 enum als_flag {

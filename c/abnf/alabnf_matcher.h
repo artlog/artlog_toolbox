@@ -23,17 +23,6 @@ enum alabnf_matcher_state_type {
   ALABNF_MATCHER_ST_NODE
 };
 
-// for debugging prupose display state value
-static const char* alabnf_type2str[]={
-				      "internal_error",
-				      "unset",
-				      "or",
-				      "and",
-				      "iterator",
-				      "reference",
-				      "node"
-};
-
 typedef struct alabnf_character_ {
   unsigned char uchar;
 } alabnf_character;
