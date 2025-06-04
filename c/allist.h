@@ -123,7 +123,9 @@ struct allistof * new_allistof(struct allistcontext * context);
  */
 struct allistof * allistcontext_get_membership(struct allistcontext * context, int membership);
 
-struct allistelement * allistcontext_new_allistelement(struct allistcontext * context, void * data);
+struct allistelement * allistcontext_new_allistelement_data(struct allistcontext * context, void * data);
+
+struct allistelement * allistcontext_new_allistelement(struct allistcontext * context, long long data_int64);
 
 struct allistelement * allistelement_add_in(struct allistelement * element, struct allistof * list);
 

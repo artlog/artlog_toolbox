@@ -295,7 +295,7 @@ int test_fill_primelist()
       int i = prims[j];
       if ( i < prime_context->glob_numbercount )
 	{
-	  prime_context->elementp[i]=allistcontext_new_allistelement(prime_context->context,(void*)((long long)i));
+	  prime_context->elementp[i]=allistcontext_new_allistelement(prime_context->context,(long long)i);
 	  step++;
 	  if ( listof == NULL )
 	    {
@@ -321,7 +321,7 @@ int test_fill_primelist()
 	  continue;
 	}
       // factor_element is a node that will collect all prime factors for this number.
-      struct allistelement * factor_element = allistcontext_new_allistelement(prime_context->context,(void*)((long long)i));
+      struct allistelement * factor_element = allistcontext_new_allistelement(prime_context->context,(long long)i);
       prime_context->elementp[i]=factor_element;
       factor.value=i;
       factor.element=factor_element;

@@ -208,14 +208,13 @@ int indexset_dump(struct indexset * indexset, FILE* where)
 /**
  when number of membership is known
 */
-struct allistelement * new_allistelement(int memberships, void * data, int delta)
+struct allistelement * new_allistelement(int memberships, int delta)
 {
   int newlength = sizeof(struct allistelement) + (sizeof(struct allistlink) * (memberships-1));
   struct allistelement * allocated = calloc(1,newlength);
   if ( allocated != NULL )
     {
       allocated->memberships=memberships;
-      allocated->data=data;
       allocated->indexset.tag[0] = 'I';
       allocated->indexset.tag[1] = 'D';
       allocated->indexset.tag[2] = 'X';
@@ -438,9 +437,17 @@ struct allistof * allistcontext_get_membership(struct allistcontext * context, i
   return NULL;
 }
 
-struct allistelement * allistcontext_new_allistelement(struct allistcontext * context, void * data)
+struct allistelement * allistcontext_new_allistelement(struct allistcontext * context, long long data_int64)
 {
-  struct allistelement * element = new_allistelement(INDEXSET_COUNT, data, 0);
+  struct allistelement * element = new_allistelement(INDEXSET_COUNT, 0);
+  element->data_int64 = data_int64;
+  return element;
+}
+
+struct allistelement * allistcontext_new_allistelement_data(struct allistcontext * context, void * data)
+{
+  struct allistelement * element = new_allistelement(INDEXSET_COUNT, 0);
+  element->data = data;
   return element;
 }
 
