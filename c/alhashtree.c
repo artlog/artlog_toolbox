@@ -189,44 +189,56 @@ void alhashtree_fatal()
   aldebug_printf(DBGSTREAM,"[FATAL] exiting program on fatal error\n");
 }
 
-void alhashtree_set_left( struct alhashtreenode * treenode,
+// capture parent
+void alhashtree_set_left( struct alhashtreenode * self,
 			   struct alhashtreenode * left)
 {
   if ( left != NULL )
     {
-      albtree_set_left(&treenode->btree,&left->btree);
-      left->parent = treenode;
+      albtree_set_left(&self->btree,&left->btree);
+      left->parent = self;
     }
   else
     {
-      albtree_set_left(&treenode->btree,NULL);
+      albtree_set_left(&self->btree,NULL);
     }
 }
 
-void alhashtree_set_right( struct alhashtreenode * treenode,
+// capture parent
+void alhashtree_set_right( struct alhashtreenode * self,
 			   struct alhashtreenode * right)
 {
   if ( right != NULL )
     {
-      albtree_set_right(&treenode->btree,&right->btree);
-      right->parent = treenode;
+      albtree_set_right(&self->btree,&right->btree);
+      right->parent = self;
     }
   else
     {
-      albtree_set_right(&treenode->btree,NULL);
+      albtree_set_right(&self->btree,NULL);
     }
 }
 
 
+
+/** binary tree
+   (parent)* if any
+      |
+    (self) [data] hash func ...
+    /    \
+  (left)* (right)*
+...
+*/
+
 void alhashtree_specific_init(
-			     struct alhashtreenode * treenode,
+			     struct alhashtreenode * self,
 			     struct alallocation_ctx * context,
 			     struct alhashtreenode * left,
 			     struct alhashtreenode * right,
 			     struct alhashtreenode * parent)
 {
 
-  struct albtree * btree = &treenode->btree;  
+  struct albtree * btree = &self->btree;  
   if ( btree->allocate != (albtreeallocator) alhashtree_allocate )
     {
       aldebug_printf(DBGSTREAM,"[FATAL] specific init a node %p with wrong allocation method %p / default %p\n",btree, btree->allocate,alhashtree_allocate);
@@ -235,44 +247,51 @@ void alhashtree_specific_init(
 
   if (( left == NULL ) && (right == NULL))
     {
-      treenode->nodetype=AL_TREELEAF;
+      self->nodetype=AL_TREELEAF;
     }
   else
     {
-      treenode->nodetype=AL_TREENODE;
+      self->nodetype=AL_TREENODE;
     }
-  treenode->context=context;
 
-  if ( treenode->func.hashmethod != NULL )
+  // propagate context
+  self->context=context;
+
+  // copy func from parent if exists else force alsha256hashfunc
+  if ( self->func.hashmethod != NULL )
     {
-      aldebug_printf(DBGSTREAM,"[WARNING] hashmethod already set %p\n", treenode->func.hashmethod);
+      aldebug_printf(DBGSTREAM,"[WARNING] hashmethod already set %p\n", self->func.hashmethod);
     }
 
   if (parent == NULL)
     {
-      treenode->func.hashmethod=alsha256hashfunc;
-      memcpy(&treenode->func.emptyhash,&emptyhash,sizeof(treenode->func.emptyhash));
+      self->func.hashmethod=alsha256hashfunc;
+      memcpy(&self->func.emptyhash,&emptyhash,sizeof(self->func.emptyhash));
     }
   else
     {
-      memcpy(&treenode->func, &parent->func, sizeof(treenode->func));
+      memcpy(&self->func, &parent->func, sizeof(self->func));
     }
-  treenode->parent=parent;
+
+  // cross reference parent
+  self->parent=parent;
   if ( left != NULL )
     {
-      left->parent = treenode;
+      left->parent = self;
     }
   if ( right != NULL)
     {
-      right->parent = treenode;
+      right->parent = self;
     }
 }
 
-// called once for initial root, after it is done through albtree allocation and reqiere a call to alhashtree_specific_init
+// called once for initial root
+// ( after it is done through albtree allocation
+//   that require a call to alhashtree_specific_init )
 // first call it is a leaf with an empty block.
-void alhashtree_init(struct alhashtreenode * treenode, struct alallocation_ctx * context, struct albtree * left, struct albtree * right)
+void alhashtree_init(struct alhashtreenode * root, struct alallocation_ctx * context, struct albtree * left, struct albtree * right)
 {
-  struct albtree * btree = &treenode->btree;
+  struct albtree * btree = &root->btree;
   if ( btree->allocate != NULL )
     {
       aldebug_printf(DBGSTREAM,"[WARNING] reinit a btree %p that has an allocate method %p / default %p\n",btree, btree->allocate,alhashtree_allocate);
@@ -281,7 +300,7 @@ void alhashtree_init(struct alhashtreenode * treenode, struct alallocation_ctx *
   btree->allocate = (albtreeallocator) alhashtree_allocate;
   btree->clean = (albtrecleaner) alhashtree_clean;
   alhashtree_specific_init(
-			   treenode,
+			   root,
 			   context,
 			   (struct alhashtreenode *) left,
 			   (struct alhashtreenode *) right,
@@ -361,33 +380,41 @@ int alhashtree_recompute_upto_root(struct alhashtreenode *intree)
   return depth;
 }
 
-// WARNING set *newroot with computed root from parent links and with new root if created
+
+
+
+
 // assuming intree is already rightmost deeper leaf.
 // will return a new rightmost element
-struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree, struct alhashtreenode ** newroot)
+struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree)
 {
   struct albtree * previous_root = NULL;
   struct alhashtreenode * root = NULL;
-  struct alhashtreenode * added = NULL;
+  struct alhashtreenode * deepest_added = NULL;
   struct alhashtreenode * parent = NULL;
-
+  struct alallocation_ctx * context = intree->context;
+  
   parent = intree->parent;
+  if ( parent == NULL )
+    {
+      previous_root= &(intree->btree);
+    }
   
       aldebug_printf(DBGSTREAM,"create a new right -child or parent- for %p\n", intree);
 
       {
-	struct alhashtreenode * freeparent = parent;	
+	struct alhashtreenode * freeparent = parent;
       	struct alhashtreenode * left = NULL;
 	// one level deeper than left ( when not the same ).
-	struct albtree * deeperleft = NULL;
+	struct albtree * lefthead = NULL;
 
-	// create deepest
-	added = alhashtree_allocate();
-	alhashtree_init(added,intree->context, NULL, NULL);
-	left=added;
-	deeperleft = &left->btree;
-	    
-	// create left children from ground on top of previous deeperleft
+	// create deepest node as tree
+	deepest_added = alhashtree_allocate();
+	alhashtree_init(deepest_added,context, NULL, NULL);
+	left=deepest_added;
+	lefthead = &left->btree;
+
+	// create left children from ground on top of previous lefthead
 	// should find a free entry at right in parent hierarchy
 	while ( freeparent != NULL )
 	  {
@@ -396,32 +423,33 @@ struct alhashtreenode * alhashtree_create_sibling(struct alhashtreenode *intree,
 	      {
 		// attach left only tree on right of free parent.
 		alhashtree_set_right(freeparent,left);
-
-		(*newroot) = (struct alhashtreenode *) previous_root;
-		// no root involved.
-		return added;
+		// no root created, filled an empty position.
+		return deepest_added;
 	      }
-
+	    
 	    left = alhashtree_allocate();
-	    alhashtree_init(left,intree->context, deeperleft, NULL);
-	    deeperleft = &left->btree;
+	    alhashtree_init(left,context, lefthead, NULL);
+	    lefthead = &left->btree;
 
 	    previous_root=&freeparent->btree;
 	    freeparent=freeparent->parent;
 	  }
 
-	// now we are at root level and left only tree is created behind left/deeperlef
-	root = alhashtree_allocate();  
-	alhashtree_init(root,intree->context, previous_root,deeperleft);
+	// now we are at root level, need to create a new root
 	
-	(*newroot) = root;
-      
-	return added;
+	// lefthead is head of a tree populated with left links only
+	// lefthead tree has same depth as current tree
+	// adding previous root at left, and new lefthead tree at right
+
+	root = alhashtree_allocate();
+	alhashtree_init(root,context, previous_root,lefthead);
+
+	return deepest_added;
 
       }
 }
 
-// assuming intree is already rightmost deeper leaf.
+// assuming <intree> is already rightmost deeper leaf.
 struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, aldatablock * block)
 {
   struct alhashtreenode * added = NULL;
@@ -433,14 +461,14 @@ struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, alda
   if (intree != NULL )
     {
       if ( intree->hash.length == 0 )
-	{	  
+	{
+	  // brand new tree no data hash computed
 	  added=intree;
 	}
       else
 	{
-	  struct alhashtreenode * root;
-	  // root = NULL; // out only, don't care its value
-	  added = alhashtree_create_sibling(intree, &root);
+	  // hash was already computed then this block is for a new leaf
+	  added = alhashtree_create_sibling(intree);
 	}
       
       if ( added == NULL )
@@ -455,7 +483,7 @@ struct alhashtreenode * alhashtree_add_block(struct alhashtreenode *intree, alda
 	}
     }
   
-  return added;;
+  return added;
 
 }
 

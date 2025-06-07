@@ -2,10 +2,11 @@
 #define __ALBTREE_H__
 
 /** binary tree
-
-    (self)
+   (parent) if any
+      |
+    (self) [data]
     /   \
-  LEFT  RIGHT
+  left  right
    / \  / \
 ...
 */
@@ -89,7 +90,11 @@ typedef void (*albtree_walk_callback) (
 				       struct albtree * btree,
 				       struct albtree * parent);
 
-/** walk btree using walkingprocess ordering given and callback for each data data_process
+/** walk btree using walkprocess ordering
+    and callback for each node
+        walk_enter when entering node
+    and walk_exit as sonn as all children of node have been walked.
+    
     for a maximum depth limit of depth ( MANDATORY )
     btree is root
 */

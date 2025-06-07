@@ -4,7 +4,8 @@ show_dots() {
     if [[ -f out.dot ]]
     then
 	gvpr -f split.gvpr out.dot
-	dotty *_0.dot&
+	dot -Tsvg *_[0-9].dot  >test.svg
+	xdg-open test.svg &
     fi
 }
     

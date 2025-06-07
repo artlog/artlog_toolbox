@@ -45,7 +45,12 @@ void  alhashtree_to_dot(void * data,
   if ( treenode->hash.length > 0 )
     {
       aloutputstream_printf_1k(output,"<FONT POINT-SIZE=\"16\">hash=");
-      aloutput_bytes_as_hex(output, &treenode->hash, 0, 8);
+      //aloutput_bytes_as_hex(output, &treenode->hash, 0, 8);
+      //HACK to reduced hash size print
+      int plength = treenode->hash.length;
+      treenode->hash.length = 4;
+      aloutput_bytes_as_hex(output, &treenode->hash, 0, 4);
+      treenode->hash.length = plength;
       aloutputstream_printf_1k(output,"</FONT>");
     }
 
@@ -192,12 +197,20 @@ int main(int argc, char ** argv)
   aloutput_file_open_init(&out,"out.dbg");
   alhashtree_global_init(&out,&context);
 
+  // snapshot in dot format
   struct alhashtree_snapshot snapshot;
+  // another snapshot in json format
+  struct alhashtree_snapshot snapshot_json;
+  
   alhashtree_snapshot_init(&snapshot,"out.dot");
+  alhashtree_snapshot_init(&snapshot_json,"out.json");
 
   treenode = alhashtree_create(&context);
 
   rightmost = treenode;
+
+  aldebug_printf(DBGSTREAM,"rightmost %p context %p ringbuffer %p\n",rightmost, rightmost->context, rightmost->context->ringbuffer);
+
 
   // snapshot all not needed, only for debugging to generate each step addition
   int snapshot_all=0;
@@ -207,7 +220,6 @@ int main(int argc, char ** argv)
     {
       char * param = argv[i];
       aldatablock_setcstring(&block,param);
-      aldebug_printf(DBGSTREAM,"rightmost %p context %p ringbuffer %p\n",rightmost, rightmost->context, rightmost->context->ringbuffer);
       rightmost = alhashtree_add_block(rightmost, &block);
       if (rightmost != NULL)
 	{
@@ -217,9 +229,11 @@ int main(int argc, char ** argv)
 	  if (snapshot_all)
 	    {
 	      depth=alhashtree_depth_to_root(rightmost, &root);
+	      aldebug_printf(DBGSTREAM,"ROOT left %p right %p", root->btree.left, root->btree.right);
 	      alhashtree_snapshot_to_dot(&snapshot,root);
+	      depth=alhashtree_depth_to_root(rightmost, &root);
+	      alhashtree_snapshot_to_json(&snapshot_json,root);
 	    }
-
 	}
       
     }
@@ -242,16 +256,14 @@ int main(int argc, char ** argv)
   // save snapshot
   alhashtree_snapshot_close(&snapshot);
 
-  // another snapshot in json
-  alhashtree_snapshot_init(&snapshot,"out.json");
 
   // find and reset root
   depth=alhashtree_depth_to_root(rightmost, &root);
   aldebug_printf(DBGSTREAM,"depth %i\n",depth);
-  alhashtree_snapshot_to_json(&snapshot,root);
+  alhashtree_snapshot_to_json(&snapshot_json,root);
 
   // save snapshot
-  alhashtree_snapshot_close(&snapshot);
+  alhashtree_snapshot_close(&snapshot_json);
 
   // cleanup
   alhashtree_clean(treenode);

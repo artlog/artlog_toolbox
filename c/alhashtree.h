@@ -42,7 +42,7 @@ struct alhashtreenode {
   enum alhashnodetype nodetype;
   aldatablock  hash;
   int canary;
-  // function to create 'cryptographic' hash
+  // function to create 'cryptographic' hash : repeated in each node ????
   struct alhashtreefunc func;
   // allocation context
   struct alallocation_ctx * context;
