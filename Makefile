@@ -19,7 +19,8 @@ staticlibraries=$(patsubst %,$(BUILD)/lib/lib%.a,$(libraries))
 objects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(src))
 libobjects=$(patsubst c/%.c,$(BUILD)/obj/%.o,$(libsrc))
 
-LIBINCLUDES=aljson.h aljson_errors.h aljson_import_internal.h aljson_parser.h\
+LIBINCLUDES=alcommon.h alhash.h\
+ aljson.h aljson_errors.h aljson_import_internal.h aljson_parser.h\
  alstrings.h json_to_c_stub.h albitfieldreader.h albitfieldwriter.h albase.h\
  al_options.h al_options_output.h altoken.h aljson_print.h alpathfile.h\
  aldebug.h aldebug_output.h alinput_file.h aloutput_file.h
