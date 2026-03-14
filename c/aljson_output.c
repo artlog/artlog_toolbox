@@ -271,7 +271,7 @@ void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print
     case ALJSON_PRINT_SPACES:
       {
 	print_ctx->indent=0;
-	print_ctx->do_indent=3; // 0 no indent, >= 1 number of space by indent.
+	print_ctx->do_indent=3; // >= 1 number of space by indent.
 	print_ctx->s_indent=" ";
 	print_ctx->format = ALJSON_PRINT_SPACES;
       }
@@ -279,7 +279,7 @@ void aljson_print_ctx_set_format(struct print_ctx * print_ctx, enum aljson_print
       {
 	// this is default : 3 spaces
 	print_ctx->indent=0;
-	print_ctx->do_indent=3; // 0 no indent, >= 1 number of space by indent.
+	print_ctx->do_indent=3; // >= 1 number of space by indent.
 	print_ctx->s_indent=" ";
 	print_ctx->format = ALJSON_PRINT_SPACES;
       }
