@@ -125,7 +125,7 @@ void aljson_dump_variable( struct json_variable * variable, struct print_ctx * p
 
 void aljson_dump_indent(struct print_ctx * print_ctx)
 {
-  if ( print_ctx && print_ctx->do_indent )
+  if ( print_ctx && print_ctx->s_indent != NULL )
     {
       struct aloutputstream * output=aljson_get_output(print_ctx);
       aloutputstream_printf_1k(output,"\n");

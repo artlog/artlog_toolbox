@@ -13,7 +13,7 @@
 #include "al_options.h"
 #include "al_options_output.h"
 
-const char * aljson_main_version="0.2.3";
+const char * aljson_main_version="0.3.0";
 
 /**
 a complicated json stream ( one char ahead ) parser
@@ -39,7 +39,7 @@ void usage()
   aldebug_printf(DBGSTREAM,"template=filename          file to open in read only mode to parse in json for template.\n");
   aldebug_printf(DBGSTREAM,"          template is used for json unification ie extracting fields from a template pattern\n");
   aldebug_printf(DBGSTREAM,"-- to separate options from arguments\n");
-  aldebug_printf(DBGSTREAM,"First argument filename    file to open in read only mode to parse in json.\n");
+  aldebug_printf(DBGSTREAM,"First argument filename    file to open in read only mode to parse in json, use '-' for stdin.\n");
 
   aldebug_printf(DBGSTREAM,"\naljson_main version %s\n",aljson_main_version);
 }
@@ -159,24 +159,16 @@ int main(int argc, char ** argv)
 	}
       if ( found == -1 )
 	{
-	  // TODO support any number of spaces...
-	  // lame brainless parsing ...
-	  if ( strncmp("spaces:1",indent_value->data.charptr,(aluint64_t) indent_value->length) == 0 )
+	  if ( strncmp("spaces:",indent_value->data.charptr,7) == 0 )
 	    {
-	      aldebug_printf(DBGSTREAM,"indent set to one space\n");
-	      aljson_print_ctx_set_format(&print_context,ALJSON_PRINT_SPACES);
-	      // force one space
-	      print_context.do_indent=1;
-	      found = 1;
-	    }
-	  else
-	  if ( strncmp("spaces:2",indent_value->data.charptr,(aluint64_t) indent_value->length) == 0 )
-	    {
-	      aldebug_printf(DBGSTREAM,"indent set to 2 spaces\n");
-	      aljson_print_ctx_set_format(&print_context,ALJSON_PRINT_SPACES);
-	      // force 2 spaces
-	      print_context.do_indent=2;
-	      found = 1;
+	      if (indent_value->length > 7)
+		{
+		  int spaces = atoi((indent_value->data.charptr) + 7);
+		  aldebug_printf(DBGSTREAM,"indent set to %i spaces\n",spaces);
+		  aljson_print_ctx_set_format(&print_context,ALJSON_PRINT_SPACES);
+		  print_context.do_indent=spaces;
+		  found = 1;
+		}
 	    }
 	  else
 	    {
@@ -235,7 +227,14 @@ int main(int argc, char ** argv)
 	}
       data.last=0;
       data.flags=0;
-      data_file = fopen(json_filename,"r");
+      if ( strncmp(json_filename,"-",1) == 0 )
+	{
+	  data_file=stdin;
+	}
+      else
+	{	
+	  data_file = fopen(json_filename,"r");
+	}
       if ( data_file != NULL )
 	{
 	  struct json_object * root=NULL;
