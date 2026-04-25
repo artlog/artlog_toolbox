@@ -20,17 +20,21 @@ provides implementations for static libraries
 
 # json
 
+a json parser that preserve ordering within arrays
 
 ## build
 
 to build all and create .h from imports in build/include :
 
+```
 make clean
 make all
+```
 
 result is within build/ directory
 
-Makefile is not generated, it is pain odd one ;-), configure is there to recall you to read this README.md ;-)
+/!\ Makefile is not generated, it is plain odd one ;-)
+/!\ configure is there to recall you to read this README.md ;-)
 
 ## tests
 

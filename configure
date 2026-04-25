@@ -37,7 +37,7 @@ libexecdir=${exec_prefix}/libexec
 # Where to put the Info files.
 infodir=${datarootdir}/info
 
-while [[ $0 > 0 ]]
+while [[ $# > 0 ]]
 do
     case $1 in
 	--srcdir=*)
