@@ -293,13 +293,14 @@ void aljson_print_ctx_set_output(struct print_ctx * print_ctx, struct aloutputst
   
 // print_ctx default to aljson_dump callbacks
 void aljson_print_ctx_init_format(struct print_ctx * print_ctx, enum aljson_print_format format)
-{
-  // 1024 levels of json MAX
+{  
+  // 1024 levels of json MAX  HARDCODED DEFAULT
   print_ctx->depth=0;
   print_ctx->max_depth=1024;
 
   aljson_print_ctx_set_format(print_ctx,format);
-  
+  // NUMBER AS STRING HARDCODED DEFAULT
+  print_ctx->number_encoding=ALJSON_NUMBER_ENCODING_STRING;
 
   print_ctx->outfile=aldebug_get_output(DBGSTREAM);
   
