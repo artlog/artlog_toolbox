@@ -30,10 +30,8 @@ struct test2 {
 ]
 }
 ```
-_______________
 
-
-map string <-> enum
+# map string <-> enum
 
 when stored in json enum are stored as string
 
@@ -51,41 +49,31 @@ to use as input for c generation ...
 should it remains an external resource (file) or embedded in storing/restoring c code ?
 ==> internal
 
-______________________________
-
-
-current status :
+# current status :
 
 ```
 ./build/c_parser infile=./c/input_for_c_parser.h
-[INFO] file to parse './c/input_for_c_parser.h'
-struct  [DEBUG]test_1{ // type 4 definition. (code line 1939)
+struct  test_1 { // type 4 definition. (code line 1950)
 [TODO] fixme hardcoded 1000 structures
 // struct definition 
-int   [DEBUG]a // struct member 0
-;int   [DEBUG]b // struct member 1
-;int   [DEBUG]c // struct member 2
-;char  * [DEBUG]d // struct member 3
-;} // close struct
-;struct  [DEBUG]test_2{ // type 4 definition. (code line 1939)
+int   a ; // struct member 0
+int   b ; // struct member 1
+int   c ; // struct member 2
+char  * d ; // struct member 3
+};
+struct  test_2 { // type 4 definition. (code line 1950)
 [TODO] fixme hardcoded 1000 structures
 // struct definition 
-int   [DEBUG]aSAME TOKEN SEEN
- // struct member 0
-;struct  [DEBUG]test_1SAME TOKEN SEEN
- [DEBUG]cSAME TOKEN SEEN
- // struct member 1
-;struct  [DEBUG]test_1SAME TOKEN SEEN
-* [DEBUG]e // struct member 2
-;struct  [DEBUG]test_1SAME TOKEN SEEN
-* [DEBUG]f // struct member 3
-;} // close struct
-;struct  [DEBUG]flat_info{ // type 4 definition. (code line 1939)
+int   abcdtest_2 ; // struct member 0
+struct   cdtest_2 ; // struct member 1
+struct  * e ; // struct member 2
+struct  * f ; // struct member 3
+};
+struct  flat_info { // type 4 definition. (code line 1950)
 [TODO] fixme hardcoded 1000 structures
 // struct definition 
-char  * [DEBUG]name // struct member 0
-;char  * [DEBUG]imafile // struct member 1
-;char  * [DEBUG]cubemappingfile // struct member 2
-;} // close struct
-;EOF id reached// non NULL token at toplevel parsing
+char  * name ; // struct member 0
+char  * imafile ; // struct member 1
+char  * cubemappingfile ; // struct member 2
+};
 ```
