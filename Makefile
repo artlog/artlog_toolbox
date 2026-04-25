@@ -165,19 +165,19 @@ $(BUILD)/private/obj/%.o: c/%.c | $(BUILD)/private/obj
  -I c/private $< -o $@
 
 $(BUILD)/base64: $(staticlibraries) | libinclude
-	cd c; make ../$(BUILD)/base64
+	cd c; $(MAKE) ../$(BUILD)/base64
 
 $(BUILD)/cbor_main: $(staticlibraries) | libinclude
-	cd c/cbor; make ../../$(BUILD)/cbor_main
+	cd c/cbor; $(MAKE) ../../$(BUILD)/cbor_main
 
 $(BUILD)/alabnf $(BUILD)/alabnf_matcher: $(staticlibraries) | libinclude
-	cd c/abnf; make ../../$@
+	cd c/abnf; $(MAKE) ../../$@
 
 $(BUILD)/aljson_ld: $(staticlibraries) | libinclude
-	cd c/; make ../$@
+	cd c/; $(MAKE) ../$@
 
-$(BUILD)/c_parser:
-	cd c/; make ../$@
+$(BUILD)/c_parser: c/c_parser.c c/c_parser.h
+	$(MAKE) -C c/ ../$@
 
 clean:
 	rm -rf $(BUILD)
