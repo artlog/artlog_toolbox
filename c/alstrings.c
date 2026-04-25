@@ -75,7 +75,7 @@ alstrings_ringbuffer_pointer  al_alstrings_ringbuffer_get_previous(alstrings_rin
 	  aldebug_printf(DBGSTREAM,"[FATAL] long loop (infinite ? ) on  al_alstrings_ringbuffer_get_previous\n");
 	}
       // HARD EXIT
-      exit(1);
+      exit(166);
     }
   return previous;
 }
@@ -203,7 +203,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 		    {
 		      aldebug_printf(DBGSTREAM,"[FATAL] token char buffer allocation shortage");
 		    }
-		  exit(1);
+		  exit(167);
 		}
 	    }
 	  else
@@ -212,7 +212,7 @@ char * al_alloc_block(alstrings_ringbuffer_pointer * ringbufferp, int length)
 		{
 		  aldebug_printf(DBGSTREAM,"[FATAL] token char buffer is NULL");
 		}
-	      exit(1);
+	      exit(168);
 	    }
 	}
       else
@@ -250,7 +250,7 @@ char * al_copy_block(alstrings_ringbuffer_pointer * ringbufferp, aldatablock * d
 		{
 		  aldebug_printf(DBGSTREAM,"[FATAL] token char buffer allocation shortage");
 		}
-	      exit(1);
+	      exit(169);
 	    }
 	}
     }
