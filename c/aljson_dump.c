@@ -6,9 +6,6 @@
 #include <stdio.h>
 #include <math.h>
 
-// quick fix to actualy not fix ...
-// #define NUMBER_AS_STRINGS
-
 struct aloutputstream * aljson_get_output(struct print_ctx * print_ctx)
 {
   return print_ctx->outfile;
@@ -65,25 +62,28 @@ void aljson_dump_string_number( struct json_object * object, struct print_ctx * 
       struct aloutputstream * output=aljson_get_output(print_ctx);
       if ( object->type == '0' )
 	{
-	  // might use direct internal representation without encoding.
-#ifdef NUMBER_AS_STRINGS
-	  aljson_dump_string( object, print_ctx);
-#else
-	  float f = json_get_float(object);
-	  if ( fpclassify(f) ==  FP_INFINITE )
+	  if ( print_ctx->number_encoding == ALJSON_NUMBER_ENCODING_FLOAT )
 	    {
-	      // emulate infinity
-	      aloutputstream_printf_1k(output,"1e500");
-	    }
-	  else if ( ceilf(f) == f )
-	    {
-	      aloutputstream_printf_1k(output,"%.0f",f);
+	      float f = json_get_float(object);
+	      if ( fpclassify(f) ==  FP_INFINITE )
+		{
+		  // emulate infinity
+		  aloutputstream_printf_1k(output,"1e500");
+		}
+	      else if ( ceilf(f) == f )
+		{
+		  aloutputstream_printf_1k(output,"%.0f",f);
+		}
+	      else
+		{
+		  aloutputstream_printf_1k(output,"%.6f",f);
+		}
 	    }
 	  else
 	    {
-	      aloutputstream_printf_1k(output,"%.6f",f);
+	      // use direct internal representation without encoding.
+	      aljson_dump_string( object, print_ctx);
 	    }
-#endif
 	}
       else
 	{

@@ -17,6 +17,11 @@ enum aljson_print_format {
 			  ALJSON_PRINT_FLAT
 };
 
+enum aljson_number_encoding {
+  ALJSON_NUMBER_ENCODING_STRING,
+  ALJSON_NUMBER_ENCODING_FLOAT
+};
+
 /* parameters for pretty printing 
 
 THIS is required to call aljson_print_ctx_init(struct print_ctx * print_ctx) on it any use.
@@ -30,6 +35,7 @@ struct print_ctx
   int space_after; // 0 no space after : pair, 1 one space.
   char * s_indent; // activate line by line indentation
   enum aljson_print_format format;
+  enum aljson_number_encoding number_encoding;
   
   struct aloutputstream * outfile;
 
