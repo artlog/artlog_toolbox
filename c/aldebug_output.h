@@ -12,7 +12,7 @@ extern struct aldebugconfig aldebug_default;
 
 #define DBGSTREAM &aldebug_default
 
-// output_uri speficiy where to output, NULL is stderr
+// output_uri specify where to output, NULL is stderr
 void aldebug_start(char * ouput_uri);
 
 void aldebug_end();
