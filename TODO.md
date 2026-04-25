@@ -1,5 +1,13 @@
 # TODO
 
+Might be many more things TODO than only on json_ld ...
+
+take a look into workinprogress directory ...
+
+seems very few progress there...
+
+## json_ld
+
 cat samples/ololo.json
 {
     "abc": "edf",
@@ -38,10 +46,4 @@ studies :
 - ABNF other parsers to parse iri
 not yet conclusive
 - to take alook on curl ... seems it deserves it ... ( but idea was to get no dependency at all for self-training ).
-
-Might be many more things TODO than only on json_ld ...
-
-take a look into workinprogress directory ...
-
-seems very few progress there...
 
