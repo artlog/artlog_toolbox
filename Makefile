@@ -176,7 +176,7 @@ $(BUILD)/alabnf $(BUILD)/alabnf_matcher: $(staticlibraries) | libinclude
 $(BUILD)/aljson_ld: $(staticlibraries) | libinclude
 	cd c/; make ../$@
 
-$(BUILD)/c_parser: $(staticlibraries) | libinclude
+$(BUILD)/c_parser:
 	cd c/; make ../$@
 
 clean:

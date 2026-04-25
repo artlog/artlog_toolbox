@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <assert.h>
 #include "c_parser.h"
 #include "altodo.h"
@@ -10,18 +11,16 @@
 #include "alinput_file.h"
 #include "aloutput_file.h"
 
-
 void
 usage()
 {
-  aldebug_printf(DBGSTREAM,"\nUSAGE:\n");
-  aldebug_printf(DBGSTREAM,"work in progress: first goal is to generate json stub from c struct definition see json_to_c_stub.c\n");
-
-  aldebug_printf(DBGSTREAM,"ex:./c_parser infile=./input_for_c_parser.h outform=aljson_stub\n");
-
-  aldebug_printf(DBGSTREAM,"more advanced goal is to be a c parser ... \n");
-  aldebug_printf(DBGSTREAM,"ex:./c_parser debug=true infile=./c_parser.c\n");
-
+  fprintf(stderr,"\
+\nUSAGE:\n\
+work in progress: first goal is to generate json stub from c struct definition see json_to_c_stub.c\n\
+ex:./c_parser infile=./input_for_c_parser.h outform=aljson_stub\n\
+more advanced goal is to be a c parser ... \n\
+ex:./c_parser debug=true infile=./c_parser.c\n\
+  ");
 }
 
 
@@ -709,6 +708,7 @@ c_parse_next (struct c_parser_ctx *parser)
 }
 
 // return NULL only if variable was recognized.
+// where is the variable name ? see c_cut_token_string(parser)
 struct al_token *
 c_parse_variable (struct c_parser_ctx *parser, struct al_token *token)
 {
@@ -1078,6 +1078,11 @@ enum al_global_error_code c_struct_info_add_member(
   return AL_EC_OK;
 }
 
+void output_dict_value(struct aloutputstream * output, aldatablock * dict_value)
+{
+  aloutputstream_printf_1k(output,"%s ", dict_value->data.charptr);
+}
+
 struct al_token *
 c_parse_struct_member (struct c_struct_info *struct_info,
 		       struct c_parser_ctx *parser, struct al_token *token, int index,
@@ -1096,14 +1101,15 @@ c_parse_struct_member (struct c_struct_info *struct_info,
   aloutputstream_printf_1k(output," ");
   if (c_parse_variable (parser, token) == NULL)
     {
+      output_dict_value(output,parser->dict_value);
       c_struct_info_add_member(parser,struct_info,&type,parser->dict_value);
-      aloutputstream_printf_1k(output," // struct member %i\n", index);
       token = c_parse_next (parser);
       if ((token != NULL) && (token->token == JSON_TOKEN_SEMI_COLON_ID))
 	{
 	  c_print_json_token (parser, token,output);
-	  return NULL;
+	  token=NULL;
 	}
+      aloutputstream_printf_1k(output," // struct member %i\n", index);
     }
   else
     {
@@ -1925,7 +1931,12 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 
   // tentatively get name ...
   type_name_value = parser->dict_value;
-  
+
+  if ( type_name_value != NULL )
+    {
+      output_dict_value(output,type_name_value);
+    }
+
   if (token == NULL)
     {
       token = c_parse_next (parser);
@@ -1972,19 +1983,21 @@ c_parse_define_type (struct c_parser_ctx *parser, struct al_token *token,
 		{
 		  if (token->token == JSON_TOKEN_CLOSE_BRACE_ID)
 		    {
-		      aloutputstream_printf_1k(output,"} // close struct\n");
+		      aloutputstream_printf_1k(output,"}");
 		      if (within_typedef == 1)
 			{
 			  return NULL;
 			}
 		      // struct definition always ends with ;
 		      token = eat_semi_colon (parser, NULL,output);
+		      aloutputstream_printf_1k(output,"\n");
 		      return token;
 		    }
 		  else
 		    {
 		      return token;
 		    }
+		  return token;
 		}
 	    }
 	  else if (parser->last_type == TOKEN_C_ENUM_ID)
@@ -3438,7 +3451,7 @@ void generate_alc2json_stub_output( struct c_parser_ctx * parser, struct aloutpu
 }
 
 
-int main (int argc, char **argv)
+int main(int argc, char **argv)
 {
   struct c_parser_ctx parser;
   struct json_import_context_data importer;
@@ -3449,6 +3462,7 @@ int main (int argc, char **argv)
   struct aloutputstream * genstream = NULL;
 
   aldebug_start(NULL);
+  aldebug_mute();
   
   struct al_options * options = al_options_create(argc,argv);
 
@@ -3465,6 +3479,7 @@ int main (int argc, char **argv)
     {
       // set debugging for parsing
       ALC_SET_FLAG(parser.flags,ALCPARSER_DEBUG);
+      aldebug_unmute();
       // alhash_set_debug(1);
     }
 

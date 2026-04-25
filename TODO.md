@@ -1,3 +1,4 @@
+# TODO
 
 cat samples/ololo.json
 {
@@ -26,9 +27,8 @@ aljson_ld.c:194 aljson_ld_build_from_json NOT YET implemented. complete iri pars
 [DEBUG] free bucket 0x59c70e6d4bf0
 [DEBUG] alhash release 0x59c70e6d42c0 autogrow 200
 ```
-___________________________________
 
-TODO iri parsing
+## iri parsing
 
 only iri parsing missing ??? i doubt so.
 
