@@ -13,7 +13,7 @@
 #include "al_options.h"
 #include "al_options_output.h"
 
-const char * aljson_main_version="0.3.0";
+const char * aljson_main_version="0.3.1";
 
 /**
 a complicated json stream ( one char ahead ) parser
@@ -26,20 +26,22 @@ static int main_debug=0;
 
 void usage()
 {
-  aldebug_printf(DBGSTREAM,"Output : dump parsed json to standard output.\n");
-  aldebug_printf(DBGSTREAM,"-d                         debug\n");
-  aldebug_printf(DBGSTREAM,"-m                         non recursive\n");
-  aldebug_printf(DBGSTREAM,"-c                         check only (no print)\n");
-  aldebug_printf(DBGSTREAM,"-b                         bare, no indent\n");
-  aldebug_printf(DBGSTREAM,"maxdepth=<integer value for max depth>     over maxdepth switch to non recursive\n");
-  aldebug_printf(DBGSTREAM,"out=<output filename>, use stdout if not set\n");
-  aldebug_printf(DBGSTREAM,"indent=flat|spaces[:x]|tabs    indentation flat or with x ( default 3 ) spaces or with tabs \n");
-  aldebug_printf(DBGSTREAM,"space_after   add a space after : of a pair\n");
-  aldebug_printf(DBGSTREAM,"json_path=<path>\n");
-  aldebug_printf(DBGSTREAM,"template=filename          file to open in read only mode to parse in json for template.\n");
-  aldebug_printf(DBGSTREAM,"          template is used for json unification ie extracting fields from a template pattern\n");
-  aldebug_printf(DBGSTREAM,"-- to separate options from arguments\n");
-  aldebug_printf(DBGSTREAM,"First argument filename    file to open in read only mode to parse in json, use '-' for stdin.\n");
+  aldebug_printf(DBGSTREAM,"\
+Output : dump parsed json to standard output.\n\
+-d                         debug\n\
+-m                         non recursive\n\
+-c                         check only (no print)\n\
+-b                         bare, no indent\n\
+maxdepth=<integer value for max depth>     over maxdepth switch to non recursive\n\
+out=<output filename>, use stdout if not set\n\
+indent=flat|spaces[:x]|tabs    indentation flat (default) or with x ( default 3 ) spaces or with tabs \n\
+space_after   add a space after : of a pair\n\
+json_path=<path>\n\
+template=filename          file to open in read only mode to parse in json for template.\n\
+          template is used for json unification ie extracting fields from a template pattern\n\
+-- to separate options from arguments\n\
+First argument filename    file to open in read only mode to parse in json, use '-' for stdin.\n\
+  ");
 
   aldebug_printf(DBGSTREAM,"\naljson_main version %s\n",aljson_main_version);
 }
