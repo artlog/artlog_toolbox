@@ -2,7 +2,7 @@
 
 test_script=./test1.sh
 
-for project in abnf base64 cbor hashtree json
+for project in base abnf base64 cbor hashtree json
 do
     pushd $project
     if [[ -f $test_script ]]
