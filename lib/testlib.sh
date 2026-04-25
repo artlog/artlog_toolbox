@@ -1,21 +1,5 @@
 #!/bin/bash
 
-log_any()
-{
-    echo "$@" >&2
-}
-
-log_error()
-{
-    log_any "[ERROR] $@"
-    errors="$errors $@"
-}
-
-log_warn()
-{
-    log_any "[WARNING] $@"
-}
-
 clean_test()
 {
     rm -r ./${TESTOUT}
@@ -50,4 +34,32 @@ check_executable()
 	log_error  "'$mime_file' does not match any expected match"
     fi
 
+}
+
+
+check_diff_files()
+{
+    fref="$1"
+    ftest="$2"
+    if ! diff $fref $ftest
+    then
+	log_error unexpected diff '(<) is ref' "'$fref'" 'and (>) is testing' "'$ftest'"
+	log_error hint meld $fref $ftest
+	if [[ -n $automeld ]]
+	then
+	    $automeld $fref $ftest&
+	fi
+    fi
+}
+
+check_diff()
+{
+    filetotest=$1
+    check_diff_files "ref/$filetotest" "${TESTOUT}/$filetotest"
+}
+
+
+check_errors()
+{
+    [[ -n $errors ]] && echo "$errors" &&  exit $EXITERROR
 }
