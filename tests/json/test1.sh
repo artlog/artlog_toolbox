@@ -103,6 +103,37 @@ full_test()
     
 }
 
+json_path() {
+    template_dir=../../template/
+    # seems to do ntoinh with
+    runit $json 'json_path=menu' "arg=[${template_dir}parse1.json]"
+    echo
+    runit $json 'json_path=menu.value' "arg=[${template_dir}parse1.json]"
+    echo
+    # expect {"value":"Open","onclick":"OpenDoc()"}
+    runit $json 'json_path=menu.popup.menuitem[1]' "arg=[${template_dir}parse1.json]"
+    echo
+    runit $json 'json_path=menu.popup.menuitem[]' -- "${template_dir}parse1.json"
+    echo
+    #  https://www.baeldung.com/guide-to-jayway-jsonpath
+    runit $json 'json_path=$.tool.jsonpath.creator.location[2]'  -- "${template_dir}baeldung_sample_1.json"
+    echo
+    runit $json 'json_path=.tool.jsonpath.creator.location[2]'  -- "${template_dir}baeldung_sample_1.json"
+    echo
+    runit $json 'json_path=tool.jsonpath.creator.location[2]'  -- "${template_dir}baeldung_sample_1.json"
+    echo
+    runit $json 'json_path=$['"'"'book'"'"'][?]'  -- "${template_dir}baeldung_sample_2.json"
+    echo
+    runit $json 'json_path=['"'"'book'"'"'][?]'  -- "${template_dir}baeldung_sample_2.json"
+    echo
+    # bunch of unsupported things.
+    runit $json "json_path=\$['book'][?(@['price'] > \$['price range']['medium'])]" -- "${template_dir}baeldung_sample_2.json"
+    echo
+    runit $json "json_path=['book'][?(@['price'] > ['price range']['medium'])]" -- "${template_dir}baeldung_sample_2.json"
+    echo
+}
+
+
 BUILD=../../build
 EXITERROR=1
 
@@ -118,6 +149,7 @@ do
     TESTOUT=tmp.$fragrance
     json=$BUILD/$fragrance
     full_test
+    json_path
 done
 
 check_errors
