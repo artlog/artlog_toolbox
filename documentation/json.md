@@ -63,6 +63,12 @@ check : checks file is a uses a valid json syntax.
 
 ## JSON path
 
+very limited implementation.
+
+does not handle '$' '@' , comparisons or filters.
+
+assuming it is always from root ($).
+
 To extract a value from a json hierarchy by specifying a path to value.
 
 ```

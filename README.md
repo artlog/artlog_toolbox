@@ -2,7 +2,9 @@
 
 Personal project
 
-Some documentation in my personal wiki https://www4.artisanlogiciel.net/dokuwiki/doku.php?id=it:dev:artlog:toolbox
+Some documentation in my personal wiki
+
+https://www4.artisanlogiciel.net/dokuwiki/doku.php?id=it:dev:artlog:artlog_json
 
 NOT SUITABLE FOR ANY PURPOSE
 
@@ -20,7 +22,9 @@ provides implementations for static libraries
 
 # json
 
-a json parser that preserve ordering within arrays
+a json parser that preserve ordering within objects too.
+
+{"a":"x","d":"y","j":6} will remain in a d j order.
 
 ## build
 
