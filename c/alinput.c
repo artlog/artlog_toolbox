@@ -14,7 +14,8 @@ void alinputstream_init(struct alinputstream * stream, int fd)
   bzero(stream, sizeof(*stream));
   stream->fd=fd;
   stream->input.data.ptr=NULL;
-  stream->type = ALINPUTSTREAM_TYPE_FD;
+  // FIXME should be explictly set.
+  stream->type = fd != -1 ? ALINPUTSTREAM_TYPE_FD : ALINPUTSTREAM_TYPE_BLOCK;
   stream->block = ALINPUTSTREAM_BLOCK_32BE;
   stream->total_read=0;
   stream->last_read=0;
@@ -55,7 +56,7 @@ enum al_global_error_code  alinputstream_fd_read_datablock(struct alinputstream 
   if (outbuf != NULL )
     {
       if ( offset + length <= block->length )
-	{       
+	{
 	  // handle case where bytes are read in multiple chunks (often network issues)
 	  while (total < length)
 	    {
@@ -145,7 +146,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 	    }
 	  alinputstream_seteof(stream);
 	}
-      
+
       return res;
     }
   else
@@ -181,16 +182,15 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
 #else
       memcpy(result,v,4);
 #endif
-  
+
       ALDEBUG_IF_DEBUG(stream,alinputstream,debug)
 	{
 	  aldebug_printf(DBGSTREAM,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
-	}  
+	}
       return (*(unsigned int*) result);
     }
 }
 
- 
 // WARNING 0 char considered as EOF
 unsigned char alinputstream_readuchar(struct alinputstream * stream)
 {
@@ -201,43 +201,64 @@ unsigned char alinputstream_readuchar(struct alinputstream * stream)
       return 0;
     }
 
-  if ( read(stream->fd,&result,1) == 1 )
+  int fd = stream->fd;
+  if ( fd != - 1 )
     {
-      stream->bits = 8;
-      return result;
+      if ( read(fd,&result,1) == 1 )
+	{
+	  stream->bits = 8;
+	  return result;
+	}
     }
   else
     {
-      struct alinputstream * next = stream->next_chain;
-      if ( ( next != NULL ) && ( ! alinputstream_iseof(next)))
+      // might be in block case with no file attached
+      if ( stream->type == ALINPUTSTREAM_TYPE_BLOCK )
 	{
-	  // WARNING RECURSIVE
-	  result = alinputstream_readuchar(next);
+	  if ( stream->input.data.ptr != NULL )
+	    {
+	      if (  stream->input.length >= stream->offset + 1 )
+		{
+		  result = stream->input.data.ucharptr[stream->offset];
+		  stream->offset ++;
+		  return result;
+		}
+	    }
 	}
-      else
-	{
-	  // set eof only if full chain is eof.
-	  stream->bits = 0;
-	  alinputstream_seteof(stream);
-	  result = 0;
-	}
-      return result;
     }
+
+  {
+    struct alinputstream * next = stream->next_chain;
+    if ( ( next != NULL ) && ( ! alinputstream_iseof(next)))
+      {
+	// WARNING RECURSIVE
+	result = alinputstream_readuchar(next);
+      }
+    else
+      {
+	// set eof only if full chain is eof.
+	stream->bits = 0;
+	alinputstream_seteof(stream);
+	result = 0;
+      }
+    return result;
+  }
+
 }
 
 static int hexchar_to_int_status(char a, int *status)
 {
   if ( status != NULL ) {
-      if (( a >= '0' ) && ( a <= 'f' )) {
-        if (( a >= ':' ) && ( a <= '@' )) {
-            (*status) = 1;
-          }          
-        }
-      else
-        {
-          (*status) = 1;
-        }
+    if (( a >= '0' ) && ( a <= 'f' )) {
+      if (( a >= ':' ) && ( a <= '@' )) {
+	(*status) = 1;
+      }
     }
+    else
+      {
+	(*status) = 1;
+      }
+  }
   int x = (a > '9') ? 10 + a - 'a'  : a - '0';
   return x;
 }
@@ -266,22 +287,22 @@ enum al_global_error_code alinputstream_readhex_stream(struct alinputstream * st
 
   if ( alinputstream_iseof(stream) )
     {
-        return AL_EC_FALSE;
+      return AL_EC_FALSE;
     }
 
   int status = 0;
   while ( index < block->length )
     {
-      unsigned char byte = alinputstream_readhex(stream, &status);      
+      unsigned char byte = alinputstream_readhex(stream, &status);
       if ( alinputstream_iseof(stream) | (status != 0) )
 	{
 	  buffer[index]='\0';
-          if ( bytesread != NULL )
-            {
-              *bytesread=index;
-            }
+	  if ( bytesread != NULL )
+	    {
+	      *bytesread=index;
+	    }
 	  return AL_EC_OK;
-	}	  
+	}
       buffer[index]=byte;
       index++;
     }
@@ -296,9 +317,9 @@ enum al_global_error_code alinputstream_readline(struct alinputstream * stream, 
 
   if ( alinputstream_iseof(stream) )
     {
-        return AL_EC_FALSE;
+      return AL_EC_FALSE;
     }
-   
+
   while ( index < block->length )
     {
       char c = (char) alinputstream_readuchar(stream);
@@ -306,12 +327,12 @@ enum al_global_error_code alinputstream_readline(struct alinputstream * stream, 
 	{
 	  buffer[index]='\0';
 	  return AL_EC_OK;
-	}	  
+	}
       if ( c =='\n' )
 	{
 	  buffer[index]='\0';
 	  return AL_EC_OK;
-	}    
+	}
       buffer[index]=c;
       index++;
     }
@@ -330,13 +351,13 @@ void alinputstream_foreach_block(
   aldatablock block;
   char * datablock = (char *) malloc(blocksize);
   block.length=blocksize;
-  
+
   if ( datablock != NULL )
     {
       block.data.ptr=datablock;
       enum al_global_error_code ec = AL_EC_OK;
       while ( ( ec = alinputstream_read_block_at(stream, &block, 0, block.length) ) == AL_EC_OK )
-	{	  
+	{
 	  (*callback) (&block,data);
 	}
       block.length=stream->last_read;
@@ -345,7 +366,6 @@ void alinputstream_foreach_block(
 	  (*finalize) (&block,data);
 	}
     }
-  
 }
 
 int alinputstream_get_readbits(struct alinputstream * stream)
@@ -386,7 +406,7 @@ struct alinputstream * alinputstream_find_previous_child(struct alinputstream * 
   while ((from != NULL) && ( from != child ))
     {
       previous_child = from;
-      from = from->child.self.next;      
+      from = from->child.self.next;
     }
   return previous_child;
 }
@@ -471,7 +491,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 	      parent->mark = 0;
 	      parent->self_offset = parent->mark;
 	      parent->child.ptr = child_stream;
-	      
+
 	      // ALLOC will be release at alinputstream_release_shared
 	      aldatablock block;
 	      char * datablock = (char *) malloc(blocksize);
@@ -484,7 +504,6 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 	      // child->offset=parent->mark;
 	      child->offset=parent->self_offset;
 	    }
-	  
 	}
       else
 	{
@@ -498,7 +517,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
     {
       // parent is already a child
       struct alinputstream_share_child * child = &parent->child.self;
-      struct alinputstream * shared_parent = child->parent;      
+      struct alinputstream * shared_parent = child->parent;
       // RECURSIVE on parent to create a sister or brother
       child_stream = alinputstream_create_mark_shared(shared_parent,blocksize);
       // new child starts where parent is even if parent is a shared child.
@@ -506,7 +525,7 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
       child->offset=parent->child.self.offset;
     }
   else
-    {     
+    {
       aldebug_printf(DBGSTREAM,"[ERROR] creating a child of child for parent %p type %i child.parent %p in %s:%s:%i\n",
 		     parent,
 		     parent->type,
@@ -520,12 +539,12 @@ struct alinputstream * alinputstream_create_mark_shared(struct alinputstream * p
 		     child_stream->type,
 		     __FILE__,__func__,__LINE__);
     }
-    
-  return child_stream; 
+
+  return child_stream;
 }
 
 void alinputstream_release_shared(struct alinputstream * parent)
-{  
+{
   if ( parent->type == ALINPUTSTREAM_TYPE_SHARED )
     {
       aldebug_printf(DBGSTREAM,"[DEBUG] free shared parent %p in %s:%s:%i\n",
@@ -533,7 +552,7 @@ void alinputstream_release_shared(struct alinputstream * parent)
 		     __FILE__,__func__,__LINE__);
 
       if ( parent->child.ptr == NULL )
-	{		      
+	{
 	  if (parent->input.data.ptr != NULL )
 	    {
 	      free(parent->input.data.ptr);
@@ -548,7 +567,7 @@ void alinputstream_release_shared(struct alinputstream * parent)
 }
 
 void alinputstream_free_shared(struct alinputstream * child_stream)
-{  
+{
   if ( child_stream != NULL )
     {
       if ( child_stream->type == ALINPUTSTREAM_TYPE_SHARED_CHILD )
@@ -567,7 +586,7 @@ void alinputstream_free_shared(struct alinputstream * child_stream)
 		  // release of buffer will be done by parent later with alinputstream_release_shared
 		  parent->child.ptr = child->next;
 		}
-	      else		
+	      else
 		{
 		  // this is not head, should remove it from next of its previous.
 		  struct alinputstream * previous_child = alinputstream_find_previous_child(parent->child.ptr,child_stream);
@@ -596,7 +615,7 @@ unsigned char alinputstream_read_and_record(struct alinputstream * stream, int o
   if ( relative < 0 )
     {
       aldebug_printf(DBGSTREAM,"[ERROR] reading before mark in %s:%s:%i\n", __FILE__,__func__,__LINE__);
-      return 0;    
+      return 0;
     }
   // steam->offset is number of char kept in parent stream after mark.
   if (relative >= stream->offset )
@@ -645,7 +664,7 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 	      aldebug_printf(DBGSTREAM,"[ERROR] reading %i  before mark %i in %s:%s:%i\n",
 			     child->offset,
 			     stream->mark,
-			     __FILE__,__func__,__LINE__);	      
+			     __FILE__,__func__,__LINE__);
 	      return 0;
 	    }
 	  result = alinputstream_read_and_record(stream,child->offset);
@@ -680,7 +699,6 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 	    }
 	  else
 	    {
-	      
 	      result = alinputstream_readuchar(childstream);
 	      if (childstream->self_offset >= childstream->mark + childstream->offset )
 		{
@@ -694,14 +712,13 @@ unsigned char alinputstream_shared_readuchar(struct alinputstream * childstream)
 	  result = alinputstream_readuchar(childstream);
 	}
     }
-  
   return result;
 }
 
 struct alinputstream *  alinputstream_create_chain(struct alinputstream * current, struct alinputstream * next)
 {
 
-  // adding in a NULL will use first as container/start of chain. 
+  // adding in a NULL will use first as container/start of chain.
   if ( current == NULL )
     {
       return next;
@@ -722,7 +739,6 @@ struct alinputstream *  alinputstream_create_chain(struct alinputstream * curren
 	  }
       }
   }
-  
   return current;
 }
 
@@ -751,8 +767,7 @@ void alinputstream_align_shared_with_child(struct alinputstream * parent, struct
 			 parent,
 			 childstream,
 			 childstream->type,
-			 __FILE__,__func__,__LINE__);	      
-
+			 __FILE__,__func__,__LINE__);
 	}
     }
 }

@@ -6,11 +6,13 @@
 
 struct alinputstream;
 
+// fundamental question this type is what it emulates or what it really is ?
 enum alinputstream_type {
   ALINPUTSTREAM_TYPE_FD,
   ALINPUTSTREAM_TYPE_SHARED,
   ALINPUTSTREAM_TYPE_SHARED_CHILD,
   ALINPUTSTREAM_TYPE_NET         ,
+  ALINPUTSTREAM_TYPE_BLOCK       , // just a reference over a memory block
 };
 
 enum alinputstream_block {
