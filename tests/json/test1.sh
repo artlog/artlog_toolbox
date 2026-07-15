@@ -100,6 +100,8 @@ full_test()
 
     encode_decode_test appendix_a json pp2.json
 
+    # expected fail on flat, done to keep track of improvable behavior
+    encode_decode_test missing_coma json pp.json
     
 }
 
