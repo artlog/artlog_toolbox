@@ -1,0 +1,16 @@
+
+{"uid":"","progress":57,
+"state":{
+"gamer":0,
+"dices":[2,2,3,3],
+"dr":0,
+"gain":[],
+"p":0,
+"pt":0,
+"score":1550,
+"next_score":1550}
+"actions":[
+{"action":"turn",
+"gamer":1}
+]
+}
