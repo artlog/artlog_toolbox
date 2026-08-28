@@ -107,6 +107,8 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
     {
       // HARDCODED LIMIT
       char template[1024];
+      // defined early to avoid dangling pointer
+      char oldpath[512];
       char * freefile = NULL;
 
       // HARDCODED LIMIT
@@ -137,7 +139,6 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
       // need to move file to have a place.
       if ( freefile == NULL )
 	{
-	  char oldpath[512];
 	  char newpath[512];
 	  int dir_fd=dirfd(currentdir);
 	  int count = 0; // number of entries matching template found
