@@ -29,8 +29,8 @@ enum al_global_error_code alsave_file_exists(char * template)
     if (alsave_debug > 0) {aldebug_printf(DBGSTREAM,"[DEBUG] file %s does not exists or  can't be read\n", template);}
     return AL_EC_FALSE;
   }
-  
-  /*  
+
+  /*
   FILE * test=fopen(template,"r");
   if ( test == NULL )
     {
@@ -84,7 +84,7 @@ char * alsave_get_fullfilename(struct alsavecontext * save_context)
 
   return save_context->lastfile;
 }
-  
+
 /**
  * every file with a prefix prefix.[0..9]+.extension will be rename with a superior index if room is needed.
  * what about prefix.extension ( ie without 0 between prefix and extension ) ?
@@ -115,7 +115,6 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	{
 	  return -1;
 	}
-      
       // don't let prefix or extension with % , simple protection against template messup
       if (strchr(prefix,'%')) {
 	return -1;
@@ -132,7 +131,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	  {
 	    // file does not exist : GOOD, free file is found !
 	    freefile=template;
-	  }	
+	  }
       }
 
       // need to move file to have a place.
@@ -145,7 +144,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	  int index_max = 0;
 	  int index_min = maxsave;
 	  int freeindex=0;
-	  
+
 	  // prefix.[0..9]+.extension
 	  sprintf(template,"%s.%%i.%s",prefix,extension);
 	  while ( (fileentry = readdir(currentdir)) != NULL )
@@ -200,13 +199,11 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	    }
 	  if ( index_min < 2 )
 	    {
-	      
 	      // .0 or .1 are used ... too bad...
 	      sprintf(template,"%s.%i.%s", prefix,(index_max+1),extension);
 	      freefile = template;
 
 	      // move all index up ...
-	      
 	      // find first hole if any
 	      if ( count < (index_max-index_min+1) )
 		{
@@ -224,9 +221,9 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 		}
 
 	      for (int i=freeindex-1; i>0; i--)
-		{		
-		  sprintf(oldpath,"%s.%i.%s", prefix,i,extension);		
-		  sprintf(newpath,"%s.%i.%s", prefix,i+1,extension);
+		{
+		  snprintf(oldpath,sizeof(oldpath),"%s.%i.%s", prefix,i,extension);
+		  snprintf(newpath,sizeof(newpath),"%s.%i.%s", prefix,i+1,extension);
 		  if (alsave_debug > 0) {aldebug_printf(DBGSTREAM,"[DEBUG] rename %s->%s\n", oldpath, newpath);}
 		  if ( renameat(dir_fd, oldpath,
 				dir_fd, newpath) != 0 )
@@ -244,7 +241,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 	  // and finaly move away prefix.extension file.
 	  sprintf(oldpath,"%s.%s", prefix,extension);
 	  freefile = oldpath;
-	  sprintf(newpath,"%s.%i.%s", prefix,1,extension);
+	  snprintf(newpath,sizeof(newpath),"%s.%i.%s", prefix,1,extension);
 	  if ( alsave_debug > 0 ) { aldebug_printf(DBGSTREAM,"[DEBUG] rename %s->%s\n", oldpath, newpath);}
 	  if ( renameat(dir_fd, oldpath,
 			dir_fd, newpath) != 0 )
@@ -256,7 +253,7 @@ int alsave_shift_file_name(struct alsavecontext * savecontext)
 
       if ( freefile != NULL )
 	{
-	  aldebug_printf(DBGSTREAM,"[DEBUG] freefile %s\n", freefile);	  
+	  aldebug_printf(DBGSTREAM,"[DEBUG] freefile %s\n", freefile);
 	}
 
       closedir (currentdir);

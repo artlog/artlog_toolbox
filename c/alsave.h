@@ -4,7 +4,7 @@
 struct alsavecontext {
   char dir[4096];
   char prefix[256];
-  char extension[256];
+  char extension[128];
   int index_min;
   int index_max;
   int maxsave;
