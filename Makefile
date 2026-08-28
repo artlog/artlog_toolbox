@@ -185,7 +185,10 @@ clean:
 dev:
 	cd c/; etags *.[ch]
 
-.PHONY:clean test libs all tests testjson testhash libinclude dev
+install: build/json
+	sudo cp $< /usr/local/bin
+
+.PHONY:clean test libs all tests testjson testhash libinclude dev install
 
 # needed to keep those files within include after make ( remove unused )
 .PRECIOUS: $(INCLUDEDIR)/%.h
