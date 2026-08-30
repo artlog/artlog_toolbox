@@ -13,7 +13,7 @@
 #include "al_options.h"
 #include "al_options_output.h"
 
-const char * aljson_main_version="0.3.1";
+const char * aljson_main_version="0.3.2";
 
 /**
 a complicated json stream ( one char ahead ) parser
