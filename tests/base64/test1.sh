@@ -117,10 +117,7 @@ then
     diff ${TESTOUT}/plaintext.txt ${TESTOUT}/plaintext.txt.1
 fi
 
-for plaintext in gnubase64.txt
-do
-    encode_decode_test gnubase64.txt
-done
+encode_decode_test gnubase64.txt
 
 }
 
