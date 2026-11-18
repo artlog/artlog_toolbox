@@ -80,6 +80,25 @@ void aljson_set_pos_info(struct json_object * object,  json_token_ctx * ctx)
     }
 }
 
+void check_open_parenthesis_coma(struct json_parser_ctx * ctx, struct json_object *  object, void * data, struct json_object * parent)
+{
+  // detect missing coma here ?
+  // object can't be already a string from a parenthesis
+  // but in facts it is a '{' or a '[' growable object, don't see quote ... or should we ask to parser ?
+  if (object != NULL ) {
+    if ( FLAG_IS_SET(json_debug,1)  )
+      {
+	aldebug_printf(DBGSTREAM, "[DEBUG] CHECK OBJECT TYPE '%c' FOR BUG %s:%i\n",object->type, __FUNCTION__,__LINE__);
+      }
+    if ( ( object->type == '\"' ) | ( object->type == '0' ) ) {
+      syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
+    }
+  }
+  else {
+    aldebug_printf(DBGSTREAM, "[DEBUG] CHECK OBJECT NULL FOR BUG %s:%i\n",__FUNCTION__,__LINE__);
+  }
+}
+
 struct json_object * aljson_new_json_string(struct json_parser_ctx * parser, char objtype,  aldatablock * data)
 {
 
@@ -303,10 +322,9 @@ void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * 
 {
   if (json_debug > 0 )
     {
-      printf("%c+=%c\n",growable->final_type,object->type);
+      printf("\n<add_to_growable final='%c' type='%c' size='%i'>\n",growable->final_type,object->type,growable->size);
       if (json_debug > 2)
 	{
-	  printf("before<");
 	  aljson_dump_growable(growable,&aljson_print_ctx_debug);
 	}
     }
@@ -331,12 +349,13 @@ void aljson_add_to_growable(struct json_parser_ctx * ctx,struct json_growable * 
     }
   if ( json_debug > 0 )
     {
-      printf("\nafter<");
       if ( json_debug > 0 )
 	{
+	  printf("<growable>\n");
 	  aljson_dump_growable(growable,&aljson_print_ctx_debug);
-	  printf("\n>>");
+	  printf("</growable>\n");
 	}
+      printf("</add_to_growable>\n");
     }
 }
 
@@ -456,8 +475,8 @@ void * json_dict_hashadd_callback (struct json_object * key, struct json_object 
   if ( data != NULL )
     {
       struct alhash_table * dict = (struct alhash_table *) data;
-       aldatablock key_datablock;
-       aldatablock value_datablock;
+      aldatablock key_datablock;
+      aldatablock value_datablock;
       // key is really datablock content
       aljson_fill_datablock(key, &key_datablock);
       // value point to json_object
@@ -549,6 +568,10 @@ struct json_object * create_json_dict(struct json_parser_ctx * parser, struct js
 /** Where growables becomes real json objects **/
 struct json_object * aljson_concrete(struct json_parser_ctx * parser, struct json_object * object)
 {
+  if ( json_debug > 0 )
+    {
+      aldebug_printf(DBGSTREAM,"<aljson_concrete object_type='%c'>\n",object == NULL ? 'N' : object->type);
+    }
   if (object !=NULL)
     {
       struct json_object * newobject = NULL;
@@ -559,16 +582,24 @@ struct json_object * aljson_concrete(struct json_parser_ctx * parser, struct jso
 	    {
 	    case '{':
 	      newobject=create_json_dict(parser,object);
-	      json_growable_release_object(object);
-	      object=newobject;
 	      break;
 	    case '[':
 	      newobject=create_json_list(parser,object);
+	      break;
+	    }
+	  switch(growable->final_type)
+	    {
+	    case '{':
+	    case '[':
 	      json_growable_release_object(object);
 	      object=newobject;
 	      break;
 	    }
 	}
+    }
+  if ( json_debug > 0 )
+    {
+      aldebug_printf(DBGSTREAM,"</aljson_concrete>\n");
     }
   return object;
 }
@@ -618,6 +649,8 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	switch(last_token->token)
 	  {
 	  case JSON_TOKEN_OPEN_PARENTHESIS_ID:
+	    // what is object here ?
+	    check_open_parenthesis_coma(ctx,object,data,parent);
 	    JSON_OPEN(ctx,parenthesis,object);
 	    object=parse_level(ctx,data,object); // expects to parse until '}' included
 	    if (parent == NULL)
@@ -628,7 +661,7 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    break;
 	  case JSON_TOKEN_CLOSE_PARENTHESIS_ID:
 	    JSON_CLOSE(ctx,parenthesis);
-	    if (object !=NULL)
+	    if (object != NULL)
 	      {
 		if ((parent != NULL) && ( parent->type=='G'))
 		  {
@@ -977,6 +1010,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
     switch(last_token->token)
       {
       case JSON_TOKEN_OPEN_PARENTHESIS_ID:
+	check_open_parenthesis_coma(ctx,object,data,parent);
 	// create object
 	JSON_OPEN(ctx,parenthesis,object);
 	alstack_push_ref(stack,(void *) object);
@@ -1190,7 +1224,7 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
 	  {
 	    if (json_debug > 0 )
 	      {
-		// should be a syntax error ( coma wihtout anything ).
+		// should be a syntax error ( coma without anything ).
 		printf("(ignore , NULL object)");
 	      }
 	  }

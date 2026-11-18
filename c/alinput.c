@@ -7,6 +7,7 @@
 #include "aldebug.h"
 #include "aldebug_output.h"
 
+# define ALINPUT_DEBUG_LEVEL 1
 ALDEBUG_DEFINE_STRUCT_FUNCTIONS(alinputstream)
 
 void alinputstream_init(struct alinputstream * stream, int fd)
@@ -183,7 +184,7 @@ unsigned int alinputstream_readuint32(struct alinputstream * stream)
       memcpy(result,v,4);
 #endif
 
-      ALDEBUG_IF_DEBUG(stream,alinputstream,debug)
+      ALDEBUG_IF_DEBUG(stream,alinputstream,ALINPUT_DEBUG_LEVEL)
 	{
 	  aldebug_printf(DBGSTREAM,"%lu %x %x %x %x\n",total, v[0], v[1], v[2], v[3]);
 	}

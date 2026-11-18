@@ -355,9 +355,9 @@ void aljson_dump_object( struct json_object * object, struct print_ctx * print_c
 	  aljson_dump_string_number(object, print_ctx);
 	  break;
 	case ':':
-	  // brainless
-	  (*print_ctx->pair_output)(object, print_ctx);
-	  //aljson_dump_pair_object(object, print_ctx);
+	  // brainless ?? need brain to understand why it is brainless...
+	  //(*print_ctx->pair_output)(object, print_ctx);
+	  aljson_dump_pair_object(object, print_ctx);
 	  break;
 	case ',':
 	  aloutputstream_printf_1k(output,"#");

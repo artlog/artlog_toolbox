@@ -18,6 +18,8 @@ const int MAXOPTIONS=1024;
 // NO debugging, set it do DBGSTREAM to get debug
 #define DBGOPTIONSTREAM NULL
 
+#define ALOPTION_DEBUG_LEVEL 1
+
 ALDEBUG_DEFINE_FUNCTIONS(struct al_options, al_options, debug);
 
 int al_options_get_duplicates(struct al_options * options, aldatablock * key)
@@ -58,7 +60,7 @@ struct alhash_entry * al_option_copy_put(struct al_options * options,
 	}
       else
 	{
-	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	  ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL)
 	    {
 	      aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] entry '%s'='%s'\n", entry->key.data.charptr, entry->value.data.charptr);
 	    }
@@ -76,7 +78,7 @@ struct alhash_entry * al_option_copy_put(struct al_options * options,
 	}
       else
 	{	
-	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	  ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL)
 	    {
 	      aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] DON'T add '%s'='%s' in options, key entry already exists\n",key->data.charptr,value->data.charptr);
 	    }
@@ -114,10 +116,10 @@ void al_option_parse_multivalued(struct al_options * options,
   const char * ivalue = valuebloc->data.constcharptr;
   int valuelength = valuebloc->length;
 
-  ALDEBUG_IF_DEBUG(options, al_options, debug)  aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] parse multivalued \n");
+  ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL)  aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] parse multivalued \n");
   if (( ivalue != NULL) && (ivalue[0] == '[' ) )
     {
-      ALDEBUG_IF_DEBUG(options, al_options, debug) aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] '[' match \n");
+      ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL) aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] '[' match \n");
       char arraykey[ALOPTION_MAX_CHAR_BUFFER];
       // mutlivalued case ivalue[0] assumed to be '['
       int charindex = 1;
@@ -215,7 +217,7 @@ void al_option_parse_multivalued(struct al_options * options,
 	      }
 	    else
 	      {
-		ALDEBUG_IF_DEBUG(options, al_options, debug)
+		ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL)
 		  {
 		    aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] entry '%s'='i\n", entry->key.data.charptr, index);
 		  }
@@ -293,7 +295,7 @@ void al_options_parse_key_value(struct al_options * options,const char * arg)
  // was sscanf(arg,"%m[^=]=%m[^=]",&key,&value);
  if ( ( key != NULL )  && (value != NULL))
    {
-     ALDEBUG_IF_DEBUG(options, al_options, debug)
+     ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL)
        {
 	 aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] option recognized : '%s'='%s'\n",key,value);
        }
@@ -305,7 +307,7 @@ void al_options_parse_key_value(struct al_options * options,const char * arg)
    {
      // key only
      // was sscanf(arg,"%m[^=]",&key);
-     ALDEBUG_IF_DEBUG(options, al_options, debug)
+     ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL)
        {
 	 aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] option recognized : '--%s' ( as %s=true) \n",key,key);
        }
@@ -402,7 +404,7 @@ aldatablock * al_option_get(struct al_options * options,const char * ikey)
   struct alhash_entry *entry =  alhash_get_entry (&options->context.dict, &key);
   if (entry == NULL)
     {
-	  ALDEBUG_IF_DEBUG(options, al_options, debug)
+	  ALDEBUG_IF_DEBUG(options, al_options, ALOPTION_DEBUG_LEVEL)
 	    {
 	      aldebug_printf( DBGOPTIONSTREAM,"[DEBUG] option %s, NOT FOUND\n",ikey);
 	    }

@@ -17,6 +17,8 @@ alhash_context alhash_context_default = {
   .debug = 0,
 };
 
+#define ALHASH_DEBUG_LEVEL 1
+
 ALDEBUG_DEFINE_FUNCTIONS(alhash_context, alhash_context, debug);
 
 // make sure index is within bucket size
@@ -247,7 +249,7 @@ void alhash_context_internal_init(alhash_context * ctx, struct alhash_table * ta
       table->context = ctx;
     }
   
-  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
+  ALDEBUG_IF_DEBUG(table->context,alhash_context,ALHASH_DEBUG_LEVEL)
     {aldebug_printf(DBGSTREAM,"[DEBUG] alhash init %p autogrow %i \n",table,table->autogrow );}
 
 }
@@ -271,7 +273,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, aldatablock * key,
 
   if ( ( table != NULL ) && ( key != NULL) && ( value != NULL ) )
     {
-      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
+      ALDEBUG_IF_DEBUG(table->context,alhash_context,ALHASH_DEBUG_LEVEL)
 	{
 	  aldebug_printf(DBGSTREAM,
 			 "[DEBUG] alhash put entry '" ALPASCALSTRFMT "'\n",
@@ -283,7 +285,7 @@ struct alhash_entry * alhash_put(struct alhash_table * table, aldatablock * key,
 	{
 	  if ( alhash_get_usage(table) > table->autogrow  )
 	    {
-	      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
+	      ALDEBUG_IF_DEBUG(table->context,alhash_context,ALHASH_DEBUG_LEVEL)
 		{
 		  aldebug_printf(DBGSTREAM,
 				 "[DEBUG] alhash %p grow from %i to %i .\n",
@@ -351,7 +353,7 @@ struct alhash_entry * alhash_get_entry(struct alhash_table * table, aldatablock 
 {
   if (( table != NULL ) && ( key != NULL ))
     {
-      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug) {
+      ALDEBUG_IF_DEBUG(table->context,alhash_context,ALHASH_DEBUG_LEVEL) {
 	aldebug_printf(DBGSTREAM,
 		       "[DEBUG] alhash get entry '" ALPASCALSTRFMT "'\n",
 		       ALPASCALSTRARGS(key->length,(char *) key->data.ptr));
@@ -504,7 +506,7 @@ int alhash_reinit(struct alhash_table * table, int length)
   // new table should have enough place
   if (table != NULL)
     {
-      ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
+      ALDEBUG_IF_DEBUG(table->context,alhash_context,ALHASH_DEBUG_LEVEL)
 	{
 	  aldebug_printf(DBGSTREAM,"[DEBUG] REINIT length of hash table to %i current usage %i used %i\n", length, alhash_get_usage(table), alhash_get_used(table));
 	}
@@ -527,14 +529,14 @@ int alhash_reinit(struct alhash_table * table, int length)
 	  temporary.autogrow=table->autogrow;
 	  memcpy(table,&temporary,sizeof(*table));
 	  size =  alhash_get_size(table);
-	  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
+	  ALDEBUG_IF_DEBUG(table->context,alhash_context,ALHASH_DEBUG_LEVEL)
 	    {
 	      aldebug_printf(DBGSTREAM,"[DEBUG] REINITIALIZED length of hash table to %i new usage %i used %i \n", length, alhash_get_usage(table), alhash_get_used(table));
 	    }	  
       }
       else
 	{
-	  ALDEBUG_IF_DEBUG(table->context,alhash_context,debug)
+	  ALDEBUG_IF_DEBUG(table->context,alhash_context,ALHASH_DEBUG_LEVEL)
 	    {
 	    aldebug_printf(DBGSTREAM,"[DEBUG] alhash length %i requested for reinit too small < used %i \n",length, table->used);
 	  }
@@ -612,16 +614,27 @@ void alhash_dump_entry_as_string(struct alhash_entry * entry)
     {
       if ( ( entry->key.data.ptr != NULL ) && ( entry->value.data.ptr != NULL ) )
 	{
-	  aldebug_printf(DBGSTREAM,"dump entry\n");
+	  aldebug_printf(DBGSTREAM,"<alhash_entry>\n");
+
 	  aldebug_printf(DBGSTREAM,
-			 "%p (%i)'" ALPASCALSTRFMT "' = (%i)'" ALPASCALSTRFMT "' (hash=%lx) (collisions=",
+			 "%p (%i)'" ALPASCALSTRFMT "'",
 			 entry, entry->key.type,
-			 ALPASCALSTRARGS(entry->key.length, (char *) entry->key.data.ptr),
+			 ALPASCALSTRARGS(entry->key.length, (char *) entry->key.data.ptr));
+	  /*
+	    WORKED BY CHANCE ( aldatablock starts with length ... )
+	  aldebug_printf(DBGSTREAM,
+			 " = (%i)'" ALPASCALSTRFMT "' \n",
 			 entry->value.type,
-			 ALPASCALSTRARGS(entry->value.length, (char *)  entry->value.data.ptr),
-			 entry->hash_key);
+			 ALPASCALSTRARGS(entry->value.length, (char *)  entry->value.data.ptr));
+	  */
+	  // would be a aldump_datablock if exists
+	  aldebug_printf(DBGSTREAM,
+			 " = %p (%i) \n",
+			 entry->value.data.ptr, entry->value.type);
+	  aldebug_printf(DBGSTREAM,"(hash=%lx)(collisions=",entry->hash_key);
 	  int collisions = alhash_walk_collisions(entry, alhash_walk_callback_collision, NULL);
-	  aldebug_printf( NULL, "#%i)\n",collisions);
+	  aldebug_printf(DBGSTREAM, "#%i)\n",collisions);
+	  aldebug_printf(DBGSTREAM,"</alhash_entry>\n");
 	}
       else
 	{
@@ -638,7 +651,6 @@ int alhash_walk_callback_dump (struct alhash_entry * entry, void * data, int ind
   printf("\n");
   return 0;
 }
-
 
 void alhash_context_release(alhash_context * hash_context)
 {

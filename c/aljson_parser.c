@@ -105,7 +105,7 @@ void pushback_char(json_token_ctx *ctx, void *data, char pushback)
   assert( (ctx->pos>0) && (pushback == str->chars[ctx->pos-1]));
   */
   ctx->pos--;
-  ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+  ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
     {
       aldebug_printf(DBGSTREAM,"[DEBUG] (pushback %c)\n",pushback);      
     }
@@ -126,7 +126,7 @@ void debug_tag(json_token_ctx *ctx,char c)
 {
   if (ctx != NULL )
     {
-      ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+      ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
 	{
 	  aldebug_printf(DBGSTREAM,"%c",c);
 	}
@@ -147,8 +147,8 @@ enum aljson_number_parser_state parse_number_level(json_token_ctx * ctx, char fi
   char c = first;
   while ( state >= ALJSON_NPSTATE_INIT )
     {
-      // fixme was > 3 now i s 1
-      ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+      // fixme was > 3 now is 1
+      ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
 	{
 	  aldebug_printf(DBGSTREAM,"(number state %i)",state);
 	}
@@ -240,7 +240,7 @@ enum aljson_number_parser_state parse_number_level(json_token_ctx * ctx, char fi
 	case ALJSON_NPSTATE_COMPLETING:
 	  // this char is NOT part of our number
 	  ctx->pushback_char(ctx,data,c);
-	  ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+	  ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
 	    {
 	      printf("(pushback end of number %c)",c);
 	      char d = ctx->next_char(ctx,data);
@@ -321,35 +321,6 @@ struct al_token * json_tokenizer(json_token_ctx * ctx, void * data)
 
   // main loop char by char, delegate to sub parser in many cases.
   while (c != 0)  {
-    // fixme debug_level was > 2 no test with 1
-    ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
-      {
-	switch(c)
-	  {
-	  case '{':
-	  case '}':
-	  case '[':
-	  case ']':
-	  case '"':
-	  case '\'':
-	  case ',':
-	  case ':':
-	  case '?':
-	    aldebug_printf(DBGSTREAM,"%c[%x]\n",c,c);
-	    /*
-	    if (parent != NULL)
-	      {
-                FIXME need a print ctx else will crash
-		aljson_output(ctx,parent,NULL);
-	      }
-	    */
-	    aldebug_printf(DBGSTREAM,"\n-------");
-	    break;
-	  default:
-	    aldebug_printf(DBGSTREAM,"%c",c);
-	  }
-      }
-
     // ignored characters.
     switch(c)
       {
@@ -358,30 +329,27 @@ struct al_token * json_tokenizer(json_token_ctx * ctx, void * data)
       case 0x0c: // cr
       case 9: // tab
 	// ignore
-	ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+	ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
 	  {
-	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
-	      {
-		aldebug_printf(DBGSTREAM,"%c", c);	
-	      }
-	    else
+	    if ( ! FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
 		// start to ignore ...
-		aldebug_printf(DBGSTREAM,"<ignore %c", c);
+		aldebug_printf(DBGSTREAM,"<ignore from_char=[%x]/>", c);
 	      }
 	  }
 	ctx->internal_flags |= JSON_FLAG_IGNORE;
 	break;
       default:
-	ALDEBUG_IF_DEBUG(ctx,json_ctx,debug_level)
+	ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
 	  {
 	    // we were ignoring and now will we stop ...
 	    if ( FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
 	      {
-		aldebug_printf(DBGSTREAM,"ignore>");
+		aldebug_printf(DBGSTREAM,"</ignore>\n");
 	      }
 	  }
 	ctx->internal_flags &= !JSON_FLAG_IGNORE;
+	aldebug_printf(DBGSTREAM,"%c",c);
       };
 
     if ( ! FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )

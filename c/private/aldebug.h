@@ -36,6 +36,6 @@ int prefix ##_is_debug(member_type * m,int flag) \
 #define ALDEBUG_SET_DEBUG(object, prefix, flags) prefix ##_set_debug(object,flags);
 
 #define ALDEBUG_IF_DEBUG(object, prefix, debug)	\
-  if ( prefix ##_is_debug( object, 1))
+  if ( prefix ##_is_debug( object, debug))
 
 #endif // #ifndef __ALDEBUG_H__
