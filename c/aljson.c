@@ -80,15 +80,6 @@ void aljson_set_pos_info(struct json_object * object,  json_token_ctx * ctx)
     }
 }
 
-void check_open_parenthesis_coma(struct json_parser_ctx * ctx, struct json_object *  object, void * data, struct json_object * parent)
-{
-  if (parent != NULL ) {
-    if ( ( parent->type == 'G' ) ) {
-      syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_MISSING_COMA,data,object,parent);
-    }
-  }
-}
-
 struct json_object * aljson_new_json_string(struct json_parser_ctx * parser, char objtype,  aldatablock * data)
 {
 
@@ -640,8 +631,6 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	switch(last_token->token)
 	  {
 	  case JSON_TOKEN_OPEN_PARENTHESIS_ID:
-	    // what is object here ?
-	    check_open_parenthesis_coma(ctx,object,data,parent);
 	    JSON_OPEN(ctx,parenthesis,object);
 	    object=parse_level(ctx,data,object); // expects to parse until '}' included
 	    if (parent == NULL)
@@ -1000,7 +989,6 @@ struct json_object * parse_level_non_recursive(struct json_parser_ctx * ctx, voi
     switch(last_token->token)
       {
       case JSON_TOKEN_OPEN_PARENTHESIS_ID:
-	check_open_parenthesis_coma(ctx,object,data,parent);
 	// create object
 	JSON_OPEN(ctx,parenthesis,object);
 	alstack_push_ref(stack,(void *) object);
