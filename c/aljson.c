@@ -82,7 +82,7 @@ void aljson_set_pos_info(struct json_object * object,  json_token_ctx * ctx)
 
 void check_open_parenthesis_coma(struct json_parser_ctx * ctx, struct json_object *  object, void * data, struct json_object * parent)
 {
-  if (object != NULL ) {
+  if (parent != NULL ) {
     if ( ( parent->type == 'G' ) ) {
       syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_MISSING_COMA,data,object,parent);
     }
@@ -143,7 +143,7 @@ struct json_object * syntax_error(const char * function, int line, struct json_p
   c = ctx->next_char(ctx, data);
   // capture some context ( 5 lines, cumulated < max_buff chars )
   // eat all to end => only one error will be captured.
-  while ( c!= 0)
+  while ( c != 0)
     {
       if ( (ctx->pos_info.line < err_object->pos_info.line + 5 ) && ( buf_idx < max_buff ) )
 	{
@@ -163,7 +163,8 @@ struct json_object * syntax_error(const char * function, int line, struct json_p
   err_object->error.string.internal.length=buf_idx;
   if ( ctx->debug_level > 0 )
     {
-      printf("At %s:%i ",function,line);
+      printf("\nERROR %i at line %i\n", erroridx, err_object->pos_info.line);
+      printf("At C code %s:%i ",function,line);
       aljson_dump_object(err_object,&aljson_print_ctx_debug);
       printf("while parsing object :\n");
       aljson_dump_object(object,&aljson_print_ctx_debug);
@@ -721,6 +722,9 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	    return aljson_concrete(ctx,parent);
 	    break;
 	  case JSON_TOKEN_DQUOTE_ID:
+	    if (object != NULL) {
+	      return syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_MISSING_COMA, data,object,parent);
+	    }
 	    if ((parent != NULL) && (parent->type == '"'))
 	      {
 		// can't parse a string within a string
@@ -739,10 +743,6 @@ struct json_object * parse_level_recursive(struct json_parser_ctx * ctx, void * 
 	  case JSON_TOKEN_COMMA_ID:
 	    if (object !=NULL)
 	      {
-		if ( json_debug > 0 )
-		  {
-		    printf("(%i parent:%p object:%p",last_token->token,parent,object);
-		  }
 		if (parent !=NULL)
 		  {
 		    if ( parent->type=='G')
