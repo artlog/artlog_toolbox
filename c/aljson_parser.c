@@ -105,7 +105,7 @@ void pushback_char(json_token_ctx *ctx, void *data, char pushback)
   assert( (ctx->pos>0) && (pushback == str->chars[ctx->pos-1]));
   */
   ctx->pos--;
-  ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
+  ALDEBUG_IF_DEBUG(ctx,json_ctx,TOKENIZER_DEBUG_ADD)
     {
       aldebug_printf(DBGSTREAM,"[DEBUG] (pushback %c)\n",pushback);      
     }
@@ -241,7 +241,7 @@ enum aljson_number_parser_state parse_number_level(json_token_ctx * ctx, char fi
 	  ctx->pushback_char(ctx,data,c);
 	  ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
 	    {
-	      printf("(pushback end of number %c)",c);
+	      aldebug_printf(DBGSTREAM,"(pushback end of number %c)",c);
 	      char d = ctx->next_char(ctx,data);
 	      if ( d != c )
 		{
@@ -346,9 +346,9 @@ struct al_token * json_tokenizer(json_token_ctx * ctx, void * data)
 	      {
 		aldebug_printf(DBGSTREAM,"</ignore>\n");
 	      }
+	    aldebug_printf(DBGSTREAM,"%c",c);
 	  }
 	ctx->internal_flags &= !JSON_FLAG_IGNORE;
-	aldebug_printf(DBGSTREAM,"%c",c);
       };
 
     if ( ! FLAG_IS_SET(ctx->internal_flags,JSON_FLAG_IGNORE) )
