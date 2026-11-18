@@ -147,8 +147,7 @@ enum aljson_number_parser_state parse_number_level(json_token_ctx * ctx, char fi
   char c = first;
   while ( state >= ALJSON_NPSTATE_INIT )
     {
-      // fixme was > 3 now is 1
-      ALDEBUG_IF_DEBUG(ctx,json_ctx,1)
+      ALDEBUG_IF_DEBUG(ctx,json_ctx,2)
 	{
 	  aldebug_printf(DBGSTREAM,"(number state %i)",state);
 	}

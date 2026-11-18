@@ -102,7 +102,10 @@ full_test()
 
     # expected fail on flat, done to keep track of improvable behavior
     encode_decode_test missing_coma json pp.json
-    
+
+    # expected fail on flat, done to keep track of improvable behavior
+    encode_decode_test missing_coma_list json pp.json
+
 }
 
 json_path() {

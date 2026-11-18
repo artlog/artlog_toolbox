@@ -82,20 +82,10 @@ void aljson_set_pos_info(struct json_object * object,  json_token_ctx * ctx)
 
 void check_open_parenthesis_coma(struct json_parser_ctx * ctx, struct json_object *  object, void * data, struct json_object * parent)
 {
-  // detect missing coma here ?
-  // object can't be already a string from a parenthesis
-  // but in facts it is a '{' or a '[' growable object, don't see quote ... or should we ask to parser ?
   if (object != NULL ) {
-    if ( FLAG_IS_SET(json_debug,1)  )
-      {
-	aldebug_printf(DBGSTREAM, "[DEBUG] CHECK OBJECT TYPE '%c' FOR BUG %s:%i\n",object->type, __FUNCTION__,__LINE__);
-      }
-    if ( ( object->type == '\"' ) | ( object->type == '0' ) ) {
-      syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_CLOSE_INVALID_PARENT,data,object,parent);
+    if ( ( parent->type == 'G' ) ) {
+      syntax_error(__FUNCTION__,__LINE__,ctx,JSON_ERROR_DICT_MISSING_COMA,data,object,parent);
     }
-  }
-  else {
-    aldebug_printf(DBGSTREAM, "[DEBUG] CHECK OBJECT NULL FOR BUG %s:%i\n",__FUNCTION__,__LINE__);
   }
 }
 
