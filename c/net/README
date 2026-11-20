@@ -1,7 +1,8 @@
 project ongoing
 
-
 clientserver is somehow a kind of tiny fuzzy netcat.
+
+in server mode it replies to 4 connections by delaying each octet some milliseconds.
 
 sudo apt install libssl-dev
 
@@ -9,4 +10,4 @@ make clean
 make
 
 
-test it with ./test.sh
+test it with tests/net/test_net.sh
