@@ -22,7 +22,7 @@
 
 #include <stddef.h>
 
-const char * CLIENTSERVER_MAIN_VERSION = "0.1";
+const char * CLIENTSERVER_MAIN_VERSION = "0.2";
 
 #define STRINGIFY(x) #x
 #define STRINGIFYDEFINED(x)  STRINGIFY(x)
@@ -32,13 +32,13 @@ const char * CLIENTSERVER_MAIN_VERSION = "0.1";
 
 void usage() {
   aldebug_printf(DBGSTREAM,"version %s\n", CLIENTSERVER_MAIN_VERSION);
-  aldebug_printf(DBGSTREAM,"As server echoes back char stream with delay between bytes on correponsindg tcp connection\n");
+  aldebug_printf(DBGSTREAM,"As server echoes back char stream with delay between bytes on corresponding tcp connection\n");
   aldebug_printf(DBGSTREAM,"As client open numbers concurrent conenction to given host and port with random content \n");
   aldebug_printf(DBGSTREAM,"loopbackserv : accept " STRINGIFYDEFINED(LOOPBACKCONNECTIONS) " client connections on local system, on port " STRINGIFYDEFINED(LOOPBACKSERV_PORT) " using concurrent thread and reply back line that was sent with delay between bytes\n");
   aldebug_printf(DBGSTREAM,"server=<irrelevant>\n");
   aldebug_printf(DBGSTREAM,"client=<hostname to connect to>\n");
   aldebug_printf(DBGSTREAM,"port=port\n");
-  aldebug_printf(DBGSTREAM,"timeout=<conenct timeout in milliseconds\n");
+  aldebug_printf(DBGSTREAM,"timeout=<connect timeout in milliseconds\n");
   aldebug_printf(DBGSTREAM,"seconds=duration of client streams\n");
   aldebug_printf(DBGSTREAM,"number=<number of concurrent connections\n");
 }
@@ -93,13 +93,13 @@ int main(int argc, char **argv)
 	  }
 	else
 	  {
-	    aldebug_printf(DBGSTREAM,"host resolution failedn");
+	    aldebug_printf(DBGSTREAM,"host resolution failed\n");
 	    return 1;
 	  }
   
 	if ( connection.addrinfo == NULL )
 	  {
-	    fprintf(stderr,"[INFO] connection.addrinfo == NULL \n");
+	    aldebug_printf(DBGSTREAM,"connection.addrinfo == NULL \n");
 	    connect_info_release(&connection);
 	    exit(1);
 	  }

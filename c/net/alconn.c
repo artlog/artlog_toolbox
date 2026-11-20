@@ -91,11 +91,11 @@ int alconn_multiple_connect(int number, struct alconnect_info * cto, int seconds
 		{
 		  if (connection[j].revents & POLLIN )
 		    {
-		      printf("<%i \n", connection[j].fd);
+		      printf("<in %i ", connection[j].fd);
 		      int r = read(connection[j].fd,buffer,sizeof(buffer));
 		      if ( r > 0 )
 			{
-			  printf("r=%i\n" ALPASCALSTRFMT "\n",r,ALPASCALSTRARGS(r,buffer));
+			  printf("r=%i'" ALPASCALSTRFMT "'",r,ALPASCALSTRARGS(r,buffer));
 			}
 		      if ( connection[j].revents & POLLHUP )
 			{

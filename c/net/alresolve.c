@@ -39,7 +39,7 @@ int connect_info_resolve(char * host, int port, struct alconnect_info * conn)
       result_code = getaddrinfo(hostname,portstr,&hints,&res);
       if (result_code != 0)
 	{
-	   aldebug_printf(DBGSTREAM,"getaddrinfo failed with %u code meaning %s\n", result_code, gai_strerror(result_code));
+	  aldebug_printf(DBGSTREAM,"getaddrinfo(%s,%i,..) failed with %i code meaning '%s' @%s:%i\n",host,port,result_code, gai_strerror(result_code),__FUNCTION__,__LINE__);
 	  return 0;
 	}
       
